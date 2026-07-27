@@ -1,13 +1,13 @@
 @page "/Administration"
 @model Neftyanik.Portal.Web.Pages.Administration.IndexModel
 @{
-    ViewData["Title"] = "?????????????????";
+    ViewData["Title"] = "Администрирование";
 }
 
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
     <div>
-        <h1 class="h2 mb-1">?????? ??????????????</h1>
-        <p class="text-muted mb-0">??????? ?????????? ? ????????? ??????? ? ?????????.</p>
+        <h1 class="h2 mb-1">Панель администрирования</h1>
+        <p class="text-muted mb-0">Сводная информация о состоянии системы и приложения.</p>
     </div>
 </div>
 
@@ -15,9 +15,9 @@
     <div class="col-sm-6 col-xl-3">
         <div class="card h-100 shadow-sm">
             <div class="card-body">
-                <h2 class="h6 text-muted">??????????? ? ???? ??????</h2>
+                <h2 class="h6 text-muted">Подключение к базе данных</h2>
                 <p class="display-6 mb-0 @(Model.DatabaseAvailable ? "text-success" : "text-danger")">
-                    @(Model.DatabaseAvailable ? "????????" : "??????????")
+                    @(Model.DatabaseAvailable ? "Доступно" : "Недоступно")
                 </p>
             </div>
         </div>
@@ -25,7 +25,7 @@
     <div class="col-sm-6 col-xl-3">
         <div class="card h-100 shadow-sm">
             <div class="card-body">
-                <h2 class="h6 text-muted">????????????</h2>
+                <h2 class="h6 text-muted">Пользователи</h2>
                 <p class="display-6 mb-0">@Model.RegisteredUsersCount</p>
             </div>
         </div>
@@ -33,7 +33,7 @@
     <div class="col-sm-6 col-xl-3">
         <div class="card h-100 shadow-sm">
             <div class="card-body">
-                <h2 class="h6 text-muted">????</h2>
+                <h2 class="h6 text-muted">Роли</h2>
                 <p class="display-6 mb-0">@Model.RolesCount</p>
             </div>
         </div>
@@ -41,7 +41,7 @@
     <div class="col-sm-6 col-xl-3">
         <div class="card h-100 shadow-sm">
             <div class="card-body">
-                <h2 class="h6 text-muted">??????????? ????????</h2>
+                <h2 class="h6 text-muted">Применённые миграции</h2>
                 <p class="display-6 mb-0">@Model.AppliedMigrationsCount</p>
             </div>
         </div>
@@ -50,7 +50,7 @@
 
 <div class="card shadow-sm">
     <div class="card-body">
-        <h2 class="h5">?????????</h2>
-        <p class="mb-0">??????? ?????????: <strong>@Model.EnvironmentName</strong></p>
+        <h2 class="h5">Окружение</h2>
+        <p class="mb-0">Текущее окружение: <strong>@Model.EnvironmentName</strong></p>
     </div>
 </div>

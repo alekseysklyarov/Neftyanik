@@ -1,10 +1,11 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <DefaultItemExcludes>$(DefaultItemExcludes);artifacts\**;bin\**;obj\**;src\**\bin\**;src\**\obj\**;tests\**\bin\**;tests\**\obj\**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,6 +21,27 @@
     <Compile Remove="src\**\obj\**\*.cs" />
     <Compile Remove="tests\**\*.cs" />
     <Compile Remove="**\*.ide.g.cs" />
+    <Content Remove="artifacts\**" />
+    <Content Remove="bin\**" />
+    <Content Remove="obj\**" />
+    <Content Remove="src\**\bin\**" />
+    <Content Remove="src\**\obj\**" />
+    <Content Remove="tests\**\bin\**" />
+    <Content Remove="tests\**\obj\**" />
+    <None Remove="artifacts\**" />
+    <None Remove="bin\**" />
+    <None Remove="obj\**" />
+    <None Remove="src\**\bin\**" />
+    <None Remove="src\**\obj\**" />
+    <None Remove="tests\**\bin\**" />
+    <None Remove="tests\**\obj\**" />
+    <EmbeddedResource Remove="artifacts\**" />
+    <EmbeddedResource Remove="bin\**" />
+    <EmbeddedResource Remove="obj\**" />
+    <EmbeddedResource Remove="src\**\bin\**" />
+    <EmbeddedResource Remove="src\**\obj\**" />
+    <EmbeddedResource Remove="tests\**\bin\**" />
+    <EmbeddedResource Remove="tests\**\obj\**" />
   </ItemGroup>
 
   <ItemGroup>

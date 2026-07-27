@@ -646,22 +646,22 @@ namespace Neftyanik.Portal.Infrastructure.Data.Migrations
             migrationBuilder.InsertData(
                 table: "ElectricityTariffs",
                 columns: new[] { "Id", "CreatedAt", "DayRatePrice", "EffectiveFrom", "EffectiveTo", "IsActive", "Name", "NightRatePrice", "SingleRatePrice" },
-                values: new object[] { 1, new DateTimeOffset(new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, new DateOnly(2026, 1, 1), null, true, "??????? ?????", null, 5.00m });
+                values: new object[] { 1, new DateTimeOffset(new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)), null, new DateOnly(2026, 1, 1), null, true, "Тариф 5,00 грн/кВт·ч", null, 5.00m });
 
             migrationBuilder.InsertData(
                 table: "ExpenseCategories",
                 columns: new[] { "Id", "Description", "IsActive", "Name" },
                 values: new object[,]
                 {
-                    { 1, null, true, "?????? ??????????????" },
-                    { 2, null, true, "?????? ???????????" },
-                    { 3, null, true, "?????? ?????" },
-                    { 4, null, true, "??????" },
-                    { 5, null, true, "????? ??????" },
-                    { 6, null, true, "???????????? ??????????" },
-                    { 7, null, true, "???????????????? ???????" },
-                    { 8, null, true, "?????? ? ?????????? ????????" },
-                    { 9, null, true, "??????" }
+                    { 1, null, true, "Оплата электроэнергии" },
+                    { 2, null, true, "Ремонт электросети" },
+                    { 3, null, true, "Ремонт дорог" },
+                    { 4, null, true, "Охрана" },
+                    { 5, null, true, "Вывоз мусора" },
+                    { 6, null, true, "Обслуживание территории" },
+                    { 7, null, true, "Административные расходы" },
+                    { 8, null, true, "Налоги и банковские комиссии" },
+                    { 9, null, true, "Прочее" }
                 });
 
             migrationBuilder.InsertData(

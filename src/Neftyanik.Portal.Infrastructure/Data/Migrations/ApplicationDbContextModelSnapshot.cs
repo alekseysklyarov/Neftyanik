@@ -554,7 +554,7 @@ namespace Neftyanik.Portal.Infrastructure.Data.Migrations
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             EffectiveFrom = new DateOnly(2026, 1, 1),
                             IsActive = true,
-                            Name = "??????? ?????",
+                            Name = "Тариф 5,00 грн/кВт·ч",
                             SingleRatePrice = 5.00m
                         });
                 });
@@ -645,55 +645,55 @@ namespace Neftyanik.Portal.Infrastructure.Data.Migrations
                         {
                             Id = 1,
                             IsActive = true,
-                            Name = "?????? ??????????????"
+                            Name = "Оплата электроэнергии"
                         },
                         new
                         {
                             Id = 2,
                             IsActive = true,
-                            Name = "?????? ???????????"
+                            Name = "Ремонт электросети"
                         },
                         new
                         {
                             Id = 3,
                             IsActive = true,
-                            Name = "?????? ?????"
+                            Name = "Ремонт дорог"
                         },
                         new
                         {
                             Id = 4,
                             IsActive = true,
-                            Name = "??????"
+                            Name = "Охрана"
                         },
                         new
                         {
                             Id = 5,
                             IsActive = true,
-                            Name = "????? ??????"
+                            Name = "Вывоз мусора"
                         },
                         new
                         {
                             Id = 6,
                             IsActive = true,
-                            Name = "???????????? ??????????"
+                            Name = "Обслуживание территории"
                         },
                         new
                         {
                             Id = 7,
                             IsActive = true,
-                            Name = "???????????????? ???????"
+                            Name = "Административные расходы"
                         },
                         new
                         {
                             Id = 8,
                             IsActive = true,
-                            Name = "?????? ? ?????????? ????????"
+                            Name = "Налоги и банковские комиссии"
                         },
                         new
                         {
                             Id = 9,
                             IsActive = true,
-                            Name = "??????"
+                            Name = "Прочее"
                         });
                 });
 

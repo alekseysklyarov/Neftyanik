@@ -357,7 +357,7 @@ GO
 IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'Id', N'CreatedAt', N'DayRatePrice', N'EffectiveFrom', N'EffectiveTo', N'IsActive', N'Name', N'NightRatePrice', N'SingleRatePrice') AND [object_id] = OBJECT_ID(N'[ElectricityTariffs]'))
     SET IDENTITY_INSERT [ElectricityTariffs] ON;
 INSERT INTO [ElectricityTariffs] ([Id], [CreatedAt], [DayRatePrice], [EffectiveFrom], [EffectiveTo], [IsActive], [Name], [NightRatePrice], [SingleRatePrice])
-VALUES (1, '2026-01-01T00:00:00.0000000+00:00', NULL, '2026-01-01', NULL, CAST(1 AS bit), N'??????? ?????', NULL, 5.0);
+VALUES (1, '2026-01-01T00:00:00.0000000+00:00', NULL, '2026-01-01', NULL, CAST(1 AS bit), N'Тариф 5,00 грн/кВт·ч', NULL, 5.0);
 IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'Id', N'CreatedAt', N'DayRatePrice', N'EffectiveFrom', N'EffectiveTo', N'IsActive', N'Name', N'NightRatePrice', N'SingleRatePrice') AND [object_id] = OBJECT_ID(N'[ElectricityTariffs]'))
     SET IDENTITY_INSERT [ElectricityTariffs] OFF;
 GO
@@ -365,15 +365,15 @@ GO
 IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'Id', N'Description', N'IsActive', N'Name') AND [object_id] = OBJECT_ID(N'[ExpenseCategories]'))
     SET IDENTITY_INSERT [ExpenseCategories] ON;
 INSERT INTO [ExpenseCategories] ([Id], [Description], [IsActive], [Name])
-VALUES (1, NULL, CAST(1 AS bit), N'?????? ??????????????'),
-(2, NULL, CAST(1 AS bit), N'?????? ???????????'),
-(3, NULL, CAST(1 AS bit), N'?????? ?????'),
-(4, NULL, CAST(1 AS bit), N'??????'),
-(5, NULL, CAST(1 AS bit), N'????? ??????'),
-(6, NULL, CAST(1 AS bit), N'???????????? ??????????'),
-(7, NULL, CAST(1 AS bit), N'???????????????? ???????'),
-(8, NULL, CAST(1 AS bit), N'?????? ? ?????????? ????????'),
-(9, NULL, CAST(1 AS bit), N'??????');
+VALUES (1, NULL, CAST(1 AS bit), N'Оплата электроэнергии'),
+(2, NULL, CAST(1 AS bit), N'Ремонт электросети'),
+(3, NULL, CAST(1 AS bit), N'Ремонт дорог'),
+(4, NULL, CAST(1 AS bit), N'Охрана'),
+(5, NULL, CAST(1 AS bit), N'Вывоз мусора'),
+(6, NULL, CAST(1 AS bit), N'Обслуживание территории'),
+(7, NULL, CAST(1 AS bit), N'Административные расходы'),
+(8, NULL, CAST(1 AS bit), N'Налоги и банковские комиссии'),
+(9, NULL, CAST(1 AS bit), N'Прочее');
 IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'Id', N'Description', N'IsActive', N'Name') AND [object_id] = OBJECT_ID(N'[ExpenseCategories]'))
     SET IDENTITY_INSERT [ExpenseCategories] OFF;
 GO

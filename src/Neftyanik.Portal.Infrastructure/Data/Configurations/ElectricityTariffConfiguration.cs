@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Neftyanik.Portal.Domain.Entities;
 
@@ -32,7 +32,7 @@ public class ElectricityTariffConfiguration : IEntityTypeConfiguration<Electrici
         builder.HasData(new ElectricityTariff
         {
             Id = SeedDataConstants.InitialElectricityTariffId,
-            Name = "??????? ?????",
+            Name = "Тариф 5,00 грн/кВт·ч",
             SingleRatePrice = 5.00m,
             EffectiveFrom = SeedDataConstants.InitialTariffEffectiveFrom,
             IsActive = true,
