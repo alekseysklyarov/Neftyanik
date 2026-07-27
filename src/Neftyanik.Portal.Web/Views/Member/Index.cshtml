@@ -1,0 +1,120 @@
+@model Neftyanik.Portal.Web.Models.MemberDashboardViewModel
+
+@{
+    ViewData["Title"] = "Member dashboard";
+}
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header">User information</div>
+            <div class="card-body">
+                <p><strong>Name:</strong> @Model.DisplayName</p>
+                <p><strong>Email:</strong> @Model.Email</p>
+                <p><strong>Phone:</strong> @Model.PhoneNumber</p>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">Debts</div>
+            <div class="card-body">
+                <p><strong>Electricity debt:</strong> @Model.CurrentElectricityDebt.ToString("C")</p>
+                <p><strong>Membership fee (this year):</strong> @Model.CurrentMembershipDebt.ToString("C")</p>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">Owned plots</div>
+            <ul class="list-group list-group-flush">
+                @foreach (var plot in Model.Plots)
+                {
+                    <li class="list-group-item">Plot #@plot.Number — @plot.Area m<sup>2</sup> — @plot.Status</li>
+                }
+                @if (!Model.Plots.Any())
+                {
+                    <li class="list-group-item">No plots assigned.</li>
+                }
+            </ul>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card mb-3">
+            <div class="card-header">Payment history</div>
+            <div class="card-body p-0">
+                <table class="table table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Amount</th>
+                            <th>Method</th>
+                            <th>Source</th>
+                            <th>Note</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Payments.Any())
+                        {
+                            foreach (var pay in Model.Payments)
+                            {
+                                <tr>
+                                    <td>@pay.Date.ToString("yyyy-MM-dd")</td>
+                                    <td>@pay.Amount.ToString("C")</td>
+                                    <td>@pay.Method</td>
+                                    <td>@pay.Source</td>
+                                    <td>@pay.Note</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr><td colspan="5">No payments found.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">Electricity readings / charges</div>
+            <div class="card-body p-0">
+                <table class="table table-sm table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Plot</th>
+                            <th>Period</th>
+                            <th>Consumption (kWh)</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.ElectricityCharges.Any())
+                        {
+                            foreach (var c in Model.ElectricityCharges)
+                            {
+                                <tr>
+                                    <td>@c.PlotNumber</td>
+                                    <td>@c.PeriodStart.ToString("yyyy-MM-dd") - @c.PeriodEnd.ToString("yyyy-MM-dd")</td>
+                                    <td>@c.ConsumptionKwh</td>
+                                    <td>@c.Amount.ToString("C")</td>
+                                    <td>@(c.IsPaid ? "Paid" : "Unpaid")</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr><td colspan="5">No records.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // custom scripts if needed
+    </script>
+}

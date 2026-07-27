@@ -1,0 +1,14 @@
+Users
+Plots
+Meters
+PlotMeters
+MeterReadings
+Tariffs
+Charges
+Payments
+MembershipFees
+Expenses
+ExpenseCategories
+News
+Documents
+AuditLogs

@@ -1,0 +1,61 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Главная";
+}
+
+<div class="p-4 p-md-5 mb-4 bg-light border rounded-3">
+    <div class="container-fluid py-2 px-0">
+        <h1 class="display-6 fw-semibold mb-3">Neftyanik Portal</h1>
+        <p class="lead mb-3">Портал садового товарищества для участников, бухгалтерии и администрации.</p>
+
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <p class="mb-4">Вы вошли в систему и можете перейти к доступным разделам портала.</p>
+
+            <div class="d-flex flex-wrap gap-2">
+                @if (User.IsInRole(RoleNames.Member))
+                {
+                    <a asp-controller="Member" asp-action="Index" class="btn btn-primary">Личный кабинет</a>
+                }
+
+                @if (User.IsInRole(RoleNames.Administrator))
+                {
+                    <a asp-page="/Administration/Index" class="btn btn-outline-primary">Панель администратора</a>
+                }
+            </div>
+        }
+        else
+        {
+            <p class="mb-4">Для доступа к защищенным разделам войдите под своей учетной записью.</p>
+            <a asp-page="/Account/Login" class="btn btn-primary">Войти</a>
+        }
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h2 class="h5">Участникам</h2>
+                <p class="mb-0">Просмотр начислений, платежей и информации по участкам.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h2 class="h5">Бухгалтерии</h2>
+                <p class="mb-0">Подготовка к учету платежей, начислений и финансовой отчетности.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h2 class="h5">Администрации</h2>
+                <p class="mb-0">Контроль состояния системы и доступ к базовой административной панели.</p>
+            </div>
+        </div>
+    </div>
+</div>
