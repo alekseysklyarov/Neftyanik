@@ -33,6 +33,4 @@ public class ElectricityMeter
     public List<MeterPlot> MeterPlots { get; set; } = new List<MeterPlot>();
 
     public List<MeterReading> MeterReadings { get; set; } = new List<MeterReading>();
-
-    public List<Charge> Charges { get; set; } = new List<Charge>();
 }

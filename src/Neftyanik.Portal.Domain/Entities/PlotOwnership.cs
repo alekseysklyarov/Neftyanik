@@ -14,7 +14,6 @@ public class PlotOwnership : IValidatableObject
 
     public Member? Member { get; set; }
 
-    [Range(typeof(decimal), "0.01", "100")]
     public decimal? OwnershipShare { get; set; }
 
     public bool IsPrimaryContact { get; set; }

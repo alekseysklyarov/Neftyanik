@@ -1,0 +1,140 @@
+@page "/Administration/Plots/{plotId:int}/Finance"
+@model Neftyanik.Portal.Web.Pages.Administration.Plots.Finance.IndexModel
+@{
+    ViewData["Title"] = $"Финансы участка {Model.Plot.PlotNumber}";
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h2 mb-1">Финансы участка @Model.Plot.PlotNumber</h1>
+        <p class="text-muted mb-0">@(string.IsNullOrWhiteSpace(Model.Plot.PlotAddress) ? "Адрес не указан" : Model.Plot.PlotAddress)</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a class="btn btn-primary" asp-page="/Administration/Plots/Finance/CreateCharge" asp-route-plotId="@Model.Plot.PlotId">Добавить начисление</a>
+        <a class="btn btn-outline-primary" asp-page="/Administration/Plots/Finance/RegisterPayment" asp-route-plotId="@Model.Plot.PlotId">Зарегистрировать платеж</a>
+         <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Details" asp-route-id="@Model.Plot.PlotId">Назад к участку</a>
+         <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Index">К списку участков</a>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-4"><div class="card shadow-sm h-100"><div class="card-body"><h2 class="h6 text-muted">Начислено</h2><p class="display-6 mb-0">@Model.Plot.ActiveChargesTotal.ToString("0.00")</p></div></div></div>
+    <div class="col-md-4"><div class="card shadow-sm h-100"><div class="card-body"><h2 class="h6 text-muted">Оплачено</h2><p class="display-6 mb-0">@Model.Plot.ActivePaymentsTotal.ToString("0.00")</p></div></div></div>
+    <div class="col-md-4"><div class="card shadow-sm h-100"><div class="card-body"><h2 class="h6 text-muted">Баланс</h2><p class="display-6 mb-0 @Model.Plot.BalanceStatusClass">@Model.Plot.Balance.ToString("0.00")</p><p class="mb-0">@Model.Plot.BalanceStatus</p></div></div></div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white"><h2 class="h5 mb-0">Начисления</h2></div>
+    <div class="card-body p-0">
+        @if (Model.Charges.Count == 0)
+        {
+            <div class="p-4 text-center text-muted">Начисления для участка пока не зарегистрированы.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Тип</th>
+                            <th>Сумма</th>
+                            <th>Дата начисления</th>
+                            <th>Срок оплаты</th>
+                            <th>Период</th>
+                            <th>Описание</th>
+                            <th>Статус</th>
+                            <th class="text-end">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var charge in Model.Charges)
+                        {
+                            <tr class="@(charge.IsCancelled ? "table-secondary" : string.Empty)">
+                                <td>@charge.ChargeTypeName</td>
+                                <td>@charge.Amount.ToString("0.00")</td>
+                                <td>@charge.ChargeDate.ToString("dd.MM.yyyy")</td>
+                                <td>@(charge.DueDate.HasValue ? charge.DueDate.Value.ToString("dd.MM.yyyy") : "—")</td>
+                                <td>@(charge.PeriodYear.HasValue ? (charge.PeriodMonth.HasValue ? $"{charge.PeriodMonth:00}.{charge.PeriodYear}" : charge.PeriodYear.Value.ToString()) : "—")</td>
+                                <td>@(string.IsNullOrWhiteSpace(charge.Description) ? "—" : charge.Description)</td>
+                                <td>
+                                    @if (charge.IsCancelled)
+                                    {
+                                        <div>Отменено</div>
+                                        <small class="text-muted">@(string.IsNullOrWhiteSpace(charge.CancellationReason) ? "Причина не указана" : charge.CancellationReason)</small>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge text-bg-success">Активно</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    @if (!charge.IsCancelled)
+                                    {
+                                        <a class="btn btn-sm btn-outline-warning" asp-page="/Administration/Plots/Finance/CancelCharge" asp-route-plotId="@Model.Plot.PlotId" asp-route-id="@charge.Id">Отменить начисление</a>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-white"><h2 class="h5 mb-0">Платежи</h2></div>
+    <div class="card-body p-0">
+        @if (Model.Payments.Count == 0)
+        {
+            <div class="p-4 text-center text-muted">Платежи по участку пока не зарегистрированы.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Сумма</th>
+                            <th>Дата платежа</th>
+                            <th>Способ оплаты</th>
+                            <th>Номер документа</th>
+                            <th>Описание</th>
+                            <th>Статус</th>
+                            <th class="text-end">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var payment in Model.Payments)
+                        {
+                            <tr class="@(payment.IsCancelled ? "table-secondary" : string.Empty)">
+                                <td>@payment.Amount.ToString("0.00")</td>
+                                <td>@payment.PaymentDate.ToString("dd.MM.yyyy")</td>
+                                <td>@payment.PaymentMethodText</td>
+                                <td>@(string.IsNullOrWhiteSpace(payment.ReferenceNumber) ? "—" : payment.ReferenceNumber)</td>
+                                <td>@(string.IsNullOrWhiteSpace(payment.Description) ? "—" : payment.Description)</td>
+                                <td>
+                                    @if (payment.IsCancelled)
+                                    {
+                                        <div>Отменен</div>
+                                        <small class="text-muted">@(string.IsNullOrWhiteSpace(payment.CancellationReason) ? "Причина не указана" : payment.CancellationReason)</small>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge text-bg-success">Активно</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    @if (!payment.IsCancelled)
+                                    {
+                                        <a class="btn btn-sm btn-outline-warning" asp-page="/Administration/Plots/Finance/CancelPayment" asp-route-plotId="@Model.Plot.PlotId" asp-route-id="@payment.Id">Отменить платеж</a>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

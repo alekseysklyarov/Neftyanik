@@ -31,6 +31,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<MembershipFeeRate> MembershipFeeRates => Set<MembershipFeeRate>();
 
+    public DbSet<ChargeType> ChargeTypes => Set<ChargeType>();
+
     public DbSet<Charge> Charges => Set<Charge>();
 
     public DbSet<Payment> Payments => Set<Payment>();

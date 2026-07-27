@@ -1,0 +1,219 @@
+@page "/Member/Plots/{plotId:int}/Finance"
+@model Neftyanik.Portal.Web.Pages.Member.Plots.Finance.IndexModel
+@{
+    ViewData["Title"] = $"Финансы участка {Model.Plot.PlotNumber}";
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h2 mb-1">Финансы участка @Model.Plot.PlotNumber</h1>
+        <p class="text-muted mb-1">@(string.IsNullOrWhiteSpace(Model.Plot.PlotAddress) ? "Адрес не указан" : Model.Plot.PlotAddress)</p>
+        @if (Model.Plot.OwnershipShare.HasValue)
+        {
+            <p class="text-muted mb-0">Доля владения: @Model.Plot.OwnershipShare.Value.ToString("0.##")%</p>
+        }
+    </div>
+    <div>
+        <a class="btn btn-outline-secondary" asp-page="/Member/Index">Назад в личный кабинет</a>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h6 text-muted">Начислено</h2>
+                <p class="display-6 mb-0">@Model.Plot.ActiveChargesTotal.ToString("0.00")</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h6 text-muted">Оплачено</h2>
+                <p class="display-6 mb-0">@Model.Plot.ActivePaymentsTotal.ToString("0.00")</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100 @Model.Plot.BalanceCardClass">
+            <div class="card-body">
+                <h2 class="h6 text-muted">Баланс</h2>
+                <p class="display-6 mb-1 @Model.Plot.BalanceStatusClass">@Model.Plot.Balance.ToString("0.00")</p>
+                <p class="mb-0 @Model.Plot.BalanceStatusClass">@Model.Plot.BalanceStatusText</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center gap-2">
+        <h2 class="h5 mb-0">Начисления</h2>
+        <span class="text-muted small">Страница @Model.ChargePage из @Model.ChargeTotalPages</span>
+    </div>
+    <div class="card-body p-0">
+        @if (Model.Charges.Count == 0)
+        {
+            <div class="p-4 text-center text-muted">Начисления по участку отсутствуют.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Дата начисления</th>
+                            <th>Тип начисления</th>
+                            <th>Сумма</th>
+                            <th>Срок оплаты</th>
+                            <th>Описание</th>
+                            <th>Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var charge in Model.Charges)
+                        {
+                            <tr class="@(charge.IsCancelled ? "table-secondary" : string.Empty)">
+                                <td>@charge.ChargeDate.ToString("dd.MM.yyyy")</td>
+                                <td>@charge.ChargeTypeName</td>
+                                <td>@charge.Amount.ToString("0.00")</td>
+                                <td>@(charge.DueDate.HasValue ? charge.DueDate.Value.ToString("dd.MM.yyyy") : "—")</td>
+                                <td>@(string.IsNullOrWhiteSpace(charge.Description) ? "—" : charge.Description)</td>
+                                <td>
+                                    @if (charge.IsCancelled)
+                                    {
+                                        <div><span class="badge text-bg-secondary">@charge.StatusText</span></div>
+                                        <small class="text-muted">@(string.IsNullOrWhiteSpace(charge.CancellationReason) ? "Причина не указана" : charge.CancellationReason)</small>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge text-bg-success">@charge.StatusText</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+    @if (Model.ChargeTotalPages > 1)
+    {
+        <div class="card-footer bg-white">
+            <nav aria-label="Навигация по начислениям">
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item @(Model.HasChargePreviousPage ? string.Empty : "disabled")">
+                        <a class="page-link"
+                           asp-page="/Member/Plots/Finance/Index"
+                           asp-route-plotId="@Model.Plot.PlotId"
+                           asp-route-chargePage="@(Model.ChargePage - 1)"
+                           asp-route-paymentPage="@Model.PaymentPage">Назад</a>
+                    </li>
+                    @for (var pageNumber = 1; pageNumber <= Model.ChargeTotalPages; pageNumber++)
+                    {
+                        <li class="page-item @(pageNumber == Model.ChargePage ? "active" : string.Empty)">
+                            <a class="page-link"
+                               asp-page="/Member/Plots/Finance/Index"
+                               asp-route-plotId="@Model.Plot.PlotId"
+                               asp-route-chargePage="@pageNumber"
+                               asp-route-paymentPage="@Model.PaymentPage">@pageNumber</a>
+                        </li>
+                    }
+                    <li class="page-item @(Model.HasChargeNextPage ? string.Empty : "disabled")">
+                        <a class="page-link"
+                           asp-page="/Member/Plots/Finance/Index"
+                           asp-route-plotId="@Model.Plot.PlotId"
+                           asp-route-chargePage="@(Model.ChargePage + 1)"
+                           asp-route-paymentPage="@Model.PaymentPage">Вперед</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    }
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center gap-2">
+        <h2 class="h5 mb-0">Платежи</h2>
+        <span class="text-muted small">Страница @Model.PaymentPage из @Model.PaymentTotalPages</span>
+    </div>
+    <div class="card-body p-0">
+        @if (Model.Payments.Count == 0)
+        {
+            <div class="p-4 text-center text-muted">Платежи по участку отсутствуют.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Дата платежа</th>
+                            <th>Сумма</th>
+                            <th>Способ оплаты</th>
+                            <th>Номер документа</th>
+                            <th>Описание</th>
+                            <th>Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var payment in Model.Payments)
+                        {
+                            <tr class="@(payment.IsCancelled ? "table-secondary" : string.Empty)">
+                                <td>@payment.PaymentDate.ToString("dd.MM.yyyy")</td>
+                                <td>@payment.Amount.ToString("0.00")</td>
+                                <td>@payment.PaymentMethodText</td>
+                                <td>@(string.IsNullOrWhiteSpace(payment.ReferenceNumber) ? "—" : payment.ReferenceNumber)</td>
+                                <td>@(string.IsNullOrWhiteSpace(payment.Description) ? "—" : payment.Description)</td>
+                                <td>
+                                    @if (payment.IsCancelled)
+                                    {
+                                        <div><span class="badge text-bg-secondary">@payment.StatusText</span></div>
+                                        <small class="text-muted">@(string.IsNullOrWhiteSpace(payment.CancellationReason) ? "Причина не указана" : payment.CancellationReason)</small>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge text-bg-success">@payment.StatusText</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+    @if (Model.PaymentTotalPages > 1)
+    {
+        <div class="card-footer bg-white">
+            <nav aria-label="Навигация по платежам">
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item @(Model.HasPaymentPreviousPage ? string.Empty : "disabled")">
+                        <a class="page-link"
+                           asp-page="/Member/Plots/Finance/Index"
+                           asp-route-plotId="@Model.Plot.PlotId"
+                           asp-route-chargePage="@Model.ChargePage"
+                           asp-route-paymentPage="@(Model.PaymentPage - 1)">Назад</a>
+                    </li>
+                    @for (var pageNumber = 1; pageNumber <= Model.PaymentTotalPages; pageNumber++)
+                    {
+                        <li class="page-item @(pageNumber == Model.PaymentPage ? "active" : string.Empty)">
+                            <a class="page-link"
+                               asp-page="/Member/Plots/Finance/Index"
+                               asp-route-plotId="@Model.Plot.PlotId"
+                               asp-route-chargePage="@Model.ChargePage"
+                               asp-route-paymentPage="@pageNumber">@pageNumber</a>
+                        </li>
+                    }
+                    <li class="page-item @(Model.HasPaymentNextPage ? string.Empty : "disabled")">
+                        <a class="page-link"
+                           asp-page="/Member/Plots/Finance/Index"
+                           asp-route-plotId="@Model.Plot.PlotId"
+                           asp-route-chargePage="@Model.ChargePage"
+                           asp-route-paymentPage="@(Model.PaymentPage + 1)">Вперед</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    }
+</div>

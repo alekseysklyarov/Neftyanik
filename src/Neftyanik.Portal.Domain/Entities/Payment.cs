@@ -1,22 +1,15 @@
 using Neftyanik.Portal.Domain.Enums;
+using System.ComponentModel.DataAnnotations;
 
 namespace Neftyanik.Portal.Domain.Entities;
 
-public enum PaymentSource
-{
-    MembershipFee = 0,
-    ElectricityCharge = 1,
-    Expense = 2,
-    Other = 10
-}
-
-public class Payment
+public class Payment : IValidatableObject
 {
     public long Id { get; set; }
 
-    public string UserId { get; set; } = string.Empty;
+    public int? PlotId { get; set; }
 
-    public ApplicationUser? User { get; set; }
+    public Plot? Plot { get; set; }
 
     public DateOnly PaymentDate { get; set; }
 
@@ -26,53 +19,25 @@ public class Payment
 
     public string? ReferenceNumber { get; set; }
 
-    public string? Comment { get; set; }
+    public string? Description { get; set; }
 
-    public string CreatedByUserId { get; set; } = string.Empty;
+    public string? CreatedByUserId { get; set; }
 
     public ApplicationUser? CreatedByUser { get; set; }
 
-    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
 
-    public bool IsCancelled { get; set; }
+    public DateTime? CancelledAtUtc { get; set; }
 
-    public DateTimeOffset? CancelledAt { get; set; }
+    public string? CancellationReason { get; set; }
 
-    public string? CancelledByUserId { get; set; }
+    public List<PaymentAllocation> PaymentAllocations { get; set; } = [];
 
-    public ApplicationUser? CancelledByUser { get; set; }
-
-    public List<PaymentAllocation> PaymentAllocations { get; set; } = new List<PaymentAllocation>();
-
-    public PaymentSource Source { get; set; } = PaymentSource.Other;
-
-    public string PayerId
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
-        get => UserId;
-        set => UserId = value ?? string.Empty;
-    }
-
-    public DateTime Date
-    {
-        get => PaymentDate.ToDateTime(TimeOnly.MinValue);
-        set => PaymentDate = DateOnly.FromDateTime(value);
-    }
-
-    public string? Method
-    {
-        get => PaymentMethod.ToString();
-        set
+        if (Amount <= 0m)
         {
-            if (Enum.TryParse<PaymentMethod>(value, true, out var parsedMethod))
-            {
-                PaymentMethod = parsedMethod;
-            }
+            yield return new ValidationResult("Payment amount must be greater than zero.", [nameof(Amount)]);
         }
-    }
-
-    public string? Note
-    {
-        get => Comment;
-        set => Comment = value;
     }
 }

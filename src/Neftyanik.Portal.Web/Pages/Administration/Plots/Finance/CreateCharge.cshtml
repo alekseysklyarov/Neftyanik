@@ -1,0 +1,89 @@
+@page "/Administration/Plots/{plotId:int}/Finance/CreateCharge"
+@model Neftyanik.Portal.Web.Pages.Administration.Plots.Finance.CreateChargeModel
+@{
+    ViewData["Title"] = "Новое начисление";
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h2 mb-1">Новое начисление</h1>
+        <p class="text-muted mb-0">Участок @Model.Plot.PlotNumber</p>
+    </div>
+    <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Finance/Index" asp-route-plotId="@Model.Plot.PlotId">К финансам участка</a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="Input.ChargeTypeId" class="form-label"></label>
+                    <select asp-for="Input.ChargeTypeId" class="form-select" id="chargeTypeSelect">
+                        <option value="">Выберите тип начисления</option>
+                        @foreach (var item in Model.ChargeTypes)
+                        {
+                            <option value="@item.Id" data-default-amount="@(item.DefaultAmount.HasValue ? item.DefaultAmount.Value.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture) : string.Empty)">@item.Name</option>
+                        }
+                    </select>
+                    <span asp-validation-for="Input.ChargeTypeId" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Input.Amount" class="form-label"></label>
+                    <input asp-for="Input.Amount" class="form-control" type="number" step="0.01" id="amountInput" />
+                    <span asp-validation-for="Input.Amount" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Input.ChargeDate" class="form-label"></label>
+                    <input asp-for="Input.ChargeDate" class="form-control" type="date" />
+                    <span asp-validation-for="Input.ChargeDate" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Input.DueDate" class="form-label"></label>
+                    <input asp-for="Input.DueDate" class="form-control" type="date" />
+                    <span asp-validation-for="Input.DueDate" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Input.PeriodYear" class="form-label"></label>
+                    <input asp-for="Input.PeriodYear" class="form-control" type="number" min="2000" max="2100" />
+                    <span asp-validation-for="Input.PeriodYear" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Input.PeriodMonth" class="form-label"></label>
+                    <input asp-for="Input.PeriodMonth" class="form-control" type="number" min="1" max="12" />
+                    <span asp-validation-for="Input.PeriodMonth" class="text-danger"></span>
+                </div>
+                <div class="col-12">
+                    <label asp-for="Input.Description" class="form-label"></label>
+                    <textarea asp-for="Input.Description" class="form-control" rows="4"></textarea>
+                    <span asp-validation-for="Input.Description" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="d-flex gap-2 mt-4">
+                <button type="submit" class="btn btn-primary">Сохранить</button>
+                <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Finance/Index" asp-route-plotId="@Model.Plot.PlotId">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const chargeTypeSelect = document.getElementById('chargeTypeSelect');
+            const amountInput = document.getElementById('amountInput');
+            if (!chargeTypeSelect || !amountInput) {
+                return;
+            }
+
+            chargeTypeSelect.addEventListener('change', () => {
+                const option = chargeTypeSelect.options[chargeTypeSelect.selectedIndex];
+                const defaultAmount = option?.dataset?.defaultAmount;
+                if (defaultAmount && (!amountInput.value || amountInput.value === '0' || amountInput.value === '0,00')) {
+                    amountInput.value = defaultAmount;
+                }
+            });
+        })();
+    </script>
+}

@@ -28,10 +28,6 @@ public class ApplicationUser : IdentityUser
 
     public List<MeterReading> ApprovedMeterReadings { get; set; } = [];
 
-    public List<Charge> Charges { get; set; } = [];
-
-    public List<Payment> Payments { get; set; } = [];
-
     public List<Expense> CreatedExpenses { get; set; } = [];
 
     public List<NewsArticle> CreatedNewsArticles { get; set; } = [];
@@ -45,8 +41,6 @@ public class ApplicationUser : IdentityUser
     public List<Charge> CreatedCharges { get; set; } = [];
 
     public List<Payment> CreatedPayments { get; set; } = [];
-
-    public List<Payment> CancelledPayments { get; set; } = [];
 
     public List<SystemSetting> UpdatedSystemSettings { get; set; } = [];
 }

@@ -53,9 +53,12 @@ else
                                 <thead>
                                     <tr>
                                         <th>Номер участка</th>
-                                        <th>Адрес</th>
+                                        <th>Адрес / описание</th>
                                         <th>Доля, %</th>
-                                        <th>Основной контакт</th>
+                                        <th>Начислено</th>
+                                        <th>Оплачено</th>
+                                        <th>Баланс</th>
+                                        <th class="text-end">Действия</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -65,7 +68,12 @@ else
                                             <td>@plot.PlotNumber</td>
                                             <td>@(string.IsNullOrWhiteSpace(plot.Address) ? "—" : plot.Address)</td>
                                             <td>@(plot.OwnershipShare.HasValue ? plot.OwnershipShare.Value.ToString("0.##") : "—")</td>
-                                            <td>@(plot.IsPrimaryContact ? "Да" : "Нет")</td>
+                                            <td>@plot.ActiveChargesTotal.ToString("0.00")</td>
+                                            <td>@plot.ActivePaymentsTotal.ToString("0.00")</td>
+                                            <td class="@(plot.Balance > 0m ? "text-danger" : plot.Balance < 0m ? "text-primary" : "text-success")">@plot.Balance.ToString("0.00")</td>
+                                            <td class="text-end">
+                                                <a class="btn btn-sm btn-outline-primary" asp-page="/Member/Plots/Finance/Index" asp-route-plotId="@plot.PlotId">Финансы</a>
+                                            </td>
                                         </tr>
                                     }
                                 </tbody>

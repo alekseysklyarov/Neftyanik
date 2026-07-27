@@ -1,50 +1,65 @@
-using Neftyanik.Portal.Domain.Enums;
+using System.ComponentModel.DataAnnotations;
 
 namespace Neftyanik.Portal.Domain.Entities;
 
-public class Charge
+public class Charge : IValidatableObject
 {
     public long Id { get; set; }
 
-    public string UserId { get; set; } = string.Empty;
-
-    public ApplicationUser? User { get; set; }
-
     public int? PlotId { get; set; }
 
-    public int? MeterId { get; set; }
+    public Plot? Plot { get; set; }
 
-    public ChargeType ChargeType { get; set; }
+    public int ChargeTypeId { get; set; }
 
-    public int PeriodYear { get; set; }
-
-    public int? PeriodMonth { get; set; }
-
-    public string Description { get; set; } = string.Empty;
-
-    public decimal? Quantity { get; set; }
-
-    public decimal? UnitPrice { get; set; }
+    public ChargeType? ChargeType { get; set; }
 
     public decimal Amount { get; set; }
 
-    public DateTimeOffset ChargedAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateOnly ChargeDate { get; set; }
 
     public DateOnly? DueDate { get; set; }
 
-    public ChargeStatus Status { get; set; } = ChargeStatus.Active;
+    public int? PeriodYear { get; set; }
 
-    public long? SourceReadingId { get; set; }
+    public int? PeriodMonth { get; set; }
+
+    [StringLength(1000)]
+    public string? Description { get; set; }
+
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
 
     public string? CreatedByUserId { get; set; }
 
     public ApplicationUser? CreatedByUser { get; set; }
 
-    public Plot? Plot { get; set; }
+    public DateTime? CancelledAtUtc { get; set; }
 
-    public ElectricityMeter? Meter { get; set; }
+    [StringLength(500)]
+    public string? CancellationReason { get; set; }
 
-    public MeterReading? SourceReading { get; set; }
+    public List<PaymentAllocation> PaymentAllocations { get; set; } = [];
 
-    public List<PaymentAllocation> PaymentAllocations { get; set; } = new List<PaymentAllocation>();
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (Amount <= 0m)
+        {
+            yield return new ValidationResult("Charge amount must be greater than zero.", [nameof(Amount)]);
+        }
+
+        if (DueDate.HasValue && DueDate.Value < ChargeDate)
+        {
+            yield return new ValidationResult("Due date cannot be earlier than charge date.", [nameof(DueDate), nameof(ChargeDate)]);
+        }
+
+        if (PeriodMonth.HasValue && (PeriodMonth.Value < 1 || PeriodMonth.Value > 12))
+        {
+            yield return new ValidationResult("Period month must be between 1 and 12.", [nameof(PeriodMonth)]);
+        }
+
+        if (PeriodYear.HasValue && (PeriodYear.Value < 2000 || PeriodYear.Value > 2100))
+        {
+            yield return new ValidationResult("Period year must be between 2000 and 2100.", [nameof(PeriodYear)]);
+        }
+    }
 }

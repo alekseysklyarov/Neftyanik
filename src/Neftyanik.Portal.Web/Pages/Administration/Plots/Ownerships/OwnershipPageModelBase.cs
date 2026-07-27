@@ -19,6 +19,8 @@ public abstract class OwnershipPageModelBase : PageModel
 
     protected async Task<PlotContextViewModel?> GetPlotContextAsync(int plotId, CancellationToken cancellationToken)
     {
+        var currentDate = DateOnly.FromDateTime(DateTime.Now);
+
         return await DbContext.Plots
             .AsNoTracking()
             .Where(plot => plot.Id == plotId)
@@ -28,14 +30,22 @@ public abstract class OwnershipPageModelBase : PageModel
                 PlotNumber = plot.Number,
                 PlotAddress = plot.Address,
                 PlotIsActive = plot.IsActive,
-                ActiveOwnersCount = plot.PlotOwnerships.Count(ownership => ownership.ValidTo == null),
-                HasActivePrimaryContact = plot.PlotOwnerships.Any(ownership => ownership.ValidTo == null && ownership.IsPrimaryContact),
+                ActiveOwnersCount = plot.PlotOwnerships.Count(ownership => (!ownership.ValidFrom.HasValue || ownership.ValidFrom.Value <= currentDate)
+                    && (!ownership.ValidTo.HasValue || ownership.ValidTo.Value >= currentDate)),
+                HasActivePrimaryContact = plot.PlotOwnerships.Any(ownership => (!ownership.ValidFrom.HasValue || ownership.ValidFrom.Value <= currentDate)
+                    && (!ownership.ValidTo.HasValue || ownership.ValidTo.Value >= currentDate)
+                    && ownership.IsPrimaryContact),
                 PrimaryContact = plot.PlotOwnerships
-                    .Where(ownership => ownership.ValidTo == null && ownership.IsPrimaryContact && ownership.Member != null)
+                    .Where(ownership => (!ownership.ValidFrom.HasValue || ownership.ValidFrom.Value <= currentDate)
+                        && (!ownership.ValidTo.HasValue || ownership.ValidTo.Value >= currentDate)
+                        && ownership.IsPrimaryContact
+                        && ownership.Member != null)
                     .Select(ownership => ownership.Member!.FullName)
                     .FirstOrDefault(),
                 SpecifiedTotalShare = plot.PlotOwnerships
-                    .Where(ownership => ownership.ValidTo == null && ownership.OwnershipShare.HasValue)
+                    .Where(ownership => (!ownership.ValidFrom.HasValue || ownership.ValidFrom.Value <= currentDate)
+                        && (!ownership.ValidTo.HasValue || ownership.ValidTo.Value >= currentDate)
+                        && ownership.OwnershipShare.HasValue)
                     .Sum(ownership => (decimal?)ownership.OwnershipShare) ?? 0m
             })
             .FirstOrDefaultAsync(cancellationToken);

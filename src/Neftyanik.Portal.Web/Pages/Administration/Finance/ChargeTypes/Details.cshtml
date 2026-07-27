@@ -1,0 +1,48 @@
+@page "{id:int}"
+@model Neftyanik.Portal.Web.Pages.Administration.Finance.ChargeTypes.DetailsModel
+@{
+    ViewData["Title"] = Model.ChargeType.Name;
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h2 mb-1">@Model.ChargeType.Name</h1>
+        <p class="text-muted mb-0">Подробная информация о типе начисления.</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a class="btn btn-outline-primary" asp-page="/Administration/Finance/ChargeTypes/Edit" asp-route-id="@Model.ChargeType.Id">Редактировать</a>
+        <a class="btn btn-outline-warning" asp-page="/Administration/Finance/ChargeTypes/Archive" asp-route-id="@Model.ChargeType.Id">@(Model.ChargeType.IsActive ? "Архивировать" : "Восстановить")</a>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/ChargeTypes/Index">К списку типов начислений</a>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-4">Наименование</dt>
+            <dd class="col-sm-8">@Model.ChargeType.Name</dd>
+
+            <dt class="col-sm-4">Сумма по умолчанию</dt>
+            <dd class="col-sm-8">@(Model.ChargeType.DefaultAmount.HasValue ? Model.ChargeType.DefaultAmount.Value.ToString("0.00") : "—")</dd>
+
+            <dt class="col-sm-4">Статус</dt>
+            <dd class="col-sm-8">@(Model.ChargeType.IsActive ? "Активен" : "В архиве")</dd>
+
+            <dt class="col-sm-4">Использований</dt>
+            <dd class="col-sm-8">@Model.ChargeType.ChargesCount</dd>
+
+            <dt class="col-sm-4">Создан</dt>
+            <dd class="col-sm-8">@Model.ChargeType.CreatedAtUtc.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</dd>
+
+            <dt class="col-sm-4">Обновлен</dt>
+            <dd class="col-sm-8">@(Model.ChargeType.UpdatedAtUtc.HasValue ? Model.ChargeType.UpdatedAtUtc.Value.ToLocalTime().ToString("dd.MM.yyyy HH:mm") : "—")</dd>
+        </dl>
+    </div>
+</div>
+
+<div class="card shadow-sm mt-4">
+    <div class="card-body">
+        <h2 class="h5 mb-3">Описание</h2>
+        <p class="mb-0">@(string.IsNullOrWhiteSpace(Model.ChargeType.Description) ? "Описание отсутствует." : Model.ChargeType.Description)</p>
+    </div>
+</div>

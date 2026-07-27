@@ -21,6 +21,8 @@ public class IndexModel : OwnershipPageModelBase
 
     public async Task<IActionResult> OnGetAsync(int plotId, CancellationToken cancellationToken)
     {
+        var currentDate = DateOnly.FromDateTime(DateTime.Now);
+
         var plot = await GetPlotContextAsync(plotId, cancellationToken);
         if (plot is null)
         {
@@ -46,7 +48,8 @@ public class IndexModel : OwnershipPageModelBase
                 IsPrimaryContact = ownership.IsPrimaryContact,
                 ValidFrom = ownership.ValidFrom,
                 ValidTo = ownership.ValidTo,
-                IsActive = ownership.ValidTo == null
+                IsActive = (!ownership.ValidFrom.HasValue || ownership.ValidFrom.Value <= currentDate)
+                    && (!ownership.ValidTo.HasValue || ownership.ValidTo.Value >= currentDate)
             })
             .ToListAsync(cancellationToken);
 

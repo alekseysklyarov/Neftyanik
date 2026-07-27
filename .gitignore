@@ -7,3 +7,5 @@ obj/
 *.ldf
 /artifacts
 /wwwroot
+/.copilot-app.out.log
+/.copilot-app.err.log

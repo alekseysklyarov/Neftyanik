@@ -84,6 +84,7 @@
                                 <td class="text-end">
                                     <div class="btn-group btn-group-sm" role="group">
                                         <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Details" asp-route-id="@plot.Id">Подробнее</a>
+                                         <a class="btn btn-outline-success" asp-page="/Administration/Plots/Finance/Index" asp-route-plotId="@plot.Id">Финансы</a>
                                         <a class="btn btn-outline-info" asp-page="/Administration/Plots/Ownerships/Index" asp-route-plotId="@plot.Id">Владельцы</a>
                                         <a class="btn btn-outline-primary" asp-page="/Administration/Plots/Edit" asp-route-id="@plot.Id">Редактировать</a>
                                         <a class="btn btn-outline-warning" asp-page="/Administration/Plots/Archive" asp-route-id="@plot.Id">@(plot.IsActive ? "Архивировать" : "Восстановить")</a>

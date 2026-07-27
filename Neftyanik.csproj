@@ -5,7 +5,7 @@
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <DefaultItemExcludes>$(DefaultItemExcludes);artifacts\**;bin\**;obj\**;src\**\bin\**;src\**\obj\**;tests\**\bin\**;tests\**\obj\**</DefaultItemExcludes>
+    <DefaultItemExcludes>$(DefaultItemExcludes);artifacts\**;bin\**;obj\**;src\**\bin\**;src\**\obj\**;tests\**;tests/**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,6 +24,7 @@
     <Compile Remove="obj\**\*.cs" />
     <Compile Remove="src\**\obj\**\*.cs" />
     <Compile Remove="tests\**\*.cs" />
+    <Compile Remove="tests/**/*.cs" />
     <Compile Remove="**\*.ide.g.cs" />
     <Content Remove="artifacts\**" />
     <Content Remove="bin\**" />
@@ -32,6 +33,8 @@
     <Content Remove="src\**\obj\**" />
     <Content Remove="tests\**\bin\**" />
     <Content Remove="tests\**\obj\**" />
+    <Content Remove="tests/**/bin/**" />
+    <Content Remove="tests/**/obj/**" />
     <None Remove="artifacts\**" />
     <None Remove="bin\**" />
     <None Remove="obj\**" />
@@ -39,6 +42,8 @@
     <None Remove="src\**\obj\**" />
     <None Remove="tests\**\bin\**" />
     <None Remove="tests\**\obj\**" />
+    <None Remove="tests/**/bin/**" />
+    <None Remove="tests/**/obj/**" />
     <EmbeddedResource Remove="artifacts\**" />
     <EmbeddedResource Remove="bin\**" />
     <EmbeddedResource Remove="obj\**" />
@@ -46,6 +51,8 @@
     <EmbeddedResource Remove="src\**\obj\**" />
     <EmbeddedResource Remove="tests\**\bin\**" />
     <EmbeddedResource Remove="tests\**\obj\**" />
+    <EmbeddedResource Remove="tests/**/bin/**" />
+    <EmbeddedResource Remove="tests/**/obj/**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -57,6 +64,7 @@
 
   <ItemGroup>
     <None Include="tests\Neftyanik.Portal.Infrastructure.Tests\Neftyanik.Portal.Infrastructure.Tests.csproj" />
+    <None Include="tests\Neftyanik.Portal.Web.Tests\Neftyanik.Portal.Web.Tests.csproj" />
   </ItemGroup>
 
 </Project>

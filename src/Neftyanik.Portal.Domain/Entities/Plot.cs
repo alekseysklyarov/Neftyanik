@@ -34,4 +34,6 @@ public class Plot
     public List<MeterPlot> MeterPlots { get; set; } = [];
 
     public List<Charge> Charges { get; set; } = [];
+
+    public List<Payment> Payments { get; set; } = [];
 }

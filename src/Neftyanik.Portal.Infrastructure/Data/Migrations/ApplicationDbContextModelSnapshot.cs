@@ -17,7 +17,7 @@ namespace Neftyanik.Portal.Infrastructure.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.8")
+                .HasAnnotation("ProductVersion", "8.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -386,68 +386,112 @@ namespace Neftyanik.Portal.Infrastructure.Data.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int>("ChargeType")
+                    b.Property<string>("CancellationReason")
+                        .HasMaxLength(500)
+                        .IsUnicode(true)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("CancelledAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateOnly>("ChargeDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("ChargeTypeId")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset>("ChargedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("CreatedByUserId")
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasMaxLength(1000)
+                        .IsUnicode(true)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<DateOnly?>("DueDate")
                         .HasColumnType("date");
 
-                    b.Property<int?>("MeterId")
-                        .HasColumnType("int");
-
                     b.Property<int?>("PeriodMonth")
                         .HasColumnType("int");
 
-                    b.Property<int>("PeriodYear")
+                    b.Property<int?>("PeriodYear")
                         .HasColumnType("int");
 
                     b.Property<int?>("PlotId")
                         .HasColumnType("int");
 
-                    b.Property<decimal?>("Quantity")
-                        .HasPrecision(18, 3)
-                        .HasColumnType("decimal(18,3)");
-
-                    b.Property<long?>("SourceReadingId")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<decimal?>("UnitPrice")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
                     b.HasKey("Id");
+
+                    b.HasIndex("CancelledAtUtc");
+
+                    b.HasIndex("ChargeDate");
+
+                    b.HasIndex("ChargeTypeId");
 
                     b.HasIndex("CreatedByUserId");
 
-                    b.HasIndex("MeterId");
+                    b.HasIndex("DueDate");
 
-                    b.HasIndex("SourceReadingId");
+                    b.HasIndex("PlotId");
 
-                    b.HasIndex("UserId", "Status");
+                    b.ToTable("Charges", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Charges_Amount_Positive", "[Amount] > 0");
 
-                    b.HasIndex("PlotId", "PeriodYear", "ChargeType");
+                            t.HasCheckConstraint("CK_Charges_DueDate_NotEarlierThanChargeDate", "[DueDate] IS NULL OR [DueDate] >= [ChargeDate]");
 
-                    b.ToTable("Charges", (string)null);
+                            t.HasCheckConstraint("CK_Charges_PeriodMonth_Range", "[PeriodMonth] IS NULL OR ([PeriodMonth] >= 1 AND [PeriodMonth] <= 12)");
+
+                            t.HasCheckConstraint("CK_Charges_PeriodYear_Range", "[PeriodYear] IS NULL OR ([PeriodYear] >= 2000 AND [PeriodYear] <= 2100)");
+                        });
+                });
+
+            modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.ChargeType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal?>("DefaultAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .IsUnicode(true)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .IsUnicode(true)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name");
+
+                    b.ToTable("ChargeTypes", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_ChargeTypes_DefaultAmount_Positive", "[DefaultAmount] IS NULL OR [DefaultAmount] > 0");
+                        });
                 });
 
             modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.ElectricityMeter", b =>
@@ -954,27 +998,25 @@ namespace Neftyanik.Portal.Infrastructure.Data.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<DateTimeOffset?>("CancelledAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<string>("CancellationReason")
+                        .HasMaxLength(500)
+                        .IsUnicode(true)
+                        .HasColumnType("nvarchar(500)");
 
-                    b.Property<string>("CancelledByUserId")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<DateTime?>("CancelledAtUtc")
+                        .HasColumnType("datetime2");
 
-                    b.Property<string>("Comment")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("CreatedByUserId")
-                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<bool>("IsCancelled")
-                        .HasColumnType("bit");
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .IsUnicode(true)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<DateOnly>("PaymentDate")
                         .HasColumnType("date");
@@ -982,27 +1024,30 @@ namespace Neftyanik.Portal.Infrastructure.Data.Migrations
                     b.Property<int>("PaymentMethod")
                         .HasColumnType("int");
 
-                    b.Property<string>("ReferenceNumber")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<int>("Source")
+                    b.Property<int?>("PlotId")
                         .HasColumnType("int");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<string>("ReferenceNumber")
+                        .HasMaxLength(150)
+                        .IsUnicode(true)
+                        .HasColumnType("nvarchar(150)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CancelledByUserId");
+                    b.HasIndex("CancelledAtUtc");
 
                     b.HasIndex("CreatedByUserId");
 
-                    b.HasIndex("UserId", "PaymentDate");
+                    b.HasIndex("PaymentDate");
 
-                    b.ToTable("Payments", (string)null);
+                    b.HasIndex("PlotId");
+
+                    b.HasIndex("ReferenceNumber");
+
+                    b.ToTable("Payments", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Payments_Amount_Positive", "[Amount] > 0");
+                        });
                 });
 
             modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.PaymentAllocation", b =>
@@ -1283,14 +1328,15 @@ namespace Neftyanik.Portal.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.Charge", b =>
                 {
+                    b.HasOne("Neftyanik.Portal.Domain.Entities.ChargeType", "ChargeType")
+                        .WithMany("Charges")
+                        .HasForeignKey("ChargeTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Neftyanik.Portal.Domain.Entities.ApplicationUser", "CreatedByUser")
                         .WithMany("CreatedCharges")
                         .HasForeignKey("CreatedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("Neftyanik.Portal.Domain.Entities.ElectricityMeter", "Meter")
-                        .WithMany("Charges")
-                        .HasForeignKey("MeterId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Neftyanik.Portal.Domain.Entities.Plot", "Plot")
@@ -1298,26 +1344,11 @@ namespace Neftyanik.Portal.Infrastructure.Data.Migrations
                         .HasForeignKey("PlotId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("Neftyanik.Portal.Domain.Entities.MeterReading", "SourceReading")
-                        .WithMany()
-                        .HasForeignKey("SourceReadingId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("Neftyanik.Portal.Domain.Entities.ApplicationUser", "User")
-                        .WithMany("Charges")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                    b.Navigation("ChargeType");
 
                     b.Navigation("CreatedByUser");
 
-                    b.Navigation("Meter");
-
                     b.Navigation("Plot");
-
-                    b.Navigation("SourceReading");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.ElectricityMeter", b =>
@@ -1416,28 +1447,19 @@ namespace Neftyanik.Portal.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.Payment", b =>
                 {
-                    b.HasOne("Neftyanik.Portal.Domain.Entities.ApplicationUser", "CancelledByUser")
-                        .WithMany("CancelledPayments")
-                        .HasForeignKey("CancelledByUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("Neftyanik.Portal.Domain.Entities.ApplicationUser", "CreatedByUser")
                         .WithMany("CreatedPayments")
                         .HasForeignKey("CreatedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("Neftyanik.Portal.Domain.Entities.ApplicationUser", "User")
+                    b.HasOne("Neftyanik.Portal.Domain.Entities.Plot", "Plot")
                         .WithMany("Payments")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("CancelledByUser");
+                        .HasForeignKey("PlotId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("CreatedByUser");
 
-                    b.Navigation("User");
+                    b.Navigation("Plot");
                 });
 
             modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.PaymentAllocation", b =>
@@ -1513,10 +1535,6 @@ namespace Neftyanik.Portal.Infrastructure.Data.Migrations
 
                     b.Navigation("AuditLogs");
 
-                    b.Navigation("CancelledPayments");
-
-                    b.Navigation("Charges");
-
                     b.Navigation("CreatedCharges");
 
                     b.Navigation("CreatedExpenses");
@@ -1528,8 +1546,6 @@ namespace Neftyanik.Portal.Infrastructure.Data.Migrations
                     b.Navigation("ElectricityMeters");
 
                     b.Navigation("Members");
-
-                    b.Navigation("Payments");
 
                     b.Navigation("PlotOwnershipHistoryRecords");
 
@@ -1545,10 +1561,13 @@ namespace Neftyanik.Portal.Infrastructure.Data.Migrations
                     b.Navigation("PaymentAllocations");
                 });
 
-            modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.ElectricityMeter", b =>
+            modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.ChargeType", b =>
                 {
                     b.Navigation("Charges");
+                });
 
+            modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.ElectricityMeter", b =>
+                {
                     b.Navigation("MeterPlots");
 
                     b.Navigation("MeterReadings");
@@ -1576,6 +1595,8 @@ namespace Neftyanik.Portal.Infrastructure.Data.Migrations
                     b.Navigation("MeterPlots");
 
                     b.Navigation("OwnershipHistory");
+
+                    b.Navigation("Payments");
 
                     b.Navigation("PlotOwnerships");
                 });

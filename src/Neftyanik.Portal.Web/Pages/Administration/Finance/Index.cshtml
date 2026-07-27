@@ -1,0 +1,127 @@
+@page
+@model Neftyanik.Portal.Web.Pages.Administration.Finance.IndexModel
+@{
+    ViewData["Title"] = "Финансы";
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h2 mb-1">Финансовый обзор</h1>
+        <p class="text-muted mb-0">Сводная информация по начислениям, платежам и балансам участков.</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a class="btn btn-outline-primary" asp-page="/Administration/Finance/ChargeTypes/Index">Типы начислений</a>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Index">К администрированию</a>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">Активные начисления</h2><p class="display-6 mb-0">@Model.Summary.TotalActiveCharges.ToString("0.00")</p></div></div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">Активные платежи</h2><p class="display-6 mb-0">@Model.Summary.TotalActivePayments.ToString("0.00")</p></div></div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">Текущая задолженность</h2><p class="display-6 mb-0 text-danger">@Model.Summary.TotalCurrentDebt.ToString("0.00")</p></div></div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">Переплаты</h2><p class="display-6 mb-0 text-primary">@Model.Summary.TotalOverpayments.ToString("0.00")</p></div></div>
+    </div>
+    <div class="col-sm-4">
+        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">Участки с долгом</h2><p class="display-6 mb-0">@Model.Summary.PlotsWithDebtCount</p></div></div>
+    </div>
+    <div class="col-sm-4">
+        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">Участки с переплатой</h2><p class="display-6 mb-0">@Model.Summary.PlotsWithOverpaymentCount</p></div></div>
+    </div>
+    <div class="col-sm-4">
+        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">Участки без задолженности</h2><p class="display-6 mb-0">@Model.Summary.PlotsWithZeroBalanceCount</p></div></div>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-6">
+                <label asp-for="Search" class="form-label">Поиск</label>
+                <input asp-for="Search" class="form-control" placeholder="Номер участка или адрес" />
+            </div>
+            <div class="col-md-3">
+                <label asp-for="Status" class="form-label">Фильтр</label>
+                <select asp-for="Status" class="form-select">
+                    <option value="all">Все</option>
+                    <option value="debt">Только задолженность</option>
+                    <option value="nodebt">Без задолженности</option>
+                    <option value="overpayment">Только переплата</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-outline-primary flex-fill">Применить</button>
+                <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/Index">Сбросить</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        @if (Model.PlotBalances.Count == 0)
+        {
+            <div class="p-4 text-center text-muted">@Model.EmptyStateMessage</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Участок</th>
+                            <th>Адрес</th>
+                            <th>Начислено</th>
+                            <th>Оплачено</th>
+                            <th>Баланс</th>
+                            <th>Статус</th>
+                            <th class="text-end">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.PlotBalances)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@item.PlotNumber</td>
+                                <td>@(string.IsNullOrWhiteSpace(item.Address) ? "—" : item.Address)</td>
+                                <td>@item.Charges.ToString("0.00")</td>
+                                <td>@item.Payments.ToString("0.00")</td>
+                                <td>@item.Balance.ToString("0.00")</td>
+                                <td>@item.Status</td>
+                                <td class="text-end">
+                                    <a class="btn btn-sm btn-outline-primary" asp-page="/Administration/Plots/Finance/Index" asp-route-plotId="@item.PlotId">Финансы участка</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@if (Model.TotalPages > 1)
+{
+    <nav aria-label="Навигация по страницам" class="mt-4">
+        <ul class="pagination justify-content-center flex-wrap">
+            <li class="page-item @(Model.HasPreviousPage ? string.Empty : "disabled")">
+                <a class="page-link" asp-page="/Administration/Finance/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-pageNumber="@(Model.PageNumber - 1)">Назад</a>
+            </li>
+            @for (var pageIndex = 1; pageIndex <= Model.TotalPages; pageIndex++)
+            {
+                <li class="page-item @(pageIndex == Model.PageNumber ? "active" : string.Empty)">
+                    <a class="page-link" asp-page="/Administration/Finance/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-pageNumber="@pageIndex">@pageIndex</a>
+                </li>
+            }
+            <li class="page-item @(Model.HasNextPage ? string.Empty : "disabled")">
+                <a class="page-link" asp-page="/Administration/Finance/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-pageNumber="@(Model.PageNumber + 1)">Вперёд</a>
+            </li>
+        </ul>
+    </nav>
+}
