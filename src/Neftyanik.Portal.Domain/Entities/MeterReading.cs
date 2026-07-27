@@ -18,11 +18,15 @@ public class MeterReading
 
     public string? SubmittedByUserId { get; set; }
 
+    public ApplicationUser? SubmittedByUser { get; set; }
+
     public MeterReadingStatus Status { get; set; }
 
     public DateTimeOffset SubmittedAt { get; set; } = DateTimeOffset.UtcNow;
 
     public string? ApprovedByUserId { get; set; }
+
+    public ApplicationUser? ApprovedByUser { get; set; }
 
     public DateTimeOffset? ApprovedAt { get; set; }
 
@@ -31,6 +35,4 @@ public class MeterReading
     public string? MeterPhotoPath { get; set; }
 
     public ElectricityMeter? Meter { get; set; }
-
-    // SubmittedByUserId and ApprovedByUserId are stored as strings; navigations live in Infrastructure
 }

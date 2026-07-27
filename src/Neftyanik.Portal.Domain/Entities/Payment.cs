@@ -16,6 +16,8 @@ public class Payment
 
     public string UserId { get; set; } = string.Empty;
 
+    public ApplicationUser? User { get; set; }
+
     public DateOnly PaymentDate { get; set; }
 
     public decimal Amount { get; set; }
@@ -28,6 +30,8 @@ public class Payment
 
     public string CreatedByUserId { get; set; } = string.Empty;
 
+    public ApplicationUser? CreatedByUser { get; set; }
+
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
     public bool IsCancelled { get; set; }
@@ -36,7 +40,8 @@ public class Payment
 
     public string? CancelledByUserId { get; set; }
 
-    // User navigations are kept in Infrastructure to avoid domain->infrastructure dependency
+    public ApplicationUser? CancelledByUser { get; set; }
+
     public List<PaymentAllocation> PaymentAllocations { get; set; } = new List<PaymentAllocation>();
 
     public PaymentSource Source { get; set; } = PaymentSource.Other;

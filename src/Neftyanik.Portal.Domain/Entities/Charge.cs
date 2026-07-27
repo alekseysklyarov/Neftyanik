@@ -8,6 +8,8 @@ public class Charge
 
     public string UserId { get; set; } = string.Empty;
 
+    public ApplicationUser? User { get; set; }
+
     public int? PlotId { get; set; }
 
     public int? MeterId { get; set; }
@@ -36,7 +38,8 @@ public class Charge
 
     public string? CreatedByUserId { get; set; }
 
-    // User navigation is stored as UserId to avoid domain->infrastructure dependency
+    public ApplicationUser? CreatedByUser { get; set; }
+
     public Plot? Plot { get; set; }
 
     public ElectricityMeter? Meter { get; set; }

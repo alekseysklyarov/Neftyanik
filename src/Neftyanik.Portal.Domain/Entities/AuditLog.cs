@@ -6,6 +6,8 @@ public class AuditLog
 
     public string? UserId { get; set; }
 
+    public ApplicationUser? User { get; set; }
+
     public string Action { get; set; } = string.Empty;
 
     public string EntityType { get; set; } = string.Empty;
@@ -20,5 +22,4 @@ public class AuditLog
 
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
-    // User navigation kept in Infrastructure to avoid domain->infrastructure dependency
 }

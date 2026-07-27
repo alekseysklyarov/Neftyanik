@@ -28,7 +28,7 @@ public class ElectricityMeter
 
     public string? OwnerId { get; set; }
 
-    // Owner navigation should be provided by Infrastructure layer
+    public ApplicationUser? Owner { get; set; }
 
     public List<MeterPlot> MeterPlots { get; set; } = new List<MeterPlot>();
 

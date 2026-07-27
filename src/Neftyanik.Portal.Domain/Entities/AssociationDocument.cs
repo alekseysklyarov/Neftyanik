@@ -22,7 +22,8 @@ public class AssociationDocument
 
     public string UploadedByUserId { get; set; } = string.Empty;
 
+    public ApplicationUser? UploadedByUser { get; set; }
+
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
-    // Navigation to ApplicationUser is kept in infrastructure project to avoid domain->infrastructure coupling
 }

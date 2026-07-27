@@ -20,9 +20,10 @@ public class NewsArticle
 
     public string CreatedByUserId { get; set; } = string.Empty;
 
+    public ApplicationUser? CreatedByUser { get; set; }
+
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
     public DateTimeOffset? UpdatedAt { get; set; }
 
-    // Navigation to user is provided in Infrastructure to avoid Domain -> Infrastructure coupling
 }

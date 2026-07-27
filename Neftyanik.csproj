@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <Compile Remove="Program.cs" />
+    <Compile Remove="artifacts\**\*.cs" />
     <Compile Remove="obj\**\*.cs" />
     <Compile Remove="src\**\obj\**\*.cs" />
     <Compile Remove="tests\**\*.cs" />

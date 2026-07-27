@@ -13,5 +13,6 @@ public class SystemSetting
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
 
     public string? UpdatedByUserId { get; set; }
-    // UpdatedByUser navigation removed to avoid domain->infrastructure dependency
+
+    public ApplicationUser? UpdatedByUser { get; set; }
 }

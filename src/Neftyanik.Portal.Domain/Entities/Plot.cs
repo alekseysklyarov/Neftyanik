@@ -20,13 +20,13 @@ public class Plot
 
     public string OwnerId { get; set; } = string.Empty;
 
+    public ApplicationUser? Owner { get; set; }
+
     public bool IsActive { get; set; } = true;
 
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
     public DateTimeOffset? ClosedAt { get; set; }
-
-    // Owner navigation is provided by Infrastructure layer
 
     public List<PlotOwnershipHistory> OwnershipHistory { get; set; } = new List<PlotOwnershipHistory>();
 

@@ -20,6 +20,8 @@ public class Expense
 
     public string CreatedByUserId { get; set; } = string.Empty;
 
+    public ApplicationUser? CreatedByUser { get; set; }
+
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
     public bool IsCancelled { get; set; }
