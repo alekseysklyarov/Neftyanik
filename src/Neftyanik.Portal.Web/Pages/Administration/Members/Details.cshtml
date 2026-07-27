@@ -1,0 +1,203 @@
+@page "{id:int}"
+@model Neftyanik.Portal.Web.Pages.Administration.Members.DetailsModel
+@{
+    ViewData["Title"] = Model.Member.FullName;
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h2 mb-1">@Model.Member.FullName</h1>
+        <p class="text-muted mb-0">Подробная информация о члене товарищества.</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a class="btn btn-outline-primary" asp-page="/Administration/Members/Edit" asp-route-id="@Model.Member.Id">Редактировать</a>
+        <a class="btn btn-outline-warning" asp-page="/Administration/Members/Archive" asp-route-id="@Model.Member.Id">@(Model.Member.IsActive ? "Архивировать" : "Восстановить")</a>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Index">К списку членов товарищества</a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Основные сведения</h2>
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">ФИО</dt>
+                    <dd class="col-sm-8">@Model.Member.FullName</dd>
+
+                    <dt class="col-sm-4">Телефон</dt>
+                    <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Member.PhoneNumber) ? "—" : Model.Member.PhoneNumber)</dd>
+
+                    <dt class="col-sm-4">Электронная почта</dt>
+                    <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Member.Email) ? "—" : Model.Member.Email)</dd>
+
+                    <dt class="col-sm-4">Дата вступления</dt>
+                    <dd class="col-sm-8">@(Model.Member.JoinedAt.HasValue ? Model.Member.JoinedAt.Value.ToString("dd.MM.yyyy") : "—")</dd>
+
+                    <dt class="col-sm-4">Статус</dt>
+                    <dd class="col-sm-8">
+                        @if (Model.Member.IsActive)
+                        {
+                            <span class="badge text-bg-success">Активен</span>
+                        }
+                        else
+                        {
+                            <span class="badge text-bg-secondary">В архиве</span>
+                        }
+                    </dd>
+
+                    <dt class="col-sm-4">Связанная учётная запись</dt>
+                    <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Member.LinkedAccount) ? "—" : Model.Member.LinkedAccount)</dd>
+
+                    <dt class="col-sm-4">Создан</dt>
+                    <dd class="col-sm-8">@Model.Member.CreatedAtUtc.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</dd>
+
+                    <dt class="col-sm-4">Обновлён</dt>
+                    <dd class="col-sm-8">@(Model.Member.UpdatedAtUtc.HasValue ? Model.Member.UpdatedAtUtc.Value.ToLocalTime().ToString("dd.MM.yyyy HH:mm") : "—")</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+                    <h2 class="h5 mb-0">Учетная запись</h2>
+                    <div class="d-flex gap-2 flex-wrap">
+                        @if (!Model.Member.Account.Exists)
+                        {
+                            <a class="btn btn-sm btn-primary" asp-page="/Administration/Members/Account/Create" asp-route-memberId="@Model.Member.Id">Создать учетную запись</a>
+                        }
+                        else
+                        {
+                            <a class="btn btn-sm btn-outline-primary" asp-page="/Administration/Members/Account/ResetPassword" asp-route-memberId="@Model.Member.Id">Сбросить пароль</a>
+                            <a class="btn btn-sm @(Model.Member.Account.IsLockedOut ? "btn-outline-success" : "btn-outline-warning")" asp-page="/Administration/Members/Account/Lock" asp-route-memberId="@Model.Member.Id">@(Model.Member.Account.IsLockedOut ? "Разблокировать учетную запись" : "Заблокировать учетную запись")</a>
+                        }
+                    </div>
+                </div>
+
+                <p><strong>Статус:</strong> @Model.Member.Account.StatusText</p>
+
+                @if (Model.Member.Account.Exists)
+                {
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Логин / email</dt>
+                        <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Member.Account.LoginEmail) ? "—" : Model.Member.Account.LoginEmail)</dd>
+
+                        <dt class="col-sm-4">Подтверждение email</dt>
+                        <dd class="col-sm-8">@(Model.Member.Account.EmailConfirmed ? "Подтверждён" : "Не подтверждён")</dd>
+
+                        <dt class="col-sm-4">Блокировка</dt>
+                        <dd class="col-sm-8">@(Model.Member.Account.IsLockedOut ? "Учетная запись заблокирована" : "Нет")</dd>
+
+                        <dt class="col-sm-4">Смена пароля</dt>
+                        <dd class="col-sm-8">@(Model.Member.Account.MustChangePassword ? "Требуется при следующем входе" : "Не требуется")</dd>
+
+                        <dt class="col-sm-4">Роли</dt>
+                        <dd class="col-sm-8">@(Model.Member.Account.Roles.Count > 0 ? string.Join(", ", Model.Member.Account.Roles) : "—")</dd>
+
+                        @if (!string.IsNullOrWhiteSpace(Model.Member.Account.IdentityUserId))
+                        {
+                            <dt class="col-sm-4 text-muted small">ID пользователя</dt>
+                            <dd class="col-sm-8 text-muted small">@Model.Member.Account.IdentityUserId</dd>
+                        }
+                    </dl>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Текущие владения участками</h2>
+                <p><strong>Количество активных владений:</strong> @Model.Member.ActiveOwnershipsCount</p>
+
+                @if (Model.Member.CurrentPlots.Count == 0)
+                {
+                    <p class="text-muted mb-0">У этого члена товарищества нет активных владений участками.</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Участок</th>
+                                    <th>Адрес</th>
+                                    <th>Доля, %</th>
+                                    <th>Основной контакт</th>
+                                    <th>Действует с</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var plot in Model.Member.CurrentPlots)
+                                {
+                                    <tr>
+                                        <td>
+                                            <a asp-page="/Administration/Plots/Details" asp-route-id="@plot.PlotId">@plot.PlotNumber</a>
+                                        </td>
+                                        <td>@(string.IsNullOrWhiteSpace(plot.PlotAddress) ? "—" : plot.PlotAddress)</td>
+                                        <td>@(plot.OwnershipShare.HasValue ? plot.OwnershipShare.Value.ToString("0.##") : "—")</td>
+                                        <td>@(plot.IsPrimaryContact ? "Да" : "Нет")</td>
+                                        <td>@(plot.ValidFrom.HasValue ? plot.ValidFrom.Value.ToString("dd.MM.yyyy") : "—")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mt-4">
+    <div class="card-body">
+        <h2 class="h5 mb-3">История владения участками</h2>
+
+        @if (Model.Member.HistoricalPlots.Count == 0)
+        {
+            <p class="text-muted mb-0">Завершённые записи владения участками отсутствуют.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Участок</th>
+                            <th>Адрес</th>
+                            <th>Доля, %</th>
+                            <th>Основной контакт</th>
+                            <th>Действует с</th>
+                            <th>Действует до</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var plot in Model.Member.HistoricalPlots)
+                        {
+                            <tr>
+                                <td>
+                                    <a asp-page="/Administration/Plots/Details" asp-route-id="@plot.PlotId">@plot.PlotNumber</a>
+                                </td>
+                                <td>@(string.IsNullOrWhiteSpace(plot.PlotAddress) ? "—" : plot.PlotAddress)</td>
+                                <td>@(plot.OwnershipShare.HasValue ? plot.OwnershipShare.Value.ToString("0.##") : "—")</td>
+                                <td>@(plot.IsPrimaryContact ? "Да" : "Нет")</td>
+                                <td>@(plot.ValidFrom.HasValue ? plot.ValidFrom.Value.ToString("dd.MM.yyyy") : "—")</td>
+                                <td>@(plot.ValidTo.HasValue ? plot.ValidTo.Value.ToString("dd.MM.yyyy") : "—")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+</div>
+
+<div class="card shadow-sm mt-4">
+    <div class="card-body">
+        <h2 class="h5 mb-3">Примечание</h2>
+        <p class="mb-0">@(string.IsNullOrWhiteSpace(Model.Member.Notes) ? "Примечание отсутствует." : Model.Member.Notes)</p>
+    </div>
+</div>

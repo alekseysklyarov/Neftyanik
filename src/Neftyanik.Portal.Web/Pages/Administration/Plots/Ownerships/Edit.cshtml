@@ -1,0 +1,73 @@
+@page "/Administration/Plots/{plotId:int}/Ownerships/{id:int}/Edit"
+@model Neftyanik.Portal.Web.Pages.Administration.Plots.Ownerships.EditModel
+@{
+    ViewData["Title"] = "Редактирование владения";
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h2 mb-1">Редактирование владения</h1>
+        <p class="text-muted mb-0">Участок @Model.Plot.PlotNumber</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Ownerships/Index" asp-route-plotId="@Model.Plot.PlotId">К списку владельцев</a>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Details" asp-route-id="@Model.Plot.PlotId">К участку</a>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <p class="mb-1"><strong>Член товарищества:</strong> @Model.Ownership.MemberFullName</p>
+                <p class="mb-1"><strong>Телефон:</strong> @(string.IsNullOrWhiteSpace(Model.Ownership.MemberPhoneNumber) ? "—" : Model.Ownership.MemberPhoneNumber)</p>
+                <p class="mb-0"><strong>Электронная почта:</strong> @(string.IsNullOrWhiteSpace(Model.Ownership.MemberEmail) ? "—" : Model.Ownership.MemberEmail)</p>
+            </div>
+            <div class="col-md-6">
+                <p class="mb-1"><strong>Статус записи:</strong> @(Model.Ownership.IsActive ? "Активно" : "Завершено")</p>
+                <p class="mb-0"><strong>Дата завершения:</strong> @(Model.Ownership.ValidTo.HasValue ? Model.Ownership.ValidTo.Value.ToString("dd.MM.yyyy") : "—")</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="row g-3">
+                <div class="col-12">
+                    <label asp-for="Input.MemberId" class="form-label"></label>
+                    <input class="form-control" value="@Model.Ownership.MemberFullName" readonly />
+                    <div class="form-text">Смена члена товарищества не поддерживается. При необходимости завершите текущее владение и создайте новое.</div>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Input.OwnershipShare" class="form-label"></label>
+                    <input asp-for="Input.OwnershipShare" class="form-control" type="number" step="0.01" />
+                    <span asp-validation-for="Input.OwnershipShare" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Input.ValidFrom" class="form-label"></label>
+                    <input asp-for="Input.ValidFrom" class="form-control" type="date" />
+                    <span asp-validation-for="Input.ValidFrom" class="text-danger"></span>
+                </div>
+                <div class="col-12">
+                    <div class="form-check">
+                        <input asp-for="Input.IsPrimaryContact" class="form-check-input" />
+                        <label asp-for="Input.IsPrimaryContact" class="form-check-label"></label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 mt-4">
+                <button type="submit" class="btn btn-primary">Сохранить</button>
+                <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Ownerships/Index" asp-route-plotId="@Model.Plot.PlotId">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

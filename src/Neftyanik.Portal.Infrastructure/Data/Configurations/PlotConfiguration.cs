@@ -14,30 +14,33 @@ public class PlotConfiguration : IEntityTypeConfiguration<Plot>
 
         builder.Property(x => x.Number)
             .IsRequired()
-            .HasMaxLength(50);
+            .HasMaxLength(50)
+            .IsUnicode();
+
+        builder.Property(x => x.Address)
+            .HasMaxLength(250)
+            .IsUnicode();
 
         builder.Property(x => x.AreaSquareMeters)
             .HasPrecision(18, 2);
 
-        builder.Property(x => x.Address)
-            .HasMaxLength(500);
+        builder.Property(x => x.CadastralNumber)
+            .HasMaxLength(100)
+            .IsUnicode();
 
-        builder.Property(x => x.OwnerId)
-            .IsRequired()
-            .HasMaxLength(450);
+        builder.Property(x => x.IsActive)
+            .HasDefaultValue(true);
 
-        builder.Property(x => x.CreatedAt)
+        builder.Property(x => x.Notes)
+            .HasMaxLength(2000)
+            .IsUnicode();
+
+        builder.Property(x => x.CreatedAtUtc)
             .IsRequired();
 
         builder.HasIndex(x => x.Number)
             .IsUnique();
 
-        builder.HasOne(x => x.Owner)
-            .WithMany(x => x.Plots)
-            .HasForeignKey(x => x.OwnerId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.Ignore(x => x.Area);
-        builder.Ignore(x => x.Status);
+        builder.HasIndex(x => x.CadastralNumber);
     }
 }

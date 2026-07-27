@@ -15,6 +15,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<Plot> Plots => Set<Plot>();
 
+    public DbSet<Member> Members => Set<Member>();
+
+    public DbSet<PlotOwnership> PlotOwnerships => Set<PlotOwnership>();
+
     public DbSet<PlotOwnershipHistory> PlotOwnershipHistories => Set<PlotOwnershipHistory>();
 
     public DbSet<ElectricityMeter> ElectricityMeters => Set<ElectricityMeter>();
@@ -66,6 +70,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
             entity.Property(x => x.DisplayName)
                 .HasMaxLength(200);
+
+            entity.Property(x => x.MustChangePassword)
+                .HasDefaultValue(false);
 
             entity.Property(x => x.CreatedAt)
                 .IsRequired();

@@ -1,0 +1,79 @@
+@page "/Member"
+@model Neftyanik.Portal.Web.Pages.Member.IndexModel
+@{
+    ViewData["Title"] = "Личный кабинет";
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h2 mb-1">Личный кабинет</h1>
+        <p class="text-muted mb-0">Здравствуйте, @Model.Dashboard.FullName.</p>
+    </div>
+</div>
+
+@if (!Model.Dashboard.IsLinked)
+{
+    <div class="alert alert-warning" role="alert">
+        Учетная запись не связана с карточкой члена товарищества. Обратитесь к администратору.
+    </div>
+}
+else
+{
+    <div class="row g-4 mb-4">
+        <div class="col-lg-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">Данные члена товарищества</h2>
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">ФИО</dt>
+                        <dd class="col-sm-8">@Model.Dashboard.FullName</dd>
+
+                        <dt class="col-sm-4">Телефон</dt>
+                        <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Dashboard.PhoneNumber) ? "—" : Model.Dashboard.PhoneNumber)</dd>
+
+                        <dt class="col-sm-4">Email</dt>
+                        <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Dashboard.Email) ? "—" : Model.Dashboard.Email)</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-8">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">Текущие участки</h2>
+
+                    @if (Model.Dashboard.Plots.Count == 0)
+                    {
+                        <p class="text-muted mb-0">Активные участки не найдены.</p>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Номер участка</th>
+                                        <th>Адрес</th>
+                                        <th>Доля, %</th>
+                                        <th>Основной контакт</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var plot in Model.Dashboard.Plots)
+                                    {
+                                        <tr>
+                                            <td>@plot.PlotNumber</td>
+                                            <td>@(string.IsNullOrWhiteSpace(plot.Address) ? "—" : plot.Address)</td>
+                                            <td>@(plot.OwnershipShare.HasValue ? plot.OwnershipShare.Value.ToString("0.##") : "—")</td>
+                                            <td>@(plot.IsPrimaryContact ? "Да" : "Нет")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}

@@ -18,7 +18,9 @@ public class ApplicationUser : IdentityUser
 
     public string? DisplayName { get; set; }
 
-    public List<Plot> Plots { get; set; } = [];
+    public bool MustChangePassword { get; set; }
+
+    public List<Member> Members { get; set; } = [];
 
     public List<PlotOwnershipHistory> PlotOwnershipHistoryRecords { get; set; } = [];
 

@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model IndexModel
 @{
     ViewData["Title"] = "Главная";
@@ -16,7 +16,7 @@
             <div class="d-flex flex-wrap gap-2">
                 @if (User.IsInRole(RoleNames.Member))
                 {
-                    <a asp-controller="Member" asp-action="Index" class="btn btn-primary">Личный кабинет</a>
+                    <a asp-page="/Member/Index" class="btn btn-primary">Личный кабинет</a>
                 }
 
                 @if (User.IsInRole(RoleNames.Administrator))

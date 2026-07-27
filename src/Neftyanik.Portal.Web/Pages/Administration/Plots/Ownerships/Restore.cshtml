@@ -1,0 +1,44 @@
+@page "/Administration/Plots/{plotId:int}/Ownerships/{id:int}/Restore"
+@model Neftyanik.Portal.Web.Pages.Administration.Plots.Ownerships.RestoreModel
+@{
+    ViewData["Title"] = "Возобновление владения";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h1 class="h3 mb-3">Возобновление владения</h1>
+
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <p>Вы собираетесь снова сделать запись владения активной. Перед возобновлением система проверит ограничения по дублированию и суммарной доле.</p>
+
+                <dl class="row mb-4">
+                    <dt class="col-sm-4">Участок</dt>
+                    <dd class="col-sm-8">@Model.Plot.PlotNumber</dd>
+
+                    <dt class="col-sm-4">Член товарищества</dt>
+                    <dd class="col-sm-8">@Model.Ownership.MemberFullName</dd>
+
+                    <dt class="col-sm-4">Доля, %</dt>
+                    <dd class="col-sm-8">@(Model.Ownership.OwnershipShare.HasValue ? Model.Ownership.OwnershipShare.Value.ToString("0.##") : "—")</dd>
+
+                    <dt class="col-sm-4">Основной контакт</dt>
+                    <dd class="col-sm-8">@(Model.Ownership.IsPrimaryContact ? "Да" : "Нет")</dd>
+
+                    <dt class="col-sm-4">Дата начала</dt>
+                    <dd class="col-sm-8">@(Model.Ownership.ValidFrom.HasValue ? Model.Ownership.ValidFrom.Value.ToString("dd.MM.yyyy") : "—")</dd>
+
+                    <dt class="col-sm-4">Дата завершения</dt>
+                    <dd class="col-sm-8">@(Model.Ownership.ValidTo.HasValue ? Model.Ownership.ValidTo.Value.ToString("dd.MM.yyyy") : "—")</dd>
+                </dl>
+
+                <form method="post" class="d-flex gap-2 flex-wrap">
+                    <button type="submit" class="btn btn-success">Подтвердить возобновление</button>
+                    <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Ownerships/Index" asp-route-plotId="@Model.Plot.PlotId">Отмена</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

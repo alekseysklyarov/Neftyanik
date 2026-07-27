@@ -1,0 +1,131 @@
+@page
+@model Neftyanik.Portal.Web.Pages.Administration.Plots.IndexModel
+@{
+    ViewData["Title"] = "Участки";
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h2 mb-1">Участки</h1>
+        <p class="text-muted mb-0">Список участков товарищества.</p>
+    </div>
+    <div>
+        <a class="btn btn-primary" asp-page="/Administration/Plots/Create">Добавить участок</a>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-6">
+                <label asp-for="Search" class="form-label">Поиск</label>
+                <input asp-for="Search" class="form-control" placeholder="Номер, адрес или кадастровый номер" />
+            </div>
+            <div class="col-md-3">
+                <label asp-for="Status" class="form-label">Статус</label>
+                <select asp-for="Status" class="form-select">
+                    <option value="active">Только активные</option>
+                    <option value="all">Все</option>
+                    <option value="archived">Только архивные</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-outline-primary flex-fill">Найти</button>
+                <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Index" asp-route-status="all">Сбросить</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        @if (Model.Plots.Count == 0)
+        {
+            <div class="p-4 text-center text-muted">
+                @Model.EmptyStateMessage
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Номер</th>
+                            <th>Адрес</th>
+                            <th>Площадь, м²</th>
+                            <th>Кадастровый номер</th>
+                            <th>Статус</th>
+                            <th>Количество владельцев</th>
+                            <th>Основной контакт</th>
+                            <th class="text-end">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var plot in Model.Plots)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@plot.Number</td>
+                                <td>@(string.IsNullOrWhiteSpace(plot.Address) ? "—" : plot.Address)</td>
+                                <td>@(plot.AreaSquareMeters.HasValue ? plot.AreaSquareMeters.Value.ToString("0.###") : "—")</td>
+                                <td>@(string.IsNullOrWhiteSpace(plot.CadastralNumber) ? "—" : plot.CadastralNumber)</td>
+                                <td>
+                                    @if (plot.IsActive)
+                                    {
+                                        <span class="badge text-bg-success">Активен</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge text-bg-secondary">В архиве</span>
+                                    }
+                                </td>
+                                <td>@plot.OwnersCount</td>
+                                <td>@(string.IsNullOrWhiteSpace(plot.PrimaryContact) ? "—" : plot.PrimaryContact)</td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Details" asp-route-id="@plot.Id">Подробнее</a>
+                                        <a class="btn btn-outline-info" asp-page="/Administration/Plots/Ownerships/Index" asp-route-plotId="@plot.Id">Владельцы</a>
+                                        <a class="btn btn-outline-primary" asp-page="/Administration/Plots/Edit" asp-route-id="@plot.Id">Редактировать</a>
+                                        <a class="btn btn-outline-warning" asp-page="/Administration/Plots/Archive" asp-route-id="@plot.Id">@(plot.IsActive ? "Архивировать" : "Восстановить")</a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@if (Model.TotalPages > 1)
+{
+    <nav aria-label="Навигация по страницам" class="mt-4">
+        <ul class="pagination justify-content-center flex-wrap">
+            <li class="page-item @(Model.HasPreviousPage ? string.Empty : "disabled")">
+                <a class="page-link"
+                   asp-page="/Administration/Plots/Index"
+                   asp-route-search="@Model.Search"
+                   asp-route-status="@Model.Status"
+                   asp-route-pageNumber="@(Model.PageNumber - 1)">Назад</a>
+            </li>
+            @for (var pageIndex = 1; pageIndex <= Model.TotalPages; pageIndex++)
+            {
+                <li class="page-item @(pageIndex == Model.PageNumber ? "active" : string.Empty)">
+                    <a class="page-link"
+                       asp-page="/Administration/Plots/Index"
+                       asp-route-search="@Model.Search"
+                       asp-route-status="@Model.Status"
+                       asp-route-pageNumber="@pageIndex">@pageIndex</a>
+                </li>
+            }
+            <li class="page-item @(Model.HasNextPage ? string.Empty : "disabled")">
+                <a class="page-link"
+                   asp-page="/Administration/Plots/Index"
+                   asp-route-search="@Model.Search"
+                   asp-route-status="@Model.Status"
+                   asp-route-pageNumber="@(Model.PageNumber + 1)">Вперёд</a>
+            </li>
+        </ul>
+    </nav>
+}

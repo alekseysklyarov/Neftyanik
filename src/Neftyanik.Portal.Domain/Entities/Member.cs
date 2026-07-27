@@ -2,21 +2,28 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Neftyanik.Portal.Domain.Entities;
 
-public class Plot
+public class Member
 {
     public int Id { get; set; }
 
     [Required]
+    [StringLength(200)]
+    public string FullName { get; set; } = string.Empty;
+
     [StringLength(50)]
-    public string Number { get; set; } = string.Empty;
+    [Phone]
+    public string? PhoneNumber { get; set; }
 
-    [StringLength(250)]
-    public string? Address { get; set; }
+    [StringLength(256)]
+    [EmailAddress]
+    public string? Email { get; set; }
 
-    public decimal? AreaSquareMeters { get; set; }
+    [StringLength(450)]
+    public string? ApplicationUserId { get; set; }
 
-    [StringLength(100)]
-    public string? CadastralNumber { get; set; }
+    public ApplicationUser? ApplicationUser { get; set; }
+
+    public DateOnly? JoinedAt { get; set; }
 
     public bool IsActive { get; set; } = true;
 
@@ -28,10 +35,4 @@ public class Plot
     public DateTime? UpdatedAtUtc { get; set; }
 
     public List<PlotOwnership> PlotOwnerships { get; set; } = [];
-
-    public List<PlotOwnershipHistory> OwnershipHistory { get; set; } = [];
-
-    public List<MeterPlot> MeterPlots { get; set; } = [];
-
-    public List<Charge> Charges { get; set; } = [];
 }

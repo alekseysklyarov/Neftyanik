@@ -46,6 +46,12 @@ public class LoginModel : PageModel
         var signInResult = await _signInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
         if (signInResult.Succeeded)
         {
+            var user = await _signInManager.UserManager.FindByEmailAsync(Input.Email);
+            if (user?.MustChangePassword == true)
+            {
+                return RedirectToPage("/Account/ChangeInitialPassword");
+            }
+
             return LocalRedirect(returnUrl ?? Url.Content("~/"));
         }
 

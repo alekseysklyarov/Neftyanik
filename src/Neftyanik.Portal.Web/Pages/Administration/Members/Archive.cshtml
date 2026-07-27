@@ -1,0 +1,51 @@
+@page "{id:int}"
+@model Neftyanik.Portal.Web.Pages.Administration.Members.ArchiveModel
+@{
+    ViewData["Title"] = Model.IsArchiveOperation ? "Архивация члена товарищества" : "Восстановление члена товарищества";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h1 class="h3 mb-3">@(Model.IsArchiveOperation ? "Архивация члена товарищества" : "Восстановление члена товарищества")</h1>
+
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <p>
+                    @(Model.IsArchiveOperation
+                        ? "Вы собираетесь архивировать карточку члена товарищества. Запись останется в системе и не будет удалена."
+                        : "Вы собираетесь восстановить карточку члена товарищества из архива.")
+                </p>
+
+                <dl class="row mb-4">
+                    <dt class="col-sm-4">ФИО</dt>
+                    <dd class="col-sm-8">@Model.Member.FullName</dd>
+
+                    <dt class="col-sm-4">Электронная почта</dt>
+                    <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Member.Email) ? "—" : Model.Member.Email)</dd>
+
+                    <dt class="col-sm-4">Активные владения</dt>
+                    <dd class="col-sm-8">@Model.Member.ActiveOwnershipsCount</dd>
+                </dl>
+
+                @if (!Model.CanChangeStatus)
+                {
+                    <div class="alert alert-warning" role="alert">
+                        Архивация недоступна: сначала завершите активные владения участками для этого члена товарищества.
+                    </div>
+                }
+
+                <form method="post" class="d-flex gap-2 flex-wrap">
+                    @if (Model.CanChangeStatus)
+                    {
+                        <button type="submit" class="btn @(Model.IsArchiveOperation ? "btn-warning" : "btn-success")">
+                            @(Model.IsArchiveOperation ? "Подтвердить архивацию" : "Подтвердить восстановление")
+                        </button>
+                    }
+                    <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Details" asp-route-id="@Model.Member.Id">Назад</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

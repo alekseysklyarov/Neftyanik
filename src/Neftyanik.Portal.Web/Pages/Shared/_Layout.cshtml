@@ -1,4 +1,4 @@
-﻿@using Neftyanik.Portal.Domain.Constants
+@using Neftyanik.Portal.Domain.Constants
 
 @inject UserManager<ApplicationUser> UserManager
 
@@ -7,6 +7,8 @@
     var userDisplayName = !string.IsNullOrWhiteSpace(currentUser?.DisplayName)
         ? currentUser.DisplayName
         : currentUser?.Email ?? User.Identity?.Name;
+    var successMessage = TempData["SuccessMessage"] as string;
+    var errorMessage = TempData["ErrorMessage"] as string;
 }
 
 <!DOCTYPE html>
@@ -36,13 +38,19 @@
                         @if (User.IsInRole(RoleNames.Member))
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Member" asp-action="Index">Личный кабинет</a>
+                                <a class="nav-link text-dark" asp-page="/Member/Index">Личный кабинет</a>
                             </li>
                         }
                         @if (User.IsInRole(RoleNames.Administrator))
                         {
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-page="/Administration/Index">Администрирование</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-page="/Administration/Plots/Index">Участки</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-page="/Administration/Members/Index">Члены товарищества</a>
                             </li>
                         }
                     </ul>
@@ -70,6 +78,22 @@
         </nav>
     </header>
     <div class="container">
+        @if (!string.IsNullOrWhiteSpace(successMessage))
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @successMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(errorMessage))
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @errorMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+            </div>
+        }
+
         <main role="main" class="pb-3">
             @RenderBody()
         </main>

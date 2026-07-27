@@ -5,3 +5,5 @@ bin/
 obj/
 *.mdf
 *.ldf
+/artifacts
+/wwwroot
