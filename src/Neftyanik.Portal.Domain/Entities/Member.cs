@@ -35,4 +35,6 @@ public class Member
     public DateTime? UpdatedAtUtc { get; set; }
 
     public List<PlotOwnership> PlotOwnerships { get; set; } = [];
+
+    public List<MemberElectricityMeter> MemberElectricityMeters { get; set; } = [];
 }

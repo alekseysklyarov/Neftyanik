@@ -10,7 +10,7 @@ public class ChargeConfiguration : IEntityTypeConfiguration<Charge>
     {
         builder.ToTable("Charges", tableBuilder =>
         {
-            tableBuilder.HasCheckConstraint("CK_Charges_Amount_Positive", "[Amount] > 0");
+            tableBuilder.HasCheckConstraint("CK_Charges_Amount_Positive", "[Amount] >= 0");
             tableBuilder.HasCheckConstraint("CK_Charges_PeriodMonth_Range", "[PeriodMonth] IS NULL OR ([PeriodMonth] >= 1 AND [PeriodMonth] <= 12)");
             tableBuilder.HasCheckConstraint("CK_Charges_PeriodYear_Range", "[PeriodYear] IS NULL OR ([PeriodYear] >= 2000 AND [PeriodYear] <= 2100)");
             tableBuilder.HasCheckConstraint("CK_Charges_DueDate_NotEarlierThanChargeDate", "[DueDate] IS NULL OR [DueDate] >= [ChargeDate]");

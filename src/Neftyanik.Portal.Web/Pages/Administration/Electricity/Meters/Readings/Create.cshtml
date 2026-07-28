@@ -1,0 +1,80 @@
+@page "/Administration/Electricity/Meters/{id:int}/Readings/Create"
+@model Neftyanik.Portal.Web.Pages.Administration.Electricity.Meters.Readings.CreateModel
+@{
+    ViewData["Title"] = "Новые показания счётчика";
+}
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h1 class="h3 mb-3">Новые показания счётчика</h1>
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                <form method="post" class="row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="Input.ReadingDate" class="form-label">Дата новых показаний</label>
+                        <input asp-for="Input.ReadingDate" class="form-control" />
+                        <span asp-validation-for="Input.ReadingDate" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.CurrentReading" class="form-label">Текущее показание, кВт·ч</label>
+                        <input asp-for="Input.CurrentReading" class="form-control" />
+                        <span asp-validation-for="Input.CurrentReading" class="text-danger"></span>
+                    </div>
+                    <div class="col-12 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                        <a class="btn btn-outline-secondary" asp-page="/Administration/Electricity/Meters/Details" asp-route-id="@Model.Meter.Id">Назад</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card shadow-sm mb-3">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Сведения о счётчике</h2>
+                <dl class="mb-0">
+                    <dt>Счётчик</dt>
+                    <dd>@Model.Meter.DisplayName</dd>
+                    <dt>Участник</dt>
+                    <dd>@Model.Meter.MemberName</dd>
+                    <dt>Связанные участки</dt>
+                    <dd>@string.Join(", ", Model.Meter.LinkedPlotNumbers)</dd>
+                    <dt>Расчётный участок</dt>
+                    <dd>@Model.Meter.BillingPlotNumber</dd>
+                    <dt>Предыдущая дата</dt>
+                    <dd>@Model.Meter.PreviousReadingDate?.ToString("dd.MM.yyyy")</dd>
+                    <dt>Предыдущее показание</dt>
+                    <dd>@(Model.Meter.PreviousReading.HasValue ? $"{Model.Meter.PreviousReading.Value:0.000} кВт·ч" : "—")</dd>
+                </dl>
+            </div>
+        </div>
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Предварительный расчёт</h2>
+                <dl class="mb-0">
+                    <dt>Тариф для участников</dt>
+                    <dd>
+                        @if (Model.Preview.Tariff is null)
+                        {
+                            @:—
+                        }
+                        else
+                        {
+                            @($"{Model.Preview.Tariff.Rate:0.0000} грн/кВт·ч")
+                            <span class="text-muted d-block small">c @Model.Preview.Tariff.EffectiveFrom.ToString("dd.MM.yyyy")</span>
+                        }
+                    </dd>
+                    <dt>Расход</dt>
+                    <dd>@(Model.Preview.Consumption.HasValue ? $"{Model.Preview.Consumption.Value:0.000} кВт·ч" : "—")</dd>
+                    <dt>Итого</dt>
+                    <dd>@(Model.Preview.Amount.HasValue ? $"{Model.Preview.Amount.Value:0.00} грн" : "—")</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

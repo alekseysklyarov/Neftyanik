@@ -35,6 +35,8 @@ public class Charge : IValidatableObject
 
     public ElectricityReading? ElectricityReading { get; set; }
 
+    public MemberElectricityReading? MemberElectricityReading { get; set; }
+
     public DateTime? CancelledAtUtc { get; set; }
 
     [StringLength(500)]
@@ -44,9 +46,9 @@ public class Charge : IValidatableObject
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
-        if (Amount <= 0m)
+        if (Amount < 0m)
         {
-            yield return new ValidationResult("Charge amount must be greater than zero.", [nameof(Amount)]);
+            yield return new ValidationResult("Charge amount cannot be negative.", [nameof(Amount)]);
         }
 
         if (DueDate.HasValue && DueDate.Value < ChargeDate)

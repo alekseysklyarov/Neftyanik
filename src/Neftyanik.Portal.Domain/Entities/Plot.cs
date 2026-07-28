@@ -35,6 +35,10 @@ public class Plot
 
     public List<ElectricityReading> ElectricityReadings { get; set; } = [];
 
+    public List<MemberElectricityMeterPlot> MemberElectricityMeterPlots { get; set; } = [];
+
+    public List<MemberElectricityMeter> BillingMemberElectricityMeters { get; set; } = [];
+
     public List<Charge> Charges { get; set; } = [];
 
     public List<Payment> Payments { get; set; } = [];

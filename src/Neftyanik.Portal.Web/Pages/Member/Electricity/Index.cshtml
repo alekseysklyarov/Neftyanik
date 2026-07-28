@@ -1,0 +1,63 @@
+@page "/Member/Electricity"
+@model Neftyanik.Portal.Web.Pages.Member.Electricity.IndexModel
+@{
+    ViewData["Title"] = "Электроэнергия";
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h2 mb-1">Электроэнергия</h1>
+        <p class="text-muted mb-0">Ваши индивидуальные однотарифные счётчики.</p>
+    </div>
+    <div>
+        <a class="btn btn-outline-secondary" asp-page="/Member/Index">Назад в личный кабинет</a>
+    </div>
+</div>
+
+@if (!Model.IsLinked)
+{
+    <div class="alert alert-warning">Учетная запись не связана с карточкой члена товарищества. Обратитесь к администратору.</div>
+}
+else if (Model.Meters.Count == 0)
+{
+    <div class="alert alert-info">Активные счётчики участника не найдены.</div>
+}
+else
+{
+    <div class="row g-4">
+        @foreach (var meter in Model.Meters)
+        {
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
+                            <div>
+                                <h2 class="h5 mb-1">@meter.DisplayName</h2>
+                                <p class="text-muted mb-3">@(string.IsNullOrWhiteSpace(meter.MeterNumber) ? "Номер не указан" : $"Номер: {meter.MeterNumber}")</p>
+                                <div class="row g-3">
+                                    <div class="col-md-4"><div class="text-muted small">Связанные участки</div><div class="fw-semibold">@string.Join(", ", meter.ConnectedPlots)</div></div>
+                                    <div class="col-md-4"><div class="text-muted small">Расчётный участок</div><div class="fw-semibold">@meter.BillingPlotNumber</div></div>
+                                    <div class="col-md-4"><div class="text-muted small">Последняя дата</div><div class="fw-semibold">@(meter.LatestReadingDate.HasValue ? meter.LatestReadingDate.Value.ToString("dd.MM.yyyy") : "—")</div></div>
+                                    <div class="col-md-4"><div class="text-muted small">Последнее показание</div><div class="fw-semibold">@(meter.LatestReading.HasValue ? $"{meter.LatestReading.Value:0.000} кВт·ч" : "—")</div></div>
+                                    <div class="col-md-4"><div class="text-muted small">Последний расход</div><div class="fw-semibold">@(meter.LatestConsumption.HasValue ? $"{meter.LatestConsumption.Value:0.000} кВт·ч" : "—")</div></div>
+                                    <div class="col-md-4"><div class="text-muted small">Последнее начисление</div><div class="fw-semibold">@(meter.LatestChargeAmount.HasValue ? $"{meter.LatestChargeAmount.Value:0.00} грн" : "—")</div></div>
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(meter.StatusMessage))
+                                {
+                                    <div class="alert alert-warning mt-3 mb-0">@meter.StatusMessage</div>
+                                }
+                            </div>
+                            <div class="d-flex flex-column gap-2 align-self-start">
+                                @if (meter.HasInitialReading)
+                                {
+                                    <a class="btn btn-primary" asp-page="/Member/Electricity/Meters/Readings/Create" asp-route-meterId="@meter.Id">Передать показания</a>
+                                }
+                                <a class="btn btn-outline-primary" asp-page="/Member/Electricity/Meters/Readings/Index" asp-route-meterId="@meter.Id">История показаний</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

@@ -1,0 +1,85 @@
+@page "/Administration/Electricity/Meters/{id:int}/Readings"
+@model Neftyanik.Portal.Web.Pages.Administration.Electricity.Meters.Readings.IndexModel
+@{
+    ViewData["Title"] = $"История показаний {Model.Meter.DisplayName}";
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h2 mb-1">История показаний</h1>
+        <p class="text-muted mb-0">@Model.Meter.DisplayName</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        @if (Model.Meter.HasInitialReading)
+        {
+            <a class="btn btn-primary" asp-page="/Administration/Electricity/Meters/Readings/Create" asp-route-id="@Model.Meter.Id">Внести новые показания</a>
+        }
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Electricity/Meters/Details" asp-route-id="@Model.Meter.Id">Назад к счётчику</a>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Дата</th>
+                    <th>Тип записи</th>
+                    <th>Предыдущее показание</th>
+                    <th>Текущее показание</th>
+                    <th>Расход</th>
+                    <th>Тариф</th>
+                    <th>Начислено</th>
+                    <th>Расчётный участок</th>
+                    <th>Статус начисления</th>
+                    <th>Кем передано</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Readings.Count == 0)
+                {
+                    <tr><td colspan="10" class="text-center text-muted py-4">История показаний отсутствует.</td></tr>
+                }
+                else
+                {
+                    @foreach (var item in Model.Readings)
+                    {
+                        <tr>
+                            <td>@item.ReadingDate.ToString("dd.MM.yyyy")</td>
+                            <td>@item.EntryTypeText</td>
+                            <td>@(item.PreviousReading.HasValue ? item.PreviousReading.Value.ToString("0.000") : "—")</td>
+                            <td>@item.CurrentReading.ToString("0.000")</td>
+                            <td>@(item.Consumption.HasValue ? item.Consumption.Value.ToString("0.000") : "—")</td>
+                            <td>@(item.AppliedMemberRate.HasValue ? $"{item.AppliedMemberRate.Value:0.0000}" : "—")</td>
+                            <td>@(item.Amount.HasValue ? $"{item.Amount.Value:0.00} грн" : "—")</td>
+                            <td>@item.BillingPlotNumber</td>
+                            <td>@item.ChargeStatusText</td>
+                            <td>@item.SubmittedByText</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+    @if (Model.TotalPages > 1)
+    {
+        <div class="card-footer bg-white">
+            <nav aria-label="Навигация по истории показаний">
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item @(Model.HasPreviousPage ? string.Empty : "disabled")">
+                        <a class="page-link" asp-page="/Administration/Electricity/Meters/Readings/Index" asp-route-id="@Model.Meter.Id" asp-route-pageNumber="@(Model.PageNumber - 1)">Назад</a>
+                    </li>
+                    @for (var pageIndex = 1; pageIndex <= Model.TotalPages; pageIndex++)
+                    {
+                        <li class="page-item @(pageIndex == Model.PageNumber ? "active" : string.Empty)">
+                            <a class="page-link" asp-page="/Administration/Electricity/Meters/Readings/Index" asp-route-id="@Model.Meter.Id" asp-route-pageNumber="@pageIndex">@pageIndex</a>
+                        </li>
+                    }
+                    <li class="page-item @(Model.HasNextPage ? string.Empty : "disabled")">
+                        <a class="page-link" asp-page="/Administration/Electricity/Meters/Readings/Index" asp-route-id="@Model.Meter.Id" asp-route-pageNumber="@(Model.PageNumber + 1)">Вперед</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    }
+</div>

@@ -1,0 +1,91 @@
+@page "/Administration/Electricity/Meters/{id:int}" 
+@model Neftyanik.Portal.Web.Pages.Administration.Electricity.Meters.DetailsModel 
+@{
+    ViewData["Title"] = Model.Meter.DisplayName;
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h2 mb-1">@Model.Meter.DisplayName</h1>
+        <p class="text-muted mb-0">Владелец: @Model.Meter.MemberName</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        @if (!Model.Meter.HasInitialReading)
+        {
+            <a class="btn btn-primary" asp-page="/Administration/Electricity/Meters/Initial" asp-route-id="@Model.Meter.Id">Внести начальные показания</a>
+        }
+        else
+        {
+            @if (Model.Meter.CanCreateReading)
+            {
+                <a class="btn btn-primary" asp-page="/Administration/Electricity/Meters/Readings/Create" asp-route-id="@Model.Meter.Id">Внести новые показания</a>
+            }
+
+            <a class="btn btn-outline-primary" asp-page="/Administration/Electricity/Meters/Readings/Index" asp-route-id="@Model.Meter.Id">История показаний</a>
+        }
+        <a class="btn btn-outline-primary" asp-page="/Administration/Electricity/Meters/Edit" asp-route-id="@Model.Meter.Id">Редактировать</a>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Electricity/Meters/Index">Назад к списку</a>
+    </div>
+</div>
+
+@if (Model.Meter.HasOwnershipWarning)
+{
+    <div class="alert alert-warning" role="alert">
+        Один или несколько участков больше не принадлежат владельцу счётчика. Проверьте настройки счётчика.
+    </div>
+}
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Основные данные</h2>
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">Название</dt>
+                    <dd class="col-sm-7">@(string.IsNullOrWhiteSpace(Model.Meter.Name) ? "—" : Model.Meter.Name)</dd>
+                    <dt class="col-sm-5">Номер счётчика</dt>
+                    <dd class="col-sm-7">@(string.IsNullOrWhiteSpace(Model.Meter.MeterNumber) ? "—" : Model.Meter.MeterNumber)</dd>
+                    <dt class="col-sm-5">Участник</dt>
+                    <dd class="col-sm-7">@Model.Meter.MemberName</dd>
+                    <dt class="col-sm-5">Статус</dt>
+                    <dd class="col-sm-7">@(Model.Meter.IsActive ? "Активен" : "Неактивен")</dd>
+                    <dt class="col-sm-5">Расчётный участок</dt>
+                    <dd class="col-sm-7">@Model.Meter.BillingPlotNumber</dd>
+                    <dt class="col-sm-5">Начальные показания</dt>
+                    <dd class="col-sm-7">@(Model.Meter.HasInitialReading ? "Установлены" : "Не установлены")</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Показания</h2>
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">Последняя дата</dt>
+                    <dd class="col-sm-7">@(Model.Meter.LatestReadingDate.HasValue ? Model.Meter.LatestReadingDate.Value.ToString("dd.MM.yyyy") : "—")</dd>
+                    <dt class="col-sm-5">Последнее показание</dt>
+                    <dd class="col-sm-7">@(Model.Meter.LatestReading.HasValue ? $"{Model.Meter.LatestReading.Value:0.000} кВт·ч" : "—")</dd>
+                    <dt class="col-sm-5">Последнее начисление</dt>
+                    <dd class="col-sm-7">@(Model.Meter.LatestChargedAmount.HasValue ? $"{Model.Meter.LatestChargedAmount.Value:0.00} грн" : "—")</dd>
+                    <dt class="col-sm-5">Количество записей</dt>
+                    <dd class="col-sm-7">@Model.Meter.ReadingCount</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mt-4">
+    <div class="card-body">
+        <h2 class="h5 mb-3">Связанные участки</h2>
+        <div class="d-flex flex-wrap gap-2">
+            @foreach (var plot in Model.Meter.LinkedPlots)
+            {
+                <a class="btn btn-sm @(plot.PlotId == Model.Meter.BillingPlotId ? "btn-primary" : "btn-outline-primary")"
+                   asp-page="/Administration/Plots/Finance/Index"
+                   asp-route-plotId="@plot.PlotId">№@plot.PlotNumber</a>
+            }
+        </div>
+    </div>
+</div>

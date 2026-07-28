@@ -24,6 +24,8 @@ namespace Neftyanik.Portal.Infrastructure
             services.AddScoped(typeof(IRepository<>), typeof(GenericRepository<>));
             services.AddScoped<IAdminBootstrapService, AdminBootstrapService>();
             services.AddScoped<IElectricityAccountingService, ElectricityAccountingService>();
+            services.AddScoped<IAssociationElectricityService, AssociationElectricityService>();
+            services.AddScoped<IMemberElectricityService, MemberElectricityService>();
 
             return services;
         }

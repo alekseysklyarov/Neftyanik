@@ -1,0 +1,36 @@
+@page
+@model Neftyanik.Portal.Web.Pages.Administration.Electricity.MemberTariffs.CreateModel
+@{
+    ViewData["Title"] = "Новый тариф для участников";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h1 class="h3 mb-3">Новый тариф для участников</h1>
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                <form method="post" class="row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="Input.EffectiveFrom" class="form-label"></label>
+                        <input asp-for="Input.EffectiveFrom" class="form-control" />
+                        <span asp-validation-for="Input.EffectiveFrom" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.Rate" class="form-label">Тариф, грн/кВт·ч</label>
+                        <input asp-for="Input.Rate" class="form-control" />
+                        <span asp-validation-for="Input.Rate" class="text-danger"></span>
+                    </div>
+                    <div class="col-12 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                        <a class="btn btn-outline-secondary" asp-page="/Administration/Electricity/MemberTariffs/Index">Назад</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

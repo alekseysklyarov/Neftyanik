@@ -1,0 +1,74 @@
+@page
+@model Neftyanik.Portal.Web.Pages.Administration.Electricity.Meters.CreateModel
+@{
+    ViewData["Title"] = "Новый счётчик участника";
+}
+
+<div class="row justify-content-center">
+    <div class="col-xl-9">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h1 class="h3 mb-3">Новый счётчик участника</h1>
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                <form method="get" class="row g-3 mb-4">
+                    <div class="col-md-8">
+                        <label asp-for="Input.MemberId" class="form-label">Участник</label>
+                        <select asp-for="SelectedMemberId" asp-items="Model.MemberOptions" class="form-select">
+                            <option value="">Выберите участника</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="submit" class="btn btn-outline-primary w-100">Показать участки</button>
+                    </div>
+                </form>
+
+                <form method="post" class="row g-3">
+                    <input type="hidden" asp-for="SelectedMemberId" />
+                    <div class="col-md-6">
+                        <label asp-for="Input.MemberId" class="form-label">Участник</label>
+                        <select asp-for="Input.MemberId" asp-items="Model.MemberOptions" class="form-select">
+                            <option value="">Выберите участника</option>
+                        </select>
+                        <span asp-validation-for="Input.MemberId" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6 d-flex align-items-end">
+                        <div class="form-check mb-2">
+                            <input asp-for="Input.IsActive" class="form-check-input" />
+                            <label asp-for="Input.IsActive" class="form-check-label">Активный счётчик</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.MeterNumber" class="form-label">Номер счётчика</label>
+                        <input asp-for="Input.MeterNumber" class="form-control" />
+                        <span asp-validation-for="Input.MeterNumber" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.Name" class="form-label">Название</label>
+                        <input asp-for="Input.Name" class="form-control" />
+                        <span asp-validation-for="Input.Name" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.PlotIds" class="form-label">Связанные участки</label>
+                        <select asp-for="Input.PlotIds" asp-items="Model.PlotOptions" class="form-select" multiple size="8"></select>
+                        <span asp-validation-for="Input.PlotIds" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.BillingPlotId" class="form-label">Расчётный участок</label>
+                        <select asp-for="Input.BillingPlotId" asp-items="Model.PlotOptions" class="form-select">
+                            <option value="">Выберите расчётный участок</option>
+                        </select>
+                        <span asp-validation-for="Input.BillingPlotId" class="text-danger"></span>
+                    </div>
+                    <div class="col-12 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                        <a class="btn btn-outline-secondary" asp-page="/Administration/Electricity/Meters/Index">Назад</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

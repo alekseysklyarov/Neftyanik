@@ -1,0 +1,41 @@
+@page
+@model Neftyanik.Portal.Web.Pages.Administration.Electricity.Association.InitialModel
+@{
+    ViewData["Title"] = "Начальные показания общего счётчика";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h1 class="h3 mb-3">Начальные показания общего счётчика</h1>
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                <form method="post" class="row g-3">
+                    <div class="col-md-4">
+                        <label asp-for="Input.ReadingDate" class="form-label"></label>
+                        <input asp-for="Input.ReadingDate" class="form-control" />
+                        <span asp-validation-for="Input.ReadingDate" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Input.CurrentDayReading" class="form-label">Дневное показание, кВт·ч</label>
+                        <input asp-for="Input.CurrentDayReading" class="form-control" />
+                        <span asp-validation-for="Input.CurrentDayReading" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Input.CurrentNightReading" class="form-label">Ночное показание, кВт·ч</label>
+                        <input asp-for="Input.CurrentNightReading" class="form-control" />
+                        <span asp-validation-for="Input.CurrentNightReading" class="text-danger"></span>
+                    </div>
+                    <div class="col-12 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                        <a class="btn btn-outline-secondary" asp-page="/Administration/Electricity/Association/Index">Назад</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

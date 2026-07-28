@@ -1,0 +1,73 @@
+@page
+@model Neftyanik.Portal.Web.Pages.Administration.Electricity.Association.CreateModel
+@{
+    ViewData["Title"] = "Новые показания общего счётчика";
+}
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h1 class="h3 mb-3">Новые показания общего счётчика</h1>
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                <form method="post" class="row g-3">
+                    <div class="col-md-4">
+                        <label asp-for="Input.ReadingDate" class="form-label"></label>
+                        <input asp-for="Input.ReadingDate" class="form-control" />
+                        <span asp-validation-for="Input.ReadingDate" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Input.CurrentDayReading" class="form-label">Текущее дневное показание, кВт·ч</label>
+                        <input asp-for="Input.CurrentDayReading" class="form-control" />
+                        <span asp-validation-for="Input.CurrentDayReading" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Input.CurrentNightReading" class="form-label">Текущее ночное показание, кВт·ч</label>
+                        <input asp-for="Input.CurrentNightReading" class="form-control" />
+                        <span asp-validation-for="Input.CurrentNightReading" class="text-danger"></span>
+                    </div>
+                    <div class="col-12 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                        <a class="btn btn-outline-secondary" asp-page="/Administration/Electricity/Association/Index">Назад</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card shadow-sm mb-3">
+            <div class="card-body">
+                <h2 class="h5">Предыдущее показание</h2>
+                <dl class="mb-0">
+                    <dt>Дата</dt>
+                    <dd>@Model.PreviousReading?.ReadingDate.ToString("dd.MM.yyyy")</dd>
+                    <dt>День</dt>
+                    <dd>@Model.PreviousReading?.CurrentDayReading.ToString("0.000")</dd>
+                    <dt>Ночь</dt>
+                    <dd>@Model.PreviousReading?.CurrentNightReading.ToString("0.000")</dd>
+                </dl>
+            </div>
+        </div>
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5">Предварительный расчёт</h2>
+                <dl class="mb-0">
+                    <dt>Тариф поставщика действует с</dt>
+                    <dd>@(Model.Preview.Tariff is null ? "—" : Model.Preview.Tariff.EffectiveFrom.ToString("dd.MM.yyyy"))</dd>
+                    <dt>Дневной расход</dt>
+                    <dd>@(Model.Preview.DayConsumption.HasValue ? Model.Preview.DayConsumption.Value.ToString("0.000") : "—")</dd>
+                    <dt>Ночной расход</dt>
+                    <dd>@(Model.Preview.NightConsumption.HasValue ? Model.Preview.NightConsumption.Value.ToString("0.000") : "—")</dd>
+                    <dt>Общий расход</dt>
+                    <dd>@(Model.Preview.TotalConsumption.HasValue ? Model.Preview.TotalConsumption.Value.ToString("0.000") : "—")</dd>
+                    <dt>Сумма поставщику</dt>
+                    <dd>@(Model.Preview.TotalAmount.HasValue ? $"{Model.Preview.TotalAmount.Value:0.00} грн" : "—")</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

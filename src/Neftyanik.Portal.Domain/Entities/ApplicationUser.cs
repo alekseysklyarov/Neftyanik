@@ -44,6 +44,16 @@ public class ApplicationUser : IdentityUser
 
     public List<ElectricityTariff> CreatedElectricityTariffs { get; set; } = [];
 
+    public List<AssociationElectricityReading> CreatedAssociationElectricityReadings { get; set; } = [];
+
+    public List<AssociationElectricityTariff> CreatedAssociationElectricityTariffs { get; set; } = [];
+
+    public List<MemberElectricityMeter> CreatedMemberElectricityMeters { get; set; } = [];
+
+    public List<MemberElectricityReading> CreatedMemberElectricityReadings { get; set; } = [];
+
+    public List<MemberElectricityTariff> CreatedMemberElectricityTariffs { get; set; } = [];
+
     public List<Payment> CreatedPayments { get; set; } = [];
 
     public List<SystemSetting> UpdatedSystemSettings { get; set; } = [];

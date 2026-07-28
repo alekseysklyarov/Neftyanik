@@ -1,0 +1,66 @@
+@page
+@model Neftyanik.Portal.Web.Pages.Administration.Electricity.Association.IndexModel
+@{
+    ViewData["Title"] = "Общий счётчик";
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h2 mb-1">Общий счётчик</h1>
+        <p class="text-muted mb-0">Двухзонный общий счётчик используется только для расчёта суммы поставщику.</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        @if (!Model.HasHistory)
+        {
+            <a class="btn btn-primary" asp-page="/Administration/Electricity/Association/Initial">Внести начальные показания</a>
+        }
+        else
+        {
+            <a class="btn btn-primary" asp-page="/Administration/Electricity/Association/Create">Внести новые показания</a>
+        }
+        <a class="btn btn-outline-primary" asp-page="/Administration/Electricity/Association/Tariffs/Index">Тарифы поставщика</a>
+    </div>
+</div>
+
+@if (!Model.HasHistory)
+{
+    <div class="alert alert-info">Показания общего счётчика пока не внесены.</div>
+}
+else
+{
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Дата</th>
+                        <th>Дневное показание</th>
+                        <th>Дневной расход</th>
+                        <th>Ночное показание</th>
+                        <th>Ночной расход</th>
+                        <th>Общий расход</th>
+                        <th>Дневной тариф поставщика</th>
+                        <th>Ночной тариф поставщика</th>
+                        <th>Сумма поставщику</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Readings)
+                    {
+                        <tr>
+                            <td>@item.ReadingDate.ToString("dd.MM.yyyy")</td>
+                            <td>@item.CurrentDayReading.ToString("0.000")</td>
+                            <td>@(item.DayConsumption.HasValue ? item.DayConsumption.Value.ToString("0.000") : "—")</td>
+                            <td>@item.CurrentNightReading.ToString("0.000")</td>
+                            <td>@(item.NightConsumption.HasValue ? item.NightConsumption.Value.ToString("0.000") : "—")</td>
+                            <td>@(item.TotalConsumption.HasValue ? item.TotalConsumption.Value.ToString("0.000") : "—")</td>
+                            <td>@(item.AppliedSupplierDayRate.HasValue ? $"{item.AppliedSupplierDayRate.Value:0.0000} грн/кВт·ч" : "—")</td>
+                            <td>@(item.AppliedSupplierNightRate.HasValue ? $"{item.AppliedSupplierNightRate.Value:0.0000} грн/кВт·ч" : "—")</td>
+                            <td>@(item.TotalSupplierAmount.HasValue ? $"{item.TotalSupplierAmount.Value:0.00} грн" : "—")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
