@@ -27,6 +27,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<MeterReading> MeterReadings => Set<MeterReading>();
 
+    public DbSet<ElectricityReading> ElectricityReadings => Set<ElectricityReading>();
+
     public DbSet<ElectricityTariff> ElectricityTariffs => Set<ElectricityTariff>();
 
     public DbSet<MembershipFeeRate> MembershipFeeRates => Set<MembershipFeeRate>();

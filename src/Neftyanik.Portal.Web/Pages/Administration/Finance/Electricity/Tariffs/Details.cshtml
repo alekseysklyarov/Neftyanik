@@ -1,0 +1,40 @@
+@page "/Administration/Finance/Electricity/Tariffs/{id:int}"
+@model Neftyanik.Portal.Web.Pages.Administration.Finance.Electricity.Tariffs.DetailsModel
+@{
+    ViewData["Title"] = "Тариф электроэнергии";
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h2 mb-1">Тариф электроэнергии</h1>
+        <p class="text-muted mb-0">Действует с @Model.Tariff.EffectiveFrom.ToString("dd.MM.yyyy")</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/Electricity/Tariffs/Index">К списку тарифов</a>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/Index">К финансам</a>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-4">Действует с</dt>
+            <dd class="col-sm-8">@Model.Tariff.EffectiveFrom.ToString("dd.MM.yyyy")</dd>
+
+            <dt class="col-sm-4">Дневной тариф</dt>
+            <dd class="col-sm-8">@Model.Tariff.DayRate.ToString("0.0000") грн/кВт·ч</dd>
+
+            <dt class="col-sm-4">Ночной тариф</dt>
+            <dd class="col-sm-8">@Model.Tariff.NightRate.ToString("0.0000") грн/кВт·ч</dd>
+
+            <dt class="col-sm-4">Создан</dt>
+            <dd class="col-sm-8">@Model.Tariff.CreatedAtUtc.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</dd>
+
+            <dt class="col-sm-4">Создал</dt>
+            <dd class="col-sm-8">@Model.Tariff.CreatedBy</dd>
+
+            <dt class="col-sm-4">Использований в начислениях</dt>
+            <dd class="col-sm-8">@Model.Tariff.UsageCount</dd>
+        </dl>
+    </div>
+</div>

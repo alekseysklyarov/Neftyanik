@@ -2,9 +2,7 @@ using System.Net;
 using Microsoft.AspNetCore.Identity;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
-using Neftyanik.Portal.Domain.Enums;
 using Neftyanik.Portal.Infrastructure.Data;
-using Neftyanik.Portal.Web.Tests.Infrastructure;
 using Xunit;
 
 namespace Neftyanik.Portal.Web.Tests;
@@ -20,7 +18,7 @@ public class MemberFinanceAuthorizationTests
         var response = await client.GetAsync("/Member");
 
         Assert.Equal(HttpStatusCode.Found, response.StatusCode);
-        Assert.StartsWith("/Account/Login", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
+        Assert.StartsWith("http://localhost/Account/Login", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -40,7 +38,7 @@ public class MemberFinanceAuthorizationTests
         var response = await client.GetAsync($"/Member/Plots/{ownedPlotId}/Finance");
 
         Assert.Equal(HttpStatusCode.Found, response.StatusCode);
-        Assert.StartsWith("/Account/Login", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
+        Assert.StartsWith("http://localhost/Account/Login", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -75,7 +73,7 @@ public class MemberFinanceAuthorizationTests
                 PlotId = plotId,
                 MemberId = memberId,
                 ValidFrom = new DateOnly(2020, 1, 1),
-                OwnershipShare = 100m,
+                OwnershipShare = 0.5m,
                 IsPrimaryContact = true
             });
             dbContext.ChargeTypes.Add(new ChargeType
@@ -98,7 +96,7 @@ public class MemberFinanceAuthorizationTests
                 PlotId = plotId,
                 Amount = 50m,
                 PaymentDate = new DateOnly(2026, 1, 11),
-                PaymentMethod = PaymentMethod.Cash,
+                PaymentMethod = Neftyanik.Portal.Domain.Enums.PaymentMethod.Cash,
                 ReferenceNumber = "OWNED-PAYMENT-REF"
             });
 
@@ -157,7 +155,7 @@ public class MemberFinanceAuthorizationTests
                 PlotId = plotBId,
                 MemberId = memberBId,
                 ValidFrom = new DateOnly(2020, 1, 1),
-                OwnershipShare = 100m,
+                OwnershipShare = 0.5m,
                 IsPrimaryContact = true
             });
             dbContext.ChargeTypes.Add(new ChargeType
@@ -180,7 +178,7 @@ public class MemberFinanceAuthorizationTests
                 PlotId = plotBId,
                 Amount = 123m,
                 PaymentDate = new DateOnly(2026, 2, 2),
-                PaymentMethod = PaymentMethod.Card,
+                PaymentMethod = Neftyanik.Portal.Domain.Enums.PaymentMethod.Card,
                 ReferenceNumber = "LEAKED-PAYMENT-REF-601",
                 Description = "Leaked Payment Description 601"
             });
@@ -239,7 +237,7 @@ public class MemberFinanceAuthorizationTests
         var response = await client.GetAsync("/Member/Plots/999/Finance");
 
         Assert.Equal(HttpStatusCode.Found, response.StatusCode);
-        Assert.Equal("/Account/AccessDenied", response.Headers.Location?.OriginalString);
+        Assert.StartsWith("http://localhost/Account/AccessDenied", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -259,7 +257,7 @@ public class MemberFinanceAuthorizationTests
         var response = await client.GetAsync("/Member/Plots/999/Finance");
 
         Assert.Equal(HttpStatusCode.Found, response.StatusCode);
-        Assert.Equal("/Account/AccessDenied", response.Headers.Location?.OriginalString);
+        Assert.StartsWith("http://localhost/Account/AccessDenied", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
     }
 
     private static ApplicationUser CreateUser(string id, string email)

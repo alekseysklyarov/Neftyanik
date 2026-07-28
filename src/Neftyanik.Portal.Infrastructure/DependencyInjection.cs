@@ -1,10 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Neftyanik.Portal.Application.Electricity;
 using Neftyanik.Portal.Application.Interfaces;
 using Neftyanik.Portal.Infrastructure.Data;
 using Neftyanik.Portal.Infrastructure.Identity;
 using Neftyanik.Portal.Infrastructure.Repositories;
+using Neftyanik.Portal.Infrastructure.Services;
 
 namespace Neftyanik.Portal.Infrastructure
 {
@@ -21,6 +23,7 @@ namespace Neftyanik.Portal.Infrastructure
             // Repositories
             services.AddScoped(typeof(IRepository<>), typeof(GenericRepository<>));
             services.AddScoped<IAdminBootstrapService, AdminBootstrapService>();
+            services.AddScoped<IElectricityAccountingService, ElectricityAccountingService>();
 
             return services;
         }

@@ -1,0 +1,68 @@
+@page "/Administration/Finance/Electricity/Tariffs"
+@model Neftyanik.Portal.Web.Pages.Administration.Finance.Electricity.Tariffs.IndexModel
+@{
+    ViewData["Title"] = "Тарифы электроэнергии";
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h2 mb-1">Тарифы электроэнергии</h1>
+        <p class="text-muted mb-0">История общих дневных и ночных тарифов товарищества.</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a class="btn btn-primary" asp-page="/Administration/Finance/Electricity/Tariffs/Create">Добавить тариф</a>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/Index">К финансам</a>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        @if (Model.Tariffs.Count == 0)
+        {
+            <div class="p-4 text-center text-muted">Тарифы электроэнергии пока не добавлены.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Действует с</th>
+                            <th>Дневной тариф</th>
+                            <th>Ночной тариф</th>
+                            <th>Текущий</th>
+                            <th>Создан</th>
+                            <th>Создал</th>
+                            <th class="text-end">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var tariff in Model.Tariffs)
+                        {
+                            <tr>
+                                <td>@tariff.EffectiveFrom.ToString("dd.MM.yyyy")</td>
+                                <td>@tariff.DayRate.ToString("0.0000") грн/кВт·ч</td>
+                                <td>@tariff.NightRate.ToString("0.0000") грн/кВт·ч</td>
+                                <td>
+                                    @if (tariff.IsCurrent)
+                                    {
+                                        <span class="badge text-bg-success">Да</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                </td>
+                                <td>@tariff.CreatedAtUtc.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+                                <td>@tariff.CreatedBy</td>
+                                <td class="text-end">
+                                    <a class="btn btn-sm btn-outline-primary" asp-page="/Administration/Finance/Electricity/Tariffs/Details" asp-route-id="@tariff.Id">Подробнее</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

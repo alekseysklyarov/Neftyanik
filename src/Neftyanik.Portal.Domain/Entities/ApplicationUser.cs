@@ -40,6 +40,10 @@ public class ApplicationUser : IdentityUser
 
     public List<Charge> CreatedCharges { get; set; } = [];
 
+    public List<ElectricityReading> CreatedElectricityReadings { get; set; } = [];
+
+    public List<ElectricityTariff> CreatedElectricityTariffs { get; set; } = [];
+
     public List<Payment> CreatedPayments { get; set; } = [];
 
     public List<SystemSetting> UpdatedSystemSettings { get; set; } = [];

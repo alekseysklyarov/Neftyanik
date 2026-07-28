@@ -6,6 +6,9 @@ public class ChargeType : IValidatableObject
 {
     public int Id { get; set; }
 
+    [StringLength(64)]
+    public string? Code { get; set; }
+
     [Required]
     [StringLength(150)]
     public string Name { get; set; } = string.Empty;

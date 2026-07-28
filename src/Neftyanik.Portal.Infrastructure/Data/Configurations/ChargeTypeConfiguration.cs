@@ -15,6 +15,10 @@ public class ChargeTypeConfiguration : IEntityTypeConfiguration<ChargeType>
 
         builder.HasKey(x => x.Id);
 
+        builder.Property(x => x.Code)
+            .HasMaxLength(64)
+            .IsUnicode(false);
+
         builder.Property(x => x.Name)
             .IsRequired()
             .HasMaxLength(150)
@@ -34,5 +38,9 @@ public class ChargeTypeConfiguration : IEntityTypeConfiguration<ChargeType>
             .IsRequired();
 
         builder.HasIndex(x => x.Name);
+
+        builder.HasIndex(x => x.Code)
+            .IsUnique()
+            .HasFilter("[Code] IS NOT NULL");
     }
 }

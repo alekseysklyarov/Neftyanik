@@ -24,7 +24,7 @@ public class PlotFinanceQueriesTests
         context.Plots.AddRange(plotA, plotB);
         context.PlotOwnerships.AddRange(
             new PlotOwnership { Id = 1, MemberId = memberA.Id, Member = memberA, PlotId = plotA.Id, Plot = plotA },
-            new PlotOwnership { Id = 2, MemberId = memberA.Id, Member = memberA, PlotId = plotB.Id, Plot = plotB, ValidTo = new DateOnly(2026, 1, 1) },
+            new PlotOwnership { Id = 2, MemberId = memberA.Id, Member = memberA, PlotId = plotB.Id, Plot = plotB, ValidTo = currentDate.AddDays(-1) },
             new PlotOwnership { Id = 3, MemberId = memberB.Id, Member = memberB, PlotId = plotB.Id, Plot = plotB });
 
         await context.SaveChangesAsync();

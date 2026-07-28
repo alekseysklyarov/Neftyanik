@@ -1,4 +1,4 @@
-﻿using Neftyanik.Portal.Domain.Constants;
+using Neftyanik.Portal.Domain.Constants;
 
 namespace Neftyanik.Portal.Infrastructure.Data.Configurations;
 
@@ -8,10 +8,8 @@ internal static class SeedDataConstants
     public const string AccountantRoleId = "role-accountant";
     public const string MemberRoleId = "role-member";
 
-    public const int InitialElectricityTariffId = 1;
     public const int InitialMembershipFeeRateId = 1;
 
-    public static readonly DateOnly InitialTariffEffectiveFrom = new(2026, 1, 1);
     public static readonly DateOnly InitialMembershipFeeDueDate = new(2026, 12, 31);
     public static readonly DateTimeOffset SeedCreatedAt = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
 

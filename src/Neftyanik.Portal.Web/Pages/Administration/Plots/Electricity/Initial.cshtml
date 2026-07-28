@@ -1,0 +1,50 @@
+@page "/Administration/Plots/{plotId:int}/Electricity/Initial"
+@model Neftyanik.Portal.Web.Pages.Administration.Plots.Electricity.InitialModel
+@{
+    ViewData["Title"] = "Начальные показания электроэнергии";
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h2 mb-1">Начальные показания электроэнергии</h1>
+        <p class="text-muted mb-0">Участок @Model.Plot.PlotNumber</p>
+    </div>
+    <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Finance/Index" asp-route-plotId="@Model.Plot.PlotId">К финансам участка</a>
+</div>
+
+<div class="alert alert-info" role="alert">
+    Начальные показания сохраняются без создания начисления.
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label asp-for="Input.ReadingDate" class="form-label"></label>
+                    <input asp-for="Input.ReadingDate" class="form-control" type="date" />
+                    <span asp-validation-for="Input.ReadingDate" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Input.CurrentDayReading" class="form-label"></label>
+                    <input asp-for="Input.CurrentDayReading" class="form-control" type="number" step="0.001" min="0" />
+                    <span asp-validation-for="Input.CurrentDayReading" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Input.CurrentNightReading" class="form-label"></label>
+                    <input asp-for="Input.CurrentNightReading" class="form-control" type="number" step="0.001" min="0" />
+                    <span asp-validation-for="Input.CurrentNightReading" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="d-flex gap-2 mt-4">
+                <button type="submit" class="btn btn-primary">Сохранить начальные показания</button>
+                <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Finance/Index" asp-route-plotId="@Model.Plot.PlotId">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -4,19 +4,31 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data;
 
-namespace Neftyanik.Portal.Web.Tests.Infrastructure;
+namespace Neftyanik.Portal.Web.Tests;
 
 public sealed class PortalWebApplicationFactory : WebApplicationFactory<Program>
 {
+    private const string TestConnectionString = "Server=(localdb)\\mssqllocaldb;Database=NeftyanikPortalTests;Trusted_Connection=True;TrustServerCertificate=True";
     private SqliteConnection? _connection;
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        Environment.SetEnvironmentVariable("ConnectionStrings__DefaultConnection", TestConnectionString);
         builder.UseEnvironment("Testing");
+
+        builder.ConfigureAppConfiguration((_, configurationBuilder) =>
+        {
+            configurationBuilder.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["ConnectionStrings:DefaultConnection"] = TestConnectionString
+            });
+        });
 
         builder.ConfigureServices(services =>
         {
@@ -79,6 +91,7 @@ public sealed class PortalWebApplicationFactory : WebApplicationFactory<Program>
 
         if (disposing)
         {
+            Environment.SetEnvironmentVariable("ConnectionStrings__DefaultConnection", null);
             _connection?.Dispose();
             _connection = null;
         }

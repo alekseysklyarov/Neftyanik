@@ -4,25 +4,15 @@ public class ElectricityTariff
 {
     public int Id { get; set; }
 
-    public string Name { get; set; } = string.Empty;
+    public decimal DayRate { get; set; }
 
-    public decimal SingleRatePrice { get; set; }
-
-    public decimal? DayRatePrice { get; set; }
-
-    public decimal? NightRatePrice { get; set; }
+    public decimal NightRate { get; set; }
 
     public DateOnly EffectiveFrom { get; set; }
 
-    public DateOnly? EffectiveTo { get; set; }
+    public DateTimeOffset CreatedAtUtc { get; set; } = DateTimeOffset.UtcNow;
 
-    public bool IsActive { get; set; } = true;
+    public string? CreatedByUserId { get; set; }
 
-    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
-
-    public decimal Rate
-    {
-        get => SingleRatePrice;
-        set => SingleRatePrice = value;
-    }
+    public ApplicationUser? CreatedByUser { get; set; }
 }

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Neftyanik.Portal.Domain.Entities;
 
@@ -8,35 +8,35 @@ public class ElectricityTariffConfiguration : IEntityTypeConfiguration<Electrici
 {
     public void Configure(EntityTypeBuilder<ElectricityTariff> builder)
     {
-        builder.ToTable("ElectricityTariffs");
+        builder.ToTable("ElectricityTariffs", tableBuilder =>
+        {
+            tableBuilder.HasCheckConstraint("CK_ElectricityTariffs_DayRate_NonNegative", "[DayRate] >= 0");
+            tableBuilder.HasCheckConstraint("CK_ElectricityTariffs_NightRate_NonNegative", "[NightRate] >= 0");
+        });
 
         builder.HasKey(x => x.Id);
 
-        builder.Property(x => x.Name)
-            .IsRequired()
-            .HasMaxLength(200);
+        builder.Property(x => x.EffectiveFrom)
+            .HasColumnType("date");
 
-        builder.Property(x => x.SingleRatePrice)
-            .HasPrecision(18, 2);
+        builder.Property(x => x.DayRate)
+            .HasPrecision(18, 4);
 
-        builder.Property(x => x.DayRatePrice)
-            .HasPrecision(18, 2);
+        builder.Property(x => x.NightRate)
+            .HasPrecision(18, 4);
 
-        builder.Property(x => x.NightRatePrice)
-            .HasPrecision(18, 2);
+        builder.Property(x => x.CreatedByUserId)
+            .HasMaxLength(450);
 
-        builder.HasIndex(x => x.EffectiveFrom);
+        builder.Property(x => x.CreatedAtUtc)
+            .IsRequired();
 
-        builder.Ignore(x => x.Rate);
+        builder.HasIndex(x => x.EffectiveFrom)
+            .IsUnique();
 
-        builder.HasData(new ElectricityTariff
-        {
-            Id = SeedDataConstants.InitialElectricityTariffId,
-            Name = "Тариф 5,00 грн/кВт·ч",
-            SingleRatePrice = 5.00m,
-            EffectiveFrom = SeedDataConstants.InitialTariffEffectiveFrom,
-            IsActive = true,
-            CreatedAt = SeedDataConstants.SeedCreatedAt
-        });
+        builder.HasOne(x => x.CreatedByUser)
+            .WithMany(x => x.CreatedElectricityTariffs)
+            .HasForeignKey(x => x.CreatedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

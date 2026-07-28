@@ -19,6 +19,8 @@ public class IndexModel : PlotFinancePageModelBase
 
     public IReadOnlyList<PaymentItemViewModel> Payments { get; private set; } = [];
 
+    public ElectricitySummaryViewModel Electricity { get; private set; } = new();
+
     public async Task<IActionResult> OnGetAsync(int plotId, CancellationToken cancellationToken)
     {
         var plot = await GetPlotContextAsync(plotId, cancellationToken);
@@ -69,7 +71,58 @@ public class IndexModel : PlotFinancePageModelBase
             })
             .ToListAsync(cancellationToken);
 
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var latestReading = await DbContext.ElectricityReadings
+            .AsNoTracking()
+            .Where(reading => reading.PlotId == plotId)
+            .OrderByDescending(reading => reading.ReadingDate)
+            .ThenByDescending(reading => reading.Id)
+            .Select(reading => new ElectricitySummaryViewModel
+            {
+                HasHistory = true,
+                LatestReadingDate = reading.ReadingDate,
+                LatestDayReading = reading.CurrentDayReading,
+                LatestNightReading = reading.CurrentNightReading,
+                IsLatestInitialReading = reading.IsInitialReading,
+                LatestChargeAmount = reading.TotalAmount
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var currentTariff = await DbContext.ElectricityTariffs
+            .AsNoTracking()
+            .Where(tariff => tariff.EffectiveFrom <= today)
+            .OrderByDescending(tariff => tariff.EffectiveFrom)
+            .ThenByDescending(tariff => tariff.Id)
+            .Select(tariff => new { tariff.DayRate, tariff.NightRate, tariff.EffectiveFrom })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        Electricity = latestReading ?? new ElectricitySummaryViewModel();
+        Electricity.CurrentDayRate = currentTariff?.DayRate;
+        Electricity.CurrentNightRate = currentTariff?.NightRate;
+        Electricity.CurrentTariffEffectiveFrom = currentTariff?.EffectiveFrom;
+
         return Page();
+    }
+
+    public sealed class ElectricitySummaryViewModel
+    {
+        public bool HasHistory { get; init; }
+
+        public DateOnly? LatestReadingDate { get; init; }
+
+        public decimal? LatestDayReading { get; init; }
+
+        public decimal? LatestNightReading { get; init; }
+
+        public bool IsLatestInitialReading { get; init; }
+
+        public decimal? LatestChargeAmount { get; init; }
+
+        public decimal? CurrentDayRate { get; set; }
+
+        public decimal? CurrentNightRate { get; set; }
+
+        public DateOnly? CurrentTariffEffectiveFrom { get; set; }
     }
 
     public sealed class ChargeItemViewModel

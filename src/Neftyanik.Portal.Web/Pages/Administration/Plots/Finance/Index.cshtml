@@ -24,6 +24,29 @@
 </div>
 
 <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center gap-2 flex-wrap"><h2 class="h5 mb-0">Электроэнергия</h2><div class="d-flex gap-2 flex-wrap">@if (!Model.Electricity.HasHistory) { <a class="btn btn-sm btn-primary" asp-page="/Administration/Plots/Electricity/Initial" asp-route-plotId="@Model.Plot.PlotId">Внести начальные показания</a> } else { <a class="btn btn-sm btn-primary" asp-page="/Administration/Plots/Electricity/Create" asp-route-plotId="@Model.Plot.PlotId">Внести новые показания</a><a class="btn btn-sm btn-outline-primary" asp-page="/Administration/Plots/Electricity/Index" asp-route-plotId="@Model.Plot.PlotId">История показаний</a> }</div></div>
+    <div class="card-body">
+        @if (!Model.Electricity.HasHistory)
+        {
+            <p class="text-muted mb-0">Показания электроэнергии для участка пока не внесены.</p>
+        }
+        else
+        {
+            <div class="row g-3">
+                <div class="col-md-4"><div class="text-muted small">Последняя дата показаний</div><div class="fw-semibold">@Model.Electricity.LatestReadingDate?.ToString("dd.MM.yyyy")</div></div>
+                <div class="col-md-4"><div class="text-muted small">Последнее дневное показание</div><div class="fw-semibold">@Model.Electricity.LatestDayReading?.ToString("0.000") кВт·ч</div></div>
+                <div class="col-md-4"><div class="text-muted small">Последнее ночное показание</div><div class="fw-semibold">@Model.Electricity.LatestNightReading?.ToString("0.000") кВт·ч</div></div>
+                <div class="col-md-4"><div class="text-muted small">Тип последней записи</div><div class="fw-semibold">@(Model.Electricity.IsLatestInitialReading ? "Начальные показания" : "Начисление")</div></div>
+                <div class="col-md-4"><div class="text-muted small">Последнее начисление</div><div class="fw-semibold">@(Model.Electricity.LatestChargeAmount.HasValue ? $"{Model.Electricity.LatestChargeAmount.Value:0.00} грн" : "—")</div></div>
+                <div class="col-md-4"><div class="text-muted small">Дневной тариф</div><div class="fw-semibold">@(Model.Electricity.CurrentDayRate.HasValue ? $"{Model.Electricity.CurrentDayRate.Value:0.0000} грн/кВт·ч" : "—")</div></div>
+                <div class="col-md-4"><div class="text-muted small">Ночной тариф</div><div class="fw-semibold">@(Model.Electricity.CurrentNightRate.HasValue ? $"{Model.Electricity.CurrentNightRate.Value:0.0000} грн/кВт·ч" : "—")</div></div>
+                <div class="col-md-4"><div class="text-muted small">Тариф действует с</div><div class="fw-semibold">@(Model.Electricity.CurrentTariffEffectiveFrom.HasValue ? Model.Electricity.CurrentTariffEffectiveFrom.Value.ToString("dd.MM.yyyy") : "—")</div></div>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4" id="charges">
     <div class="card-header bg-white"><h2 class="h5 mb-0">Начисления</h2></div>
     <div class="card-body p-0">
         @if (Model.Charges.Count == 0)

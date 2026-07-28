@@ -1,9 +1,10 @@
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Neftyanik.Portal.Web.Tests.Infrastructure;
+namespace Neftyanik.Portal.Web.Tests;
 
 public sealed class TestAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {

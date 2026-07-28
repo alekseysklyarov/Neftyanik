@@ -125,8 +125,8 @@ public class ApplicationDbContextModelTests
         AssertDeleteBehavior<MeterReading, ElectricityMeter>(context, DeleteBehavior.Restrict);
         AssertDeleteBehavior<Expense, ExpenseCategory>(context, DeleteBehavior.Restrict);
         AssertDeleteBehavior<Charge, Plot>(context, DeleteBehavior.Restrict);
-        AssertDeleteBehavior<Charge, ApplicationUser>(context, DeleteBehavior.Restrict, nameof(Charge.UserId));
-        AssertDeleteBehavior<Payment, ApplicationUser>(context, DeleteBehavior.Restrict, nameof(Payment.UserId));
+        AssertDeleteBehavior<Charge, ApplicationUser>(context, DeleteBehavior.Restrict, nameof(Charge.CreatedByUserId));
+        AssertDeleteBehavior<Payment, ApplicationUser>(context, DeleteBehavior.Restrict, nameof(Payment.CreatedByUserId));
     }
 
     private static void AssertPropertyPrecision(IEntityType entityType, string propertyName, int precision, int scale)

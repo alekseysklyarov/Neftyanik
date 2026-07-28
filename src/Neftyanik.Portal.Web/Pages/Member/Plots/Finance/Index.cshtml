@@ -47,6 +47,50 @@
 </div>
 
 <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+        <h2 class="h5 mb-0">Электроэнергия</h2>
+    </div>
+    <div class="card-body">
+        @if (!Model.Electricity.HasHistory)
+        {
+            <p class="text-muted mb-0">История показаний электроэнергии пока отсутствует.</p>
+        }
+        else
+        {
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="text-muted small">Последняя дата показаний</div>
+                    <div class="fw-semibold">@(Model.Electricity.LatestReadingDate.HasValue ? Model.Electricity.LatestReadingDate.Value.ToString("dd.MM.yyyy") : "—")</div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-muted small">Последнее дневное показание</div>
+                    <div class="fw-semibold">@(Model.Electricity.LatestDayReading.HasValue ? $"{Model.Electricity.LatestDayReading.Value:0.000} кВт·ч" : "—")</div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-muted small">Последнее ночное показание</div>
+                    <div class="fw-semibold">@(Model.Electricity.LatestNightReading.HasValue ? $"{Model.Electricity.LatestNightReading.Value:0.000} кВт·ч" : "—")</div>
+                </div>
+            </div>
+
+            <div class="list-group list-group-flush border rounded">
+                @foreach (var reading in Model.Electricity.RecentReadings)
+                {
+                    <div class="list-group-item">
+                        <div class="fw-semibold mb-1">@reading.ReadingDate.ToString("dd.MM.yyyy") — @(reading.IsInitialReading ? "Начальные показания" : "Начисление")</div>
+                        <div class="small text-muted">Расход день: @(reading.DayConsumption.HasValue ? $"{reading.DayConsumption.Value:0.000} кВт·ч" : "—")</div>
+                        <div class="small text-muted">Расход ночь: @(reading.NightConsumption.HasValue ? $"{reading.NightConsumption.Value:0.000} кВт·ч" : "—")</div>
+                        <div class="small text-muted">Дневной тариф: @(reading.DayRate.HasValue ? $"{reading.DayRate.Value:0.0000} грн/кВт·ч" : "—")</div>
+                        <div class="small text-muted">Ночной тариф: @(reading.NightRate.HasValue ? $"{reading.NightRate.Value:0.0000} грн/кВт·ч" : "—")</div>
+                        <div class="small text-muted">Начислено: @(reading.TotalAmount.HasValue ? $"{reading.TotalAmount.Value:0.00} грн" : "—")</div>
+                        <div class="small text-muted">Статус: @reading.ChargeStatusText</div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
     <div class="card-header bg-white d-flex justify-content-between align-items-center gap-2">
         <h2 class="h5 mb-0">Начисления</h2>
         <span class="text-muted small">Страница @Model.ChargePage из @Model.ChargeTotalPages</span>
