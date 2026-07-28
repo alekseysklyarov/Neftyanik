@@ -18,6 +18,8 @@ public class IndexModel : PageModel
 
     public IReadOnlyList<TariffListItemViewModel> Tariffs { get; private set; } = [];
 
+    public decimal? CurrentMemberRate { get; private set; }
+
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
         var today = DateOnly.FromDateTime(DateTime.Today);
@@ -26,6 +28,13 @@ public class IndexModel : PageModel
             .Where(tariff => tariff.EffectiveFrom <= today)
             .OrderByDescending(tariff => tariff.EffectiveFrom)
             .Select(tariff => (DateOnly?)tariff.EffectiveFrom)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        CurrentMemberRate = await _dbContext.MemberElectricityTariffs
+            .AsNoTracking()
+            .Where(tariff => tariff.EffectiveFrom <= today)
+            .OrderByDescending(tariff => tariff.EffectiveFrom)
+            .Select(tariff => (decimal?)tariff.Rate)
             .FirstOrDefaultAsync(cancellationToken);
 
         Tariffs = await _dbContext.ElectricityTariffs

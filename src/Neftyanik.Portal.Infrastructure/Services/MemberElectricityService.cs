@@ -11,6 +11,7 @@ namespace Neftyanik.Portal.Infrastructure.Services;
 
 public sealed class MemberElectricityService : IMemberElectricityService
 {
+    private const decimal MaxReadingIncrease = 500m;
     private static readonly CultureInfo RussianCulture = CultureInfo.GetCultureInfo("ru-RU");
     private readonly ApplicationDbContext _dbContext;
 
@@ -55,6 +56,115 @@ public sealed class MemberElectricityService : IMemberElectricityService
         }
     }
 
+    public async Task<ElectricityReadingOperationResult> CreateInitialReadingWithDebtAsync(CreateMemberElectricityInitializationRequest request, CancellationToken cancellationToken = default)
+    {
+        if (request.CurrentReading < 0m)
+        {
+            return ElectricityReadingOperationResult.Failure("Показание не может быть отрицательным.");
+        }
+
+        if (request.OpeningDebtAmount < 0m)
+        {
+            return ElectricityReadingOperationResult.Failure("Начальная задолженность не может быть отрицательной.");
+        }
+
+        var meter = await _dbContext.MemberElectricityMeters
+            .Include(item => item.BillingPlot)
+            .FirstOrDefaultAsync(item => item.Id == request.MeterId, cancellationToken);
+
+        if (meter is null)
+        {
+            return ElectricityReadingOperationResult.Failure("Счетчик не найден.");
+        }
+
+        var hasHistory = await _dbContext.MemberElectricityReadings
+            .AsNoTracking()
+            .AnyAsync(reading => reading.MemberElectricityMeterId == request.MeterId, cancellationToken);
+
+        if (hasHistory)
+        {
+            return ElectricityReadingOperationResult.Failure("Начальные показания можно внести только один раз.");
+        }
+
+        var reading = new MemberElectricityReading
+        {
+            MemberElectricityMeterId = request.MeterId,
+            ReadingDate = request.ReadingDate,
+            CurrentReading = request.CurrentReading,
+            IsInitialReading = true,
+            CreatedAtUtc = DateTimeOffset.UtcNow,
+            CreatedByUserId = request.CreatedByUserId,
+            SubmittedByMember = request.SubmittedByMember
+        };
+
+        Charge? openingDebtCharge = null;
+        if (request.OpeningDebtAmount > 0m)
+        {
+            var chargeType = await GetOrCreateElectricityChargeTypeAsync(cancellationToken);
+            openingDebtCharge = new Charge
+            {
+                PlotId = meter.BillingPlotId,
+                ChargeType = chargeType,
+                Amount = RoundMoney(request.OpeningDebtAmount),
+                ChargeDate = request.ReadingDate,
+                Description = BuildOpeningDebtDescription(request.ReadingDate),
+                CreatedAtUtc = DateTime.UtcNow,
+                CreatedByUserId = request.CreatedByUserId
+            };
+        }
+
+        IDbContextTransaction? transaction = null;
+        if (_dbContext.Database.IsRelational())
+        {
+            transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+        }
+
+        try
+        {
+            _dbContext.MemberElectricityReadings.Add(reading);
+
+            if (openingDebtCharge is not null)
+            {
+                _dbContext.Charges.Add(openingDebtCharge);
+            }
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            if (transaction is not null)
+            {
+                await transaction.CommitAsync(cancellationToken);
+            }
+
+            return ElectricityReadingOperationResult.Success(reading.Id, openingDebtCharge?.Id, openingDebtCharge?.Amount);
+        }
+        catch (DbUpdateException)
+        {
+            if (transaction is not null)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+            }
+
+            if (await HasInitialReadingAsync(request.MeterId, cancellationToken))
+            {
+                return ElectricityReadingOperationResult.Failure("Начальные показания можно внести только один раз.");
+            }
+
+            if (await HasReadingOnDateAsync(request.MeterId, request.ReadingDate, cancellationToken))
+            {
+                return ElectricityReadingOperationResult.Failure("Показания на эту дату для счетчика уже существуют.");
+            }
+
+            return ElectricityReadingOperationResult.Failure("Не удалось сохранить начальные показания и задолженность. Повторите попытку.");
+        }
+        finally
+        {
+            if (transaction is not null)
+            {
+                await transaction.DisposeAsync();
+            }
+        }
+    }
+
     public async Task<MemberElectricityMeterOperationResult> CreateMeterAsync(CreateMemberElectricityMeterRequest request, CancellationToken cancellationToken = default)
     {
         var validationResult = await ValidateMeterRequestAsync(request.MemberId, request.BillingPlotId, request.PlotIds, null, cancellationToken);
@@ -80,6 +190,108 @@ public sealed class MemberElectricityService : IMemberElectricityService
         _dbContext.MemberElectricityMeters.Add(meter);
         await _dbContext.SaveChangesAsync(cancellationToken);
         return MemberElectricityMeterOperationResult.Success(meter.Id);
+    }
+
+    public async Task<MemberElectricityMeterInitializationOperationResult> CreateMeterWithInitialReadingAsync(CreateMemberElectricityMeterInitializationRequest request, CancellationToken cancellationToken = default)
+    {
+        if (request.CurrentReading < 0m)
+        {
+            return MemberElectricityMeterInitializationOperationResult.Failure("Показание не может быть отрицательным.");
+        }
+
+        if (request.OpeningDebtAmount < 0m)
+        {
+            return MemberElectricityMeterInitializationOperationResult.Failure("Начальная задолженность не может быть отрицательной.");
+        }
+
+        var validationResult = await ValidateMeterRequestAsync(request.MemberId, request.BillingPlotId, request.PlotIds, null, cancellationToken);
+        if (!validationResult.Succeeded)
+        {
+            return MemberElectricityMeterInitializationOperationResult.Failure(validationResult.ErrorMessage ?? "Не удалось сохранить счётчик.");
+        }
+
+        var meter = new MemberElectricityMeter
+        {
+            MemberId = request.MemberId,
+            MeterNumber = Normalize(request.MeterNumber),
+            Name = Normalize(request.Name),
+            IsActive = request.IsActive,
+            BillingPlotId = request.BillingPlotId,
+            CreatedAtUtc = DateTimeOffset.UtcNow,
+            CreatedByUserId = request.CreatedByUserId,
+            MeterPlots = validationResult.ValidPlotIds
+                .Select(plotId => new MemberElectricityMeterPlot { PlotId = plotId })
+                .ToList()
+        };
+
+        var reading = new MemberElectricityReading
+        {
+            MemberElectricityMeter = meter,
+            ReadingDate = request.ReadingDate,
+            CurrentReading = request.CurrentReading,
+            IsInitialReading = true,
+            CreatedAtUtc = DateTimeOffset.UtcNow,
+            CreatedByUserId = request.CreatedByUserId,
+            SubmittedByMember = request.SubmittedByMember
+        };
+
+        Charge? openingDebtCharge = null;
+        if (request.OpeningDebtAmount > 0m)
+        {
+            var chargeType = await GetOrCreateElectricityChargeTypeAsync(cancellationToken);
+            openingDebtCharge = new Charge
+            {
+                PlotId = request.BillingPlotId,
+                ChargeType = chargeType,
+                Amount = RoundMoney(request.OpeningDebtAmount),
+                ChargeDate = request.ReadingDate,
+                Description = BuildOpeningDebtDescription(request.ReadingDate),
+                CreatedAtUtc = DateTime.UtcNow,
+                CreatedByUserId = request.CreatedByUserId
+            };
+        }
+
+        IDbContextTransaction? transaction = null;
+        if (_dbContext.Database.IsRelational())
+        {
+            transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+        }
+
+        try
+        {
+            _dbContext.MemberElectricityMeters.Add(meter);
+            _dbContext.MemberElectricityReadings.Add(reading);
+
+            if (openingDebtCharge is not null)
+            {
+                _dbContext.Charges.Add(openingDebtCharge);
+            }
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            if (transaction is not null)
+            {
+                await transaction.CommitAsync(cancellationToken);
+            }
+
+            return MemberElectricityMeterInitializationOperationResult.Success(meter.Id, reading.Id, openingDebtCharge?.Id, openingDebtCharge?.Amount);
+        }
+        catch (DbUpdateException)
+        {
+            if (transaction is not null)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+            }
+
+            return MemberElectricityMeterInitializationOperationResult.Failure("Не удалось создать счётчик и сохранить начальные показания. Повторите попытку.");
+        }
+        finally
+        {
+            if (transaction is not null)
+            {
+                await transaction.DisposeAsync();
+            }
+        }
     }
 
     public async Task<MemberElectricityMeterOperationResult> UpdateMeterAsync(UpdateMemberElectricityMeterRequest request, CancellationToken cancellationToken = default)
@@ -199,13 +411,7 @@ public sealed class MemberElectricityService : IMemberElectricityService
             .Distinct()
             .ToListAsync(cancellationToken);
 
-        var tariff = await _dbContext.MemberElectricityTariffs
-            .AsNoTracking()
-            .Where(item => item.EffectiveFrom <= readingDate)
-            .OrderByDescending(item => item.EffectiveFrom)
-            .ThenByDescending(item => item.Id)
-            .Select(item => new MemberElectricityTariffSnapshot(item.EffectiveFrom, item.Rate))
-            .FirstOrDefaultAsync(cancellationToken);
+        var tariff = await GetApplicableMemberTariffAsync(readingDate, cancellationToken);
 
         var consumption = currentReading.HasValue && meter.PreviousReading.HasValue
             ? currentReading.Value - meter.PreviousReading.Value
@@ -336,6 +542,12 @@ public sealed class MemberElectricityService : IMemberElectricityService
         if (request.CurrentReading < meter.PreviousReading.Value)
         {
             return ElectricityReadingOperationResult.Failure("Текущее показание не может быть меньше предыдущего.");
+        }
+
+        var readingIncrease = request.CurrentReading - meter.PreviousReading.Value;
+        if (readingIncrease > MaxReadingIncrease)
+        {
+            return ElectricityReadingOperationResult.Failure($"Изменение показаний не может превышать {MaxReadingIncrease:0} кВт·ч.");
         }
 
         if (meter.Tariff is null)
@@ -500,6 +712,30 @@ public sealed class MemberElectricityService : IMemberElectricityService
         return chargeType;
     }
 
+    private async Task<MemberElectricityTariffSnapshot?> GetApplicableMemberTariffAsync(DateOnly readingDate, CancellationToken cancellationToken)
+    {
+        var memberTariff = await _dbContext.MemberElectricityTariffs
+            .AsNoTracking()
+            .Where(item => item.EffectiveFrom <= readingDate)
+            .OrderByDescending(item => item.EffectiveFrom)
+            .ThenByDescending(item => item.Id)
+            .Select(item => new MemberElectricityTariffSnapshot(item.EffectiveFrom, item.Rate))
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (memberTariff is not null)
+        {
+            return memberTariff;
+        }
+
+        return await _dbContext.ElectricityTariffs
+            .AsNoTracking()
+            .Where(item => item.EffectiveFrom <= readingDate)
+            .OrderByDescending(item => item.EffectiveFrom)
+            .ThenByDescending(item => item.Id)
+            .Select(item => new MemberElectricityTariffSnapshot(item.EffectiveFrom, item.DayRate))
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
     private static string BuildChargeDescription(DateOnly readingDate, decimal consumption)
     {
         return string.Format(
@@ -507,6 +743,14 @@ public sealed class MemberElectricityService : IMemberElectricityService
             "Электроэнергия за {0:dd.MM.yyyy}: расход {1:0.000} кВт·ч",
             readingDate.ToDateTime(TimeOnly.MinValue),
             consumption);
+    }
+
+    private static string BuildOpeningDebtDescription(DateOnly readingDate)
+    {
+        return string.Format(
+            RussianCulture,
+            "Начальная задолженность по электроэнергии на {0:dd.MM.yyyy}",
+            readingDate.ToDateTime(TimeOnly.MinValue));
     }
 
     private static decimal RoundMoney(decimal value)

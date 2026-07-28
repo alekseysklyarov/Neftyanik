@@ -14,7 +14,7 @@
         {
             <a class="btn btn-primary" asp-page="/Administration/Plots/Electricity/Create" asp-route-plotId="@Model.Plot.PlotId">Внести новые показания</a>
         }
-        <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Finance/Index" asp-route-plotId="@Model.Plot.PlotId">Назад к финансам участка</a>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Details" asp-route-id="@Model.Plot.PlotId">К участку</a>
     </div>
 </div>
 
@@ -60,7 +60,7 @@
                                 <td class="text-end">
                                     @if (reading.ChargeId.HasValue)
                                     {
-                                        <a class="btn btn-sm btn-outline-primary" asp-page="/Administration/Plots/Finance/Index" asp-route-plotId="@Model.Plot.PlotId" asp-fragment="charges">К начислению</a>
+                                        <a class="btn btn-sm btn-outline-primary" asp-page="/Administration/Finance/Index">Общая финансовая сводка</a>
                                     }
                                 </td>
                             </tr>

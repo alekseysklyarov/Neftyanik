@@ -46,7 +46,6 @@ public class RestoreModel : OwnershipPageModelBase
             MemberId = ownership.MemberId,
             MemberFullName = ownership.Member?.FullName ?? "—",
             OwnershipShare = ownership.OwnershipShare,
-            IsPrimaryContact = ownership.IsPrimaryContact,
             ValidFrom = ownership.ValidFrom,
             ValidTo = ownership.ValidTo
         };
@@ -60,6 +59,11 @@ public class RestoreModel : OwnershipPageModelBase
         if (await HasDuplicateActiveOwnershipAsync(plotId, ownership.MemberId, ownership.Id, cancellationToken))
         {
             ModelState.AddModelError(string.Empty, "Нельзя возобновить владение, потому что у этого члена товарищества уже есть активная запись по данному участку.");
+        }
+
+        if (await HasOpenOwnershipAsync(plotId, ownership.Id, cancellationToken))
+        {
+            ModelState.AddModelError(string.Empty, "Нельзя возобновить владение, потому что у участка уже есть текущий владелец.");
         }
 
         var existingTotalShare = await GetSpecifiedActiveOwnershipShareTotalAsync(plotId, ownership.Id, cancellationToken);
@@ -77,12 +81,6 @@ public class RestoreModel : OwnershipPageModelBase
         try
         {
             await DbContext.SaveChangesAsync(cancellationToken);
-
-            if (ownership.IsPrimaryContact)
-            {
-                await ClearOtherPrimaryContactsAsync(plotId, ownership.Id, cancellationToken);
-                await DbContext.SaveChangesAsync(cancellationToken);
-            }
 
             await transaction.CommitAsync(cancellationToken);
         }
@@ -115,7 +113,6 @@ public class RestoreModel : OwnershipPageModelBase
                 MemberId = item.MemberId,
                 MemberFullName = item.Member != null ? item.Member.FullName : "—",
                 OwnershipShare = item.OwnershipShare,
-                IsPrimaryContact = item.IsPrimaryContact,
                 ValidFrom = item.ValidFrom,
                 ValidTo = item.ValidTo
             })
@@ -147,8 +144,6 @@ public class RestoreModel : OwnershipPageModelBase
         public string MemberFullName { get; init; } = string.Empty;
 
         public decimal? OwnershipShare { get; init; }
-
-        public bool IsPrimaryContact { get; init; }
 
         public DateOnly? ValidFrom { get; init; }
 

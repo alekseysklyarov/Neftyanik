@@ -7,7 +7,7 @@
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
         <h1 class="h2 mb-1">Тарифы электроэнергии</h1>
-        <p class="text-muted mb-0">История общих дневных и ночных тарифов товарищества.</p>
+        <p class="text-muted mb-0">Дневной и ночной тарифы используются для общего счётчика. Текущий тариф для пользователей показывается отдельно.</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
         <a class="btn btn-primary" asp-page="/Administration/Finance/Electricity/Tariffs/Create">Добавить тариф</a>
@@ -28,9 +28,9 @@
                     <thead class="table-light">
                         <tr>
                             <th>Действует с</th>
-                            <th>Дневной тариф</th>
-                            <th>Ночной тариф</th>
-                            <th>Текущий</th>
+                            <th>Дневной тариф общего счётчика</th>
+                            <th>Ночной тариф общего счётчика</th>
+                            <th>Тариф для пользователей</th>
                             <th>Создан</th>
                             <th>Создал</th>
                             <th class="text-end">Действия</th>
@@ -40,19 +40,16 @@
                         @foreach (var tariff in Model.Tariffs)
                         {
                             <tr>
-                                <td>@tariff.EffectiveFrom.ToString("dd.MM.yyyy")</td>
-                                <td>@tariff.DayRate.ToString("0.0000") грн/кВт·ч</td>
-                                <td>@tariff.NightRate.ToString("0.0000") грн/кВт·ч</td>
                                 <td>
+                                    @tariff.EffectiveFrom.ToString("dd.MM.yyyy")
                                     @if (tariff.IsCurrent)
                                     {
-                                        <span class="badge text-bg-success">Да</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted">—</span>
+                                        <span class="badge text-bg-success ms-2">Текущий для общего счётчика</span>
                                     }
                                 </td>
+                                <td>@tariff.DayRate.ToString("0.0000") грн/кВт·ч</td>
+                                <td>@tariff.NightRate.ToString("0.0000") грн/кВт·ч</td>
+                                <td>@(Model.CurrentMemberRate.HasValue ? $"{Model.CurrentMemberRate.Value:0.0000} грн/кВт·ч" : "—")</td>
                                 <td>@tariff.CreatedAtUtc.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
                                 <td>@tariff.CreatedBy</td>
                                 <td class="text-end">

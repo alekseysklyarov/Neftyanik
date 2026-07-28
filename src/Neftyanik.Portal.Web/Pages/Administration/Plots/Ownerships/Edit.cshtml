@@ -24,8 +24,8 @@
                 <p class="mb-0"><strong>Электронная почта:</strong> @(string.IsNullOrWhiteSpace(Model.Ownership.MemberEmail) ? "—" : Model.Ownership.MemberEmail)</p>
             </div>
             <div class="col-md-6">
-                <p class="mb-1"><strong>Статус записи:</strong> @(Model.Ownership.IsActive ? "Активно" : "Завершено")</p>
-                <p class="mb-0"><strong>Дата завершения:</strong> @(Model.Ownership.ValidTo.HasValue ? Model.Ownership.ValidTo.Value.ToString("dd.MM.yyyy") : "—")</p>
+                <p class="mb-1"><strong>Статус записи:</strong> @(Model.Ownership.IsActive ? "Активный" : "Аннулирован")</p>
+                <p class="mb-0"><strong>Дата аннулирования:</strong> @(Model.Ownership.ValidTo.HasValue ? Model.Ownership.ValidTo.Value.ToString("dd.MM.yyyy") : "—")</p>
             </div>
         </div>
     </div>
@@ -43,20 +43,9 @@
                     <div class="form-text">Смена члена товарищества не поддерживается. При необходимости завершите текущее владение и создайте новое.</div>
                 </div>
                 <div class="col-md-6">
-                    <label asp-for="Input.OwnershipShare" class="form-label"></label>
-                    <input asp-for="Input.OwnershipShare" class="form-control" type="number" step="0.01" />
-                    <span asp-validation-for="Input.OwnershipShare" class="text-danger"></span>
-                </div>
-                <div class="col-md-6">
                     <label asp-for="Input.ValidFrom" class="form-label"></label>
                     <input asp-for="Input.ValidFrom" class="form-control" type="date" />
                     <span asp-validation-for="Input.ValidFrom" class="text-danger"></span>
-                </div>
-                <div class="col-12">
-                    <div class="form-check">
-                        <input asp-for="Input.IsPrimaryContact" class="form-check-input" />
-                        <label asp-for="Input.IsPrimaryContact" class="form-check-label"></label>
-                    </div>
                 </div>
             </div>
 

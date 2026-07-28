@@ -83,8 +83,8 @@
             @foreach (var plot in Model.Meter.LinkedPlots)
             {
                 <a class="btn btn-sm @(plot.PlotId == Model.Meter.BillingPlotId ? "btn-primary" : "btn-outline-primary")"
-                   asp-page="/Administration/Plots/Finance/Index"
-                   asp-route-plotId="@plot.PlotId">№@plot.PlotNumber</a>
+                   asp-page="/Administration/Plots/Details"
+                   asp-route-id="@plot.PlotId">№@plot.PlotNumber</a>
             }
         </div>
     </div>

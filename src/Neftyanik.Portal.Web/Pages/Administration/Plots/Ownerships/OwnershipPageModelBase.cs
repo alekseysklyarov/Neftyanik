@@ -21,7 +21,7 @@ public abstract class OwnershipPageModelBase : PageModel
     {
         var currentDate = DateOnly.FromDateTime(DateTime.Now);
 
-        return await DbContext.Plots
+        var plot = await DbContext.Plots
             .AsNoTracking()
             .Where(plot => plot.Id == plotId)
             .Select(plot => new PlotContextViewModel
@@ -29,30 +29,45 @@ public abstract class OwnershipPageModelBase : PageModel
                 PlotId = plot.Id,
                 PlotNumber = plot.Number,
                 PlotAddress = plot.Address,
-                PlotIsActive = plot.IsActive,
-                ActiveOwnersCount = plot.PlotOwnerships.Count(ownership => (!ownership.ValidFrom.HasValue || ownership.ValidFrom.Value <= currentDate)
-                    && (!ownership.ValidTo.HasValue || ownership.ValidTo.Value >= currentDate)),
-                HasActivePrimaryContact = plot.PlotOwnerships.Any(ownership => (!ownership.ValidFrom.HasValue || ownership.ValidFrom.Value <= currentDate)
-                    && (!ownership.ValidTo.HasValue || ownership.ValidTo.Value >= currentDate)
-                    && ownership.IsPrimaryContact),
-                PrimaryContact = plot.PlotOwnerships
-                    .Where(ownership => (!ownership.ValidFrom.HasValue || ownership.ValidFrom.Value <= currentDate)
-                        && (!ownership.ValidTo.HasValue || ownership.ValidTo.Value >= currentDate)
-                        && ownership.IsPrimaryContact
-                        && ownership.Member != null)
-                    .Select(ownership => ownership.Member!.FullName)
-                    .FirstOrDefault(),
-                SpecifiedTotalShare = plot.PlotOwnerships
-                    .Where(ownership => (!ownership.ValidFrom.HasValue || ownership.ValidFrom.Value <= currentDate)
-                        && (!ownership.ValidTo.HasValue || ownership.ValidTo.Value >= currentDate)
-                        && ownership.OwnershipShare.HasValue)
-                    .Sum(ownership => (decimal?)ownership.OwnershipShare) ?? 0m
+                PlotIsActive = plot.IsActive
             })
             .FirstOrDefaultAsync(cancellationToken);
+
+        if (plot is null)
+        {
+            return null;
+        }
+
+        var currentOwnerships = await DbContext.PlotOwnerships
+            .AsNoTracking()
+            .Where(ownership => ownership.PlotId == plotId
+                && (!ownership.ValidFrom.HasValue || ownership.ValidFrom.Value <= currentDate)
+                && (!ownership.ValidTo.HasValue || ownership.ValidTo.Value >= currentDate))
+            .Select(ownership => new
+            {
+                ownership.OwnershipShare
+            })
+            .ToListAsync(cancellationToken);
+
+        plot.HasOpenOwnership = await DbContext.PlotOwnerships
+            .AsNoTracking()
+            .AnyAsync(ownership => ownership.PlotId == plotId && ownership.ValidTo == null, cancellationToken);
+
+        plot.ActiveOwnersCount = currentOwnerships.Count;
+        plot.SpecifiedTotalShare = currentOwnerships
+            .Where(ownership => ownership.OwnershipShare.HasValue)
+            .Sum(ownership => ownership.OwnershipShare ?? 0m);
+
+        return plot;
     }
 
     protected async Task<IReadOnlyList<SelectListItem>> GetMemberOptionsAsync(int plotId, int? selectedMemberId, CancellationToken cancellationToken)
     {
+        if (!selectedMemberId.HasValue && await HasOpenOwnershipAsync(plotId, null, cancellationToken))
+        {
+            return [];
+        }
+
         var activeOwnershipMemberIds = await DbContext.PlotOwnerships
             .AsNoTracking()
             .Where(ownership => ownership.PlotId == plotId && ownership.ValidTo == null)
@@ -94,6 +109,17 @@ public abstract class OwnershipPageModelBase : PageModel
                 cancellationToken);
     }
 
+    protected async Task<bool> HasOpenOwnershipAsync(int plotId, int? excludedOwnershipId, CancellationToken cancellationToken)
+    {
+        return await DbContext.PlotOwnerships
+            .AsNoTracking()
+            .AnyAsync(
+                ownership => ownership.PlotId == plotId
+                    && ownership.ValidTo == null
+                    && (!excludedOwnershipId.HasValue || ownership.Id != excludedOwnershipId.Value),
+                cancellationToken);
+    }
+
     protected async Task<bool> IsActiveMemberAsync(int memberId, CancellationToken cancellationToken)
     {
         return await DbContext.Members
@@ -103,13 +129,16 @@ public abstract class OwnershipPageModelBase : PageModel
 
     protected async Task<decimal> GetSpecifiedActiveOwnershipShareTotalAsync(int plotId, int? excludedOwnershipId, CancellationToken cancellationToken)
     {
-        return await DbContext.PlotOwnerships
+        var shares = await DbContext.PlotOwnerships
             .AsNoTracking()
             .Where(ownership => ownership.PlotId == plotId
                 && ownership.ValidTo == null
                 && ownership.OwnershipShare.HasValue
                 && (!excludedOwnershipId.HasValue || ownership.Id != excludedOwnershipId.Value))
-            .SumAsync(ownership => ownership.OwnershipShare ?? 0m, cancellationToken);
+            .Select(ownership => ownership.OwnershipShare ?? 0m)
+            .ToListAsync(cancellationToken);
+
+        return shares.Sum();
     }
 
     protected void ValidateTotalShare(decimal existingSpecifiedTotal, decimal? ownershipShare)
@@ -125,21 +154,6 @@ public abstract class OwnershipPageModelBase : PageModel
         if (validFrom.HasValue && validTo.HasValue && validTo.Value < validFrom.Value)
         {
             ModelState.AddModelError(string.Empty, "Дата окончания не может быть раньше даты начала владения.");
-        }
-    }
-
-    protected async Task ClearOtherPrimaryContactsAsync(int plotId, int ownershipId, CancellationToken cancellationToken)
-    {
-        var otherActivePrimaryOwnerships = await DbContext.PlotOwnerships
-            .Where(ownership => ownership.PlotId == plotId
-                && ownership.Id != ownershipId
-                && ownership.ValidTo == null
-                && ownership.IsPrimaryContact)
-            .ToListAsync(cancellationToken);
-
-        foreach (var ownership in otherActivePrimaryOwnerships)
-        {
-            ownership.IsPrimaryContact = false;
         }
     }
 
@@ -173,12 +187,10 @@ public abstract class OwnershipPageModelBase : PageModel
 
         public bool PlotIsActive { get; init; }
 
-        public int ActiveOwnersCount { get; init; }
+        public bool HasOpenOwnership { get; set; }
 
-        public bool HasActivePrimaryContact { get; init; }
+        public int ActiveOwnersCount { get; set; }
 
-        public string? PrimaryContact { get; init; }
-
-        public decimal SpecifiedTotalShare { get; init; }
+        public decimal SpecifiedTotalShare { get; set; }
     }
 }

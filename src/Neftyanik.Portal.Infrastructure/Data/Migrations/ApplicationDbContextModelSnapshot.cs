@@ -326,6 +326,151 @@ namespace Neftyanik.Portal.Infrastructure.Data.Migrations
                     b.ToTable("AssociationDocuments", (string)null);
                 });
 
+            modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.AssociationElectricityReading", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<decimal?>("AppliedSupplierDayRate")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal?>("AppliedSupplierNightRate")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<decimal>("CurrentDayReading")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<decimal>("CurrentNightReading")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<decimal?>("DayAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("DayConsumption")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<bool>("IsInitialReading")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal?>("NightAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("NightConsumption")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<decimal?>("PreviousDayReading")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<decimal?>("PreviousNightReading")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<DateOnly>("ReadingDate")
+                        .HasColumnType("date");
+
+                    b.Property<decimal?>("TotalConsumption")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<decimal?>("TotalSupplierAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("IsInitialReading")
+                        .IsUnique()
+                        .HasFilter("[IsInitialReading] = 1");
+
+                    b.HasIndex("ReadingDate")
+                        .IsUnique();
+
+                    b.ToTable("AssociationElectricityReadings", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_AssociationElectricityReadings_CurrentDayReading_NonNegative", "[CurrentDayReading] >= 0");
+
+                            t.HasCheckConstraint("CK_AssociationElectricityReadings_CurrentNightReading_NonNegative", "[CurrentNightReading] >= 0");
+
+                            t.HasCheckConstraint("CK_AssociationElectricityReadings_DayAmount_NonNegative", "[DayAmount] IS NULL OR [DayAmount] >= 0");
+
+                            t.HasCheckConstraint("CK_AssociationElectricityReadings_DayConsumption_NonNegative", "[DayConsumption] IS NULL OR [DayConsumption] >= 0");
+
+                            t.HasCheckConstraint("CK_AssociationElectricityReadings_NightAmount_NonNegative", "[NightAmount] IS NULL OR [NightAmount] >= 0");
+
+                            t.HasCheckConstraint("CK_AssociationElectricityReadings_NightConsumption_NonNegative", "[NightConsumption] IS NULL OR [NightConsumption] >= 0");
+
+                            t.HasCheckConstraint("CK_AssociationElectricityReadings_PreviousDayReading_NonNegative", "[PreviousDayReading] IS NULL OR [PreviousDayReading] >= 0");
+
+                            t.HasCheckConstraint("CK_AssociationElectricityReadings_PreviousNightReading_NonNegative", "[PreviousNightReading] IS NULL OR [PreviousNightReading] >= 0");
+
+                            t.HasCheckConstraint("CK_AssociationElectricityReadings_TotalConsumption_NonNegative", "[TotalConsumption] IS NULL OR [TotalConsumption] >= 0");
+
+                            t.HasCheckConstraint("CK_AssociationElectricityReadings_TotalSupplierAmount_NonNegative", "[TotalSupplierAmount] IS NULL OR [TotalSupplierAmount] >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.AssociationElectricityTariff", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<decimal>("DayRate")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<DateOnly>("EffectiveFrom")
+                        .HasColumnType("date");
+
+                    b.Property<decimal>("NightRate")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("EffectiveFrom")
+                        .IsUnique();
+
+                    b.ToTable("AssociationElectricityTariffs", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_AssociationElectricityTariffs_DayRate_NonNegative", "[DayRate] >= 0");
+
+                            t.HasCheckConstraint("CK_AssociationElectricityTariffs_NightRate_NonNegative", "[NightRate] >= 0");
+                        });
+                });
+
             modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.AuditLog", b =>
                 {
                     b.Property<long>("Id")
@@ -440,7 +585,7 @@ namespace Neftyanik.Portal.Infrastructure.Data.Migrations
 
                     b.ToTable("Charges", null, t =>
                         {
-                            t.HasCheckConstraint("CK_Charges_Amount_Positive", "[Amount] > 0");
+                            t.HasCheckConstraint("CK_Charges_Amount_Positive", "[Amount] >= 0");
 
                             t.HasCheckConstraint("CK_Charges_DueDate_NotEarlierThanChargeDate", "[DueDate] IS NULL OR [DueDate] >= [ChargeDate]");
 
@@ -480,11 +625,26 @@ namespace Neftyanik.Portal.Infrastructure.Data.Migrations
                         .HasColumnType("bit")
                         .HasDefaultValue(true);
 
+                    b.Property<bool>("IsDefault")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsYearly")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(150)
                         .IsUnicode(true)
                         .HasColumnType("nvarchar(150)");
+
+                    b.Property<bool>("OnlyOnOwnerChange")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("datetime2");
@@ -495,11 +655,17 @@ namespace Neftyanik.Portal.Infrastructure.Data.Migrations
                         .IsUnique()
                         .HasFilter("[Code] IS NOT NULL");
 
+                    b.HasIndex("IsDefault")
+                        .IsUnique()
+                        .HasFilter("[IsDefault] = 1 AND [IsActive] = 1");
+
                     b.HasIndex("Name");
 
                     b.ToTable("ChargeTypes", null, t =>
                         {
                             t.HasCheckConstraint("CK_ChargeTypes_DefaultAmount_Positive", "[DefaultAmount] IS NULL OR [DefaultAmount] > 0");
+
+                            t.HasCheckConstraint("CK_ChargeTypes_YearlyAndOwnerChangeExclusive", "[IsYearly] = 0 OR [OnlyOnOwnerChange] = 0");
                         });
                 });
 
@@ -906,6 +1072,178 @@ namespace Neftyanik.Portal.Infrastructure.Data.Migrations
                     b.ToTable("Members", (string)null);
                 });
 
+            modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.MemberElectricityMeter", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BillingPlotId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("MemberId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("MeterNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BillingPlotId");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("MemberId");
+
+                    b.ToTable("MemberElectricityMeters", (string)null);
+                });
+
+            modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.MemberElectricityMeterPlot", b =>
+                {
+                    b.Property<int>("MemberElectricityMeterId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PlotId")
+                        .HasColumnType("int");
+
+                    b.HasKey("MemberElectricityMeterId", "PlotId");
+
+                    b.HasIndex("PlotId");
+
+                    b.ToTable("MemberElectricityMeterPlots", (string)null);
+                });
+
+            modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.MemberElectricityReading", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<decimal?>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("AppliedMemberRate")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<long?>("ChargeId")
+                        .HasColumnType("bigint");
+
+                    b.Property<decimal?>("Consumption")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<decimal>("CurrentReading")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<bool>("IsInitialReading")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("MemberElectricityMeterId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("PreviousReading")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<DateOnly>("ReadingDate")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("SubmittedByMember")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChargeId")
+                        .IsUnique()
+                        .HasFilter("[ChargeId] IS NOT NULL");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("MemberElectricityMeterId", "IsInitialReading")
+                        .IsUnique()
+                        .HasFilter("[IsInitialReading] = 1");
+
+                    b.HasIndex("MemberElectricityMeterId", "ReadingDate")
+                        .IsUnique();
+
+                    b.ToTable("MemberElectricityReadings", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_MemberElectricityReadings_Amount_NonNegative", "[Amount] IS NULL OR [Amount] >= 0");
+
+                            t.HasCheckConstraint("CK_MemberElectricityReadings_AppliedMemberRate_NonNegative", "[AppliedMemberRate] IS NULL OR [AppliedMemberRate] >= 0");
+
+                            t.HasCheckConstraint("CK_MemberElectricityReadings_Consumption_NonNegative", "[Consumption] IS NULL OR [Consumption] >= 0");
+
+                            t.HasCheckConstraint("CK_MemberElectricityReadings_CurrentReading_NonNegative", "[CurrentReading] >= 0");
+
+                            t.HasCheckConstraint("CK_MemberElectricityReadings_PreviousReading_NonNegative", "[PreviousReading] IS NULL OR [PreviousReading] >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.MemberElectricityTariff", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateOnly>("EffectiveFrom")
+                        .HasColumnType("date");
+
+                    b.Property<decimal>("Rate")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("EffectiveFrom")
+                        .IsUnique();
+
+                    b.ToTable("MemberElectricityTariffs", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_MemberElectricityTariffs_Rate_NonNegative", "[Rate] >= 0");
+                        });
+                });
+
             modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.MembershipFeeRate", b =>
                 {
                     b.Property<int>("Id")
@@ -1269,7 +1607,7 @@ namespace Neftyanik.Portal.Infrastructure.Data.Migrations
 
                     b.HasIndex("MemberId");
 
-                    b.HasIndex("PlotId", "MemberId")
+                    b.HasIndex("PlotId")
                         .IsUnique()
                         .HasFilter("[ValidTo] IS NULL");
 
@@ -1417,6 +1755,26 @@ namespace Neftyanik.Portal.Infrastructure.Data.Migrations
                     b.Navigation("UploadedByUser");
                 });
 
+            modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.AssociationElectricityReading", b =>
+                {
+                    b.HasOne("Neftyanik.Portal.Domain.Entities.ApplicationUser", "CreatedByUser")
+                        .WithMany("CreatedAssociationElectricityReadings")
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CreatedByUser");
+                });
+
+            modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.AssociationElectricityTariff", b =>
+                {
+                    b.HasOne("Neftyanik.Portal.Domain.Entities.ApplicationUser", "CreatedByUser")
+                        .WithMany("CreatedAssociationElectricityTariffs")
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CreatedByUser");
+                });
+
             modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.AuditLog", b =>
                 {
                     b.HasOne("Neftyanik.Portal.Domain.Entities.ApplicationUser", "User")
@@ -1524,6 +1882,86 @@ namespace Neftyanik.Portal.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("ApplicationUser");
+                });
+
+            modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.MemberElectricityMeter", b =>
+                {
+                    b.HasOne("Neftyanik.Portal.Domain.Entities.Plot", "BillingPlot")
+                        .WithMany("BillingMemberElectricityMeters")
+                        .HasForeignKey("BillingPlotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Neftyanik.Portal.Domain.Entities.ApplicationUser", "CreatedByUser")
+                        .WithMany("CreatedMemberElectricityMeters")
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Neftyanik.Portal.Domain.Entities.Member", "Member")
+                        .WithMany("MemberElectricityMeters")
+                        .HasForeignKey("MemberId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("BillingPlot");
+
+                    b.Navigation("CreatedByUser");
+
+                    b.Navigation("Member");
+                });
+
+            modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.MemberElectricityMeterPlot", b =>
+                {
+                    b.HasOne("Neftyanik.Portal.Domain.Entities.MemberElectricityMeter", "MemberElectricityMeter")
+                        .WithMany("MeterPlots")
+                        .HasForeignKey("MemberElectricityMeterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Neftyanik.Portal.Domain.Entities.Plot", "Plot")
+                        .WithMany("MemberElectricityMeterPlots")
+                        .HasForeignKey("PlotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("MemberElectricityMeter");
+
+                    b.Navigation("Plot");
+                });
+
+            modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.MemberElectricityReading", b =>
+                {
+                    b.HasOne("Neftyanik.Portal.Domain.Entities.Charge", "Charge")
+                        .WithOne("MemberElectricityReading")
+                        .HasForeignKey("Neftyanik.Portal.Domain.Entities.MemberElectricityReading", "ChargeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Neftyanik.Portal.Domain.Entities.ApplicationUser", "CreatedByUser")
+                        .WithMany("CreatedMemberElectricityReadings")
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Neftyanik.Portal.Domain.Entities.MemberElectricityMeter", "MemberElectricityMeter")
+                        .WithMany("Readings")
+                        .HasForeignKey("MemberElectricityMeterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Charge");
+
+                    b.Navigation("CreatedByUser");
+
+                    b.Navigation("MemberElectricityMeter");
+                });
+
+            modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.MemberElectricityTariff", b =>
+                {
+                    b.HasOne("Neftyanik.Portal.Domain.Entities.ApplicationUser", "CreatedByUser")
+                        .WithMany("CreatedMemberElectricityTariffs")
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CreatedByUser");
                 });
 
             modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.MeterPlot", b =>
@@ -1671,6 +2109,10 @@ namespace Neftyanik.Portal.Infrastructure.Data.Migrations
 
                     b.Navigation("AuditLogs");
 
+                    b.Navigation("CreatedAssociationElectricityReadings");
+
+                    b.Navigation("CreatedAssociationElectricityTariffs");
+
                     b.Navigation("CreatedCharges");
 
                     b.Navigation("CreatedElectricityReadings");
@@ -1678,6 +2120,12 @@ namespace Neftyanik.Portal.Infrastructure.Data.Migrations
                     b.Navigation("CreatedElectricityTariffs");
 
                     b.Navigation("CreatedExpenses");
+
+                    b.Navigation("CreatedMemberElectricityMeters");
+
+                    b.Navigation("CreatedMemberElectricityReadings");
+
+                    b.Navigation("CreatedMemberElectricityTariffs");
 
                     b.Navigation("CreatedNewsArticles");
 
@@ -1699,6 +2147,8 @@ namespace Neftyanik.Portal.Infrastructure.Data.Migrations
             modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.Charge", b =>
                 {
                     b.Navigation("ElectricityReading");
+
+                    b.Navigation("MemberElectricityReading");
 
                     b.Navigation("PaymentAllocations");
                 });
@@ -1722,7 +2172,16 @@ namespace Neftyanik.Portal.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.Member", b =>
                 {
+                    b.Navigation("MemberElectricityMeters");
+
                     b.Navigation("PlotOwnerships");
+                });
+
+            modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.MemberElectricityMeter", b =>
+                {
+                    b.Navigation("MeterPlots");
+
+                    b.Navigation("Readings");
                 });
 
             modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.Payment", b =>
@@ -1732,9 +2191,13 @@ namespace Neftyanik.Portal.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.Plot", b =>
                 {
+                    b.Navigation("BillingMemberElectricityMeters");
+
                     b.Navigation("Charges");
 
                     b.Navigation("ElectricityReadings");
+
+                    b.Navigation("MemberElectricityMeterPlots");
 
                     b.Navigation("MeterPlots");
 

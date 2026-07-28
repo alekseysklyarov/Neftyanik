@@ -29,6 +29,7 @@
 
                 <form method="post" class="d-flex gap-2 flex-wrap">
                     <button type="submit" class="btn @(Model.IsUnlockOperation ? "btn-success" : "btn-warning")">@(Model.IsUnlockOperation ? "Подтвердить разблокировку" : "Подтвердить блокировку")</button>
+                    <a class="btn btn-outline-success" asp-page="/Administration/Members/Finance" asp-route-id="@Model.Member.Id">Финансы</a>
                     <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Details" asp-route-id="@Model.Member.Id">Отмена</a>
                 </form>
             </div>

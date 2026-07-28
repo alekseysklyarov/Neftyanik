@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Infrastructure.Data;
+using Neftyanik.Portal.Infrastructure.Data.Queries;
+using Neftyanik.Portal.Web.Pages.Finance;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Members;
 
@@ -37,6 +39,7 @@ public class IndexModel : PageModel
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
+        var currentDate = DateOnly.FromDateTime(DateTime.Now);
         var normalizedStatus = NormalizeStatus(Status);
         Status = normalizedStatus;
         PageNumber = PageNumber < 1 ? 1 : PageNumber;
@@ -79,14 +82,77 @@ public class IndexModel : PageModel
                 Email = member.Email,
                 JoinedAt = member.JoinedAt,
                 IsActive = member.IsActive,
-                ActiveOwnershipsCount = member.PlotOwnerships.Count(ownership => ownership.ValidTo == null),
-                LinkedAccount = member.ApplicationUserId == null
+                ActiveOwnershipsCount = member.PlotOwnerships.Count(ownership => (!ownership.ValidFrom.HasValue || ownership.ValidFrom.Value <= currentDate)
+                    && (!ownership.ValidTo.HasValue || ownership.ValidTo.Value >= currentDate)),
+                Login = member.ApplicationUserId == null
                     ? null
                     : member.ApplicationUser != null
-                        ? member.ApplicationUser.DisplayName ?? member.ApplicationUser.Email ?? member.ApplicationUser.UserName
+                        ? member.ApplicationUser.UserName
                         : member.ApplicationUserId
             })
             .ToListAsync(cancellationToken);
+
+        if (Members.Count > 0)
+        {
+            var memberIds = Members.Select(member => member.Id).ToArray();
+            var memberPlotPairs = await _dbContext.PlotOwnerships
+                .AsNoTracking()
+                .WhereCurrentOn(currentDate)
+                .Where(ownership => memberIds.Contains(ownership.MemberId))
+                .Select(ownership => new
+                {
+                    ownership.MemberId,
+                    ownership.PlotId
+                })
+                .Distinct()
+                .ToListAsync(cancellationToken);
+
+            var plotIds = memberPlotPairs
+                .Select(item => item.PlotId)
+                .Distinct()
+                .ToArray();
+
+            var chargeTotalsByPlot = plotIds.Length == 0
+                ? new Dictionary<int, decimal>()
+                : (await _dbContext.Charges
+                    .AsNoTracking()
+                    .Where(charge => charge.PlotId.HasValue && plotIds.Contains(charge.PlotId.Value) && charge.CancelledAtUtc == null)
+                    .Select(charge => new
+                    {
+                        PlotId = charge.PlotId!.Value,
+                        charge.Amount
+                    })
+                    .ToListAsync(cancellationToken))
+                    .GroupBy(item => item.PlotId)
+                    .ToDictionary(group => group.Key, group => group.Sum(item => item.Amount));
+
+            var paymentTotalsByPlot = plotIds.Length == 0
+                ? new Dictionary<int, decimal>()
+                : (await _dbContext.Payments
+                    .AsNoTracking()
+                    .Where(payment => payment.PlotId.HasValue && plotIds.Contains(payment.PlotId.Value) && payment.CancelledAtUtc == null)
+                    .Select(payment => new
+                    {
+                        PlotId = payment.PlotId!.Value,
+                        payment.Amount
+                    })
+                    .ToListAsync(cancellationToken))
+                    .GroupBy(item => item.PlotId)
+                    .ToDictionary(group => group.Key, group => group.Sum(item => item.Amount));
+
+            var balancesByMember = memberPlotPairs
+                .GroupBy(item => item.MemberId)
+                .ToDictionary(
+                    group => group.Key,
+                    group => group.Sum(item => chargeTotalsByPlot.GetValueOrDefault(item.PlotId) - paymentTotalsByPlot.GetValueOrDefault(item.PlotId)));
+
+            Members = Members
+                .Select(member => member with
+                {
+                    Balance = balancesByMember.GetValueOrDefault(member.Id)
+                })
+                .ToList();
+        }
 
         EmptyStateMessage = TotalCount == 0 && string.IsNullOrWhiteSpace(Search) && normalizedStatus == "all"
             ? "Члены товарищества пока не добавлены."
@@ -97,7 +163,7 @@ public class IndexModel : PageModel
 
     public bool HasNextPage => PageNumber < TotalPages;
 
-    public sealed class MemberListItem
+    public sealed record MemberListItem
     {
         public int Id { get; init; }
 
@@ -113,7 +179,17 @@ public class IndexModel : PageModel
 
         public int ActiveOwnershipsCount { get; init; }
 
-        public string? LinkedAccount { get; init; }
+        public string? Login { get; init; }
+
+        public decimal Balance { get; init; }
+
+        public string BalanceStatusText => FinanceDisplayHelper.GetBalanceStatusText(Balance);
+
+        public string BalanceStatusClass => FinanceDisplayHelper.GetBalanceStatusClass(Balance);
+
+        public string BalanceDisplayText => Balance == 0m
+            ? BalanceStatusText
+            : $"{BalanceStatusText}: {Math.Abs(Balance):0.00}";
     }
 
     private static string NormalizeStatus(string? status)

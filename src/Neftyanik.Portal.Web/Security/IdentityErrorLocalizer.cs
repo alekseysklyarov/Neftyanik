@@ -29,7 +29,6 @@ internal static class IdentityErrorLocalizer
         {
             nameof(IdentityErrorDescriber.DuplicateEmail) => (emailKey, "Пользователь с таким адресом электронной почты уже существует."),
             nameof(IdentityErrorDescriber.DuplicateUserName) => (emailKey, "Пользователь с таким логином уже существует."),
-            nameof(IdentityErrorDescriber.InvalidEmail) => (emailKey, "Введите корректный адрес электронной почты."),
             nameof(IdentityErrorDescriber.InvalidUserName) => (emailKey, "Укажите корректный логин."),
             nameof(IdentityErrorDescriber.PasswordTooShort) => (passwordKey, "Пароль слишком короткий."),
             nameof(IdentityErrorDescriber.PasswordRequiresDigit) => (passwordKey, "Пароль должен содержать хотя бы одну цифру."),
@@ -38,7 +37,9 @@ internal static class IdentityErrorLocalizer
             nameof(IdentityErrorDescriber.PasswordRequiresNonAlphanumeric) => (passwordKey, "Пароль должен содержать хотя бы один специальный символ."),
             nameof(IdentityErrorDescriber.PasswordRequiresUniqueChars) => (passwordKey, "Пароль должен содержать достаточное количество уникальных символов."),
             nameof(IdentityErrorDescriber.PasswordMismatch) when !string.IsNullOrWhiteSpace(currentPasswordKey) => (currentPasswordKey!, "Текущий пароль указан неверно."),
-            _ => (string.Empty, "Не удалось выполнить операцию с учетной записью. Проверьте введенные данные и повторите попытку.")
+            _ => (string.Empty, string.IsNullOrWhiteSpace(error.Description)
+                ? "Не удалось выполнить операцию с учетной записью. Проверьте введенные данные и повторите попытку."
+                : error.Description)
         };
     }
 }

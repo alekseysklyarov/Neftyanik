@@ -55,14 +55,13 @@ public class EndModel : OwnershipPageModelBase
             MemberId = ownership.MemberId,
             MemberFullName = ownership.Member?.FullName ?? "—",
             OwnershipShare = ownership.OwnershipShare,
-            IsPrimaryContact = ownership.IsPrimaryContact,
             ValidFrom = ownership.ValidFrom,
             ValidTo = ownership.ValidTo
         };
 
         if (ownership.ValidTo.HasValue)
         {
-            ModelState.AddModelError(string.Empty, "Эта запись владения уже завершена.");
+            ModelState.AddModelError(string.Empty, "Эта запись владения уже аннулирована.");
             return Page();
         }
 
@@ -76,7 +75,7 @@ public class EndModel : OwnershipPageModelBase
         ownership.ValidTo = Input.ValidTo;
         await DbContext.SaveChangesAsync(cancellationToken);
 
-        TempData["SuccessMessage"] = "Владение участком успешно завершено.";
+        TempData["SuccessMessage"] = "Владение участком успешно аннулировано.";
         return RedirectToPage("/Administration/Plots/Ownerships/Index", new { plotId });
     }
 
@@ -98,7 +97,6 @@ public class EndModel : OwnershipPageModelBase
                 MemberId = item.MemberId,
                 MemberFullName = item.Member != null ? item.Member.FullName : "—",
                 OwnershipShare = item.OwnershipShare,
-                IsPrimaryContact = item.IsPrimaryContact,
                 ValidFrom = item.ValidFrom,
                 ValidTo = item.ValidTo
             })
@@ -125,8 +123,6 @@ public class EndModel : OwnershipPageModelBase
         public string MemberFullName { get; init; } = string.Empty;
 
         public decimal? OwnershipShare { get; init; }
-
-        public bool IsPrimaryContact { get; init; }
 
         public DateOnly? ValidFrom { get; init; }
 

@@ -4,11 +4,11 @@ using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Application.Electricity;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data;
-using Neftyanik.Portal.Web.Pages.Administration.Plots.Finance;
+using Neftyanik.Portal.Web.Pages.Administration.Plots;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Plots.Electricity;
 
-public class InitialModel : PlotFinancePageModelBase
+public class InitialModel : PlotPageModelBase
 {
     private readonly IElectricityAccountingService _electricityAccountingService;
 
@@ -24,7 +24,7 @@ public class InitialModel : PlotFinancePageModelBase
     [BindProperty]
     public InitialElectricityReadingInputModel Input { get; set; } = new();
 
-    public PlotFinanceContextViewModel Plot { get; private set; } = new();
+    public PlotContextViewModel Plot { get; private set; } = new();
 
     public async Task<IActionResult> OnGetAsync(int plotId, CancellationToken cancellationToken)
     {
@@ -37,7 +37,7 @@ public class InitialModel : PlotFinancePageModelBase
         if (await HasHistoryAsync(plotId, cancellationToken))
         {
             TempData["ErrorMessage"] = "Начальные показания уже внесены.";
-            return RedirectToPage("/Administration/Plots/Finance/Index", new { plotId });
+            return RedirectToPage("/Administration/Plots/Electricity/Index", new { plotId });
         }
 
         Plot = plot;
@@ -82,7 +82,7 @@ public class InitialModel : PlotFinancePageModelBase
         }
 
         TempData["SuccessMessage"] = "Начальные показания сохранены без создания начисления.";
-        return RedirectToPage("/Administration/Plots/Finance/Index", new { plotId });
+        return RedirectToPage("/Administration/Plots/Electricity/Index", new { plotId });
     }
 
     private async Task<bool> HasHistoryAsync(int plotId, CancellationToken cancellationToken)

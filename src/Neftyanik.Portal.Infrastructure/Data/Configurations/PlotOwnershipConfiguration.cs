@@ -29,7 +29,7 @@ public class PlotOwnershipConfiguration : IEntityTypeConfiguration<PlotOwnership
 
         builder.HasIndex(x => x.MemberId);
 
-        builder.HasIndex(x => new { x.PlotId, x.MemberId })
+        builder.HasIndex(x => x.PlotId)
             .IsUnique()
             .HasFilter("[ValidTo] IS NULL");
 

@@ -165,6 +165,8 @@ public class IndexModel : PageModel
 
         public decimal Balance => Charges - Payments;
 
+        public decimal BalanceDisplayAmount => Math.Abs(Balance);
+
         public string Status => Balance switch
         {
             > 0m => "Задолженность",

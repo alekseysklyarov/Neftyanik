@@ -4,11 +4,11 @@ using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Application.Electricity;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data;
-using Neftyanik.Portal.Web.Pages.Administration.Plots.Finance;
+using Neftyanik.Portal.Web.Pages.Administration.Plots;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Plots.Electricity;
 
-public class CreateModel : PlotFinancePageModelBase
+public class CreateModel : PlotPageModelBase
 {
     private readonly IElectricityAccountingService _electricityAccountingService;
 
@@ -24,7 +24,7 @@ public class CreateModel : PlotFinancePageModelBase
     [BindProperty]
     public ElectricityReadingInputModel Input { get; set; } = new();
 
-    public PlotFinanceContextViewModel Plot { get; private set; } = new();
+    public PlotContextViewModel Plot { get; private set; } = new();
 
     public PreviousReadingViewModel PreviousReading { get; private set; } = new();
 

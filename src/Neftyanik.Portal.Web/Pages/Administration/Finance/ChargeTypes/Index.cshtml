@@ -52,6 +52,7 @@
                         <tr>
                             <th>Наименование</th>
                             <th>Сумма по умолчанию</th>
+                            <th>Правила</th>
                             <th>Статус</th>
                             <th>Использований</th>
                             <th class="text-end">Действия</th>
@@ -63,6 +64,26 @@
                             <tr>
                                 <td class="fw-semibold">@chargeType.Name</td>
                                 <td>@(chargeType.DefaultAmount.HasValue ? chargeType.DefaultAmount.Value.ToString("0.00") : "—")</td>
+                                <td>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        @if (chargeType.IsDefault)
+                                        {
+                                            <span class="badge text-bg-primary">По умолчанию</span>
+                                        }
+                                        @if (chargeType.IsYearly)
+                                        {
+                                            <span class="badge text-bg-info">Ежегодный</span>
+                                        }
+                                        @if (chargeType.OnlyOnOwnerChange)
+                                        {
+                                            <span class="badge text-bg-warning">При смене владельца</span>
+                                        }
+                                        @if (!chargeType.IsDefault && !chargeType.IsYearly && !chargeType.OnlyOnOwnerChange)
+                                        {
+                                            <span class="text-muted">—</span>
+                                        }
+                                    </div>
+                                </td>
                                 <td>
                                     @if (chargeType.IsActive)
                                     {

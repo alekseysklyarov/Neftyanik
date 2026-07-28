@@ -36,6 +36,11 @@ public class CreateModel : OwnershipPageModelBase
 
         Plot = plot;
 
+        if (await HasOpenOwnershipAsync(plotId, null, cancellationToken))
+        {
+            ModelState.AddModelError(string.Empty, "У участка уже есть владелец. Сначала аннулируйте текущее владение.");
+        }
+
         if (Input.MemberId is null)
         {
             ModelState.AddModelError("Input.MemberId", "Выберите члена товарищества.");
@@ -69,7 +74,6 @@ public class CreateModel : OwnershipPageModelBase
             PlotId = plotId,
             MemberId = Input.MemberId!.Value,
             OwnershipShare = Input.OwnershipShare,
-            IsPrimaryContact = Input.IsPrimaryContact,
             ValidFrom = Input.ValidFrom,
             CreatedAtUtc = DateTime.UtcNow
         };
@@ -79,12 +83,6 @@ public class CreateModel : OwnershipPageModelBase
         try
         {
             await DbContext.SaveChangesAsync(cancellationToken);
-
-            if (ownership.IsPrimaryContact)
-            {
-                await ClearOtherPrimaryContactsAsync(plotId, ownership.Id, cancellationToken);
-                await DbContext.SaveChangesAsync(cancellationToken);
-            }
 
             await transaction.CommitAsync(cancellationToken);
         }

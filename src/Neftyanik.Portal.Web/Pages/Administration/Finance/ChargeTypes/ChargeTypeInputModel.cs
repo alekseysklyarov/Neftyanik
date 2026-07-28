@@ -16,6 +16,15 @@ public class ChargeTypeInputModel : IValidatableObject
     [Display(Name = "Сумма по умолчанию")]
     public decimal? DefaultAmount { get; set; }
 
+    [Display(Name = "По умолчанию")]
+    public bool IsDefault { get; set; }
+
+    [Display(Name = "Ежегодный")]
+    public bool IsYearly { get; set; }
+
+    [Display(Name = "Только при смене владельца")]
+    public bool OnlyOnOwnerChange { get; set; }
+
     [Display(Name = "Активен")]
     public bool IsActive { get; set; } = true;
 
@@ -26,6 +35,20 @@ public class ChargeTypeInputModel : IValidatableObject
             yield return new ValidationResult(
                 "Сумма по умолчанию должна быть больше нуля.",
                 [nameof(DefaultAmount)]);
+        }
+
+        if (IsYearly && OnlyOnOwnerChange)
+        {
+            yield return new ValidationResult(
+                "Тип начисления не может быть одновременно ежегодным и только при смене владельца.",
+                [nameof(IsYearly), nameof(OnlyOnOwnerChange)]);
+        }
+
+        if (IsDefault && !IsActive)
+        {
+            yield return new ValidationResult(
+                "Тип начисления по умолчанию должен быть активным.",
+                [nameof(IsDefault), nameof(IsActive)]);
         }
     }
 }

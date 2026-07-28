@@ -42,6 +42,20 @@ public class ArchiveModel : PageModel
         }
 
         var willArchive = chargeType.IsActive;
+
+        if (!willArchive && chargeType.IsDefault)
+        {
+            var hasAnotherActiveDefault = await _dbContext.ChargeTypes
+                .AsNoTracking()
+                .AnyAsync(item => item.Id != id && item.IsActive && item.IsDefault, cancellationToken);
+
+            if (hasAnotherActiveDefault)
+            {
+                TempData["ErrorMessage"] = "Нельзя восстановить тип начисления как активный по умолчанию, пока другой активный тип уже помечен по умолчанию.";
+                return RedirectToPage("/Administration/Finance/ChargeTypes/Details", new { id });
+            }
+        }
+
         chargeType.IsActive = !chargeType.IsActive;
         chargeType.UpdatedAtUtc = DateTime.UtcNow;
         await _dbContext.SaveChangesAsync(cancellationToken);

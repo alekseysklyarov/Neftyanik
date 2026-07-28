@@ -69,6 +69,9 @@ public class IndexModel : PageModel
                 Id = chargeType.Id,
                 Name = chargeType.Name,
                 DefaultAmount = chargeType.DefaultAmount,
+                IsDefault = chargeType.IsDefault,
+                IsYearly = chargeType.IsYearly,
+                OnlyOnOwnerChange = chargeType.OnlyOnOwnerChange,
                 IsActive = chargeType.IsActive,
                 ChargesCount = chargeType.Charges.Count()
             })
@@ -100,6 +103,12 @@ public class IndexModel : PageModel
         public string Name { get; init; } = string.Empty;
 
         public decimal? DefaultAmount { get; init; }
+
+        public bool IsDefault { get; init; }
+
+        public bool IsYearly { get; init; }
+
+        public bool OnlyOnOwnerChange { get; init; }
 
         public bool IsActive { get; init; }
 

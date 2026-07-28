@@ -3,11 +3,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data;
-using Neftyanik.Portal.Web.Pages.Administration.Plots.Finance;
+using Neftyanik.Portal.Web.Pages.Administration.Plots;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Plots.Electricity;
 
-public class IndexModel : PlotFinancePageModelBase
+public class IndexModel : PlotPageModelBase
 {
     private const int PageSize = 20;
 
@@ -19,7 +19,7 @@ public class IndexModel : PlotFinancePageModelBase
     [BindProperty(SupportsGet = true)]
     public int PageNumber { get; set; } = 1;
 
-    public PlotFinanceContextViewModel Plot { get; private set; } = new();
+    public PlotContextViewModel Plot { get; private set; } = new();
 
     public IReadOnlyList<ElectricityReadingItemViewModel> Readings { get; private set; } = [];
 

@@ -39,6 +39,9 @@ public class EditModel : PageModel
             Name = chargeType.Name,
             Description = chargeType.Description,
             DefaultAmount = chargeType.DefaultAmount,
+            IsDefault = chargeType.IsDefault,
+            IsYearly = chargeType.IsYearly,
+            OnlyOnOwnerChange = chargeType.OnlyOnOwnerChange,
             IsActive = chargeType.IsActive
         };
 
@@ -52,6 +55,11 @@ public class EditModel : PageModel
         if (await NameExistsAsync(id, cancellationToken))
         {
             ModelState.AddModelError("Input.Name", "Тип начисления с таким наименованием уже существует.");
+        }
+
+        if (await HasAnotherDefaultAsync(id, cancellationToken))
+        {
+            ModelState.AddModelError("Input.IsDefault", "Тип начисления по умолчанию уже выбран. Снимите признак у другого активного типа начисления.");
         }
 
         if (!ModelState.IsValid)
@@ -68,6 +76,9 @@ public class EditModel : PageModel
         chargeType.Name = Input.Name.Trim();
         chargeType.Description = Normalize(Input.Description);
         chargeType.DefaultAmount = Input.DefaultAmount;
+        chargeType.IsDefault = Input.IsDefault;
+        chargeType.IsYearly = Input.IsYearly;
+        chargeType.OnlyOnOwnerChange = Input.OnlyOnOwnerChange;
         chargeType.IsActive = Input.IsActive;
         chargeType.UpdatedAtUtc = DateTime.UtcNow;
 
@@ -93,5 +104,17 @@ public class EditModel : PageModel
     private static string? Normalize(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private async Task<bool> HasAnotherDefaultAsync(int currentId, CancellationToken cancellationToken)
+    {
+        if (!Input.IsDefault || !Input.IsActive)
+        {
+            return false;
+        }
+
+        return await _dbContext.ChargeTypes
+            .AsNoTracking()
+            .AnyAsync(chargeType => chargeType.IsDefault && chargeType.IsActive && chargeType.Id != currentId, cancellationToken);
     }
 }

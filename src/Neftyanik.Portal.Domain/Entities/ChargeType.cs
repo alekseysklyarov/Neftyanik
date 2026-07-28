@@ -18,6 +18,12 @@ public class ChargeType : IValidatableObject
 
     public bool IsActive { get; set; } = true;
 
+    public bool IsDefault { get; set; }
+
+    public bool IsYearly { get; set; }
+
+    public bool OnlyOnOwnerChange { get; set; }
+
     public decimal? DefaultAmount { get; set; }
 
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
@@ -33,6 +39,13 @@ public class ChargeType : IValidatableObject
             yield return new ValidationResult(
                 "DefaultAmount must be greater than zero when specified.",
                 [nameof(DefaultAmount)]);
+        }
+
+        if (IsYearly && OnlyOnOwnerChange)
+        {
+            yield return new ValidationResult(
+                "Charge type cannot be yearly and owner-change-only at the same time.",
+                [nameof(IsYearly), nameof(OnlyOnOwnerChange)]);
         }
     }
 }

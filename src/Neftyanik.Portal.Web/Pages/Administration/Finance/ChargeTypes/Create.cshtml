@@ -32,6 +32,24 @@
                     <textarea asp-for="Input.Description" class="form-control" rows="4"></textarea>
                     <span asp-validation-for="Input.Description" class="text-danger"></span>
                 </div>
+                <div class="col-md-4">
+                    <div class="form-check">
+                        <input asp-for="Input.IsDefault" class="form-check-input" />
+                        <label asp-for="Input.IsDefault" class="form-check-label"></label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-check">
+                        <input asp-for="Input.IsYearly" class="form-check-input" />
+                        <label asp-for="Input.IsYearly" class="form-check-label"></label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-check">
+                        <input asp-for="Input.OnlyOnOwnerChange" class="form-check-input" />
+                        <label asp-for="Input.OnlyOnOwnerChange" class="form-check-label"></label>
+                    </div>
+                </div>
                 <div class="col-12">
                     <div class="form-check">
                         <input asp-for="Input.IsActive" class="form-check-input" />

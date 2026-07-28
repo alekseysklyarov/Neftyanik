@@ -12,7 +12,7 @@
 
                 <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
-                <p>Вы собираетесь снова сделать запись владения активной. Перед возобновлением система проверит ограничения по дублированию и суммарной доле.</p>
+                <p>Вы собираетесь снова сделать запись владения активной. Перед возобновлением система проверит ограничения по дублированию.</p>
 
                 <dl class="row mb-4">
                     <dt class="col-sm-4">Участок</dt>
@@ -21,16 +21,10 @@
                     <dt class="col-sm-4">Член товарищества</dt>
                     <dd class="col-sm-8">@Model.Ownership.MemberFullName</dd>
 
-                    <dt class="col-sm-4">Доля, %</dt>
-                    <dd class="col-sm-8">@(Model.Ownership.OwnershipShare.HasValue ? Model.Ownership.OwnershipShare.Value.ToString("0.##") : "—")</dd>
-
-                    <dt class="col-sm-4">Основной контакт</dt>
-                    <dd class="col-sm-8">@(Model.Ownership.IsPrimaryContact ? "Да" : "Нет")</dd>
-
                     <dt class="col-sm-4">Дата начала</dt>
                     <dd class="col-sm-8">@(Model.Ownership.ValidFrom.HasValue ? Model.Ownership.ValidFrom.Value.ToString("dd.MM.yyyy") : "—")</dd>
 
-                    <dt class="col-sm-4">Дата завершения</dt>
+                    <dt class="col-sm-4">Дата аннулирования</dt>
                     <dd class="col-sm-8">@(Model.Ownership.ValidTo.HasValue ? Model.Ownership.ValidTo.Value.ToString("dd.MM.yyyy") : "—")</dd>
                 </dl>
 

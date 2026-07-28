@@ -43,6 +43,7 @@
                             @(Model.IsArchiveOperation ? "Подтвердить архивацию" : "Подтвердить восстановление")
                         </button>
                     }
+                    <a class="btn btn-outline-success" asp-page="/Administration/Members/Finance" asp-route-id="@Model.Member.Id">Финансы</a>
                     <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Details" asp-route-id="@Model.Member.Id">Назад</a>
                 </form>
             </div>

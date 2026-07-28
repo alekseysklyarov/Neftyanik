@@ -17,8 +17,6 @@ public class IndexModel : OwnershipPageModelBase
 
     public IReadOnlyList<OwnershipListItemViewModel> HistoricalOwnerships { get; private set; } = [];
 
-    public bool ShowPrimaryContactWarning => Plot.ActiveOwnersCount > 0 && !Plot.HasActivePrimaryContact;
-
     public async Task<IActionResult> OnGetAsync(int plotId, CancellationToken cancellationToken)
     {
         var currentDate = DateOnly.FromDateTime(DateTime.Now);
@@ -33,7 +31,6 @@ public class IndexModel : OwnershipPageModelBase
             .AsNoTracking()
             .Where(ownership => ownership.PlotId == plotId)
             .OrderByDescending(ownership => ownership.ValidTo == null)
-            .ThenByDescending(ownership => ownership.IsPrimaryContact)
             .ThenBy(ownership => ownership.ValidTo)
             .ThenBy(ownership => ownership.Member != null ? ownership.Member.FullName : string.Empty)
             .Select(ownership => new OwnershipListItemViewModel
@@ -45,7 +42,6 @@ public class IndexModel : OwnershipPageModelBase
                 MemberPhoneNumber = ownership.Member != null ? ownership.Member.PhoneNumber : null,
                 MemberEmail = ownership.Member != null ? ownership.Member.Email : null,
                 OwnershipShare = ownership.OwnershipShare,
-                IsPrimaryContact = ownership.IsPrimaryContact,
                 ValidFrom = ownership.ValidFrom,
                 ValidTo = ownership.ValidTo,
                 IsActive = (!ownership.ValidFrom.HasValue || ownership.ValidFrom.Value <= currentDate)
@@ -74,8 +70,6 @@ public class IndexModel : OwnershipPageModelBase
         public string? MemberEmail { get; init; }
 
         public decimal? OwnershipShare { get; init; }
-
-        public bool IsPrimaryContact { get; init; }
 
         public DateOnly? ValidFrom { get; init; }
 

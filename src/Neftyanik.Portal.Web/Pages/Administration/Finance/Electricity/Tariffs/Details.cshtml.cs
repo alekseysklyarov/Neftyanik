@@ -19,6 +19,8 @@ public class DetailsModel : PageModel
 
     public TariffDetailsViewModel Tariff { get; private set; } = new();
 
+    public decimal? CurrentMemberRate { get; private set; }
+
     public async Task<IActionResult> OnGetAsync(int id, CancellationToken cancellationToken)
     {
         var tariff = await _dbContext.ElectricityTariffs
@@ -59,6 +61,14 @@ public class DetailsModel : PageModel
                     && reading.ReadingDate >= tariff.EffectiveFrom
                     && (!nextEffectiveFrom.HasValue || reading.ReadingDate < nextEffectiveFrom.Value), cancellationToken)
         };
+
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        CurrentMemberRate = await _dbContext.MemberElectricityTariffs
+            .AsNoTracking()
+            .Where(item => item.EffectiveFrom <= today)
+            .OrderByDescending(item => item.EffectiveFrom)
+            .Select(item => (decimal?)item.Rate)
+            .FirstOrDefaultAsync(cancellationToken);
 
         Tariff = tariff;
         return Page();

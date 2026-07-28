@@ -25,6 +25,15 @@
             <dt class="col-sm-4">Сумма по умолчанию</dt>
             <dd class="col-sm-8">@(Model.ChargeType.DefaultAmount.HasValue ? Model.ChargeType.DefaultAmount.Value.ToString("0.00") : "—")</dd>
 
+            <dt class="col-sm-4">По умолчанию</dt>
+            <dd class="col-sm-8">@(Model.ChargeType.IsDefault ? "Да" : "Нет")</dd>
+
+            <dt class="col-sm-4">Ежегодный</dt>
+            <dd class="col-sm-8">@(Model.ChargeType.IsYearly ? "Да" : "Нет")</dd>
+
+            <dt class="col-sm-4">Только при смене владельца</dt>
+            <dd class="col-sm-8">@(Model.ChargeType.OnlyOnOwnerChange ? "Да" : "Нет")</dd>
+
             <dt class="col-sm-4">Статус</dt>
             <dd class="col-sm-8">@(Model.ChargeType.IsActive ? "Активен" : "В архиве")</dd>
 

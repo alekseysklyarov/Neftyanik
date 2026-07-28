@@ -65,7 +65,6 @@ public class DetailsModel : PageModel
                 PlotNumber = ownership.Plot != null ? ownership.Plot.Number : "—",
                 PlotAddress = ownership.Plot != null ? ownership.Plot.Address : null,
                 OwnershipShare = ownership.OwnershipShare,
-                IsPrimaryContact = ownership.IsPrimaryContact,
                 ValidFrom = ownership.ValidFrom,
                 ValidTo = ownership.ValidTo
             })
@@ -107,7 +106,8 @@ public class DetailsModel : PageModel
         {
             Exists = true,
             StatusText = isLockedOut ? "Учетная запись заблокирована" : "Учетная запись активна",
-            LoginEmail = user.Email ?? user.UserName,
+                Login = user.UserName,
+                Email = user.Email,
             IdentityUserId = user.Id,
             IsLockedOut = isLockedOut,
             LockoutEnd = user.LockoutEnd,
@@ -160,8 +160,6 @@ public class DetailsModel : PageModel
 
         public decimal? OwnershipShare { get; init; }
 
-        public bool IsPrimaryContact { get; init; }
-
         public DateOnly? ValidFrom { get; init; }
 
         public DateOnly? ValidTo { get; init; }
@@ -173,7 +171,9 @@ public class DetailsModel : PageModel
 
         public string StatusText { get; init; } = string.Empty;
 
-        public string? LoginEmail { get; init; }
+        public string? Login { get; init; }
+
+        public string? Email { get; init; }
 
         public string? IdentityUserId { get; init; }
 

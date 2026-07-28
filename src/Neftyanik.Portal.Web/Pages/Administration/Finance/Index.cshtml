@@ -93,10 +93,10 @@
                                 <td>@(string.IsNullOrWhiteSpace(item.Address) ? "—" : item.Address)</td>
                                 <td>@item.Charges.ToString("0.00")</td>
                                 <td>@item.Payments.ToString("0.00")</td>
-                                <td>@item.Balance.ToString("0.00")</td>
+                                <td>@item.BalanceDisplayAmount.ToString("0.00")</td>
                                 <td>@item.Status</td>
                                 <td class="text-end">
-                                    <a class="btn btn-sm btn-outline-primary" asp-page="/Administration/Plots/Finance/Index" asp-route-plotId="@item.PlotId">Финансы участка</a>
+                                    <a class="btn btn-sm btn-outline-primary" asp-page="/Administration/Plots/Details" asp-route-id="@item.PlotId">Карточка участка</a>
                                 </td>
                             </tr>
                         }

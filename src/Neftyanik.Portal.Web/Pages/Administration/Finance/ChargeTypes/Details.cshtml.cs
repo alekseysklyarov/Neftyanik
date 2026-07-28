@@ -30,6 +30,9 @@ public class DetailsModel : PageModel
                 Name = item.Name,
                 Description = item.Description,
                 DefaultAmount = item.DefaultAmount,
+                IsDefault = item.IsDefault,
+                IsYearly = item.IsYearly,
+                OnlyOnOwnerChange = item.OnlyOnOwnerChange,
                 IsActive = item.IsActive,
                 CreatedAtUtc = item.CreatedAtUtc,
                 UpdatedAtUtc = item.UpdatedAtUtc,
@@ -55,6 +58,12 @@ public class DetailsModel : PageModel
         public string? Description { get; init; }
 
         public decimal? DefaultAmount { get; init; }
+
+        public bool IsDefault { get; init; }
+
+        public bool IsYearly { get; init; }
+
+        public bool OnlyOnOwnerChange { get; init; }
 
         public bool IsActive { get; init; }
 

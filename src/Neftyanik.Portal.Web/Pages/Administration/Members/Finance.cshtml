@@ -1,0 +1,563 @@
+@page "{id:int}/Finance"
+@model Neftyanik.Portal.Web.Pages.Administration.Members.FinanceModel
+@{
+    ViewData["Title"] = $"Финансы: {Model.Member.FullName}";
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h4 mb-1">Финансы члена товарищества</h1>
+        <p class="h1 text-muted mb-0">@Model.Member.FullName</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        @if (Model.Plots.Count > 0)
+        {
+            <a class="btn btn-primary" asp-page="/Administration/Members/Finance/CreateCharge" asp-route-id="@Model.Member.Id">Добавить начисление</a>
+            <a class="btn btn-outline-primary" asp-page="/Administration/Members/Finance/RegisterPayment" asp-route-id="@Model.Member.Id">Зарегистрировать платеж</a>
+        }
+        @if (Model.CanEnterElectricityReading)
+        {
+            <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#electricityReadingModal">Внести показание электросчётчика</button>
+        }
+        <a class="btn btn-outline-primary" asp-page="/Administration/Members/Details" asp-route-id="@Model.Member.Id">Карточка члена товарищества</a>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Index">К списку членов товарищества</a>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] is string successMessage)
+{
+    <div class="alert alert-success" role="alert">@successMessage</div>
+}
+
+@if (TempData["ErrorMessage"] is string errorMessage)
+{
+    <div class="alert alert-danger" role="alert">@errorMessage</div>
+}
+
+<div class="row g-4 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">Активные участки</h2><p class="display-6 mb-0">@Model.Member.ActivePlotsCount</p></div></div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">Начислено</h2><p class="display-6 mb-0">@Model.Member.TotalCharges.ToString("0.00")</p></div></div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">Оплачено</h2><p class="display-6 mb-0">@Model.Member.TotalPayments.ToString("0.00")</p></div></div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card h-100 shadow-sm @Model.Member.BalanceCardClass"><div class="card-body"><h2 class="h6 text-muted">Баланс</h2><p class="display-6 mb-0 @Model.Member.BalanceStatusClass">@Model.Member.BalanceDisplayAmount.ToString("0.00")</p><div class="text-muted">@Model.Member.BalanceStatusText</div></div></div>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <p class="mb-1"><strong>Телефон:</strong> @(string.IsNullOrWhiteSpace(Model.Member.PhoneNumber) ? "—" : Model.Member.PhoneNumber)</p>
+                <p class="mb-0"><strong>Email:</strong> @(string.IsNullOrWhiteSpace(Model.Member.Email) ? "—" : Model.Member.Email)</p>
+            </div>
+            <div class="col-md-4">
+                <p class="mb-0"><strong>Статус:</strong> @(Model.Member.IsActive ? "Активен" : "В архиве")</p>
+            </div>
+            <div class="col-md-4">
+                <p class="mb-0"><strong>Финансовый статус:</strong> <span class="@Model.Member.BalanceStatusClass">@Model.Member.BalanceStatusText</span></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+        <h2 class="h5 mb-0">Участки</h2>
+    </div>
+    <div class="card-body p-0">
+        @if (Model.Plots.Count == 0)
+        {
+            <div class="p-4 text-center text-muted">У этого члена товарищества нет активных участков с финансовыми данными.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Участок</th>
+                            <th>Адрес</th>
+                            <th>Начислено</th>
+                            <th>Оплачено</th>
+                            <th>Баланс</th>
+                            <th>Статус</th>
+                            <th class="text-end">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var plot in Model.Plots)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@plot.PlotNumber</td>
+                                <td>@(string.IsNullOrWhiteSpace(plot.Address) ? "—" : plot.Address)</td>
+                                <td>@plot.Charges.ToString("0.00")</td>
+                                <td>@plot.Payments.ToString("0.00")</td>
+                                <td class="@plot.BalanceStatusClass">@plot.BalanceDisplayAmount.ToString("0.00")</td>
+                                <td>@plot.Status</td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a class="btn btn-outline-success" asp-page="/Administration/Members/Finance/CreateCharge" asp-route-id="@Model.Member.Id" asp-route-plotId="@plot.PlotId">Начислить</a>
+                                        <a class="btn btn-outline-primary" asp-page="/Administration/Members/Finance/RegisterPayment" asp-route-id="@Model.Member.Id" asp-route-plotId="@plot.PlotId">Платеж</a>
+                                        <a class="btn btn-outline-primary" asp-page="/Administration/Plots/Details" asp-route-id="@plot.PlotId">Карточка участка</a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-xl-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h2 class="h5 mb-0">Начисления</h2>
+            </div>
+            <div class="card-body p-0">
+                @if (Model.Charges.Count == 0)
+                {
+                    <div class="p-4 text-center text-muted">Начисления отсутствуют.</div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Дата</th>
+                                    <th>Участок</th>
+                                    <th>Тип</th>
+                                    <th>Сумма</th>
+                                    <th>Срок</th>
+                                    <th>Статус</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var charge in Model.Charges)
+                                {
+                                    <tr>
+                                        <td>@charge.ChargeDate.ToString("dd.MM.yyyy")</td>
+                                        <td>@charge.PlotNumber</td>
+                                        <td>@charge.ChargeTypeName</td>
+                                        <td>@charge.Amount.ToString("0.00")</td>
+                                        <td>@(charge.DueDate.HasValue ? charge.DueDate.Value.ToString("dd.MM.yyyy") : "—")</td>
+                                        <td>@charge.StatusText</td>
+                                    </tr>
+                                    @if (!string.IsNullOrWhiteSpace(charge.Description) || !string.IsNullOrWhiteSpace(charge.CancellationReason))
+                                    {
+                                        <tr class="table-light">
+                                            <td colspan="6" class="small text-muted">
+                                                @if (!string.IsNullOrWhiteSpace(charge.Description))
+                                                {
+                                                    <div><strong>Описание:</strong> @charge.Description</div>
+                                                }
+                                                @if (!string.IsNullOrWhiteSpace(charge.CancellationReason))
+                                                {
+                                                    <div><strong>Причина отмены:</strong> @charge.CancellationReason</div>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+            @if (Model.ChargeTotalPages > 1)
+            {
+                <div class="card-footer bg-white">
+                    <nav aria-label="Навигация по начислениям">
+                        <ul class="pagination justify-content-center mb-0 flex-wrap">
+                            <li class="page-item @(Model.HasChargePreviousPage ? string.Empty : "disabled")">
+                                <a class="page-link" asp-page="/Administration/Members/Finance" asp-route-id="@Model.Member.Id" asp-route-chargePage="@(Model.ChargePage - 1)" asp-route-paymentPage="@Model.PaymentPage">Назад</a>
+                            </li>
+                            @for (var pageIndex = 1; pageIndex <= Model.ChargeTotalPages; pageIndex++)
+                            {
+                                <li class="page-item @(pageIndex == Model.ChargePage ? "active" : string.Empty)">
+                                    <a class="page-link" asp-page="/Administration/Members/Finance" asp-route-id="@Model.Member.Id" asp-route-chargePage="@pageIndex" asp-route-paymentPage="@Model.PaymentPage">@pageIndex</a>
+                                </li>
+                            }
+                            <li class="page-item @(Model.HasChargeNextPage ? string.Empty : "disabled")">
+                                <a class="page-link" asp-page="/Administration/Members/Finance" asp-route-id="@Model.Member.Id" asp-route-chargePage="@(Model.ChargePage + 1)" asp-route-paymentPage="@Model.PaymentPage">Вперёд</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            }
+        </div>
+    </div>
+    <div class="col-xl-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h2 class="h5 mb-0">Платежи</h2>
+            </div>
+            <div class="card-body p-0">
+                @if (Model.Payments.Count == 0)
+                {
+                    <div class="p-4 text-center text-muted">Платежи отсутствуют.</div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Дата</th>
+                                    <th>Участок</th>
+                                    <th>Сумма</th>
+                                    <th>Способ</th>
+                                    <th>Документ</th>
+                                    <th>Статус</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var payment in Model.Payments)
+                                {
+                                    <tr>
+                                        <td>@payment.PaymentDate.ToString("dd.MM.yyyy")</td>
+                                        <td>@payment.PlotNumber</td>
+                                        <td>@payment.Amount.ToString("0.00")</td>
+                                        <td>@payment.PaymentMethodText</td>
+                                        <td>@(string.IsNullOrWhiteSpace(payment.ReferenceNumber) ? "—" : payment.ReferenceNumber)</td>
+                                        <td>@payment.StatusText</td>
+                                    </tr>
+                                    @if (!string.IsNullOrWhiteSpace(payment.Description) || !string.IsNullOrWhiteSpace(payment.CancellationReason))
+                                    {
+                                        <tr class="table-light">
+                                            <td colspan="6" class="small text-muted">
+                                                @if (!string.IsNullOrWhiteSpace(payment.Description))
+                                                {
+                                                    <div><strong>Описание:</strong> @payment.Description</div>
+                                                }
+                                                @if (!string.IsNullOrWhiteSpace(payment.CancellationReason))
+                                                {
+                                                    <div><strong>Причина отмены:</strong> @payment.CancellationReason</div>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+            @if (Model.PaymentTotalPages > 1)
+            {
+                <div class="card-footer bg-white">
+                    <nav aria-label="Навигация по платежам">
+                        <ul class="pagination justify-content-center mb-0 flex-wrap">
+                            <li class="page-item @(Model.HasPaymentPreviousPage ? string.Empty : "disabled")">
+                                <a class="page-link" asp-page="/Administration/Members/Finance" asp-route-id="@Model.Member.Id" asp-route-chargePage="@Model.ChargePage" asp-route-paymentPage="@(Model.PaymentPage - 1)">Назад</a>
+                            </li>
+                            @for (var pageIndex = 1; pageIndex <= Model.PaymentTotalPages; pageIndex++)
+                            {
+                                <li class="page-item @(pageIndex == Model.PaymentPage ? "active" : string.Empty)">
+                                    <a class="page-link" asp-page="/Administration/Members/Finance" asp-route-id="@Model.Member.Id" asp-route-chargePage="@Model.ChargePage" asp-route-paymentPage="@pageIndex">@pageIndex</a>
+                                </li>
+                            }
+                            <li class="page-item @(Model.HasPaymentNextPage ? string.Empty : "disabled")">
+                                <a class="page-link" asp-page="/Administration/Members/Finance" asp-route-id="@Model.Member.Id" asp-route-chargePage="@Model.ChargePage" asp-route-paymentPage="@(Model.PaymentPage + 1)">Вперёд</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@if (!Model.IsElectricityFeatureAvailable)
+{
+    <div class="alert alert-warning" role="alert">
+        @Model.ElectricityFeatureWarningMessage
+    </div>
+}
+else
+{
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <h2 class="h5 mb-0">Электросчётчики</h2>
+            <div class="d-flex gap-2 flex-wrap">
+                @if (Model.CanSetupElectricityMeter)
+                {
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#electricitySetupModal">Инициализировать электросчётчик</button>
+                }
+                @if (Model.CanInitializeElectricity)
+                {
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#electricityInitializationModal">Инициализировать значения</button>
+                }
+            </div>
+        </div>
+        <div class="card-body p-0">
+            @if (!Model.HasElectricityMeters)
+            {
+                <div class="p-4 text-center text-muted">
+                    <div>У участника пока нет привязанных электросчётчиков.</div>
+                    @if (Model.CanSetupElectricityMeter)
+                    {
+                        <button type="button" class="btn btn-sm btn-outline-primary mt-3" data-bs-toggle="modal" data-bs-target="#electricitySetupModal">Привязать счётчик и сохранить начальные показания</button>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Счётчик</th>
+                                <th>Расчётный участок</th>
+                                <th>История показаний</th>
+                                <th>Статус</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var meter in Model.ElectricityMeters)
+                            {
+                                <tr>
+                                    <td class="fw-semibold">@meter.DisplayName</td>
+                                    <td>@meter.BillingPlotNumber</td>
+                                    <td>
+                                        @if (meter.Readings.Count == 0)
+                                        {
+                                            <span class="text-muted">История отсутствует</span>
+                                        }
+                                        else
+                                        {
+                                            <div class="small d-flex flex-column gap-2 py-1">
+                                                @foreach (var reading in meter.Readings)
+                                                {
+                                                    <div class="border rounded px-2 py-1 bg-light-subtle">
+                                                        <div class="d-flex flex-wrap justify-content-between gap-2">
+                                                            <span class="fw-semibold">@reading.ReadingDate.ToString("dd.MM.yyyy")</span>
+                                                            <span>@reading.CurrentReading.ToString("0.000") кВт·ч</span>
+                                                        </div>
+                                                        <div class="d-flex flex-wrap gap-3 text-muted mt-1">
+                                                            @if (reading.IsInitialReading)
+                                                            {
+                                                                <span>Начальные показания</span>
+                                                            }
+                                                            else if (reading.Consumption.HasValue)
+                                                            {
+                                                                <span>Расход: @reading.Consumption.Value.ToString("0.000")</span>
+                                                            }
+
+                                                            @if (reading.Amount.HasValue)
+                                                            {
+                                                                <span>Начисление: @reading.Amount.Value.ToString("0.00") грн</span>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!meter.IsActive)
+                                        {
+                                            <span class="badge text-bg-secondary">Неактивен</span>
+                                        }
+                                        else if (!meter.HasReadings)
+                                        {
+                                            <span class="badge text-bg-warning">Требуется инициализация</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge text-bg-success">Готов к работе</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+<div class="modal fade" id="electricityReadingModal" tabindex="-1" aria-labelledby="electricityReadingModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="CreateElectricityReading" asp-route-id="@Model.Member.Id">
+                <input asp-for="ChargePage" type="hidden" />
+                <input asp-for="PaymentPage" type="hidden" />
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="electricityReadingModalLabel">Ввод показаний электросчётчика</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+                    <div class="mb-3">
+                        <label asp-for="ReadingInput.MeterId" class="form-label"></label>
+                        <select asp-for="ReadingInput.MeterId" asp-items="Model.ReadingMeterOptions" class="form-select">
+                            <option value="">Выберите счётчик</option>
+                        </select>
+                        <span asp-validation-for="ReadingInput.MeterId" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="ReadingInput.ReadingDate" class="form-label"></label>
+                        <input asp-for="ReadingInput.ReadingDate" class="form-control" type="date" />
+                        <span asp-validation-for="ReadingInput.ReadingDate" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="ReadingInput.CurrentReading" class="form-label"></label>
+                        <input asp-for="ReadingInput.CurrentReading" class="form-control" type="number" step="0.001" min="0" />
+                        <span asp-validation-for="ReadingInput.CurrentReading" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-success">Сохранить показания</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="electricitySetupModal" tabindex="-1" aria-labelledby="electricitySetupModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="SetupElectricity" asp-route-id="@Model.Member.Id">
+                <input asp-for="ChargePage" type="hidden" />
+                <input asp-for="PaymentPage" type="hidden" />
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="electricitySetupModalLabel">Инициализация электросчётчика</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+                    <div class="mb-3">
+                        <label asp-for="SetupInput.BillingPlotId" class="form-label"></label>
+                        <select asp-for="SetupInput.BillingPlotId" asp-items="Model.SetupPlotOptions" class="form-select">
+                            <option value="">Выберите участок</option>
+                        </select>
+                        <span asp-validation-for="SetupInput.BillingPlotId" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="SetupInput.MeterNumber" class="form-label"></label>
+                        <input asp-for="SetupInput.MeterNumber" class="form-control" />
+                        <span asp-validation-for="SetupInput.MeterNumber" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="SetupInput.Name" class="form-label"></label>
+                        <input asp-for="SetupInput.Name" class="form-control" />
+                        <span asp-validation-for="SetupInput.Name" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="SetupInput.ReadingDate" class="form-label"></label>
+                        <input asp-for="SetupInput.ReadingDate" class="form-control" type="date" />
+                        <span asp-validation-for="SetupInput.ReadingDate" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="SetupInput.CurrentReading" class="form-label"></label>
+                        <input asp-for="SetupInput.CurrentReading" class="form-control" type="number" step="0.001" min="0" />
+                        <span asp-validation-for="SetupInput.CurrentReading" class="text-danger"></span>
+                    </div>
+                    <div class="mb-0">
+                        <label asp-for="SetupInput.OpeningDebtAmount" class="form-label"></label>
+                        <input asp-for="SetupInput.OpeningDebtAmount" class="form-control" type="number" step="0.01" min="0" />
+                        <span asp-validation-for="SetupInput.OpeningDebtAmount" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить начальные значения</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="electricityInitializationModal" tabindex="-1" aria-labelledby="electricityInitializationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="InitializeElectricity" asp-route-id="@Model.Member.Id">
+                <input asp-for="ChargePage" type="hidden" />
+                <input asp-for="PaymentPage" type="hidden" />
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="electricityInitializationModalLabel">Инициализация значений электросчётчика</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+                    <div class="mb-3">
+                        <label asp-for="InitializationInput.MeterId" class="form-label"></label>
+                        <select asp-for="InitializationInput.MeterId" asp-items="Model.InitializationMeterOptions" class="form-select">
+                            <option value="">Выберите счётчик</option>
+                        </select>
+                        <span asp-validation-for="InitializationInput.MeterId" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="InitializationInput.ReadingDate" class="form-label"></label>
+                        <input asp-for="InitializationInput.ReadingDate" class="form-control" type="date" />
+                        <span asp-validation-for="InitializationInput.ReadingDate" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="InitializationInput.CurrentReading" class="form-label"></label>
+                        <input asp-for="InitializationInput.CurrentReading" class="form-control" type="number" step="0.001" min="0" />
+                        <span asp-validation-for="InitializationInput.CurrentReading" class="text-danger"></span>
+                    </div>
+                    <div class="mb-0">
+                        <label asp-for="InitializationInput.OpeningDebtAmount" class="form-label"></label>
+                        <input asp-for="InitializationInput.OpeningDebtAmount" class="form-control" type="number" step="0.01" min="0" />
+                        <span asp-validation-for="InitializationInput.OpeningDebtAmount" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить начальные значения</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const setupModalElement = document.getElementById('electricitySetupModal');
+            const readingModalElement = document.getElementById('electricityReadingModal');
+            const initializationModalElement = document.getElementById('electricityInitializationModal');
+
+            @if (Model.ReopenSetupModal)
+            {
+                <text>
+                if (setupModalElement && window.bootstrap) {
+                    window.bootstrap.Modal.getOrCreateInstance(setupModalElement).show();
+                }
+                </text>
+            }
+
+            @if (Model.ReopenReadingModal)
+            {
+                <text>
+                if (readingModalElement && window.bootstrap) {
+                    window.bootstrap.Modal.getOrCreateInstance(readingModalElement).show();
+                }
+                </text>
+            }
+
+            @if (Model.ReopenInitializationModal)
+            {
+                <text>
+                if (initializationModalElement && window.bootstrap) {
+                    window.bootstrap.Modal.getOrCreateInstance(initializationModalElement).show();
+                }
+                </text>
+            }
+        })();
+    </script>
+}

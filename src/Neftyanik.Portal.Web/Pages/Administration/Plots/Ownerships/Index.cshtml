@@ -10,11 +10,21 @@
         <p class="text-muted mb-0">Управление текущими и завершёнными записями владения.</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
-        <a class="btn btn-primary" asp-page="/Administration/Plots/Ownerships/Create" asp-route-plotId="@Model.Plot.PlotId">Добавить владельца</a>
+        @if (!Model.Plot.HasOpenOwnership)
+        {
+            <a class="btn btn-primary" asp-page="/Administration/Plots/Ownerships/Create" asp-route-plotId="@Model.Plot.PlotId">Добавить владельца</a>
+        }
         <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Details" asp-route-id="@Model.Plot.PlotId">К участку</a>
         <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Index">К списку участков</a>
     </div>
 </div>
+
+@if (Model.Plot.HasOpenOwnership)
+{
+    <div class="alert alert-info" role="alert">
+        У участка может быть только один владелец. Чтобы назначить нового, сначала завершите текущее владение.
+    </div>
+}
 
 <div class="row g-4 mb-4">
     <div class="col-lg-4">
@@ -48,8 +58,7 @@
             <div class="card-body">
                 <h2 class="h5 mb-3">Текущие владельцы</h2>
                 <p class="mb-2"><strong>Количество:</strong> @Model.Plot.ActiveOwnersCount</p>
-                <p class="mb-2"><strong>Основной контакт:</strong> @(string.IsNullOrWhiteSpace(Model.Plot.PrimaryContact) ? "—" : Model.Plot.PrimaryContact)</p>
-                <p class="mb-0"><strong>Указанная суммарная доля:</strong> @Model.Plot.SpecifiedTotalShare.ToString("0.##")%</p>
+                <p class="mb-0 text-muted">У участка может быть только один текущий владелец.</p>
             </div>
         </div>
     </div>
@@ -62,13 +71,6 @@
         </div>
     </div>
 </div>
-
-@if (Model.ShowPrimaryContactWarning)
-{
-    <div class="alert alert-warning" role="alert">
-        У участка есть активные владельцы, но не назначен основной контакт.
-    </div>
-}
 
 <div class="card shadow-sm mb-4">
     <div class="card-header bg-white">
@@ -88,8 +90,6 @@
                             <th>Член товарищества</th>
                             <th>Телефон</th>
                             <th>Электронная почта</th>
-                            <th>Доля, %</th>
-                            <th>Основной контакт</th>
                             <th>Действует с</th>
                             <th>Статус</th>
                             <th class="text-end">Действия</th>
@@ -104,14 +104,13 @@
                                 </td>
                                 <td>@(string.IsNullOrWhiteSpace(ownership.MemberPhoneNumber) ? "—" : ownership.MemberPhoneNumber)</td>
                                 <td>@(string.IsNullOrWhiteSpace(ownership.MemberEmail) ? "—" : ownership.MemberEmail)</td>
-                                <td>@(ownership.OwnershipShare.HasValue ? ownership.OwnershipShare.Value.ToString("0.##") : "—")</td>
-                                <td>@(ownership.IsPrimaryContact ? "Да" : "Нет")</td>
                                 <td>@(ownership.ValidFrom.HasValue ? ownership.ValidFrom.Value.ToString("dd.MM.yyyy") : "—")</td>
-                                <td><span class="badge text-bg-success">Активно</span></td>
+                                <td><span class="badge text-bg-success">Активный</span></td>
                                 <td class="text-end">
                                     <div class="btn-group btn-group-sm" role="group">
+                                        <a class="btn btn-outline-success" asp-page="/Administration/Members/Finance" asp-route-id="@ownership.MemberId">Финансы</a>
                                         <a class="btn btn-outline-primary" asp-page="/Administration/Plots/Ownerships/Edit" asp-route-plotId="@ownership.PlotId" asp-route-id="@ownership.Id">Редактировать</a>
-                                        <a class="btn btn-outline-warning" asp-page="/Administration/Plots/Ownerships/End" asp-route-plotId="@ownership.PlotId" asp-route-id="@ownership.Id">Завершить владение</a>
+                                        <a class="btn btn-outline-warning" asp-page="/Administration/Plots/Ownerships/End" asp-route-plotId="@ownership.PlotId" asp-route-id="@ownership.Id">Аннулировать</a>
                                     </div>
                                 </td>
                             </tr>
@@ -141,8 +140,6 @@
                             <th>Член товарищества</th>
                             <th>Телефон</th>
                             <th>Электронная почта</th>
-                            <th>Доля, %</th>
-                            <th>Основной контакт</th>
                             <th>Действует с</th>
                             <th>Действует до</th>
                             <th>Статус</th>
@@ -158,13 +155,12 @@
                                 </td>
                                 <td>@(string.IsNullOrWhiteSpace(ownership.MemberPhoneNumber) ? "—" : ownership.MemberPhoneNumber)</td>
                                 <td>@(string.IsNullOrWhiteSpace(ownership.MemberEmail) ? "—" : ownership.MemberEmail)</td>
-                                <td>@(ownership.OwnershipShare.HasValue ? ownership.OwnershipShare.Value.ToString("0.##") : "—")</td>
-                                <td>@(ownership.IsPrimaryContact ? "Да" : "Нет")</td>
                                 <td>@(ownership.ValidFrom.HasValue ? ownership.ValidFrom.Value.ToString("dd.MM.yyyy") : "—")</td>
                                 <td>@(ownership.ValidTo.HasValue ? ownership.ValidTo.Value.ToString("dd.MM.yyyy") : "—")</td>
-                                <td><span class="badge text-bg-secondary">Завершено</span></td>
+                                <td><span class="badge text-bg-secondary">Аннулирован</span></td>
                                 <td class="text-end">
                                     <div class="btn-group btn-group-sm" role="group">
+                                        <a class="btn btn-outline-success" asp-page="/Administration/Members/Finance" asp-route-id="@ownership.MemberId">Финансы</a>
                                         <a class="btn btn-outline-primary" asp-page="/Administration/Plots/Ownerships/Edit" asp-route-plotId="@ownership.PlotId" asp-route-id="@ownership.Id">Редактировать</a>
                                         <a class="btn btn-outline-success" asp-page="/Administration/Plots/Ownerships/Restore" asp-route-plotId="@ownership.PlotId" asp-route-id="@ownership.Id">Возобновить владение</a>
                                     </div>

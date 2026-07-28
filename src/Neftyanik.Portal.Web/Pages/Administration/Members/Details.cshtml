@@ -10,6 +10,8 @@
         <p class="text-muted mb-0">Подробная информация о члене товарищества.</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
+        <a class="btn btn-primary" asp-page="/Administration/Members/Plots/Create" asp-route-memberId="@Model.Member.Id">Добавить участок</a>
+        <a class="btn btn-outline-success" asp-page="/Administration/Members/Finance" asp-route-id="@Model.Member.Id">Финансы</a>
         <a class="btn btn-outline-primary" asp-page="/Administration/Members/Edit" asp-route-id="@Model.Member.Id">Редактировать</a>
         <a class="btn btn-outline-warning" asp-page="/Administration/Members/Archive" asp-route-id="@Model.Member.Id">@(Model.Member.IsActive ? "Архивировать" : "Восстановить")</a>
         <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Index">К списку членов товарищества</a>
@@ -81,8 +83,11 @@
                 @if (Model.Member.Account.Exists)
                 {
                     <dl class="row mb-0">
-                        <dt class="col-sm-4">Логин / email</dt>
-                        <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Member.Account.LoginEmail) ? "—" : Model.Member.Account.LoginEmail)</dd>
+                        <dt class="col-sm-4">Логин</dt>
+                        <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Member.Account.Login) ? "—" : Model.Member.Account.Login)</dd>
+
+                        <dt class="col-sm-4">Email</dt>
+                        <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Member.Account.Email) ? "—" : Model.Member.Account.Email)</dd>
 
                         <dt class="col-sm-4">Подтверждение email</dt>
                         <dd class="col-sm-8">@(Model.Member.Account.EmailConfirmed ? "Подтверждён" : "Не подтверждён")</dd>
@@ -109,7 +114,12 @@
     <div class="col-lg-6">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <h2 class="h5 mb-3">Текущие владения участками</h2>
+                <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+                    <div>
+                        <h2 class="h5 mb-0">Текущие владения участками</h2>
+                    </div>
+                    <a class="btn btn-sm btn-outline-primary" asp-page="/Administration/Members/Plots/Create" asp-route-memberId="@Model.Member.Id">Добавить участок</a>
+                </div>
                 <p><strong>Количество активных владений:</strong> @Model.Member.ActiveOwnershipsCount</p>
 
                 @if (Model.Member.CurrentPlots.Count == 0)
@@ -124,8 +134,6 @@
                                 <tr>
                                     <th>Участок</th>
                                     <th>Адрес</th>
-                                    <th>Доля, %</th>
-                                    <th>Основной контакт</th>
                                     <th>Действует с</th>
                                 </tr>
                             </thead>
@@ -137,8 +145,6 @@
                                             <a asp-page="/Administration/Plots/Details" asp-route-id="@plot.PlotId">@plot.PlotNumber</a>
                                         </td>
                                         <td>@(string.IsNullOrWhiteSpace(plot.PlotAddress) ? "—" : plot.PlotAddress)</td>
-                                        <td>@(plot.OwnershipShare.HasValue ? plot.OwnershipShare.Value.ToString("0.##") : "—")</td>
-                                        <td>@(plot.IsPrimaryContact ? "Да" : "Нет")</td>
                                         <td>@(plot.ValidFrom.HasValue ? plot.ValidFrom.Value.ToString("dd.MM.yyyy") : "—")</td>
                                     </tr>
                                 }
@@ -167,8 +173,6 @@
                         <tr>
                             <th>Участок</th>
                             <th>Адрес</th>
-                            <th>Доля, %</th>
-                            <th>Основной контакт</th>
                             <th>Действует с</th>
                             <th>Действует до</th>
                         </tr>
@@ -181,8 +185,6 @@
                                     <a asp-page="/Administration/Plots/Details" asp-route-id="@plot.PlotId">@plot.PlotNumber</a>
                                 </td>
                                 <td>@(string.IsNullOrWhiteSpace(plot.PlotAddress) ? "—" : plot.PlotAddress)</td>
-                                <td>@(plot.OwnershipShare.HasValue ? plot.OwnershipShare.Value.ToString("0.##") : "—")</td>
-                                <td>@(plot.IsPrimaryContact ? "Да" : "Нет")</td>
                                 <td>@(plot.ValidFrom.HasValue ? plot.ValidFrom.Value.ToString("dd.MM.yyyy") : "—")</td>
                                 <td>@(plot.ValidTo.HasValue ? plot.ValidTo.Value.ToString("dd.MM.yyyy") : "—")</td>
                             </tr>

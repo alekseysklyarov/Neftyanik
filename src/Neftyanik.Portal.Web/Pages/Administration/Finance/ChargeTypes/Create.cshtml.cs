@@ -28,6 +28,11 @@ public class CreateModel : PageModel
             ModelState.AddModelError("Input.Name", "Тип начисления с таким наименованием уже существует.");
         }
 
+        if (await HasAnotherDefaultAsync(null, cancellationToken))
+        {
+            ModelState.AddModelError("Input.IsDefault", "Тип начисления по умолчанию уже выбран. Снимите признак у другого активного типа начисления.");
+        }
+
         if (!ModelState.IsValid)
         {
             return Page();
@@ -38,6 +43,9 @@ public class CreateModel : PageModel
             Name = Input.Name.Trim(),
             Description = Normalize(Input.Description),
             DefaultAmount = Input.DefaultAmount,
+            IsDefault = Input.IsDefault,
+            IsYearly = Input.IsYearly,
+            OnlyOnOwnerChange = Input.OnlyOnOwnerChange,
             IsActive = Input.IsActive,
             CreatedAtUtc = DateTime.UtcNow
         };
@@ -65,5 +73,19 @@ public class CreateModel : PageModel
     private static string? Normalize(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private async Task<bool> HasAnotherDefaultAsync(int? currentId, CancellationToken cancellationToken)
+    {
+        if (!Input.IsDefault || !Input.IsActive)
+        {
+            return false;
+        }
+
+        return await _dbContext.ChargeTypes
+            .AsNoTracking()
+            .AnyAsync(chargeType => chargeType.IsDefault
+                && chargeType.IsActive
+                && (!currentId.HasValue || chargeType.Id != currentId.Value), cancellationToken);
     }
 }

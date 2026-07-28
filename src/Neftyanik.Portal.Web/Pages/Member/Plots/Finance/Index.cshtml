@@ -8,10 +8,6 @@
     <div>
         <h1 class="h2 mb-1">Финансы участка @Model.Plot.PlotNumber</h1>
         <p class="text-muted mb-1">@(string.IsNullOrWhiteSpace(Model.Plot.PlotAddress) ? "Адрес не указан" : Model.Plot.PlotAddress)</p>
-        @if (Model.Plot.OwnershipShare.HasValue)
-        {
-            <p class="text-muted mb-0">Доля владения: @Model.Plot.OwnershipShare.Value.ToString("0.##")%</p>
-        }
     </div>
     <div>
         <a class="btn btn-outline-secondary" asp-page="/Member/Index">Назад в личный кабинет</a>
@@ -39,7 +35,7 @@
         <div class="card shadow-sm h-100 @Model.Plot.BalanceCardClass">
             <div class="card-body">
                 <h2 class="h6 text-muted">Баланс</h2>
-                <p class="display-6 mb-1 @Model.Plot.BalanceStatusClass">@Model.Plot.Balance.ToString("0.00")</p>
+                <p class="display-6 mb-1 @Model.Plot.BalanceStatusClass">@Model.Plot.BalanceDisplayAmount.ToString("0.00")</p>
                 <p class="mb-0 @Model.Plot.BalanceStatusClass">@Model.Plot.BalanceStatusText</p>
             </div>
         </div>

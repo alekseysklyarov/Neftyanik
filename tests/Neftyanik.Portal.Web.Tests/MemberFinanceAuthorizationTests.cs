@@ -124,6 +124,242 @@ public class MemberFinanceAuthorizationTests
     }
 
     [Fact]
+    public async Task GetMemberDashboard_WhenPaymentIsAllocatedAcrossPlots_ShowsAllocationBasedPlotBalances()
+    {
+        using var factory = new PortalWebApplicationFactory();
+        const string userId = "member-user-dashboard";
+        const int memberId = 1201;
+        const int firstPlotId = 1301;
+        const int secondPlotId = 1302;
+        const int chargeTypeId = 1401;
+
+        await factory.ExecuteDbContextAsync(async dbContext =>
+        {
+            dbContext.Users.Add(CreateUser(userId, "member-dashboard@example.com"));
+            dbContext.Members.Add(new Member
+            {
+                Id = memberId,
+                FullName = "Member Dashboard",
+                ApplicationUserId = userId,
+                IsActive = true
+            });
+            dbContext.Plots.AddRange(
+                new Plot { Id = firstPlotId, Number = "P-1301", Address = "First Plot", IsActive = true },
+                new Plot { Id = secondPlotId, Number = "P-1302", Address = "Second Plot", IsActive = true });
+            dbContext.PlotOwnerships.AddRange(
+                new PlotOwnership
+                {
+                    Id = 1,
+                    PlotId = firstPlotId,
+                    MemberId = memberId,
+                    ValidFrom = new DateOnly(2020, 1, 1),
+                    OwnershipShare = 1m,
+                    IsPrimaryContact = true
+                },
+                new PlotOwnership
+                {
+                    Id = 2,
+                    PlotId = secondPlotId,
+                    MemberId = memberId,
+                    ValidFrom = new DateOnly(2020, 1, 1),
+                    OwnershipShare = 1m,
+                    IsPrimaryContact = false
+                });
+            dbContext.ChargeTypes.Add(new ChargeType
+            {
+                Id = chargeTypeId,
+                Name = "Членский взнос",
+                IsActive = true
+            });
+            dbContext.Charges.AddRange(
+                new Charge { Id = 1, PlotId = firstPlotId, ChargeTypeId = chargeTypeId, Amount = 100m, ChargeDate = new DateOnly(2026, 1, 1) },
+                new Charge { Id = 2, PlotId = secondPlotId, ChargeTypeId = chargeTypeId, Amount = 100m, ChargeDate = new DateOnly(2026, 1, 2) });
+            dbContext.Payments.Add(new Payment
+            {
+                Id = 1,
+                PlotId = firstPlotId,
+                Amount = 150m,
+                PaymentDate = new DateOnly(2026, 1, 10),
+                PaymentMethod = Neftyanik.Portal.Domain.Enums.PaymentMethod.Cash,
+                ReferenceNumber = "DASHBOARD-REF"
+            });
+            dbContext.PaymentAllocations.AddRange(
+                new PaymentAllocation { PaymentId = 1, ChargeId = 1, Amount = 100m },
+                new PaymentAllocation { PaymentId = 1, ChargeId = 2, Amount = 50m });
+
+            await dbContext.SaveChangesAsync();
+        });
+
+        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userId, RoleNames.Member));
+
+        var response = await client.GetAsync("/Member");
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("Финансы члена товарищества", html, StringComparison.Ordinal);
+        Assert.Contains("Начисления", html, StringComparison.Ordinal);
+        Assert.Contains("Платежи", html, StringComparison.Ordinal);
+        Assert.Contains("Электросчётчики", html, StringComparison.Ordinal);
+        Assert.Contains("P-1301", html, StringComparison.Ordinal);
+        Assert.Contains("P-1302", html, StringComparison.Ordinal);
+        Assert.Contains("100,00", html, StringComparison.Ordinal);
+        Assert.Contains("50,00", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("-50,00", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("Добавить начисление", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("Зарегистрировать платеж", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task GetMemberDashboard_WithReadyElectricityMeter_ShowsSubmitReadingButton()
+    {
+        using var factory = new PortalWebApplicationFactory();
+        const string userId = "member-user-meter";
+        const int memberId = 1501;
+        const int plotId = 1502;
+        const int meterId = 1503;
+
+        await factory.ExecuteDbContextAsync(async dbContext =>
+        {
+            dbContext.Users.Add(CreateUser(userId, "member-meter@example.com"));
+            dbContext.Members.Add(new Member
+            {
+                Id = memberId,
+                FullName = "Member With Meter",
+                ApplicationUserId = userId,
+                IsActive = true
+            });
+            dbContext.Plots.Add(new Plot
+            {
+                Id = plotId,
+                Number = "P-1502",
+                IsActive = true
+            });
+            dbContext.PlotOwnerships.Add(new PlotOwnership
+            {
+                Id = 1,
+                PlotId = plotId,
+                MemberId = memberId,
+                ValidFrom = new DateOnly(2020, 1, 1),
+                IsPrimaryContact = true
+            });
+            dbContext.MemberElectricityMeters.Add(new MemberElectricityMeter
+            {
+                Id = meterId,
+                MemberId = memberId,
+                BillingPlotId = plotId,
+                IsActive = true,
+                MeterPlots =
+                [
+                    new MemberElectricityMeterPlot { PlotId = plotId }
+                ],
+                Readings =
+                [
+                    new MemberElectricityReading
+                    {
+                        ReadingDate = new DateOnly(2026, 1, 1),
+                        CurrentReading = 100m,
+                        IsInitialReading = true
+                    }
+                ]
+            });
+
+            await dbContext.SaveChangesAsync();
+        });
+
+        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userId, RoleNames.Member));
+
+        var response = await client.GetAsync("/Member");
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("Внести показания электросчётчика", html, StringComparison.Ordinal);
+        Assert.Contains($"/Member/Electricity/Meters/{meterId}/Readings/Create", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task GetMemberDashboard_WithElectricityHistory_ShowsAllReadings()
+    {
+        using var factory = new PortalWebApplicationFactory();
+        const string userId = "member-user-history";
+        const int memberId = 1601;
+        const int plotId = 1602;
+        const int meterId = 1603;
+
+        await factory.ExecuteDbContextAsync(async dbContext =>
+        {
+            dbContext.Users.Add(CreateUser(userId, "member-history@example.com"));
+            dbContext.Members.Add(new Member
+            {
+                Id = memberId,
+                FullName = "Member With History",
+                ApplicationUserId = userId,
+                IsActive = true
+            });
+            dbContext.Plots.Add(new Plot
+            {
+                Id = plotId,
+                Number = "P-1602",
+                IsActive = true
+            });
+            dbContext.PlotOwnerships.Add(new PlotOwnership
+            {
+                Id = 1,
+                PlotId = plotId,
+                MemberId = memberId,
+                ValidFrom = new DateOnly(2020, 1, 1),
+                IsPrimaryContact = true
+            });
+            dbContext.MemberElectricityMeters.Add(new MemberElectricityMeter
+            {
+                Id = meterId,
+                MemberId = memberId,
+                BillingPlotId = plotId,
+                IsActive = true,
+                MeterPlots =
+                [
+                    new MemberElectricityMeterPlot { PlotId = plotId }
+                ],
+                Readings =
+                [
+                    new MemberElectricityReading
+                    {
+                        ReadingDate = new DateOnly(2026, 1, 1),
+                        CurrentReading = 100m,
+                        IsInitialReading = true
+                    },
+                    new MemberElectricityReading
+                    {
+                        ReadingDate = new DateOnly(2026, 2, 1),
+                        PreviousReading = 100m,
+                        CurrentReading = 130m,
+                        Consumption = 30m,
+                        Amount = 150m,
+                        IsInitialReading = false
+                    }
+                ]
+            });
+
+            await dbContext.SaveChangesAsync();
+        });
+
+        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userId, RoleNames.Member));
+
+        var response = await client.GetAsync("/Member");
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("История показаний", html, StringComparison.Ordinal);
+        Assert.Contains("01.02.2026", html, StringComparison.Ordinal);
+        Assert.Contains("130", html, StringComparison.Ordinal);
+        Assert.Contains("кВт·ч", html, StringComparison.Ordinal);
+        Assert.Contains("Расход: 30", html, StringComparison.Ordinal);
+        Assert.Contains("Начисление: 150", html, StringComparison.Ordinal);
+        Assert.Contains("01.01.2026", html, StringComparison.Ordinal);
+        Assert.Contains("100", html, StringComparison.Ordinal);
+        Assert.Contains("Начальные показания", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task GetMemberPlotFinance_ForAnotherMembersPlot_ReturnsNotFoundWithoutLeakingFinanceData()
     {
         using var factory = new PortalWebApplicationFactory();

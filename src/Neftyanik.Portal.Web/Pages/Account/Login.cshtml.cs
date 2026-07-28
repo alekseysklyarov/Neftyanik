@@ -43,10 +43,14 @@ public class LoginModel : PageModel
             return Page();
         }
 
-        var signInResult = await _signInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+        var login = Input.Login.Trim();
+        var user = await _signInManager.UserManager.FindByNameAsync(login)
+            ?? await _signInManager.UserManager.FindByEmailAsync(login);
+        var userName = user?.UserName ?? login;
+
+        var signInResult = await _signInManager.PasswordSignInAsync(userName, Input.Password, Input.RememberMe, lockoutOnFailure: false);
         if (signInResult.Succeeded)
         {
-            var user = await _signInManager.UserManager.FindByEmailAsync(Input.Email);
             if (user?.MustChangePassword == true)
             {
                 return RedirectToPage("/Account/ChangeInitialPassword");
@@ -61,16 +65,15 @@ public class LoginModel : PageModel
             return Page();
         }
 
-        ModelState.AddModelError(string.Empty, "Неверная электронная почта или пароль.");
+        ModelState.AddModelError(string.Empty, "Неверный логин или пароль.");
         return Page();
     }
 
     public class InputModel
     {
-        [Required(ErrorMessage = "Введите электронную почту.")]
-        [EmailAddress(ErrorMessage = "Введите корректный адрес электронной почты.")]
-        [Display(Name = "Электронная почта")]
-        public string Email { get; set; } = string.Empty;
+        [Required(ErrorMessage = "Введите логин.")]
+        [Display(Name = "Логин")]
+        public string Login { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Введите пароль.")]
         [DataType(DataType.Password)]

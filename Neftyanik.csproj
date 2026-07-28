@@ -58,6 +58,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationMemberAccountTests.cs" />
+    <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationPlotChargeTests.cs" />
+    <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationPlotOwnershipTests.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="src\Neftyanik.Portal.Domain\Entities\Legacy\" />
     <Folder Include="src\Neftyanik.Portal.Web\Controllers\" />
     <Folder Include="src\Neftyanik.Portal.Web\Models\" />

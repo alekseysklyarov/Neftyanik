@@ -11,9 +11,6 @@ public class OwnershipInputModel : IValidatableObject
     [Display(Name = "Доля владения, %")]
     public decimal? OwnershipShare { get; set; }
 
-    [Display(Name = "Основной контакт")]
-    public bool IsPrimaryContact { get; set; }
-
     [DataType(DataType.Date)]
     [Display(Name = "Действует с")]
     public DateOnly? ValidFrom { get; set; }

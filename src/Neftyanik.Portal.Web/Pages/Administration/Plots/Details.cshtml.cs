@@ -36,24 +36,7 @@ public class DetailsModel : PageModel
                 Notes = item.Notes,
                 IsActive = item.IsActive,
                 CreatedAtUtc = item.CreatedAtUtc,
-                UpdatedAtUtc = item.UpdatedAtUtc,
-                OwnersCount = item.PlotOwnerships.Count(ownership => (!ownership.ValidFrom.HasValue || ownership.ValidFrom.Value <= currentDate)
-                    && (!ownership.ValidTo.HasValue || ownership.ValidTo.Value >= currentDate)),
-                HasPrimaryContact = item.PlotOwnerships.Any(ownership => (!ownership.ValidFrom.HasValue || ownership.ValidFrom.Value <= currentDate)
-                    && (!ownership.ValidTo.HasValue || ownership.ValidTo.Value >= currentDate)
-                    && ownership.IsPrimaryContact),
-                PrimaryContact = item.PlotOwnerships
-                    .Where(ownership => (!ownership.ValidFrom.HasValue || ownership.ValidFrom.Value <= currentDate)
-                        && (!ownership.ValidTo.HasValue || ownership.ValidTo.Value >= currentDate)
-                        && ownership.IsPrimaryContact
-                        && ownership.Member != null)
-                    .Select(ownership => ownership.Member!.FullName)
-                    .FirstOrDefault(),
-                SpecifiedTotalShare = item.PlotOwnerships
-                    .Where(ownership => (!ownership.ValidFrom.HasValue || ownership.ValidFrom.Value <= currentDate)
-                        && (!ownership.ValidTo.HasValue || ownership.ValidTo.Value >= currentDate)
-                        && ownership.OwnershipShare.HasValue)
-                    .Sum(ownership => (decimal?)ownership.OwnershipShare) ?? 0m
+                UpdatedAtUtc = item.UpdatedAtUtc
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -62,21 +45,42 @@ public class DetailsModel : PageModel
             return NotFound();
         }
 
-        plot.CurrentOwnerships = await _dbContext.PlotOwnerships
+        var currentOwnerships = await _dbContext.PlotOwnerships
             .AsNoTracking()
             .Where(ownership => ownership.PlotId == id
                 && (!ownership.ValidFrom.HasValue || ownership.ValidFrom.Value <= currentDate)
                 && (!ownership.ValidTo.HasValue || ownership.ValidTo.Value >= currentDate))
-            .OrderByDescending(ownership => ownership.IsPrimaryContact)
-            .ThenBy(ownership => ownership.Member != null ? ownership.Member.FullName : string.Empty)
+            .OrderBy(ownership => ownership.Member != null ? ownership.Member.FullName : string.Empty)
             .Select(ownership => new PlotOwnershipViewModel
             {
                 MemberId = ownership.MemberId,
                 MemberFullName = ownership.Member != null ? ownership.Member.FullName : "—",
                 OwnershipShare = ownership.OwnershipShare,
-                IsPrimaryContact = ownership.IsPrimaryContact,
                 ValidFrom = ownership.ValidFrom,
                 ValidTo = ownership.ValidTo
+            })
+            .ToListAsync(cancellationToken);
+
+        plot.CurrentOwnerships = currentOwnerships;
+        plot.OwnersCount = currentOwnerships.Count;
+        plot.SpecifiedTotalShare = currentOwnerships
+            .Where(ownership => ownership.OwnershipShare.HasValue)
+            .Sum(ownership => ownership.OwnershipShare ?? 0m);
+
+        plot.Charges = await _dbContext.Charges
+            .AsNoTracking()
+            .Where(charge => charge.PlotId == id)
+            .OrderByDescending(charge => charge.ChargeDate)
+            .ThenByDescending(charge => charge.Id)
+            .Select(charge => new PlotChargeViewModel
+            {
+                ChargeDate = charge.ChargeDate,
+                ChargeTypeName = charge.ChargeType != null ? charge.ChargeType.Name : "—",
+                Amount = charge.Amount,
+                DueDate = charge.DueDate,
+                Description = charge.Description,
+                IsCancelled = charge.CancelledAtUtc != null,
+                CancellationReason = charge.CancellationReason
             })
             .ToListAsync(cancellationToken);
 
@@ -104,15 +108,13 @@ public class DetailsModel : PageModel
 
         public DateTime? UpdatedAtUtc { get; init; }
 
-        public int OwnersCount { get; init; }
+        public int OwnersCount { get; set; }
 
-        public bool HasPrimaryContact { get; init; }
-
-        public string? PrimaryContact { get; init; }
-
-        public decimal SpecifiedTotalShare { get; init; }
+        public decimal SpecifiedTotalShare { get; set; }
 
         public IReadOnlyList<PlotOwnershipViewModel> CurrentOwnerships { get; set; } = [];
+
+        public IReadOnlyList<PlotChargeViewModel> Charges { get; set; } = [];
     }
 
     public sealed class PlotOwnershipViewModel
@@ -123,10 +125,27 @@ public class DetailsModel : PageModel
 
         public decimal? OwnershipShare { get; init; }
 
-        public bool IsPrimaryContact { get; init; }
-
         public DateOnly? ValidFrom { get; init; }
 
         public DateOnly? ValidTo { get; init; }
+    }
+
+    public sealed class PlotChargeViewModel
+    {
+        public DateOnly ChargeDate { get; init; }
+
+        public string ChargeTypeName { get; init; } = string.Empty;
+
+        public decimal Amount { get; init; }
+
+        public DateOnly? DueDate { get; init; }
+
+        public string? Description { get; init; }
+
+        public bool IsCancelled { get; init; }
+
+        public string? CancellationReason { get; init; }
+
+        public string StatusText => IsCancelled ? "Аннулирован" : "Активный";
     }
 }

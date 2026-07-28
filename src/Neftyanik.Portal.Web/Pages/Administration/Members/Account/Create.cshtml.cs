@@ -1,5 +1,5 @@
-using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Identity;
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Domain.Constants;
@@ -35,7 +35,7 @@ public class CreateModel : MemberAccountPageModelBase
         }
 
         Member = member;
-        Input.LoginEmail = member.Email ?? string.Empty;
+        Input.Login = member.Email ?? string.Empty;
         return Page();
     }
 
@@ -67,11 +67,11 @@ public class CreateModel : MemberAccountPageModelBase
             ModelState.AddModelError(string.Empty, "Для этого члена товарищества учетная запись уже создана.");
         }
 
-        var loginEmail = Input.LoginEmail.Trim();
-        var existingUser = await UserManager.FindByEmailAsync(loginEmail) ?? await UserManager.FindByNameAsync(loginEmail);
-        if (existingUser is not null)
+        var login = Input.Login.Trim();
+        var existingLoginUser = await UserManager.FindByNameAsync(login);
+        if (existingLoginUser is not null)
         {
-            ModelState.AddModelError("Input.LoginEmail", "Пользователь с таким адресом электронной почты уже существует.");
+            ModelState.AddModelError("Input.Login", "Пользователь с таким логином уже существует.");
         }
 
         if (!ModelState.IsValid)
@@ -83,8 +83,8 @@ public class CreateModel : MemberAccountPageModelBase
 
         var user = new ApplicationUser
         {
-            UserName = loginEmail,
-            Email = loginEmail,
+            UserName = login,
+            Email = null,
             EmailConfirmed = false,
             FirstName = name.FirstName,
             LastName = name.LastName,
@@ -102,7 +102,7 @@ public class CreateModel : MemberAccountPageModelBase
         if (!createResult.Succeeded)
         {
             await transaction.RollbackAsync(cancellationToken);
-            AddIdentityErrors(createResult, "Input.LoginEmail", "Input.TemporaryPassword");
+            AddIdentityErrors(createResult, "Input.Login", "Input.TemporaryPassword");
             return Page();
         }
 
@@ -110,7 +110,7 @@ public class CreateModel : MemberAccountPageModelBase
         if (!addToRoleResult.Succeeded)
         {
             await transaction.RollbackAsync(cancellationToken);
-            AddIdentityErrors(addToRoleResult, "Input.LoginEmail", "Input.TemporaryPassword");
+            AddIdentityErrors(addToRoleResult, "Input.Login", "Input.TemporaryPassword");
             return Page();
         }
 
@@ -119,16 +119,19 @@ public class CreateModel : MemberAccountPageModelBase
         await DbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
-        TempData["SuccessMessage"] = "Учетная запись члена товарищества успешно создана.";
+        if (TempData is not null)
+        {
+            TempData["SuccessMessage"] = "Учетная запись члена товарищества успешно создана.";
+        }
+
         return RedirectToPage("/Administration/Members/Details", new { id = memberId });
     }
 
     public class InputModel
     {
-        [Required(ErrorMessage = "Укажите адрес электронной почты для входа.")]
-        [EmailAddress(ErrorMessage = "Введите корректный адрес электронной почты.")]
-        [Display(Name = "Логин / email")]
-        public string LoginEmail { get; set; } = string.Empty;
+        [Required(ErrorMessage = "Укажите логин для входа.")]
+        [Display(Name = "Логин")]
+        public string Login { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Введите временный пароль.")]
         [DataType(DataType.Password)]

@@ -1,18 +1,18 @@
 @page "/Administration/Plots/{plotId:int}/Ownerships/{id:int}/End"
 @model Neftyanik.Portal.Web.Pages.Administration.Plots.Ownerships.EndModel
 @{
-    ViewData["Title"] = "Завершение владения";
+    ViewData["Title"] = "Аннулирование владения";
 }
 
 <div class="row justify-content-center">
     <div class="col-lg-8">
         <div class="card shadow-sm">
             <div class="card-body p-4">
-                <h1 class="h3 mb-3">Завершение владения</h1>
+                <h1 class="h3 mb-3">Аннулирование владения</h1>
 
                 <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
-                <p>Вы собираетесь завершить запись владения. Запись останется в системе и будет перенесена в историю.</p>
+                <p>Вы собираетесь аннулировать запись владения. Запись останется в системе и будет перенесена в историю.</p>
 
                 <dl class="row mb-4">
                     <dt class="col-sm-4">Участок</dt>
@@ -20,12 +20,6 @@
 
                     <dt class="col-sm-4">Член товарищества</dt>
                     <dd class="col-sm-8">@Model.Ownership.MemberFullName</dd>
-
-                    <dt class="col-sm-4">Доля, %</dt>
-                    <dd class="col-sm-8">@(Model.Ownership.OwnershipShare.HasValue ? Model.Ownership.OwnershipShare.Value.ToString("0.##") : "—")</dd>
-
-                    <dt class="col-sm-4">Основной контакт</dt>
-                    <dd class="col-sm-8">@(Model.Ownership.IsPrimaryContact ? "Да" : "Нет")</dd>
 
                     <dt class="col-sm-4">Дата начала</dt>
                     <dd class="col-sm-8">@(Model.Ownership.ValidFrom.HasValue ? Model.Ownership.ValidFrom.Value.ToString("dd.MM.yyyy") : "—")</dd>
@@ -39,7 +33,7 @@
                     </div>
 
                     <div class="d-flex gap-2 flex-wrap">
-                        <button type="submit" class="btn btn-warning">Подтвердить завершение</button>
+                        <button type="submit" class="btn btn-warning">Подтвердить аннулирование</button>
                         <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Ownerships/Index" asp-route-plotId="@Model.Plot.PlotId">Отмена</a>
                     </div>
                 </form>

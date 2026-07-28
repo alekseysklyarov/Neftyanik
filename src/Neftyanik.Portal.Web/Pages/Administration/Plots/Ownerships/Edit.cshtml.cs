@@ -67,26 +67,10 @@ public class EditModel : OwnershipPageModelBase
             return Page();
         }
 
-        await using var transaction = ownership.ValidTo == null && Input.IsPrimaryContact
-            ? await DbContext.Database.BeginTransactionAsync(cancellationToken)
-            : null;
-
         ownership.OwnershipShare = Input.OwnershipShare;
-        ownership.IsPrimaryContact = Input.IsPrimaryContact;
         ownership.ValidFrom = Input.ValidFrom;
 
         await DbContext.SaveChangesAsync(cancellationToken);
-
-        if (ownership.ValidTo == null && ownership.IsPrimaryContact)
-        {
-            await ClearOtherPrimaryContactsAsync(plotId, ownership.Id, cancellationToken);
-            await DbContext.SaveChangesAsync(cancellationToken);
-        }
-
-        if (transaction is not null)
-        {
-            await transaction.CommitAsync(cancellationToken);
-        }
 
         TempData["SuccessMessage"] = "Изменения по владению сохранены.";
         return RedirectToPage("/Administration/Plots/Ownerships/Index", new { plotId });
@@ -129,7 +113,6 @@ public class EditModel : OwnershipPageModelBase
             {
                 MemberId = item.MemberId,
                 OwnershipShare = item.OwnershipShare,
-                IsPrimaryContact = item.IsPrimaryContact,
                 ValidFrom = item.ValidFrom
             })
             .FirstAsync(cancellationToken);

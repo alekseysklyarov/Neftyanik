@@ -113,11 +113,21 @@ public class IndexModel : PageModel
             .Select(charge => charge.Amount)
             .ToListAsync(cancellationToken);
 
-        var activePaymentAmounts = await _dbContext.Payments
+        var chargeIds = await _dbContext.Charges
             .AsNoTracking()
-            .Where(payment => payment.PlotId == plotId && payment.CancelledAtUtc == null)
-            .Select(payment => payment.Amount)
-            .ToListAsync(cancellationToken);
+            .Where(charge => charge.PlotId == plotId && charge.CancelledAtUtc == null)
+            .Select(charge => charge.Id)
+            .ToArrayAsync(cancellationToken);
+
+        var activePaymentAmounts = chargeIds.Length == 0
+            ? []
+            : await _dbContext.PaymentAllocations
+                .AsNoTracking()
+                .Where(allocation => chargeIds.Contains(allocation.ChargeId)
+                    && allocation.Payment != null
+                    && allocation.Payment.CancelledAtUtc == null)
+                .Select(allocation => allocation.Amount)
+                .ToListAsync(cancellationToken);
 
         Plot = new PlotFinanceViewModel
         {
@@ -350,6 +360,8 @@ public class IndexModel : PageModel
         public decimal ActivePaymentsTotal { get; init; }
 
         public decimal Balance => ActiveChargesTotal - ActivePaymentsTotal;
+
+        public decimal BalanceDisplayAmount => Math.Abs(Balance);
 
         public string BalanceStatusText => Balance switch
         {

@@ -64,15 +64,6 @@
                     <a class="btn btn-sm btn-outline-info" asp-page="/Administration/Plots/Ownerships/Index" asp-route-plotId="@Model.Plot.Id">Управление владельцами</a>
                 </div>
                 <p><strong>Количество текущих владельцев:</strong> @Model.Plot.OwnersCount</p>
-                <p><strong>Основной контакт:</strong> @(string.IsNullOrWhiteSpace(Model.Plot.PrimaryContact) ? "—" : Model.Plot.PrimaryContact)</p>
-                <p><strong>Указанная суммарная доля:</strong> @Model.Plot.SpecifiedTotalShare.ToString("0.##")%</p>
-
-                @if (Model.Plot.OwnersCount > 0 && !Model.Plot.HasPrimaryContact)
-                {
-                    <div class="alert alert-warning" role="alert">
-                        У участка есть активные владельцы, но основной контакт не назначен.
-                    </div>
-                }
 
                 @if (Model.Plot.CurrentOwnerships.Count == 0)
                 {
@@ -86,8 +77,6 @@
                             <thead>
                                 <tr>
                                     <th>Член товарищества</th>
-                                    <th>Доля, %</th>
-                                    <th>Основной контакт</th>
                                     <th>Действует с</th>
                                 </tr>
                             </thead>
@@ -96,10 +85,11 @@
                                 {
                                     <tr>
                                         <td>
-                                            <a asp-page="/Administration/Members/Details" asp-route-id="@ownership.MemberId">@ownership.MemberFullName</a>
+                                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                                <a asp-page="/Administration/Members/Details" asp-route-id="@ownership.MemberId">@ownership.MemberFullName</a>
+                                                <a class="btn btn-sm btn-outline-success" asp-page="/Administration/Members/Finance" asp-route-id="@ownership.MemberId">Финансы</a>
+                                            </div>
                                         </td>
-                                        <td>@(ownership.OwnershipShare.HasValue ? ownership.OwnershipShare.Value.ToString("0.##") : "—")</td>
-                                        <td>@(ownership.IsPrimaryContact ? "Да" : "Нет")</td>
                                         <td>@(ownership.ValidFrom.HasValue ? ownership.ValidFrom.Value.ToString("dd.MM.yyyy") : "—")</td>
                                     </tr>
                                 }
@@ -116,5 +106,60 @@
     <div class="card-body">
         <h2 class="h5 mb-3">Примечание</h2>
         <p class="mb-0">@(string.IsNullOrWhiteSpace(Model.Plot.Notes) ? "Примечание отсутствует." : Model.Plot.Notes)</p>
+    </div>
+</div>
+
+<div class="card shadow-sm mt-4">
+    <div class="card-header bg-white">
+        <h2 class="h5 mb-0">Начисления</h2>
+    </div>
+    <div class="card-body p-0">
+        @if (Model.Plot.Charges.Count == 0)
+        {
+            <div class="p-4 text-center text-muted">Начисления по участку отсутствуют.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Дата</th>
+                            <th>Тип</th>
+                            <th>Сумма</th>
+                            <th>Срок</th>
+                            <th>Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var charge in Model.Plot.Charges)
+                        {
+                            <tr>
+                                <td>@charge.ChargeDate.ToString("dd.MM.yyyy")</td>
+                                <td>@charge.ChargeTypeName</td>
+                                <td>@charge.Amount.ToString("0.00")</td>
+                                <td>@(charge.DueDate.HasValue ? charge.DueDate.Value.ToString("dd.MM.yyyy") : "—")</td>
+                                <td>@charge.StatusText</td>
+                            </tr>
+                            @if (!string.IsNullOrWhiteSpace(charge.Description) || !string.IsNullOrWhiteSpace(charge.CancellationReason))
+                            {
+                                <tr class="table-light">
+                                    <td colspan="5" class="small text-muted">
+                                        @if (!string.IsNullOrWhiteSpace(charge.Description))
+                                        {
+                                            <div><strong>Описание:</strong> @charge.Description</div>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(charge.CancellationReason))
+                                        {
+                                            <div><strong>Причина отмены:</strong> @charge.CancellationReason</div>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
     </div>
 </div>

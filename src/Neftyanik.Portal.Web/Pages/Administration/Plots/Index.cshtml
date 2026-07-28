@@ -14,6 +14,16 @@
     </div>
 </div>
 
+@if (TempData["SuccessMessage"] is string successMessage)
+{
+    <div class="alert alert-success" role="alert">@successMessage</div>
+}
+
+@if (TempData["ErrorMessage"] is string errorMessage)
+{
+    <div class="alert alert-danger" role="alert">@errorMessage</div>
+}
+
 <div class="card shadow-sm mb-4">
     <div class="card-body">
         <form method="get" class="row g-3 align-items-end">
@@ -29,9 +39,17 @@
                     <option value="archived">Только архивные</option>
                 </select>
             </div>
-            <div class="col-md-3 d-flex gap-2">
+            <div class="col-md-3">
+                <label asp-for="Ownership" class="form-label">Владельцы</label>
+                <select asp-for="Ownership" class="form-select">
+                    <option value="all">Все участки</option>
+                    <option value="withowners">Только с текущими владельцами</option>
+                    <option value="withoutowners">Только без текущих владельцев</option>
+                </select>
+            </div>
+            <div class="col-md-12 col-lg-3 d-flex gap-2">
                 <button type="submit" class="btn btn-outline-primary flex-fill">Найти</button>
-                <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Index" asp-route-status="all">Сбросить</a>
+                <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Index">Сбросить</a>
             </div>
         </form>
     </div>
@@ -47,53 +65,174 @@
         }
         else
         {
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Номер</th>
-                            <th>Адрес</th>
-                            <th>Площадь, м²</th>
-                            <th>Кадастровый номер</th>
-                            <th>Статус</th>
-                            <th>Количество владельцев</th>
-                            <th>Основной контакт</th>
-                            <th class="text-end">Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var plot in Model.Plots)
-                        {
+            <form method="post" asp-page-handler="CreateCharges" id="bulk-charge-form">
+                <input asp-for="Search" type="hidden" />
+                <input asp-for="Status" type="hidden" />
+                <input asp-for="Ownership" type="hidden" />
+                <input asp-for="PageNumber" type="hidden" />
+
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 p-3 border-bottom">
+                    <div>
+                        <h2 class="h5 mb-1">Список участков</h2>
+                        <p class="text-muted mb-0">Для начисления доступны только активные участки с текущими владельцами.</p>
+                    </div>
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#bulkChargeModal">Начислить выбранным</button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
                             <tr>
-                                <td class="fw-semibold">@plot.Number</td>
-                                <td>@(string.IsNullOrWhiteSpace(plot.Address) ? "—" : plot.Address)</td>
-                                <td>@(plot.AreaSquareMeters.HasValue ? plot.AreaSquareMeters.Value.ToString("0.###") : "—")</td>
-                                <td>@(string.IsNullOrWhiteSpace(plot.CadastralNumber) ? "—" : plot.CadastralNumber)</td>
-                                <td>
-                                    @if (plot.IsActive)
-                                    {
-                                        <span class="badge text-bg-success">Активен</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge text-bg-secondary">В архиве</span>
-                                    }
-                                </td>
-                                <td>@plot.OwnersCount</td>
-                                <td>@(string.IsNullOrWhiteSpace(plot.PrimaryContact) ? "—" : plot.PrimaryContact)</td>
-                                <td class="text-end">
-                                    <div class="btn-group btn-group-sm" role="group">
-                                        <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Details" asp-route-id="@plot.Id">Подробнее</a>
-                                        <a class="btn btn-outline-info" asp-page="/Administration/Plots/Ownerships/Index" asp-route-plotId="@plot.Id">Владельцы</a>
-                                        <a class="btn btn-outline-primary" asp-page="/Administration/Plots/Edit" asp-route-id="@plot.Id">Редактировать</a>
-                                        <a class="btn btn-outline-warning" asp-page="/Administration/Plots/Archive" asp-route-id="@plot.Id">@(plot.IsActive ? "Архивировать" : "Восстановить")</a>
+                                <th style="width: 1%;">
+                                    <div class="form-check mb-0">
+                                        <input class="form-check-input" type="checkbox" id="select-all-plots" aria-label="Выбрать все участки" />
                                     </div>
-                                </td>
+                                </th>
+                                <th>Номер</th>
+                                <th>Адрес</th>
+                                <th>Площадь, м²</th>
+                                <th>Кадастровый номер</th>
+                                <th>Статус</th>
+                                <th>Владелец</th>
+                                <th class="text-end">Действия</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
+                        </thead>
+                        <tbody>
+                            @foreach (var plot in Model.Plots)
+                            {
+                                <tr>
+                                    <td>
+                                        @if (plot.CanCreateCharge)
+                                        {
+                                            @if (Model.ChargeInput.SelectedPlotIds.Contains(plot.Id))
+                                            {
+                                                <input class="form-check-input" type="checkbox" name="ChargeInput.SelectedPlotIds" value="@plot.Id" checked aria-label="Выбрать участок @plot.Number" />
+                                            }
+                                            else
+                                            {
+                                                <input class="form-check-input" type="checkbox" name="ChargeInput.SelectedPlotIds" value="@plot.Id" aria-label="Выбрать участок @plot.Number" />
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">—</span>
+                                        }
+                                    </td>
+                                    <td class="fw-semibold">@plot.Number</td>
+                                    <td>@(string.IsNullOrWhiteSpace(plot.Address) ? "—" : plot.Address)</td>
+                                    <td>@(plot.AreaSquareMeters.HasValue ? plot.AreaSquareMeters.Value.ToString("0.###") : "—")</td>
+                                    <td>@(string.IsNullOrWhiteSpace(plot.CadastralNumber) ? "—" : plot.CadastralNumber)</td>
+                                    <td>
+                                        @if (plot.IsActive)
+                                        {
+                                            <span class="badge text-bg-success">Активен</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge text-bg-secondary">В архиве</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (plot.OwnerMemberId.HasValue && !string.IsNullOrWhiteSpace(plot.OwnerFullName))
+                                        {
+                                            <a asp-page="/Administration/Members/Details" asp-route-id="@plot.OwnerMemberId.Value">@plot.OwnerFullName</a>
+                                        }
+                                        else
+                                        {
+                                            <div class="text-muted">—</div>
+                                        }
+                                        @if (!plot.CanCreateCharge)
+                                        {
+                                            <div class="small text-muted">Начисление недоступно</div>
+                                        }
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Details" asp-route-id="@plot.Id">Подробнее</a>
+                                            <a class="btn btn-outline-primary" asp-page="/Administration/Plots/Edit" asp-route-id="@plot.Id">Редактировать</a>
+                                            <a class="btn btn-outline-warning" asp-page="/Administration/Plots/Archive" asp-route-id="@plot.Id">@(plot.IsActive ? "Архивировать" : "Восстановить")</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="modal fade" id="bulkChargeModal" tabindex="-1" aria-labelledby="bulkChargeModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h2 class="modal-title h5" id="bulkChargeModalLabel">Начисление по выбранным участкам</h2>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                                <div class="mb-3">
+                                    <div class="fw-semibold">Выбранные участки</div>
+                                    <div id="bulk-charge-selected-count" class="text-muted small mb-2"></div>
+                                    <ul id="bulk-charge-selected-plots" class="mb-0 ps-3"></ul>
+                                    <span asp-validation-for="ChargeInput.SelectedPlotIds" class="text-danger"></span>
+                                </div>
+
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label asp-for="ChargeInput.ChargeTypeId" class="form-label"></label>
+                                        @if (Model.HasSingleChargeType)
+                                        {
+                                            <input type="hidden" asp-for="ChargeInput.ChargeTypeId" />
+                                            <input class="form-control" value="@Model.SingleChargeTypeText" readonly />
+                                        }
+                                        else
+                                        {
+                                            <select asp-for="ChargeInput.ChargeTypeId" asp-items="Model.ChargeTypeOptions" class="form-select">
+                                                <option value="">Выберите тип начисления</option>
+                                            </select>
+                                        }
+                                        <span asp-validation-for="ChargeInput.ChargeTypeId" class="text-danger"></span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label asp-for="ChargeInput.Amount" class="form-label"></label>
+                                        <input class="form-control" id="charge-amount-display" value="@(Model.ChargeInput.Amount.HasValue ? $"{Model.ChargeInput.Amount.Value:0.00} грн" : string.Empty)" readonly />
+                                        <span asp-validation-for="ChargeInput.Amount" class="text-danger"></span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label asp-for="ChargeInput.ChargeDate" class="form-label"></label>
+                                        <input class="form-control" value="@Model.CurrentChargeDateDisplay" readonly />
+                                        <span asp-validation-for="ChargeInput.ChargeDate" class="text-danger"></span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label asp-for="ChargeInput.DueDate" class="form-label"></label>
+                                        <input asp-for="ChargeInput.DueDate" class="form-control" type="date" />
+                                        <span asp-validation-for="ChargeInput.DueDate" class="text-danger"></span>
+                                    </div>
+                                    <div class="col-12">
+                                        <label asp-for="ChargeInput.Description" class="form-label"></label>
+                                        <textarea asp-for="ChargeInput.Description" class="form-control" rows="3"></textarea>
+                                        <span asp-validation-for="ChargeInput.Description" class="text-danger"></span>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="confirm-bulk-charge" required />
+                                            <label class="form-check-label" for="confirm-bulk-charge">
+                                                Подтверждаю создание начислений для всех выбранных участков.
+                                            </label>
+                                            <div class="invalid-feedback d-block" id="confirm-bulk-charge-validation" hidden>
+                                                Подтвердите создание начислений.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+                                <button type="submit" class="btn btn-primary" id="submit-bulk-charge">Создать начисления</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
         }
     </div>
 </div>
@@ -107,6 +246,7 @@
                    asp-page="/Administration/Plots/Index"
                    asp-route-search="@Model.Search"
                    asp-route-status="@Model.Status"
+                   asp-route-ownership="@Model.Ownership"
                    asp-route-pageNumber="@(Model.PageNumber - 1)">Назад</a>
             </li>
             @for (var pageIndex = 1; pageIndex <= Model.TotalPages; pageIndex++)
@@ -116,6 +256,7 @@
                        asp-page="/Administration/Plots/Index"
                        asp-route-search="@Model.Search"
                        asp-route-status="@Model.Status"
+                       asp-route-ownership="@Model.Ownership"
                        asp-route-pageNumber="@pageIndex">@pageIndex</a>
                 </li>
             }
@@ -124,8 +265,157 @@
                    asp-page="/Administration/Plots/Index"
                    asp-route-search="@Model.Search"
                    asp-route-status="@Model.Status"
+                   asp-route-ownership="@Model.Ownership"
                    asp-route-pageNumber="@(Model.PageNumber + 1)">Вперёд</a>
             </li>
         </ul>
     </nav>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const selectAllCheckbox = document.getElementById('select-all-plots');
+            const modalElement = document.getElementById('bulkChargeModal');
+            const selectedPlotsList = document.getElementById('bulk-charge-selected-plots');
+            const selectedPlotsCount = document.getElementById('bulk-charge-selected-count');
+            const submitBulkChargeButton = document.getElementById('submit-bulk-charge');
+            const confirmBulkChargeCheckbox = document.getElementById('confirm-bulk-charge');
+            const confirmBulkChargeValidation = document.getElementById('confirm-bulk-charge-validation');
+            const chargeTypeSelect = document.getElementById('ChargeInput_ChargeTypeId');
+            const chargeAmountDisplay = document.getElementById('charge-amount-display');
+            const chargeTypeDefaultAmounts = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ChargeTypeDefaultAmounts));
+
+            if (!selectAllCheckbox) {
+                return;
+            }
+
+            const plotCheckboxes = Array.from(document.querySelectorAll('input[name="ChargeInput.SelectedPlotIds"]'));
+
+            const updateSelectAllState = () => {
+                const checkedCount = plotCheckboxes.filter(checkbox => checkbox.checked).length;
+                selectAllCheckbox.checked = plotCheckboxes.length > 0 && checkedCount === plotCheckboxes.length;
+                selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < plotCheckboxes.length;
+            };
+
+            const getSelectedPlotRows = () => plotCheckboxes
+                .filter(checkbox => checkbox.checked)
+                .map(checkbox => checkbox.closest('tr'))
+                .filter(row => row);
+
+            const updateBulkChargeSummary = () => {
+                if (!selectedPlotsList || !selectedPlotsCount || !submitBulkChargeButton) {
+                    return;
+                }
+
+                const selectedRows = getSelectedPlotRows();
+                selectedPlotsList.innerHTML = '';
+
+                if (selectedRows.length === 0) {
+                    selectedPlotsCount.textContent = 'Участки не выбраны.';
+                    const item = document.createElement('li');
+                    item.textContent = 'Выберите хотя бы один участок в списке.';
+                    selectedPlotsList.appendChild(item);
+                    submitBulkChargeButton.disabled = true;
+                    return;
+                }
+
+                selectedPlotsCount.textContent = `Выбрано участков: ${selectedRows.length}.`;
+                submitBulkChargeButton.disabled = false;
+
+                for (const row of selectedRows) {
+                    const item = document.createElement('li');
+                    item.textContent = row.cells[1]?.textContent?.trim() || 'Участок';
+                    selectedPlotsList.appendChild(item);
+                }
+            };
+
+            const resetConfirmationState = () => {
+                if (!confirmBulkChargeCheckbox || !confirmBulkChargeValidation) {
+                    return;
+                }
+
+                confirmBulkChargeCheckbox.checked = false;
+                confirmBulkChargeValidation.hidden = true;
+            };
+
+            const updateChargeAmount = () => {
+                if (!chargeAmountDisplay) {
+                    return;
+                }
+
+                const selectedChargeTypeId = chargeTypeSelect ? chargeTypeSelect.value : chargeTypeSelect;
+                const selectedAmount = selectedChargeTypeId && chargeTypeDefaultAmounts[selectedChargeTypeId] !== undefined
+                    ? chargeTypeDefaultAmounts[selectedChargeTypeId]
+                    : null;
+
+                if (selectedAmount === null || selectedAmount === undefined) {
+                    chargeAmountDisplay.value = '';
+                    return;
+                }
+
+                const normalizedAmount = Number(selectedAmount).toFixed(2);
+                chargeAmountDisplay.value = `${normalizedAmount} грн`;
+            };
+
+            selectAllCheckbox.addEventListener('change', () => {
+                for (const checkbox of plotCheckboxes) {
+                    checkbox.checked = selectAllCheckbox.checked;
+                }
+
+                updateSelectAllState();
+                updateBulkChargeSummary();
+            });
+
+            for (const checkbox of plotCheckboxes) {
+                checkbox.addEventListener('change', () => {
+                    updateSelectAllState();
+                    updateBulkChargeSummary();
+                });
+            }
+
+            if (modalElement) {
+                modalElement.addEventListener('show.bs.modal', () => {
+                    updateBulkChargeSummary();
+                    updateChargeAmount();
+                    resetConfirmationState();
+                });
+            }
+
+            if (chargeTypeSelect) {
+                chargeTypeSelect.addEventListener('change', updateChargeAmount);
+            }
+
+            const bulkChargeForm = document.getElementById('bulk-charge-form');
+            if (bulkChargeForm) {
+                bulkChargeForm.addEventListener('submit', (event) => {
+                    updateBulkChargeSummary();
+
+                    if (submitBulkChargeButton && submitBulkChargeButton.disabled) {
+                        event.preventDefault();
+                        return;
+                    }
+
+                    if (confirmBulkChargeCheckbox && !confirmBulkChargeCheckbox.checked) {
+                        event.preventDefault();
+                        confirmBulkChargeValidation.hidden = false;
+                    }
+                });
+            }
+
+            updateSelectAllState();
+            updateBulkChargeSummary();
+            updateChargeAmount();
+
+            @if (Model.ReopenChargeModal)
+            {
+                <text>
+                if (modalElement && window.bootstrap) {
+                    window.bootstrap.Modal.getOrCreateInstance(modalElement).show();
+                }
+                </text>
+            }
+        })();
+    </script>
 }
