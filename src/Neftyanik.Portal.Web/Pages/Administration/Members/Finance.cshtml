@@ -318,7 +318,6 @@ else
                             <tr>
                                 <th>Счётчик</th>
                                 <th>Расчётный участок</th>
-                                <th>История показаний</th>
                                 <th>Статус</th>
                             </tr>
                         </thead>
@@ -328,41 +327,6 @@ else
                                 <tr>
                                     <td class="fw-semibold">@meter.DisplayName</td>
                                     <td>@meter.BillingPlotNumber</td>
-                                    <td>
-                                        @if (meter.Readings.Count == 0)
-                                        {
-                                            <span class="text-muted">История отсутствует</span>
-                                        }
-                                        else
-                                        {
-                                            <div class="small d-flex flex-column gap-2 py-1">
-                                                @foreach (var reading in meter.Readings)
-                                                {
-                                                    <div class="border rounded px-2 py-1 bg-light-subtle">
-                                                        <div class="d-flex flex-wrap justify-content-between gap-2">
-                                                            <span class="fw-semibold">@reading.ReadingDate.ToString("dd.MM.yyyy")</span>
-                                                            <span>@reading.CurrentReading.ToString("0.000") кВт·ч</span>
-                                                        </div>
-                                                        <div class="d-flex flex-wrap gap-3 text-muted mt-1">
-                                                            @if (reading.IsInitialReading)
-                                                            {
-                                                                <span>Начальные показания</span>
-                                                            }
-                                                            else if (reading.Consumption.HasValue)
-                                                            {
-                                                                <span>Расход: @reading.Consumption.Value.ToString("0.000")</span>
-                                                            }
-
-                                                            @if (reading.Amount.HasValue)
-                                                            {
-                                                                <span>Начисление: @reading.Amount.Value.ToString("0.00") грн</span>
-                                                            }
-                                                        </div>
-                                                    </div>
-                                                }
-                                            </div>
-                                        }
-                                    </td>
                                     <td>
                                         @if (!meter.IsActive)
                                         {
@@ -376,6 +340,47 @@ else
                                         {
                                             <span class="badge text-bg-success">Готов к работе</span>
                                         }
+                                    </td>
+                                </tr>
+                                <tr class="table-light">
+                                    <td colspan="3">
+                                        <div class="small">
+                                            <div class="fw-semibold mb-2">История показаний</div>
+
+                                            @if (meter.Readings.Count == 0)
+                                            {
+                                                <span class="text-muted">История отсутствует</span>
+                                            }
+                                            else
+                                            {
+                                                <div class="d-flex flex-column gap-2 py-1">
+                                                    @foreach (var reading in meter.Readings)
+                                                    {
+                                                        <div class="border rounded px-2 py-1 bg-light-subtle">
+                                                            <div class="d-flex flex-wrap justify-content-between gap-2">
+                                                                <span class="fw-semibold">@reading.ReadingDate.ToString("dd.MM.yyyy")</span>
+                                                                <span>@reading.CurrentReading.ToString("0.000") кВт·ч</span>
+                                                            </div>
+                                                            <div class="d-flex flex-wrap gap-3 text-muted mt-1">
+                                                                @if (reading.IsInitialReading)
+                                                                {
+                                                                    <span>Начальные показания</span>
+                                                                }
+                                                                else if (reading.Consumption.HasValue)
+                                                                {
+                                                                    <span>Расход: @reading.Consumption.Value.ToString("0.000")</span>
+                                                                }
+
+                                                                @if (reading.Amount.HasValue)
+                                                                {
+                                                                    <span>Начисление: @reading.Amount.Value.ToString("0.00") грн</span>
+                                                                }
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
                                     </td>
                                 </tr>
                             }

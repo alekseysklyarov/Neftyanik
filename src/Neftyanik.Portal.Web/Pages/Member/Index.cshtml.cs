@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Domain.Constants;
@@ -9,6 +11,7 @@ using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data;
 using Neftyanik.Portal.Infrastructure.Data.Queries;
 using Neftyanik.Portal.Web.Pages.Finance;
+using Neftyanik.Portal.Web.Security;
 
 namespace Neftyanik.Portal.Web.Pages.Member;
 
@@ -26,11 +29,20 @@ public class IndexModel : PageModel
 
     public MemberDashboardViewModel Dashboard { get; private set; } = new();
 
+    [BindProperty]
+    public ProfileInputModel Profile { get; set; } = new();
+
+    [BindProperty]
+    public ChangePasswordInputModel ChangePassword { get; set; } = new();
+
     [BindProperty(SupportsGet = true)]
     public int ChargePage { get; set; } = 1;
 
     [BindProperty(SupportsGet = true)]
     public int PaymentPage { get; set; } = 1;
+
+    [BindProperty(SupportsGet = true)]
+    public int? ChargeTypeId { get; set; }
 
     public IReadOnlyList<PlotViewModel> Plots { get; private set; } = [];
 
@@ -39,6 +51,8 @@ public class IndexModel : PageModel
     public IReadOnlyList<PaymentItemViewModel> Payments { get; private set; } = [];
 
     public IReadOnlyList<MemberElectricityMeterItemViewModel> ElectricityMeters { get; private set; } = [];
+
+    public IReadOnlyList<SelectListItem> ChargeTypeOptions { get; private set; } = [];
 
     public int ChargeTotalPages { get; private set; } = 1;
 
@@ -64,12 +78,12 @@ public class IndexModel : PageModel
 
     public string? ElectricityFeatureWarningMessage { get; private set; }
 
+    public bool ReopenEditProfileModal { get; private set; }
+
+    public bool ReopenChangePasswordModal { get; private set; }
+
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
-        var currentDate = DateOnly.FromDateTime(DateTime.Now);
-        ChargePage = ChargePage < 1 ? 1 : ChargePage;
-        PaymentPage = PaymentPage < 1 ? 1 : PaymentPage;
-
         var user = await _userManager.GetUserAsync(User);
         if (user is null)
         {
@@ -80,6 +94,145 @@ public class IndexModel : PageModel
         {
             return RedirectToPage("/Account/ChangeInitialPassword");
         }
+
+        await LoadPageStateAsync(user, cancellationToken);
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostUpdateProfileAsync(CancellationToken cancellationToken)
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user is null)
+        {
+            return Challenge();
+        }
+
+        if (user.MustChangePassword)
+        {
+            return RedirectToPage("/Account/ChangeInitialPassword");
+        }
+
+        var member = await _dbContext.Members
+            .FirstOrDefaultAsync(item => item.ApplicationUserId == user.Id, cancellationToken);
+        if (member is null)
+        {
+            TempData["ErrorMessage"] = "Учетная запись не связана с карточкой члена товарищества. Обратитесь к администратору.";
+            return RedirectToPage();
+        }
+
+        Profile.FullName = Profile.FullName.Trim();
+        Profile.PhoneNumber = Normalize(Profile.PhoneNumber);
+        Profile.Email = Normalize(Profile.Email);
+
+        if (string.IsNullOrWhiteSpace(Profile.FullName))
+        {
+            ModelState.AddModelError($"{nameof(Profile)}.{nameof(ProfileInputModel.FullName)}", "Укажите ФИО.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(Profile.Email))
+        {
+            var normalizedEmail = _userManager.NormalizeEmail(Profile.Email);
+            var duplicateEmailExists = await _dbContext.Users
+                .AsNoTracking()
+                .AnyAsync(item => item.Id != user.Id && item.NormalizedEmail == normalizedEmail, cancellationToken);
+
+            if (duplicateEmailExists)
+            {
+                ModelState.AddModelError($"{nameof(Profile)}.{nameof(ProfileInputModel.Email)}", "Пользователь с таким адресом электронной почты уже существует.");
+            }
+        }
+
+        if (!ModelState.IsValid)
+        {
+            ReopenEditProfileModal = true;
+            await LoadPageStateAsync(user, cancellationToken, preserveProfileInput: true);
+            return Page();
+        }
+
+        var name = ParseFullName(Profile.FullName);
+
+        member.FullName = Profile.FullName;
+        member.PhoneNumber = Profile.PhoneNumber;
+        member.Email = Profile.Email;
+        member.UpdatedAtUtc = DateTime.UtcNow;
+
+        user.FirstName = name.FirstName;
+        user.LastName = name.LastName;
+        user.DisplayName = name.DisplayName;
+        user.PhoneNumber = Profile.PhoneNumber;
+        user.Email = Profile.Email;
+
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+        var updateResult = await _userManager.UpdateAsync(user);
+        if (!updateResult.Succeeded)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            ReopenEditProfileModal = true;
+            IdentityErrorLocalizer.AddErrors(
+                ModelState,
+                updateResult,
+                $"{nameof(Profile)}.{nameof(ProfileInputModel.Email)}",
+                string.Empty);
+
+            await LoadPageStateAsync(user, cancellationToken, preserveProfileInput: true);
+            return Page();
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        TempData["SuccessMessage"] = "Основные сведения обновлены.";
+        return RedirectToPage(new { chargePage = ChargePage, paymentPage = PaymentPage, chargeTypeId = ChargeTypeId });
+    }
+
+    public async Task<IActionResult> OnPostChangePasswordAsync(CancellationToken cancellationToken)
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user is null)
+        {
+            return Challenge();
+        }
+
+        if (user.MustChangePassword)
+        {
+            return RedirectToPage("/Account/ChangeInitialPassword");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            ReopenChangePasswordModal = true;
+            await LoadPageStateAsync(user, cancellationToken);
+            return Page();
+        }
+
+        var result = await _userManager.ChangePasswordAsync(user, ChangePassword.CurrentPassword, ChangePassword.NewPassword);
+        if (!result.Succeeded)
+        {
+            ReopenChangePasswordModal = true;
+            IdentityErrorLocalizer.AddErrors(
+                ModelState,
+                result,
+                string.Empty,
+                $"{nameof(ChangePassword)}.{nameof(ChangePasswordInputModel.NewPassword)}",
+                $"{nameof(ChangePassword)}.{nameof(ChangePasswordInputModel.CurrentPassword)}");
+
+            await LoadPageStateAsync(user, cancellationToken);
+            return Page();
+        }
+
+        TempData["SuccessMessage"] = "Пароль успешно изменен.";
+        return RedirectToPage(new { chargePage = ChargePage, paymentPage = PaymentPage, chargeTypeId = ChargeTypeId });
+    }
+
+    private async Task LoadPageStateAsync(
+        ApplicationUser user,
+        CancellationToken cancellationToken,
+        bool preserveProfileInput = false)
+    {
+        var currentDate = DateOnly.FromDateTime(DateTime.Now);
+        ChargePage = ChargePage < 1 ? 1 : ChargePage;
+        PaymentPage = PaymentPage < 1 ? 1 : PaymentPage;
 
         var member = await _dbContext.Members
             .AsNoTracking()
@@ -104,7 +257,25 @@ public class IndexModel : PageModel
                 IsLinked = false
             };
 
-            return Page();
+            Plots = [];
+            Charges = [];
+            Payments = [];
+            ElectricityMeters = [];
+            ChargeTotalPages = 1;
+            PaymentTotalPages = 1;
+            IsElectricityFeatureAvailable = true;
+            ElectricityFeatureWarningMessage = null;
+            return;
+        }
+
+        if (!preserveProfileInput)
+        {
+            Profile = new ProfileInputModel
+            {
+                FullName = member.FullName,
+                PhoneNumber = member.PhoneNumber,
+                Email = member.Email
+            };
         }
 
         var plots = await _dbContext.PlotOwnerships
@@ -156,9 +327,38 @@ public class IndexModel : PageModel
             .Select(payment => payment.Amount)
             .ToListAsync(cancellationToken);
 
-        var chargesQuery = _dbContext.Charges
+        ChargeTypeOptions = await _dbContext.Charges
             .AsNoTracking()
             .Where(charge => charge.PlotId != null && plotIds.Contains(charge.PlotId.Value))
+            .Select(charge => new
+            {
+                charge.ChargeTypeId,
+                Name = charge.ChargeType != null ? charge.ChargeType.Name : null
+            })
+            .Distinct()
+            .OrderBy(item => item.Name)
+            .Select(item => new SelectListItem
+            {
+                Value = item.ChargeTypeId.ToString(),
+                Text = string.IsNullOrWhiteSpace(item.Name) ? $"Тип #{item.ChargeTypeId}" : item.Name
+            })
+            .ToListAsync(cancellationToken);
+
+        if (ChargeTypeId.HasValue && !ChargeTypeOptions.Any(option => option.Value == ChargeTypeId.Value.ToString()))
+        {
+            ChargeTypeId = null;
+        }
+
+        var chargesQuery = _dbContext.Charges
+            .AsNoTracking()
+            .Where(charge => charge.PlotId != null && plotIds.Contains(charge.PlotId.Value));
+
+        if (ChargeTypeId.HasValue)
+        {
+            chargesQuery = chargesQuery.Where(charge => charge.ChargeTypeId == ChargeTypeId.Value);
+        }
+
+        chargesQuery = chargesQuery
             .OrderByDescending(charge => charge.ChargeDate)
             .ThenByDescending(charge => charge.Id);
 
@@ -231,8 +431,48 @@ public class IndexModel : PageModel
             TotalPayments = totalPayments.Sum(),
             Plots = member.Plots
         };
+    }
 
-        return Page();
+    private static string? Normalize(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private static (string FirstName, string LastName, string DisplayName) ParseFullName(string fullName)
+    {
+        var trimmedFullName = fullName.Trim();
+        var nameParts = trimmedFullName.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        if (nameParts.Length == 0)
+        {
+            return ("Член", "Товарищества", "Член товарищества");
+        }
+
+        if (nameParts.Length == 1)
+        {
+            return (TrimToLength(nameParts[0], 100), "Товарищества", trimmedFullName);
+        }
+
+        var firstName = TrimToLength(string.Join(' ', nameParts[..^1]), 100);
+        var lastName = TrimToLength(nameParts[^1], 100);
+
+        if (string.IsNullOrWhiteSpace(firstName))
+        {
+            firstName = "Член";
+        }
+
+        if (string.IsNullOrWhiteSpace(lastName))
+        {
+            lastName = "Товарищества";
+        }
+
+        return (firstName, lastName, trimmedFullName);
+    }
+
+    private static string TrimToLength(string value, int maxLength)
+    {
+        var trimmed = value.Trim();
+        return trimmed.Length <= maxLength ? trimmed : trimmed[..maxLength].TrimEnd();
     }
 
     private sealed class MemberDashboardQueryModel
@@ -248,6 +488,43 @@ public class IndexModel : PageModel
         public bool IsLinked { get; init; }
 
         public IReadOnlyList<PlotViewModel> Plots { get; set; } = [];
+    }
+
+    public sealed class ProfileInputModel
+    {
+        [Required(ErrorMessage = "Укажите ФИО.")]
+        [StringLength(200, ErrorMessage = "ФИО не должно превышать 200 символов.")]
+        [Display(Name = "ФИО")]
+        public string FullName { get; set; } = string.Empty;
+
+        [StringLength(50, ErrorMessage = "Номер телефона не должен превышать 50 символов.")]
+        [Phone(ErrorMessage = "Введите корректный номер телефона.")]
+        [Display(Name = "Телефон")]
+        public string? PhoneNumber { get; set; }
+
+        [StringLength(256, ErrorMessage = "Электронная почта не должна превышать 256 символов.")]
+        [EmailAddress(ErrorMessage = "Введите корректный адрес электронной почты.")]
+        [Display(Name = "Электронная почта")]
+        public string? Email { get; set; }
+    }
+
+    public sealed class ChangePasswordInputModel
+    {
+        [Required(ErrorMessage = "Введите текущий пароль.")]
+        [DataType(DataType.Password)]
+        [Display(Name = "Текущий пароль")]
+        public string CurrentPassword { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Введите новый пароль.")]
+        [DataType(DataType.Password)]
+        [Display(Name = "Новый пароль")]
+        public string NewPassword { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Подтвердите новый пароль.")]
+        [DataType(DataType.Password)]
+        [Compare(nameof(NewPassword), ErrorMessage = "Пароли не совпадают.")]
+        [Display(Name = "Подтверждение нового пароля")]
+        public string ConfirmNewPassword { get; set; } = string.Empty;
     }
 
     private async Task<Dictionary<int, decimal>> LoadPaymentTotalsByPlotAsync(int[] plotIds, CancellationToken cancellationToken)

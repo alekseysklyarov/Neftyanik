@@ -19,7 +19,7 @@
         <form method="get" class="row g-3 align-items-end">
             <div class="col-md-6">
                 <label asp-for="Search" class="form-label">Поиск</label>
-                <input asp-for="Search" class="form-control" placeholder="ФИО, телефон или электронная почта" />
+                <input asp-for="Search" class="form-control" placeholder="ФИО или телефон" />
             </div>
             <div class="col-md-3">
                 <label asp-for="Status" class="form-label">Статус</label>
@@ -53,9 +53,9 @@
                         <tr>
                             <th>ФИО</th>
                             <th>Телефон</th>
-                            <th>Электронная почта</th>
                             <th>Дата вступления</th>
                             <th>Статус</th>
+                            <th>Электричество (отключено)</th>
                             <th>Активные владения</th>
                             <th>Баланс</th>
                             <th>Логин</th>
@@ -68,7 +68,6 @@
                             <tr>
                                 <td class="fw-semibold">@member.FullName</td>
                                 <td>@(string.IsNullOrWhiteSpace(member.PhoneNumber) ? "—" : member.PhoneNumber)</td>
-                                <td>@(string.IsNullOrWhiteSpace(member.Email) ? "—" : member.Email)</td>
                                 <td>@(member.JoinedAt.HasValue ? member.JoinedAt.Value.ToString("dd.MM.yyyy") : "—")</td>
                                 <td>
                                     @if (member.IsActive)
@@ -78,6 +77,16 @@
                                     else
                                     {
                                         <span class="badge text-bg-secondary">В архиве</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (member.IsElectricityDisconnected)
+                                    {
+                                        <span>Аннулированный</span>
+                                    }
+                                    else
+                                    {
+                                        <span>—</span>
                                     }
                                 </td>
                                 <td>@member.ActiveOwnershipsCount</td>

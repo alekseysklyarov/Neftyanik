@@ -145,6 +145,78 @@ public class AdministrationPlotChargeTests
     }
 
     [Fact]
+    public async Task OnGetPlotDetailsAsync_FiltersChargesByType()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseSqlite(connection)
+            .Options;
+
+        await using var dbContext = new ApplicationDbContext(options);
+        await dbContext.Database.EnsureCreatedAsync();
+
+        const int plotId = 1701;
+        const int membershipChargeTypeId = 1801;
+        const int electricityChargeTypeId = 1802;
+
+        dbContext.Plots.Add(new Plot
+        {
+            Id = plotId,
+            Number = "P-1701",
+            IsActive = true
+        });
+
+        dbContext.ChargeTypes.AddRange(
+            new ChargeType
+            {
+                Id = membershipChargeTypeId,
+                Name = "Членский взнос",
+                IsActive = true,
+                DefaultAmount = 500m
+            },
+            new ChargeType
+            {
+                Id = electricityChargeTypeId,
+                Name = "Электроэнергия",
+                IsActive = true,
+                DefaultAmount = 250m
+            });
+
+        dbContext.Charges.AddRange(
+            new Charge
+            {
+                PlotId = plotId,
+                ChargeTypeId = membershipChargeTypeId,
+                Amount = 500m,
+                ChargeDate = new DateOnly(2026, 1, 15)
+            },
+            new Charge
+            {
+                PlotId = plotId,
+                ChargeTypeId = electricityChargeTypeId,
+                Amount = 250m,
+                ChargeDate = new DateOnly(2026, 2, 15)
+            });
+
+        await dbContext.SaveChangesAsync();
+
+        var model = new DetailsModel(dbContext)
+        {
+            ChargeTypeId = electricityChargeTypeId
+        };
+
+        var result = await model.OnGetAsync(plotId, CancellationToken.None);
+
+        Assert.IsType<PageResult>(result);
+        var charge = Assert.Single(model.Plot.Charges);
+        Assert.Equal("Электроэнергия", charge.ChargeTypeName);
+        Assert.Equal(250m, charge.Amount);
+        Assert.Equal(2, model.ChargeTypeOptions.Count);
+    }
+
+    [Fact]
     public async Task OnPostCreateChargesAsync_WithMultipleSelectedPlots_UsesDefaultAmountAndCurrentDate()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");

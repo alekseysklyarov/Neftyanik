@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Infrastructure.Data;
@@ -18,6 +19,11 @@ public class DetailsModel : PageModel
     }
 
     public PlotDetailsViewModel Plot { get; private set; } = new();
+
+    [BindProperty(SupportsGet = true)]
+    public int? ChargeTypeId { get; set; }
+
+    public IReadOnlyList<SelectListItem> ChargeTypeOptions { get; private set; } = [];
 
     public async Task<IActionResult> OnGetAsync(int id, CancellationToken cancellationToken)
     {
@@ -67,9 +73,38 @@ public class DetailsModel : PageModel
             .Where(ownership => ownership.OwnershipShare.HasValue)
             .Sum(ownership => ownership.OwnershipShare ?? 0m);
 
-        plot.Charges = await _dbContext.Charges
+        ChargeTypeOptions = await _dbContext.Charges
             .AsNoTracking()
             .Where(charge => charge.PlotId == id)
+            .Select(charge => new
+            {
+                Id = charge.ChargeTypeId,
+                Name = charge.ChargeType != null ? charge.ChargeType.Name : null
+            })
+            .Distinct()
+            .OrderBy(item => item.Name)
+            .Select(item => new SelectListItem
+            {
+                Value = item.Id.ToString(),
+                Text = string.IsNullOrWhiteSpace(item.Name) ? $"Тип #{item.Id}" : item.Name
+            })
+            .ToListAsync(cancellationToken);
+
+        if (ChargeTypeId.HasValue && !ChargeTypeOptions.Any(option => option.Value == ChargeTypeId.Value.ToString()))
+        {
+            ChargeTypeId = null;
+        }
+
+        var chargesQuery = _dbContext.Charges
+            .AsNoTracking()
+            .Where(charge => charge.PlotId == id);
+
+        if (ChargeTypeId.HasValue)
+        {
+            chargesQuery = chargesQuery.Where(charge => charge.ChargeTypeId == ChargeTypeId.Value);
+        }
+
+        plot.Charges = await chargesQuery
             .OrderByDescending(charge => charge.ChargeDate)
             .ThenByDescending(charge => charge.Id)
             .Select(charge => new PlotChargeViewModel

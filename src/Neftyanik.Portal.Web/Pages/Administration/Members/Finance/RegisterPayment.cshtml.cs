@@ -16,6 +16,7 @@ namespace Neftyanik.Portal.Web.Pages.Administration.Members.Finance;
 [Authorize(Roles = RoleNames.Administrator)]
 public class RegisterPaymentModel : PageModel
 {
+    private static readonly PaymentMethod[] AllowedPaymentMethods = [PaymentMethod.Cash, PaymentMethod.Card];
     private readonly ApplicationDbContext _dbContext;
     private readonly UserManager<ApplicationUser> _userManager;
 
@@ -77,6 +78,11 @@ public class RegisterPaymentModel : PageModel
             Input.PlotId = int.Parse(PlotOptions[0].Value);
         }
 
+        if (!Input.PaymentMethod.HasValue)
+        {
+            Input.PaymentMethod = PaymentMethod.Cash;
+        }
+
         if (!ModelState.IsValid)
         {
             return Page();
@@ -86,6 +92,12 @@ public class RegisterPaymentModel : PageModel
         if (!Input.PlotId.HasValue || !validPlotIds.Contains(Input.PlotId.Value.ToString()))
         {
             ModelState.AddModelError(nameof(Input.PlotId), "Выберите участок из списка текущих владений участника.");
+            return Page();
+        }
+
+        if (!Input.PaymentMethod.HasValue || !AllowedPaymentMethods.Contains(Input.PaymentMethod.Value))
+        {
+            ModelState.AddModelError(nameof(Input.PaymentMethod), "Выберите допустимый способ оплаты: наличные или банковская карта.");
             return Page();
         }
 
@@ -258,7 +270,7 @@ public class RegisterPaymentModel : PageModel
             .Distinct()
             .ToListAsync(cancellationToken);
 
-        PaymentMethodOptions = Enum.GetValues<PaymentMethod>()
+        PaymentMethodOptions = AllowedPaymentMethods
             .Select(method => new SelectListItem
             {
                 Value = method.ToString(),

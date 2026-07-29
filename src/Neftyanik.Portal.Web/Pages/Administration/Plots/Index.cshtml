@@ -90,7 +90,7 @@
                                 </th>
                                 <th>Номер</th>
                                 <th>Адрес</th>
-                                <th>Площадь, м²</th>
+                                <th>Площадь, соток</th>
                                 <th>Кадастровый номер</th>
                                 <th>Статус</th>
                                 <th>Владелец</th>
@@ -123,13 +123,9 @@
                                     <td>@(plot.AreaSquareMeters.HasValue ? plot.AreaSquareMeters.Value.ToString("0.###") : "—")</td>
                                     <td>@(string.IsNullOrWhiteSpace(plot.CadastralNumber) ? "—" : plot.CadastralNumber)</td>
                                     <td>
-                                        @if (plot.IsActive)
+                                        @if (!plot.IsActive)
                                         {
-                                            <span class="badge text-bg-success">Активен</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge text-bg-secondary">В архиве</span>
+                                            <span>анулировано</span>
                                         }
                                     </td>
                                     <td>

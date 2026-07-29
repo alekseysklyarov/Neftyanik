@@ -210,6 +210,87 @@ public class MemberFinanceAuthorizationTests
     }
 
     [Fact]
+    public async Task GetMemberDashboard_WithChargeTypeFilter_ShowsOnlySelectedCharges()
+    {
+        using var factory = new PortalWebApplicationFactory();
+        const string userId = "member-user-filter";
+        const int memberId = 2201;
+        const int plotId = 2301;
+        const int membershipChargeTypeId = 2401;
+        const int electricityChargeTypeId = 2402;
+
+        await factory.ExecuteDbContextAsync(async dbContext =>
+        {
+            dbContext.Users.Add(CreateUser(userId, "member-filter@example.com"));
+            dbContext.Members.Add(new Member
+            {
+                Id = memberId,
+                FullName = "Member Filter",
+                ApplicationUserId = userId,
+                IsActive = true
+            });
+            dbContext.Plots.Add(new Plot
+            {
+                Id = plotId,
+                Number = "P-2301",
+                IsActive = true
+            });
+            dbContext.PlotOwnerships.Add(new PlotOwnership
+            {
+                Id = 1,
+                PlotId = plotId,
+                MemberId = memberId,
+                ValidFrom = new DateOnly(2020, 1, 1),
+                IsPrimaryContact = true
+            });
+            dbContext.ChargeTypes.AddRange(
+                new ChargeType
+                {
+                    Id = membershipChargeTypeId,
+                    Name = "Членский взнос",
+                    IsActive = true
+                },
+                new ChargeType
+                {
+                    Id = electricityChargeTypeId,
+                    Name = "Электроэнергия",
+                    IsActive = true
+                });
+            dbContext.Charges.AddRange(
+                new Charge
+                {
+                    Id = 1,
+                    PlotId = plotId,
+                    ChargeTypeId = membershipChargeTypeId,
+                    Amount = 150m,
+                    ChargeDate = new DateOnly(2026, 1, 10),
+                    Description = "Membership charge"
+                },
+                new Charge
+                {
+                    Id = 2,
+                    PlotId = plotId,
+                    ChargeTypeId = electricityChargeTypeId,
+                    Amount = 250m,
+                    ChargeDate = new DateOnly(2026, 1, 11),
+                    Description = "Electricity charge"
+                });
+
+            await dbContext.SaveChangesAsync();
+        });
+
+        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userId, RoleNames.Member));
+
+        var response = await client.GetAsync($"/Member?chargeTypeId={electricityChargeTypeId}");
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("Электроэнергия", html, StringComparison.Ordinal);
+        Assert.Contains("Electricity charge", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("Membership charge", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task GetMemberDashboard_WithReadyElectricityMeter_ShowsSubmitReadingButton()
     {
         using var factory = new PortalWebApplicationFactory();

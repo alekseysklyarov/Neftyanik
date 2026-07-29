@@ -25,6 +25,16 @@
     }
 </div>
 
+@if (TempData["SuccessMessage"] is string successMessage)
+{
+    <div class="alert alert-success" role="alert">@successMessage</div>
+}
+
+@if (TempData["ErrorMessage"] is string errorMessage)
+{
+    <div class="alert alert-danger" role="alert">@errorMessage</div>
+}
+
 @if (!Model.Dashboard.IsLinked)
 {
     <div class="alert alert-warning" role="alert">
@@ -49,18 +59,124 @@ else
     </div>
 
     <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white">
+            <h2 class="h5 mb-0">Основные сведения</h2>
+        </div>
         <div class="card-body">
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <p class="mb-1"><strong>Телефон:</strong> @(string.IsNullOrWhiteSpace(Model.Dashboard.PhoneNumber) ? "—" : Model.Dashboard.PhoneNumber)</p>
-                    <p class="mb-0"><strong>Email:</strong> @(string.IsNullOrWhiteSpace(Model.Dashboard.Email) ? "—" : Model.Dashboard.Email)</p>
+            <div class="row g-4">
+                <div class="col-lg-7">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">ФИО</dt>
+                        <dd class="col-sm-8">@Model.Dashboard.FullName</dd>
+
+                        <dt class="col-sm-4">Телефон</dt>
+                        <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Dashboard.PhoneNumber) ? "—" : Model.Dashboard.PhoneNumber)</dd>
+
+                        <dt class="col-sm-4">Электронная почта</dt>
+                        <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Dashboard.Email) ? "—" : Model.Dashboard.Email)</dd>
+                    </dl>
+
+                    <div class="form-text mt-3">Логин для входа изменяется администратором.</div>
+
+                    <div class="mt-4 d-flex gap-2 flex-wrap">
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editProfileModal">Редактировать</button>
+                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Изменить пароль</button>
+                    </div>
                 </div>
-                <div class="col-md-4">
-                    <p class="mb-0"><strong>Статус:</strong> @(Model.Dashboard.IsActive ? "Активен" : "В архиве")</p>
+                <div class="col-lg-5">
+                    <div class="d-flex flex-column gap-3 h-100">
+                        <div class="border rounded p-3 bg-light">
+                            <p class="mb-2"><strong>Текущий телефон:</strong> @(string.IsNullOrWhiteSpace(Model.Dashboard.PhoneNumber) ? "—" : Model.Dashboard.PhoneNumber)</p>
+                            <p class="mb-2"><strong>Текущий email:</strong> @(string.IsNullOrWhiteSpace(Model.Dashboard.Email) ? "—" : Model.Dashboard.Email)</p>
+                            <p class="mb-2"><strong>Статус:</strong> @(Model.Dashboard.IsActive ? "Активен" : "В архиве")</p>
+                            <p class="mb-0"><strong>Финансовый статус:</strong> <span class="@Model.Dashboard.BalanceStatusClass">@Model.Dashboard.BalanceStatusText</span></p>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-md-4">
-                    <p class="mb-0"><strong>Финансовый статус:</strong> <span class="@Model.Dashboard.BalanceStatusClass">@Model.Dashboard.BalanceStatusText</span></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="editProfileModalLabel">Редактировать информацию</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
                 </div>
+                <form method="post" asp-page-handler="UpdateProfile">
+                    <div class="modal-body">
+                        <input type="hidden" asp-for="ChargeTypeId" />
+                        <input type="hidden" asp-for="ChargePage" />
+                        <input type="hidden" asp-for="PaymentPage" />
+
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label asp-for="Profile.FullName" class="form-label"></label>
+                                <input asp-for="Profile.FullName" class="form-control" />
+                                <span asp-validation-for="Profile.FullName" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Profile.PhoneNumber" class="form-label"></label>
+                                <input asp-for="Profile.PhoneNumber" class="form-control" />
+                                <span asp-validation-for="Profile.PhoneNumber" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Profile.Email" class="form-label"></label>
+                                <input asp-for="Profile.Email" class="form-control" />
+                                <span asp-validation-for="Profile.Email" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+                        <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="changePasswordModalLabel">Изменить пароль</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <form method="post" asp-page-handler="ChangePassword">
+                    <div class="modal-body">
+                        <input type="hidden" asp-for="ChargeTypeId" />
+                        <input type="hidden" asp-for="ChargePage" />
+                        <input type="hidden" asp-for="PaymentPage" />
+
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="ChangePassword.CurrentPassword" class="form-label"></label>
+                            <input asp-for="ChangePassword.CurrentPassword" class="form-control" type="password" autocomplete="current-password" />
+                            <span asp-validation-for="ChangePassword.CurrentPassword" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="ChangePassword.NewPassword" class="form-label"></label>
+                            <input asp-for="ChangePassword.NewPassword" class="form-control" type="password" autocomplete="new-password" />
+                            <span asp-validation-for="ChangePassword.NewPassword" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="ChangePassword.ConfirmNewPassword" class="form-label"></label>
+                            <input asp-for="ChangePassword.ConfirmNewPassword" class="form-control" type="password" autocomplete="new-password" />
+                            <span asp-validation-for="ChangePassword.ConfirmNewPassword" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+                        <button type="submit" class="btn btn-primary">Изменить пароль</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -115,7 +231,19 @@ else
         <div class="col-xl-6">
             <div class="card shadow-sm h-100">
                 <div class="card-header bg-white">
-                    <h2 class="h5 mb-0">Начисления</h2>
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                        <h2 class="h5 mb-0">Начисления</h2>
+                        <form method="get" class="d-flex flex-column flex-sm-row gap-2 align-items-sm-center">
+                            <input type="hidden" asp-for="PaymentPage" />
+                            <select asp-for="ChargeTypeId" asp-items="Model.ChargeTypeOptions" class="form-select form-select-sm">
+                                <option value="">Все типы</option>
+                            </select>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-sm btn-outline-primary">Фильтр</button>
+                                <a class="btn btn-sm btn-outline-secondary" asp-page="/Member/Index" asp-route-paymentPage="@Model.PaymentPage">Сбросить</a>
+                            </div>
+                        </form>
+                    </div>
                 </div>
                 <div class="card-body p-0">
                     @if (Model.Charges.Count == 0)
@@ -174,16 +302,16 @@ else
                         <nav aria-label="Навигация по начислениям">
                             <ul class="pagination justify-content-center mb-0 flex-wrap">
                                 <li class="page-item @(Model.HasChargePreviousPage ? string.Empty : "disabled")">
-                                    <a class="page-link" asp-page="/Member/Index" asp-route-chargePage="@(Model.ChargePage - 1)" asp-route-paymentPage="@Model.PaymentPage">Назад</a>
+                                    <a class="page-link" asp-page="/Member/Index" asp-route-chargePage="@(Model.ChargePage - 1)" asp-route-paymentPage="@Model.PaymentPage" asp-route-chargeTypeId="@Model.ChargeTypeId">Назад</a>
                                 </li>
                                 @for (var pageIndex = 1; pageIndex <= Model.ChargeTotalPages; pageIndex++)
                                 {
                                     <li class="page-item @(pageIndex == Model.ChargePage ? "active" : string.Empty)">
-                                        <a class="page-link" asp-page="/Member/Index" asp-route-chargePage="@pageIndex" asp-route-paymentPage="@Model.PaymentPage">@pageIndex</a>
+                                        <a class="page-link" asp-page="/Member/Index" asp-route-chargePage="@pageIndex" asp-route-paymentPage="@Model.PaymentPage" asp-route-chargeTypeId="@Model.ChargeTypeId">@pageIndex</a>
                                     </li>
                                 }
                                 <li class="page-item @(Model.HasChargeNextPage ? string.Empty : "disabled")">
-                                    <a class="page-link" asp-page="/Member/Index" asp-route-chargePage="@(Model.ChargePage + 1)" asp-route-paymentPage="@Model.PaymentPage">Вперёд</a>
+                                    <a class="page-link" asp-page="/Member/Index" asp-route-chargePage="@(Model.ChargePage + 1)" asp-route-paymentPage="@Model.PaymentPage" asp-route-chargeTypeId="@Model.ChargeTypeId">Вперёд</a>
                                 </li>
                             </ul>
                         </nav>
@@ -253,16 +381,16 @@ else
                         <nav aria-label="Навигация по платежам">
                             <ul class="pagination justify-content-center mb-0 flex-wrap">
                                 <li class="page-item @(Model.HasPaymentPreviousPage ? string.Empty : "disabled")">
-                                    <a class="page-link" asp-page="/Member/Index" asp-route-chargePage="@Model.ChargePage" asp-route-paymentPage="@(Model.PaymentPage - 1)">Назад</a>
+                                    <a class="page-link" asp-page="/Member/Index" asp-route-chargePage="@Model.ChargePage" asp-route-paymentPage="@(Model.PaymentPage - 1)" asp-route-chargeTypeId="@Model.ChargeTypeId">Назад</a>
                                 </li>
                                 @for (var pageIndex = 1; pageIndex <= Model.PaymentTotalPages; pageIndex++)
                                 {
                                     <li class="page-item @(pageIndex == Model.PaymentPage ? "active" : string.Empty)">
-                                        <a class="page-link" asp-page="/Member/Index" asp-route-chargePage="@Model.ChargePage" asp-route-paymentPage="@pageIndex">@pageIndex</a>
+                                        <a class="page-link" asp-page="/Member/Index" asp-route-chargePage="@Model.ChargePage" asp-route-paymentPage="@pageIndex" asp-route-chargeTypeId="@Model.ChargeTypeId">@pageIndex</a>
                                     </li>
                                 }
                                 <li class="page-item @(Model.HasPaymentNextPage ? string.Empty : "disabled")">
-                                    <a class="page-link" asp-page="/Member/Index" asp-route-chargePage="@Model.ChargePage" asp-route-paymentPage="@(Model.PaymentPage + 1)">Вперёд</a>
+                                    <a class="page-link" asp-page="/Member/Index" asp-route-chargePage="@Model.ChargePage" asp-route-paymentPage="@(Model.PaymentPage + 1)" asp-route-chargeTypeId="@Model.ChargeTypeId">Вперёд</a>
                                 </li>
                             </ul>
                         </nav>
@@ -297,7 +425,6 @@ else
                                 <tr>
                                     <th>Счётчик</th>
                                     <th>Расчётный участок</th>
-                                    <th>История показаний</th>
                                     <th>Статус</th>
                                 </tr>
                             </thead>
@@ -307,41 +434,6 @@ else
                                     <tr>
                                         <td class="fw-semibold">@meter.DisplayName</td>
                                         <td>@meter.BillingPlotNumber</td>
-                                        <td>
-                                            @if (meter.Readings.Count == 0)
-                                            {
-                                                <span class="text-muted">История отсутствует</span>
-                                            }
-                                            else
-                                            {
-                                                <div class="small d-flex flex-column gap-2 py-1">
-                                                    @foreach (var reading in meter.Readings)
-                                                    {
-                                                        <div class="border rounded px-2 py-1 bg-light-subtle">
-                                                            <div class="d-flex flex-wrap justify-content-between gap-2">
-                                                                <span class="fw-semibold">@reading.ReadingDate.ToString("dd.MM.yyyy")</span>
-                                                                <span>@reading.CurrentReading.ToString("0.000") кВт·ч</span>
-                                                            </div>
-                                                            <div class="d-flex flex-wrap gap-3 text-muted mt-1">
-                                                                @if (reading.IsInitialReading)
-                                                                {
-                                                                    <span>Начальные показания</span>
-                                                                }
-                                                                else if (reading.Consumption.HasValue)
-                                                                {
-                                                                    <span>Расход: @reading.Consumption.Value.ToString("0.000")</span>
-                                                                }
-
-                                                                @if (reading.Amount.HasValue)
-                                                                {
-                                                                    <span>Начисление: @reading.Amount.Value.ToString("0.00") грн</span>
-                                                                }
-                                                            </div>
-                                                        </div>
-                                                    }
-                                                </div>
-                                            }
-                                        </td>
                                         <td>
                                             @if (!meter.IsActive)
                                             {
@@ -357,6 +449,48 @@ else
                                             }
                                         </td>
                                     </tr>
+
+                                    <tr class="table-light">
+                                        <td colspan="3">
+                                            <div class="small">
+                                                <div class="fw-semibold mb-2">История показаний</div>
+
+                                                @if (meter.Readings.Count == 0)
+                                                {
+                                                    <span class="text-muted">История отсутствует</span>
+                                                }
+                                                else
+                                                {
+                                                    <div class="d-flex flex-column gap-2 py-1">
+                                                        @foreach (var reading in meter.Readings)
+                                                        {
+                                                            <div class="border rounded px-2 py-1 bg-light-subtle">
+                                                                <div class="d-flex flex-wrap justify-content-between gap-2">
+                                                                    <span class="fw-semibold">@reading.ReadingDate.ToString("dd.MM.yyyy")</span>
+                                                                    <span>@reading.CurrentReading.ToString("0.000") кВт·ч</span>
+                                                                </div>
+                                                                <div class="d-flex flex-wrap gap-3 text-muted mt-1">
+                                                                    @if (reading.IsInitialReading)
+                                                                    {
+                                                                        <span>Начальные показания</span>
+                                                                    }
+                                                                    else if (reading.Consumption.HasValue)
+                                                                    {
+                                                                        <span>Расход: @reading.Consumption.Value.ToString("0.000")</span>
+                                                                    }
+
+                                                                    @if (reading.Amount.HasValue)
+                                                                    {
+                                                                        <span>Начисление: @reading.Amount.Value.ToString("0.00") грн</span>
+                                                                    }
+                                                                </div>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                }
+                                            </div>
+                                        </td>
+                                    </tr>
                                 }
                             </tbody>
                         </table>
@@ -364,5 +498,33 @@ else
                 }
             </div>
         </div>
+    }
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    @if (Model.ReopenEditProfileModal)
+    {
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                var modalElement = document.getElementById('editProfileModal');
+                if (modalElement) {
+                    bootstrap.Modal.getOrCreateInstance(modalElement).show();
+                }
+            });
+        </script>
+    }
+
+    @if (Model.ReopenChangePasswordModal)
+    {
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                var modalElement = document.getElementById('changePasswordModal');
+                if (modalElement) {
+                    bootstrap.Modal.getOrCreateInstance(modalElement).show();
+                }
+            });
+        </script>
     }
 }

@@ -79,9 +79,10 @@ public class IndexModel : PageModel
                 Id = member.Id,
                 FullName = member.FullName,
                 PhoneNumber = member.PhoneNumber,
-                Email = member.Email,
                 JoinedAt = member.JoinedAt,
                 IsActive = member.IsActive,
+                IsElectricityDisconnected = member.MemberElectricityMeters.Any()
+                    && !member.MemberElectricityMeters.Any(meter => meter.IsActive),
                 ActiveOwnershipsCount = member.PlotOwnerships.Count(ownership => (!ownership.ValidFrom.HasValue || ownership.ValidFrom.Value <= currentDate)
                     && (!ownership.ValidTo.HasValue || ownership.ValidTo.Value >= currentDate)),
                 Login = member.ApplicationUserId == null
@@ -171,11 +172,11 @@ public class IndexModel : PageModel
 
         public string? PhoneNumber { get; init; }
 
-        public string? Email { get; init; }
-
         public DateOnly? JoinedAt { get; init; }
 
         public bool IsActive { get; init; }
+
+        public bool IsElectricityDisconnected { get; init; }
 
         public int ActiveOwnershipsCount { get; init; }
 

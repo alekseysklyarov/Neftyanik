@@ -7,6 +7,7 @@ using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure;
 using Neftyanik.Portal.Infrastructure.Data;
+using Neftyanik.Portal.Web.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,12 +33,15 @@ builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = false;
     options.Password.RequireNonAlphanumeric = false;
     options.Password.RequireUppercase = false;
     options.Password.RequiredLength = 6;
     options.User.RequireUniqueEmail = false;
 })
 .AddEntityFrameworkStores<ApplicationDbContext>()
+.AddPasswordValidator<SimplePasswordValidator>()
 .AddDefaultTokenProviders();
 
 builder.Services.ConfigureApplicationCookie(options =>

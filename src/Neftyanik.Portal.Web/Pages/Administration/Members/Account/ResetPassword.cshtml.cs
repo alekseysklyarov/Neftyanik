@@ -55,7 +55,7 @@ public class ResetPasswordModel : MemberAccountPageModelBase
         }
 
         var resetToken = await UserManager.GeneratePasswordResetTokenAsync(user);
-        user.MustChangePassword = true;
+        user.MustChangePassword = Input.MustChangePasswordOnLogin;
         var resetResult = await UserManager.ResetPasswordAsync(user, resetToken, Input.NewTemporaryPassword);
         if (!resetResult.Succeeded)
         {
@@ -63,7 +63,9 @@ public class ResetPasswordModel : MemberAccountPageModelBase
             return Page();
         }
 
-        TempData["SuccessMessage"] = "Временный пароль установлен. Пользователь должен изменить его при следующем входе.";
+        TempData["SuccessMessage"] = Input.MustChangePasswordOnLogin
+            ? "Временный пароль установлен. Пользователь должен изменить его при следующем входе."
+            : "Временный пароль установлен.";
         return RedirectToPage("/Administration/Members/Details", new { id = memberId });
     }
 
@@ -105,5 +107,8 @@ public class ResetPasswordModel : MemberAccountPageModelBase
         [Compare(nameof(NewTemporaryPassword), ErrorMessage = "Пароли не совпадают.")]
         [Display(Name = "Подтверждение пароля")]
         public string ConfirmPassword { get; set; } = string.Empty;
+
+        [Display(Name = "Сменить при входе")]
+        public bool MustChangePasswordOnLogin { get; set; }
     }
 }

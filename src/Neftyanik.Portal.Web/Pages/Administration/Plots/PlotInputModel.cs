@@ -14,7 +14,7 @@ public class PlotInputModel
     public string? Address { get; set; }
 
     [Range(typeof(decimal), "0", "79228162514264337593543950335", ErrorMessage = "Площадь не может быть отрицательной.")]
-    [Display(Name = "Площадь, м²")]
+    [Display(Name = "Площадь, соток")]
     public decimal? AreaSquareMeters { get; set; }
 
     [StringLength(100, ErrorMessage = "Кадастровый номер не должен превышать 100 символов.")]

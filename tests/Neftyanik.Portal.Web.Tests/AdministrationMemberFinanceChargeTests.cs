@@ -885,6 +885,78 @@ public class AdministrationMemberFinanceChargeTests
             });
     }
 
+    [Fact]
+    public async Task OnPostRegisterPaymentAsync_WithBankTransfer_ReturnsValidationError()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseSqlite(connection)
+            .Options;
+
+        await using var dbContext = new ApplicationDbContext(options);
+        await dbContext.Database.EnsureCreatedAsync();
+
+        const int memberId = 2;
+        const int plotId = 3;
+
+        dbContext.Members.Add(new Member
+        {
+            Id = memberId,
+            FullName = "Payment Member",
+            IsActive = true
+        });
+
+        dbContext.Plots.Add(new Plot
+        {
+            Id = plotId,
+            Number = "P-3",
+            IsActive = true
+        });
+
+        dbContext.PlotOwnerships.Add(new PlotOwnership
+        {
+            Id = 1,
+            MemberId = memberId,
+            PlotId = plotId,
+            ValidFrom = new DateOnly(2020, 1, 1),
+            IsPrimaryContact = true
+        });
+
+        await dbContext.SaveChangesAsync();
+
+        using var userStore = new UserStore<ApplicationUser>(dbContext);
+        using var userManager = new UserManager<ApplicationUser>(
+            userStore,
+            Options.Create(new IdentityOptions()),
+            new PasswordHasher<ApplicationUser>(),
+            Array.Empty<IUserValidator<ApplicationUser>>(),
+            Array.Empty<IPasswordValidator<ApplicationUser>>(),
+            new UpperInvariantLookupNormalizer(),
+            new IdentityErrorDescriber(),
+            null,
+            NullLogger<UserManager<ApplicationUser>>.Instance);
+
+        var model = new RegisterPaymentModel(dbContext, userManager)
+        {
+            Input = new MemberPaymentInputModel
+            {
+                PlotId = plotId,
+                PaymentDate = DateOnly.FromDateTime(DateTime.Today),
+                Amount = 100m,
+                PaymentMethod = Neftyanik.Portal.Domain.Enums.PaymentMethod.BankTransfer
+            }
+        };
+
+        var result = await model.OnPostAsync(memberId, CancellationToken.None);
+
+        Assert.IsType<PageResult>(result);
+        Assert.False(model.ModelState.IsValid);
+        var error = Assert.Single(model.ModelState[nameof(model.Input.PaymentMethod)]!.Errors);
+        Assert.Equal("Выберите допустимый способ оплаты: наличные или банковская карта.", error.ErrorMessage);
+    }
+
     private static PageContext CreatePageContext(string userId)
     {
         return new PageContext
