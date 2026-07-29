@@ -23,7 +23,7 @@ public class ExpenseCategoryConfiguration : IEntityTypeConfiguration<ExpenseCate
         {
             Id = x.Id,
             Name = x.Name,
-            IsActive = true
+            IsActive = x.IsActive
         }));
     }
 }

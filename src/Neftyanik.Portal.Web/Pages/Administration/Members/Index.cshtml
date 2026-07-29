@@ -2,6 +2,7 @@
 @model Neftyanik.Portal.Web.Pages.Administration.Members.IndexModel
 @{
     ViewData["Title"] = "Члены товарищества";
+    var isAdministrator = User.IsInRole(RoleNames.Administrator);
 }
 
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
@@ -9,9 +10,12 @@
         <h1 class="h2 mb-1">Члены товарищества</h1>
         <p class="text-muted mb-0">Список членов товарищества и их карточек.</p>
     </div>
-    <div>
-        <a class="btn btn-primary" asp-page="/Administration/Members/Create">Добавить члена товарищества</a>
-    </div>
+    @if (isAdministrator)
+    {
+        <div>
+            <a class="btn btn-primary" asp-page="/Administration/Members/Create">Добавить члена товарищества</a>
+        </div>
+    }
 </div>
 
 <div class="card shadow-sm mb-4">
@@ -96,8 +100,11 @@
                                     <div class="btn-group btn-group-sm" role="group">
                                         <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Details" asp-route-id="@member.Id">Подробнее</a>
                                         <a class="btn btn-outline-success" asp-page="/Administration/Members/Finance" asp-route-id="@member.Id">Финансы</a>
-                                        <a class="btn btn-outline-primary" asp-page="/Administration/Members/Edit" asp-route-id="@member.Id">Редактировать</a>
-                                        <a class="btn btn-outline-warning" asp-page="/Administration/Members/Archive" asp-route-id="@member.Id">@(member.IsActive ? "Архивировать" : "Восстановить")</a>
+                                        @if (isAdministrator)
+                                        {
+                                            <a class="btn btn-outline-primary" asp-page="/Administration/Members/Edit" asp-route-id="@member.Id">Редактировать</a>
+                                            <a class="btn btn-outline-warning" asp-page="/Administration/Members/Archive" asp-route-id="@member.Id">@(member.IsActive ? "Архивировать" : "Восстановить")</a>
+                                        }
                                     </div>
                                 </td>
                             </tr>

@@ -10,7 +10,7 @@ using Neftyanik.Portal.Infrastructure.Data;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Electricity.Association;
 
-[Authorize(Roles = RoleNames.Administrator)]
+[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
 public class CreateModel : PageModel
 {
     private readonly ApplicationDbContext _dbContext;

@@ -1,0 +1,139 @@
+@page "{id:long}"
+@model Neftyanik.Portal.Web.Pages.Administration.Finance.Expenses.DetailsModel
+@{
+    ViewData["Title"] = $"Расход #{Model.Expense.Id}";
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h2 mb-1">Расход #@Model.Expense.Id</h1>
+        <p class="text-muted mb-0">Подробная информация о расходе товарищества.</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        @if (Model.Expense.CanEdit)
+        {
+            <a class="btn btn-outline-primary" asp-page="/Administration/Finance/Expenses/Edit" asp-route-id="@Model.Expense.Id">Редактировать</a>
+        }
+        <a class="btn btn-outline-warning" asp-page="/Administration/Finance/Expenses/Cancel" asp-route-id="@Model.Expense.Id">@(Model.Expense.IsCancelled ? "Восстановить" : "Отменить")</a>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/Expenses/Index">К списку расходов</a>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-4">Дата расхода</dt>
+            <dd class="col-sm-8">@Model.Expense.ExpenseDate.ToString("dd.MM.yyyy")</dd>
+
+            <dt class="col-sm-4">Тип расхода</dt>
+            <dd class="col-sm-8">@Model.Expense.CategoryName</dd>
+
+            <dt class="col-sm-4">Сумма</dt>
+            <dd class="col-sm-8">@Model.Expense.Amount.ToString("0.00")</dd>
+
+            <dt class="col-sm-4">Получатель</dt>
+            <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Expense.Payee) ? "—" : Model.Expense.Payee)</dd>
+
+            <dt class="col-sm-4">Номер документа</dt>
+            <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Expense.DocumentNumber) ? "—" : Model.Expense.DocumentNumber)</dd>
+
+            <dt class="col-sm-4">Статус</dt>
+            <dd class="col-sm-8">@(Model.Expense.IsCancelled ? "Отменён" : "Активен")</dd>
+
+            <dt class="col-sm-4">Причина отмены</dt>
+            <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Expense.CancellationReason) ? "—" : Model.Expense.CancellationReason)</dd>
+
+            <dt class="col-sm-4">Отменён</dt>
+            <dd class="col-sm-8">@(Model.Expense.CancelledAt.HasValue ? Model.Expense.CancelledAt.Value.ToLocalTime().ToString("dd.MM.yyyy HH:mm") : "—")</dd>
+
+            <dt class="col-sm-4">Создал</dt>
+            <dd class="col-sm-8">@Model.Expense.CreatedByName</dd>
+
+            <dt class="col-sm-4">Создан</dt>
+            <dd class="col-sm-8">@Model.Expense.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</dd>
+
+            <dt class="col-sm-4">Обновлён</dt>
+            <dd class="col-sm-8">@(Model.Expense.UpdatedAt.HasValue ? Model.Expense.UpdatedAt.Value.ToLocalTime().ToString("dd.MM.yyyy HH:mm") : "—")</dd>
+        </dl>
+    </div>
+</div>
+
+<div class="card shadow-sm mt-4">
+    <div class="card-body">
+        <h2 class="h5 mb-3">Описание</h2>
+        <p class="mb-0">@Model.Expense.Description</p>
+    </div>
+</div>
+
+@if (Model.Expense.IsAssociationElectricityExpense)
+{
+    <div class="card shadow-sm mt-4">
+        <div class="card-body">
+            <h2 class="h5 mb-3">Данные общего электросчётчика</h2>
+            <dl class="row mb-0">
+                <dt class="col-sm-4">Предыдущее Т1</dt>
+                <dd class="col-sm-8">@(Model.Expense.PreviousDayReading.HasValue ? Model.Expense.PreviousDayReading.Value.ToString("0.000") : "—")</dd>
+
+                <dt class="col-sm-4">Текущее Т1</dt>
+                <dd class="col-sm-8">@(Model.Expense.CurrentDayReading.HasValue ? Model.Expense.CurrentDayReading.Value.ToString("0.000") : "—")</dd>
+
+                <dt class="col-sm-4">Расход Т1</dt>
+                <dd class="col-sm-8">@(Model.Expense.DayConsumption.HasValue ? Model.Expense.DayConsumption.Value.ToString("0.000") : "—")</dd>
+
+                <dt class="col-sm-4">Тариф Т1</dt>
+                <dd class="col-sm-8">@(Model.Expense.AppliedSupplierDayRate.HasValue ? $"{Model.Expense.AppliedSupplierDayRate.Value:0.0000} грн/кВт·ч" : "—")</dd>
+
+                <dt class="col-sm-4">Предыдущее Т2</dt>
+                <dd class="col-sm-8">@(Model.Expense.PreviousNightReading.HasValue ? Model.Expense.PreviousNightReading.Value.ToString("0.000") : "—")</dd>
+
+                <dt class="col-sm-4">Текущее Т2</dt>
+                <dd class="col-sm-8">@(Model.Expense.CurrentNightReading.HasValue ? Model.Expense.CurrentNightReading.Value.ToString("0.000") : "—")</dd>
+
+                <dt class="col-sm-4">Расход Т2</dt>
+                <dd class="col-sm-8">@(Model.Expense.NightConsumption.HasValue ? Model.Expense.NightConsumption.Value.ToString("0.000") : "—")</dd>
+
+                <dt class="col-sm-4">Тариф Т2</dt>
+                <dd class="col-sm-8">@(Model.Expense.AppliedSupplierNightRate.HasValue ? $"{Model.Expense.AppliedSupplierNightRate.Value:0.0000} грн/кВт·ч" : "—")</dd>
+
+                <dt class="col-sm-4">Общий расход</dt>
+                <dd class="col-sm-8">@(Model.Expense.TotalConsumption.HasValue ? Model.Expense.TotalConsumption.Value.ToString("0.000") : "—")</dd>
+            </dl>
+        </div>
+    </div>
+}
+
+<div class="card shadow-sm mt-4">
+    <div class="card-body">
+        <h2 class="h5 mb-3">История изменений</h2>
+        @if (Model.History.Count == 0)
+        {
+            <p class="mb-0 text-muted">История изменений отсутствует.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Дата и время</th>
+                            <th>Действие</th>
+                            <th>Пользователь</th>
+                            <th>Данные</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.History)
+                        {
+                            <tr>
+                                <td>@item.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+                                <td>@item.Action</td>
+                                <td>@item.UserName</td>
+                                <td><span class="small text-muted">@(string.IsNullOrWhiteSpace(item.NewValues) ? "—" : item.NewValues)</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

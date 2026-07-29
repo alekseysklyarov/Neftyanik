@@ -4,6 +4,10 @@ namespace Neftyanik.Portal.Web.Pages.Administration.Members;
 
 public class MemberInputModel
 {
+    [StringLength(256, ErrorMessage = "Логин не должен превышать 256 символов.")]
+    [Display(Name = "Логин")]
+    public string? Login { get; set; }
+
     [Required(ErrorMessage = "Укажите ФИО.")]
     [StringLength(200, ErrorMessage = "ФИО не должно превышать 200 символов.")]
     [Display(Name = "ФИО")]

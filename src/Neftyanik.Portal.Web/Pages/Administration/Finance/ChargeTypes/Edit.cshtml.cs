@@ -7,7 +7,7 @@ using Neftyanik.Portal.Infrastructure.Data;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Finance.ChargeTypes;
 
-[Authorize(Roles = RoleNames.Administrator)]
+[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
 public class EditModel : PageModel
 {
     private readonly ApplicationDbContext _dbContext;

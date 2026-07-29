@@ -1,0 +1,369 @@
+@page
+@model Neftyanik.Portal.Web.Pages.Administration.Finance.Expenses.Electricity.IndexModel
+@{
+    ViewData["Title"] = "Расход электроэнергии";
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h2 mb-1">Расход электроэнергии</h1>
+        <p class="text-muted mb-0">На этой странице вносятся показания общего электросчётчика. Расход создается автоматически по тарифам Т1 и Т2.</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a class="btn btn-outline-primary" asp-page="/Administration/Finance/Expenses/Index">Все расходы</a>
+        <a class="btn btn-outline-primary" asp-page="/Administration/Finance/Electricity/Tariffs/Index">Тарифы поставщика</a>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/Index">К финансам</a>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] is string successMessage)
+{
+    <div class="alert alert-success" role="alert">@successMessage</div>
+}
+
+@if (TempData["ErrorMessage"] is string errorMessage)
+{
+    <div class="alert alert-danger" role="alert">@errorMessage</div>
+}
+
+<div class="row g-4 mb-4">
+    <div class="col-xl-5">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h5 mb-3">@(Model.HasHistory ? "Новые показания" : "Начальные показания")</h2>
+
+                @if (Model.HasHistory && Model.PreviousReading is not null)
+                {
+                    <div class="alert alert-info" id="previousReadingInfo"
+                         data-previous-day="@Model.PreviousReading.CurrentDayReading.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                         data-previous-night="@Model.PreviousReading.CurrentNightReading.ToString(System.Globalization.CultureInfo.InvariantCulture)">
+                        Последние показания на @Model.PreviousReading.ReadingDate.ToString("dd.MM.yyyy"):
+                        Т1 @Model.PreviousReading.CurrentDayReading.ToString("0"),
+                        Т2 @Model.PreviousReading.CurrentNightReading.ToString("0")
+                    </div>
+                }
+
+                <form method="post" id="electricityExpenseForm">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label asp-for="Input.ReadingDate" class="form-label">Дата показаний</label>
+                            <input asp-for="Input.ReadingDate" class="form-control" type="date" />
+                            <span asp-validation-for="Input.ReadingDate" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Input.CurrentDayReading" class="form-label">Показание Т1</label>
+                            <input asp-for="Input.CurrentDayReading" class="form-control" type="number" step="1" min="0" />
+                            <span asp-validation-for="Input.CurrentDayReading" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Input.CurrentNightReading" class="form-label">Показание Т2</label>
+                            <input asp-for="Input.CurrentNightReading" class="form-control" type="number" step="1" min="0" />
+                            <span asp-validation-for="Input.CurrentNightReading" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    @if (Model.HasHistory)
+                    {
+                        <hr class="my-4" />
+                        <h3 class="h6">Тарифы поставщика на дату</h3>
+
+                        @if (Model.Preview.Tariff is null)
+                        {
+                            <div class="alert alert-warning mb-0">Для выбранной даты не найден тариф поставщика для общего счётчика. Перед сохранением добавьте тариф поставщика.</div>
+                        }
+                        else
+                        {
+                            <dl class="row mb-0 small" id="supplierTariffInfo"
+                                data-day-rate="@Model.Preview.Tariff.DayRate.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                data-night-rate="@Model.Preview.Tariff.NightRate.ToString(System.Globalization.CultureInfo.InvariantCulture)">
+                                <dt class="col-sm-6">Тариф Т1</dt>
+                                <dd class="col-sm-6">@Model.Preview.Tariff.DayRate.ToString("0.0000") грн/кВт·ч</dd>
+                                <dt class="col-sm-6">Тариф Т2</dt>
+                                <dd class="col-sm-6">@Model.Preview.Tariff.NightRate.ToString("0.0000") грн/кВт·ч</dd>
+                            </dl>
+                        }
+                    }
+
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="button" class="btn btn-primary" id="openElectricityExpenseConfirmation">Сохранить</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-7">
+        <div class="card shadow-sm h-100">
+            <div class="card-body p-0">
+                @if (!Model.HasHistory)
+                {
+                    <div class="p-4 text-center text-muted">Показания общего электросчётчика пока не внесены.</div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Дата</th>
+                                    <th>Т1</th>
+                                    <th>Расход Т1</th>
+                                    <th>Т2</th>
+                                    <th>Расход Т2</th>
+                                    <th>Всего</th>
+                                    <th>Сумма</th>
+                                    <th class="text-end">Оплата</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.Readings)
+                                {
+                                    <tr>
+                                        <td>
+                                            @item.ReadingDate.ToString("dd.MM.yyyy")
+                                            @if (item.IsInitialReading)
+                                            {
+                                                <div class="small text-muted">Начальные</div>
+                                            }
+                                        </td>
+                                        <td>@item.CurrentDayReading.ToString("0.000")</td>
+                                        <td>@(item.DayConsumption.HasValue ? item.DayConsumption.Value.ToString("0.000") : "—")</td>
+                                        <td>@item.CurrentNightReading.ToString("0.000")</td>
+                                        <td>@(item.NightConsumption.HasValue ? item.NightConsumption.Value.ToString("0.000") : "—")</td>
+                                        <td>@(item.TotalConsumption.HasValue ? item.TotalConsumption.Value.ToString("0.000") : "—")</td>
+                                        <td>@(item.TotalSupplierAmount.HasValue ? $"{item.TotalSupplierAmount.Value:0.00} грн" : "—")</td>
+                                        <td class="text-end">
+                                            @if (item.IsInitialReading)
+                                            {
+                                                <button type="button" class="btn btn-sm btn-outline-secondary" disabled>Не оплачивается</button>
+                                            }
+                                            else if (item.HasExpense)
+                                            {
+                                                <button type="button" class="btn btn-sm btn-outline-secondary" disabled>Оплачено</button>
+                                            }
+                                            else
+                                            {
+                                                <form method="post" asp-page-handler="Pay" asp-route-readingId="@item.Id" class="d-inline" id="payReadingForm-@item.Id">
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-success js-open-pay-confirmation"
+                                                            data-form-id="payReadingForm-@item.Id"
+                                                            data-reading-date="@item.ReadingDate.ToString("dd.MM.yyyy")"
+                                                            data-total-amount="@(item.TotalSupplierAmount.HasValue ? item.TotalSupplierAmount.Value.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture) : string.Empty)">
+                                                        Оплатить
+                                                    </button>
+                                                </form>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="payElectricityExpenseConfirmationModal" tabindex="-1" aria-labelledby="payElectricityExpenseConfirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="payElectricityExpenseConfirmationModalLabel">Подтверждение оплаты</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">Будет создан расход по показаниям общего счётчика.</p>
+                <dl class="row mb-0 small">
+                    <dt class="col-sm-5">Дата показаний</dt>
+                    <dd class="col-sm-7" id="payConfirmationReadingDate">—</dd>
+                    <dt class="col-sm-5">Сумма расхода</dt>
+                    <dd class="col-sm-7 fw-semibold" id="payConfirmationTotalAmount">—</dd>
+                </dl>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-success" id="confirmPayElectricityExpense">Подтвердить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="electricityExpenseConfirmationModal" tabindex="-1" aria-labelledby="electricityExpenseConfirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="electricityExpenseConfirmationModalLabel">Подтверждение сохранения</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <div id="electricityExpenseConfirmationWarning" class="alert alert-warning d-none mb-3"></div>
+                <div id="electricityExpenseConfirmationCalculation" class="d-none">
+                    <dl class="row mb-0 small">
+                        <dt class="col-sm-6">Дата показаний</dt>
+                        <dd class="col-sm-6" id="confirmationReadingDate">—</dd>
+                        <dt class="col-sm-6">Новое показание Т1</dt>
+                        <dd class="col-sm-6" id="confirmationCurrentDayReading">—</dd>
+                        <dt class="col-sm-6">Новое показание Т2</dt>
+                        <dd class="col-sm-6" id="confirmationCurrentNightReading">—</dd>
+                        <dt class="col-sm-6">Расход Т1</dt>
+                        <dd class="col-sm-6" id="confirmationDayConsumption">—</dd>
+                        <dt class="col-sm-6">Расход Т2</dt>
+                        <dd class="col-sm-6" id="confirmationNightConsumption">—</dd>
+                        <dt class="col-sm-6">Тариф Т1</dt>
+                        <dd class="col-sm-6" id="confirmationDayRate">—</dd>
+                        <dt class="col-sm-6">Тариф Т2</dt>
+                        <dd class="col-sm-6" id="confirmationNightRate">—</dd>
+                        <dt class="col-sm-6">Сумма расхода</dt>
+                        <dd class="col-sm-6 fw-semibold" id="confirmationTotalAmount">—</dd>
+                    </dl>
+                </div>
+                <div id="electricityExpenseInitialConfirmation" class="d-none">
+                    Будут сохранены начальные показания общего электросчётчика без создания расхода.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="submit" class="btn btn-primary" id="confirmElectricityExpenseSave" form="electricityExpenseForm">Подтвердить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const form = document.getElementById('electricityExpenseForm');
+            const openButton = document.getElementById('openElectricityExpenseConfirmation');
+            const confirmButton = document.getElementById('confirmElectricityExpenseSave');
+            const modalElement = document.getElementById('electricityExpenseConfirmationModal');
+            const previousReadingInfo = document.getElementById('previousReadingInfo');
+            const supplierTariffInfo = document.getElementById('supplierTariffInfo');
+            const readingDateInput = document.getElementById('Input_ReadingDate');
+            const currentDayInput = document.getElementById('Input_CurrentDayReading');
+            const currentNightInput = document.getElementById('Input_CurrentNightReading');
+            const warningElement = document.getElementById('electricityExpenseConfirmationWarning');
+            const calculationElement = document.getElementById('electricityExpenseConfirmationCalculation');
+            const initialElement = document.getElementById('electricityExpenseInitialConfirmation');
+            const payModalElement = document.getElementById('payElectricityExpenseConfirmationModal');
+            const payConfirmationButtons = document.querySelectorAll('.js-open-pay-confirmation');
+            const confirmPayButton = document.getElementById('confirmPayElectricityExpense');
+
+            if (!form || !openButton || !confirmButton || !modalElement || !window.bootstrap || !readingDateInput || !currentDayInput || !currentNightInput) {
+                return;
+            }
+
+            const modal = window.bootstrap.Modal.getOrCreateInstance(modalElement);
+            const payModal = payModalElement ? window.bootstrap.Modal.getOrCreateInstance(payModalElement) : null;
+            const hasHistory = previousReadingInfo !== null;
+            let payForm = null;
+
+            const parseNumber = value => Number.parseFloat((value ?? '').replace(',', '.'));
+            const formatNumber = (value, digits) => Number.isFinite(value) ? value.toFixed(digits) : '—';
+            const setText = (id, value) => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = value;
+                }
+            };
+
+            openButton.addEventListener('click', () => {
+                if (!form.reportValidity()) {
+                    return;
+                }
+
+                warningElement.classList.add('d-none');
+                calculationElement.classList.add('d-none');
+                initialElement.classList.add('d-none');
+
+                if (!hasHistory) {
+                    initialElement.classList.remove('d-none');
+                    modal.show();
+                    return;
+                }
+
+                if (!supplierTariffInfo) {
+                    warningElement.textContent = 'Для выбранной даты не найден тариф поставщика. Сначала добавьте тариф поставщика.';
+                    warningElement.classList.remove('d-none');
+                    modal.show();
+                    return;
+                }
+
+                const previousDay = parseNumber(previousReadingInfo.dataset.previousDay);
+                const previousNight = parseNumber(previousReadingInfo.dataset.previousNight);
+                const currentDay = parseNumber(currentDayInput.value);
+                const currentNight = parseNumber(currentNightInput.value);
+                const dayRate = parseNumber(supplierTariffInfo.dataset.dayRate);
+                const nightRate = parseNumber(supplierTariffInfo.dataset.nightRate);
+
+                const dayConsumption = currentDay - previousDay;
+                const nightConsumption = currentNight - previousNight;
+
+                if (!Number.isFinite(dayConsumption) || !Number.isFinite(nightConsumption) || dayConsumption < 0 || nightConsumption < 0) {
+                    warningElement.textContent = 'Проверьте введённые показания. Они должны быть не меньше предыдущих значений.';
+                    warningElement.classList.remove('d-none');
+                    modal.show();
+                    return;
+                }
+
+                const totalAmount = (dayConsumption * dayRate) + (nightConsumption * nightRate);
+
+                setText('confirmationReadingDate', readingDateInput.value || '—');
+                setText('confirmationCurrentDayReading', `${formatNumber(currentDay, 0)} кВт·ч`);
+                setText('confirmationCurrentNightReading', `${formatNumber(currentNight, 0)} кВт·ч`);
+                setText('confirmationDayConsumption', `${formatNumber(dayConsumption, 0)} кВт·ч`);
+                setText('confirmationNightConsumption', `${formatNumber(nightConsumption, 0)} кВт·ч`);
+                setText('confirmationDayRate', `${formatNumber(dayRate, 4)} грн/кВт·ч`);
+                setText('confirmationNightRate', `${formatNumber(nightRate, 4)} грн/кВт·ч`);
+                setText('confirmationTotalAmount', `${formatNumber(totalAmount, 2)} грн`);
+
+                calculationElement.classList.remove('d-none');
+                modal.show();
+            });
+
+            confirmButton.addEventListener('click', () => {
+                modal.hide();
+            });
+
+            payConfirmationButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    if (!payModal) {
+                        return;
+                    }
+
+                    const formId = button.dataset.formId;
+                    payForm = formId ? document.getElementById(formId) : null;
+
+                    const readingDateElement = document.getElementById('payConfirmationReadingDate');
+                    const totalAmountElement = document.getElementById('payConfirmationTotalAmount');
+
+                    if (readingDateElement) {
+                        readingDateElement.textContent = button.dataset.readingDate || '—';
+                    }
+
+                    if (totalAmountElement) {
+                        totalAmountElement.textContent = button.dataset.totalAmount
+                            ? `${button.dataset.totalAmount} грн`
+                            : '—';
+                    }
+
+                    payModal.show();
+                });
+            });
+
+            if (confirmPayButton) {
+                confirmPayButton.addEventListener('click', () => {
+                    if (!payForm) {
+                        return;
+                    }
+
+                    payModal?.hide();
+                    payForm.submit();
+                });
+            }
+        })();
+    </script>
+}

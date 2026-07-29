@@ -1,0 +1,180 @@
+@page
+@model Neftyanik.Portal.Web.Pages.Administration.Finance.Expenses.IndexModel
+@{
+    ViewData["Title"] = "Расходы";
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h2 mb-1">Расходы</h1>
+        <p class="text-muted mb-0">Журнал расходов товарищества, включая оплату электроэнергии по общему счётчику.</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a class="btn btn-primary" asp-page="/Administration/Finance/Expenses/Create">Добавить расход</a>
+        <a class="btn btn-outline-success" asp-page="/Administration/Finance/Expenses/Electricity/Index">Расход электроэнергии</a>
+        <a class="btn btn-outline-primary" asp-page="/Administration/Finance/ExpenseCategories/Index">Типы расходов</a>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/Index">К финансам</a>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">Активные расходы</h2><p class="display-6 mb-0">@Model.Summary.TotalActiveExpenses.ToString("0.00")</p></div></div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">Электроэнергия</h2><p class="display-6 mb-0">@Model.Summary.ElectricityExpenses.ToString("0.00")</p></div></div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">Прочие расходы</h2><p class="display-6 mb-0">@Model.Summary.ManualExpenses.ToString("0.00")</p></div></div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">Количество</h2><p class="display-6 mb-0">@Model.Summary.ActiveExpensesCount</p></div></div>
+    </div>
+</div>
+
+<div class="d-flex gap-2 flex-wrap mb-4">
+    <a class="btn @(Model.Kind == "all" ? "btn-primary" : "btn-outline-primary")" asp-page="/Administration/Finance/Expenses/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-expenseCategoryId="@Model.ExpenseCategoryId" asp-route-kind="all" asp-route-pageNumber="1">Все расходы</a>
+    <a class="btn @(Model.Kind == "electricity" ? "btn-primary" : "btn-outline-primary")" asp-page="/Administration/Finance/Expenses/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-expenseCategoryId="@Model.ExpenseCategoryId" asp-route-kind="electricity" asp-route-pageNumber="1">Только электроэнергия</a>
+    <a class="btn @(Model.Kind == "manual" ? "btn-primary" : "btn-outline-primary")" asp-page="/Administration/Finance/Expenses/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-expenseCategoryId="@Model.ExpenseCategoryId" asp-route-kind="manual" asp-route-pageNumber="1">Только обычные</a>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-5">
+                <label asp-for="Search" class="form-label">Поиск</label>
+                <input asp-for="Search" class="form-control" placeholder="Категория, получатель, документ или описание" />
+            </div>
+            <div class="col-md-3">
+                <label asp-for="ExpenseCategoryId" class="form-label">Тип расхода</label>
+                <select asp-for="ExpenseCategoryId" asp-items="Model.ExpenseCategoryOptions" class="form-select">
+                    <option value="">Все типы</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label asp-for="Status" class="form-label">Статус</label>
+                <select asp-for="Status" class="form-select">
+                    <option value="active">Только активные</option>
+                    <option value="all">Все</option>
+                    <option value="cancelled">Только отменённые</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <input type="hidden" asp-for="Kind" />
+                <button type="submit" class="btn btn-outline-primary flex-fill">Найти</button>
+                <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/Expenses/Index" asp-route-status="all" asp-route-kind="all">Сбросить</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        @if (Model.Expenses.Count == 0)
+        {
+            <div class="p-4 text-center text-muted">@Model.EmptyStateMessage</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Дата</th>
+                            <th>Тип</th>
+                            <th>Сумма</th>
+                            <th>Получатель</th>
+                            <th>Документ</th>
+                            <th>Создал</th>
+                            <th>Статус</th>
+                            <th class="text-end">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Expenses)
+                        {
+                            <tr>
+                                <td>@item.ExpenseDate.ToString("dd.MM.yyyy")</td>
+                                <td>
+                                    <div class="fw-semibold">@item.CategoryName</div>
+                                    @if (item.IsAssociationElectricityExpense)
+                                    {
+                                        <div class="small text-muted">Общий счётчик, тарифы Т1/Т2</div>
+                                    }
+                                </td>
+                                <td>@item.Amount.ToString("0.00")</td>
+                                <td>@(string.IsNullOrWhiteSpace(item.Payee) ? "—" : item.Payee)</td>
+                                <td>@(string.IsNullOrWhiteSpace(item.DocumentNumber) ? "—" : item.DocumentNumber)</td>
+                                <td>@item.CreatedByName</td>
+                                <td>
+                                    @if (item.IsCancelled)
+                                    {
+                                        <span class="badge text-bg-secondary">Отменён</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge text-bg-success">Активен</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/Expenses/Details" asp-route-id="@item.Id">Подробнее</a>
+                                        @if (item.CanEdit)
+                                        {
+                                            <a class="btn btn-outline-primary" asp-page="/Administration/Finance/Expenses/Edit" asp-route-id="@item.Id">Редактировать</a>
+                                        }
+                                        <a class="btn btn-outline-warning" asp-page="/Administration/Finance/Expenses/Cancel" asp-route-id="@item.Id">@(item.IsCancelled ? "Восстановить" : "Отменить")</a>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="table-light">
+                                <td colspan="8" class="small text-muted">
+                                    <div><strong>Описание:</strong> @item.Description</div>
+                                    @if (item.IsAssociationElectricityExpense)
+                                    {
+                                        <div class="mt-1">
+                                            <strong>Показания общего счётчика:</strong>
+                                            Т1 @(item.CurrentDayReading.HasValue ? item.CurrentDayReading.Value.ToString("0.000") : "—"),
+                                            Т2 @(item.CurrentNightReading.HasValue ? item.CurrentNightReading.Value.ToString("0.000") : "—")
+                                        </div>
+                                        <div>
+                                            <strong>Расход:</strong>
+                                            Т1 @(item.DayConsumption.HasValue ? item.DayConsumption.Value.ToString("0.000") : "—") кВт·ч,
+                                            Т2 @(item.NightConsumption.HasValue ? item.NightConsumption.Value.ToString("0.000") : "—") кВт·ч,
+                                            всего @(item.TotalConsumption.HasValue ? item.TotalConsumption.Value.ToString("0.000") : "—") кВт·ч
+                                        </div>
+                                        <div>
+                                            <strong>Тариф поставщика:</strong>
+                                            Т1 @(item.AppliedSupplierDayRate.HasValue ? item.AppliedSupplierDayRate.Value.ToString("0.0000") : "—") грн/кВт·ч,
+                                            Т2 @(item.AppliedSupplierNightRate.HasValue ? item.AppliedSupplierNightRate.Value.ToString("0.0000") : "—") грн/кВт·ч
+                                        </div>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@if (Model.TotalPages > 1)
+{
+    <nav aria-label="Навигация по страницам" class="mt-4">
+        <ul class="pagination justify-content-center flex-wrap">
+            <li class="page-item @(Model.HasPreviousPage ? string.Empty : "disabled")">
+                <a class="page-link" asp-page="/Administration/Finance/Expenses/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-kind="@Model.Kind" asp-route-expenseCategoryId="@Model.ExpenseCategoryId" asp-route-pageNumber="@(Model.PageNumber - 1)">Назад</a>
+            </li>
+            @for (var pageIndex = 1; pageIndex <= Model.TotalPages; pageIndex++)
+            {
+                <li class="page-item @(pageIndex == Model.PageNumber ? "active" : string.Empty)">
+                    <a class="page-link" asp-page="/Administration/Finance/Expenses/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-kind="@Model.Kind" asp-route-expenseCategoryId="@Model.ExpenseCategoryId" asp-route-pageNumber="@pageIndex">@pageIndex</a>
+                </li>
+            }
+            <li class="page-item @(Model.HasNextPage ? string.Empty : "disabled")">
+                <a class="page-link" asp-page="/Administration/Finance/Expenses/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-kind="@Model.Kind" asp-route-expenseCategoryId="@Model.ExpenseCategoryId" asp-route-pageNumber="@(Model.PageNumber + 1)">Вперёд</a>
+            </li>
+        </ul>
+    </nav>
+}

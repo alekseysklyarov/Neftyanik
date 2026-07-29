@@ -310,6 +310,63 @@ public class AdministrationMemberFinanceChargeTests
     }
 
     [Fact]
+    public async Task OnGetAdministrationMemberRegisterPayment_LoadsCurrentCashAmount()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseSqlite(connection)
+            .Options;
+
+        await using var dbContext = new ApplicationDbContext(options);
+        await dbContext.Database.EnsureCreatedAsync();
+
+        const string adminUserId = "admin-user";
+        const int memberId = 865;
+        const int plotId = 866;
+
+        dbContext.Users.Add(CreateUser(adminUserId, "admin-payment-cash@example.com"));
+        dbContext.Members.Add(new Member { Id = memberId, FullName = "Cash Member", IsActive = true });
+        dbContext.Plots.Add(new Plot { Id = plotId, Number = "P-866", IsActive = true });
+        dbContext.PlotOwnerships.Add(new PlotOwnership { Id = 1, PlotId = plotId, MemberId = memberId, ValidFrom = new DateOnly(2020, 1, 1), IsPrimaryContact = true });
+        dbContext.Payments.AddRange(
+            new Payment { Id = 1, PlotId = plotId, PaymentDate = new DateOnly(2026, 1, 1), Amount = 200m, PaymentMethod = Domain.Enums.PaymentMethod.Cash, CreatedAtUtc = DateTime.UtcNow },
+            new Payment { Id = 2, PlotId = plotId, PaymentDate = new DateOnly(2026, 1, 2), Amount = 50m, PaymentMethod = Domain.Enums.PaymentMethod.Card, CreatedAtUtc = DateTime.UtcNow });
+        dbContext.Expenses.Add(new Expense
+        {
+            Id = 1,
+            ExpenseCategoryId = 1,
+            ExpenseDate = new DateOnly(2026, 1, 3),
+            Amount = 80m,
+            Description = "Test expense",
+            CreatedByUserId = adminUserId,
+            CreatedAt = DateTimeOffset.UtcNow,
+            IsCancelled = false
+        });
+        await dbContext.SaveChangesAsync();
+
+        using var userStore = new UserStore<ApplicationUser>(dbContext);
+        using var userManager = new UserManager<ApplicationUser>(
+            userStore,
+            Options.Create(new IdentityOptions()),
+            new PasswordHasher<ApplicationUser>(),
+            Array.Empty<IUserValidator<ApplicationUser>>(),
+            Array.Empty<IPasswordValidator<ApplicationUser>>(),
+            new UpperInvariantLookupNormalizer(),
+            new IdentityErrorDescriber(),
+            null,
+            NullLogger<UserManager<ApplicationUser>>.Instance);
+
+        var model = new RegisterPaymentModel(dbContext, userManager);
+
+        var result = await model.OnGetAsync(memberId, null, CancellationToken.None);
+
+        Assert.IsType<PageResult>(result);
+        Assert.Equal(120m, model.CurrentCashAmount);
+    }
+
+    [Fact]
     public async Task OnGetAdministrationMemberFinance_UsesPaymentAllocationsForPlotBalances()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
@@ -790,6 +847,69 @@ public class AdministrationMemberFinanceChargeTests
 
         Assert.False(result.Succeeded);
         Assert.Equal("Изменение показаний не может превышать 500 кВт·ч.", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task CreateMemberElectricityReadingAsync_ReturnsValidationError_WhenMemberTariffIsMissing()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseSqlite(connection)
+            .Options;
+
+        await using var dbContext = new ApplicationDbContext(options);
+        await dbContext.Database.EnsureCreatedAsync();
+
+        const string adminUserId = "admin-user";
+        const int memberId = 1321;
+        const int plotId = 1322;
+        const int meterId = 1323;
+
+        dbContext.Users.Add(CreateUser(adminUserId, "admin8@example.com"));
+        dbContext.Members.Add(new Member { Id = memberId, FullName = "Missing Tariff Member", IsActive = true });
+        dbContext.Plots.Add(new Plot { Id = plotId, Number = "P-1322", IsActive = true });
+        dbContext.PlotOwnerships.Add(new PlotOwnership { Id = 1, PlotId = plotId, MemberId = memberId, ValidFrom = new DateOnly(2020, 1, 1), IsPrimaryContact = true });
+        dbContext.MemberElectricityMeters.Add(new MemberElectricityMeter
+        {
+            Id = meterId,
+            MemberId = memberId,
+            Name = "Missing Tariff Meter",
+            BillingPlotId = plotId,
+            IsActive = true,
+            MeterPlots = [new MemberElectricityMeterPlot { PlotId = plotId }],
+            Readings =
+            [
+                new MemberElectricityReading
+                {
+                    ReadingDate = new DateOnly(2026, 1, 1),
+                    CurrentReading = 100m,
+                    IsInitialReading = true
+                }
+            ]
+        });
+        dbContext.ElectricityTariffs.Add(new ElectricityTariff
+        {
+            EffectiveFrom = new DateOnly(2020, 1, 1),
+            DayRate = 9m,
+            NightRate = 4.5m,
+            CreatedAtUtc = DateTime.UtcNow,
+            CreatedByUserId = adminUserId
+        });
+        await dbContext.SaveChangesAsync();
+
+        var service = new MemberElectricityService(dbContext);
+        var result = await service.CreateReadingAsync(
+            new CreateMemberElectricityReadingRequest(
+                meterId,
+                new DateOnly(2026, 2, 1),
+                130m,
+                adminUserId),
+            CancellationToken.None);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal("Для указанной даты не найден тариф для участников.", result.ErrorMessage);
     }
 
     [Fact]

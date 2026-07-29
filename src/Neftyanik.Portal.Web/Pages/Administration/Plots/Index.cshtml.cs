@@ -11,7 +11,7 @@ using Neftyanik.Portal.Web.Pages.Administration.Plots.Finance;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Plots;
 
-[Authorize(Roles = RoleNames.Administrator)]
+[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
 public class IndexModel : PageModel
 {
     private const int PageSize = 20;

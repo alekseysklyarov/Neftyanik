@@ -552,7 +552,7 @@ public sealed class MemberElectricityService : IMemberElectricityService
 
         if (meter.Tariff is null)
         {
-            return ElectricityReadingOperationResult.Failure("Для указанной даты не найден тариф для участников.");
+            return ElectricityReadingOperationResult.Failure("Для указанной даты не найден тариф для участников. Добавьте его на странице \"Тариф для участников\".");
         }
 
         var tariff = meter.Tariff.Rate;
@@ -714,25 +714,12 @@ public sealed class MemberElectricityService : IMemberElectricityService
 
     private async Task<MemberElectricityTariffSnapshot?> GetApplicableMemberTariffAsync(DateOnly readingDate, CancellationToken cancellationToken)
     {
-        var memberTariff = await _dbContext.MemberElectricityTariffs
+        return await _dbContext.MemberElectricityTariffs
             .AsNoTracking()
             .Where(item => item.EffectiveFrom <= readingDate)
             .OrderByDescending(item => item.EffectiveFrom)
             .ThenByDescending(item => item.Id)
             .Select(item => new MemberElectricityTariffSnapshot(item.EffectiveFrom, item.Rate))
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (memberTariff is not null)
-        {
-            return memberTariff;
-        }
-
-        return await _dbContext.ElectricityTariffs
-            .AsNoTracking()
-            .Where(item => item.EffectiveFrom <= readingDate)
-            .OrderByDescending(item => item.EffectiveFrom)
-            .ThenByDescending(item => item.Id)
-            .Select(item => new MemberElectricityTariffSnapshot(item.EffectiveFrom, item.DayRate))
             .FirstOrDefaultAsync(cancellationToken);
     }
 

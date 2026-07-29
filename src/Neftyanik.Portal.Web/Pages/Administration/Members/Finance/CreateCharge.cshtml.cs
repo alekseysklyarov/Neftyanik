@@ -11,7 +11,7 @@ using Neftyanik.Portal.Infrastructure.Data.Queries;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Members.Finance;
 
-[Authorize(Roles = RoleNames.Administrator)]
+[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
 public class CreateChargeModel : PageModel
 {
     private readonly ApplicationDbContext _dbContext;

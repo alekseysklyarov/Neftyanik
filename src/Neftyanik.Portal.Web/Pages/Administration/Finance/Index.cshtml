@@ -7,26 +7,33 @@
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
         <h1 class="h2 mb-1">Финансовый обзор</h1>
-        <p class="text-muted mb-0">Сводная информация по начислениям, платежам и балансам участков.</p>
+        <p class="text-muted mb-0">Сводная информация по начислениям, платежам, расходам и балансам участков.</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
-        <a class="btn btn-outline-primary" asp-page="/Administration/Finance/Electricity/Tariffs/Index">Тарифы электроэнергии</a>
-        <a class="btn btn-outline-primary" asp-page="/Administration/Finance/ChargeTypes/Index">Типы начислений</a>
+        <a class="btn btn-outline-primary" asp-page="/Administration/Finance/Expenses/Index">Расходы</a>
+        <a class="btn btn-outline-primary" asp-page="/Administration/Finance/Expenses/Electricity/Index">Расходы электроэнергии</a>
+        <a class="btn btn-outline-primary" asp-page="/Administration/Finance/Settings/Index">Настройки финансов</a>
         <a class="btn btn-outline-secondary" asp-page="/Administration/Index">К администрированию</a>
     </div>
 </div>
 
 <div class="row g-4 mb-4">
-    <div class="col-sm-6 col-xl-3">
-        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">Активные начисления</h2><p class="display-6 mb-0">@Model.Summary.TotalActiveCharges.ToString("0.00")</p></div></div>
+    <div class="col-sm-6 col-xl-4">
+        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">Касса</h2><p class="display-6 mb-0">@Model.Summary.CurrentCashAmount.ToString("0.00")</p></div></div>
     </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">Активные платежи</h2><p class="display-6 mb-0">@Model.Summary.TotalActivePayments.ToString("0.00")</p></div></div>
+    <div class="col-sm-6 col-xl-4">
+        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">Касса на начало @Model.CurrentYear года</h2><p class="display-6 mb-0">@Model.Summary.OpeningYearCashAmount.ToString("0.00")</p></div></div>
     </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">Текущая задолженность</h2><p class="display-6 mb-0 text-danger">@Model.Summary.TotalCurrentDebt.ToString("0.00")</p></div></div>
+    <div class="col-sm-6 col-xl-4">
+        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">Начисления за @Model.CurrentYear год</h2><p class="display-6 mb-0">@Model.Summary.CurrentYearCharges.ToString("0.00")</p></div></div>
     </div>
-    <div class="col-sm-6 col-xl-3">
+    <div class="col-sm-6 col-xl-4">
+        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">Задолженность членов товарищества на начало @Model.CurrentYear года</h2><p class="display-6 mb-0 text-danger">@Model.Summary.OpeningYearDebt.ToString("0.00")</p></div></div>
+    </div>
+    <div class="col-sm-6 col-xl-4">
+        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">Задолженность членов товарищества за @Model.CurrentYear год</h2><p class="display-6 mb-0 text-danger">@Model.Summary.CurrentYearDebt.ToString("0.00")</p></div></div>
+    </div>
+    <div class="col-sm-6 col-xl-4">
         <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">Переплаты</h2><p class="display-6 mb-0 text-primary">@Model.Summary.TotalOverpayments.ToString("0.00")</p></div></div>
     </div>
     <div class="col-sm-4">

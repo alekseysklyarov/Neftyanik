@@ -300,6 +300,29 @@ else
             </div>
         </div>
         <div class="card-body p-0">
+            <div class="p-3 border-bottom bg-light-subtle">
+                @if (Model.CurrentMemberTariff is null)
+                {
+                    <div class="alert alert-warning mb-0 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3" role="alert">
+                        <div>
+                            <div class="fw-semibold">Тариф для участников не задан.</div>
+                            <div class="small">Тарифы со страницы общих тарифов не используются для начислений участникам.</div>
+                        </div>
+                        <a class="btn btn-sm btn-outline-primary" asp-page="/Administration/Electricity/MemberTariffs/Index">Тариф для участников</a>
+                    </div>
+                }
+                else
+                {
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 small">
+                        <div>
+                            <span class="text-muted">Текущий тариф для участников:</span>
+                            <strong>@Model.CurrentMemberTariff.Rate.ToString("0.0000") грн/кВт·ч</strong>
+                            <span class="text-muted">с @Model.CurrentMemberTariff.EffectiveFrom.ToString("dd.MM.yyyy")</span>
+                        </div>
+                        <a class="btn btn-sm btn-outline-primary" asp-page="/Administration/Electricity/MemberTariffs/Index">Изменить тариф</a>
+                    </div>
+                }
+            </div>
             @if (!Model.HasElectricityMeters)
             {
                 <div class="p-4 text-center text-muted">
@@ -359,7 +382,7 @@ else
                                                         <div class="border rounded px-2 py-1 bg-light-subtle">
                                                             <div class="d-flex flex-wrap justify-content-between gap-2">
                                                                 <span class="fw-semibold">@reading.ReadingDate.ToString("dd.MM.yyyy")</span>
-                                                                <span>@reading.CurrentReading.ToString("0.000") кВт·ч</span>
+                                                                <span>@reading.CurrentReading.ToString("0.###") кВт·ч</span>
                                                             </div>
                                                             <div class="d-flex flex-wrap gap-3 text-muted mt-1">
                                                                 @if (reading.IsInitialReading)
@@ -368,7 +391,7 @@ else
                                                                 }
                                                                 else if (reading.Consumption.HasValue)
                                                                 {
-                                                                    <span>Расход: @reading.Consumption.Value.ToString("0.000")</span>
+                                                                    <span>Расход: @reading.Consumption.Value.ToString("0.###") кВт·ч</span>
                                                                 }
 
                                                                 @if (reading.Amount.HasValue)
@@ -402,7 +425,14 @@ else
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
                 </div>
                 <div class="modal-body">
-                    <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+                    <div asp-validation-summary="All" class="alert alert-danger @(ViewContext.ViewData.ModelState.ErrorCount > 0 ? string.Empty : "d-none")" role="alert"></div>
+                    @if (Model.CurrentMemberTariff is null)
+                    {
+                        <div class="alert alert-warning" role="alert">
+                            Для сохранения показаний сначала добавьте тариф для участников.
+                            <a asp-page="/Administration/Electricity/MemberTariffs/Index">Открыть тарифы для участников</a>
+                        </div>
+                    }
                     <div class="mb-3">
                         <label asp-for="ReadingInput.MeterId" class="form-label"></label>
                         <select asp-for="ReadingInput.MeterId" asp-items="Model.ReadingMeterOptions" class="form-select">
@@ -441,7 +471,7 @@ else
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
                 </div>
                 <div class="modal-body">
-                    <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+                    <div asp-validation-summary="All" class="alert alert-danger @(ViewContext.ViewData.ModelState.ErrorCount > 0 ? string.Empty : "d-none")" role="alert"></div>
                     <div class="mb-3">
                         <label asp-for="SetupInput.BillingPlotId" class="form-label"></label>
                         <select asp-for="SetupInput.BillingPlotId" asp-items="Model.SetupPlotOptions" class="form-select">
@@ -495,7 +525,7 @@ else
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
                 </div>
                 <div class="modal-body">
-                    <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+                    <div asp-validation-summary="All" class="alert alert-danger @(ViewContext.ViewData.ModelState.ErrorCount > 0 ? string.Empty : "d-none")" role="alert"></div>
                     <div class="mb-3">
                         <label asp-for="InitializationInput.MeterId" class="form-label"></label>
                         <select asp-for="InitializationInput.MeterId" asp-items="Model.InitializationMeterOptions" class="form-select">

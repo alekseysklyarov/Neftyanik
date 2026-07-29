@@ -2,6 +2,7 @@
 @model Neftyanik.Portal.Web.Pages.Administration.Plots.DetailsModel
 @{
     ViewData["Title"] = $"Участок {Model.Plot.Number}";
+    var isAdministrator = User.IsInRole(RoleNames.Administrator);
 }
 
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
@@ -10,9 +11,12 @@
         <p class="text-muted mb-0">Подробная информация об участке.</p>
     </div>
     <div class="d-flex gap-2">
-        <a class="btn btn-outline-primary" asp-page="/Administration/Plots/Edit" asp-route-id="@Model.Plot.Id">Редактировать</a>
-        <a class="btn btn-info" asp-page="/Administration/Plots/Ownerships/Index" asp-route-plotId="@Model.Plot.Id">Управление владельцами</a>
-        <a class="btn btn-outline-warning" asp-page="/Administration/Plots/Archive" asp-route-id="@Model.Plot.Id">@(Model.Plot.IsActive ? "Архивировать" : "Восстановить")</a>
+        @if (isAdministrator)
+        {
+            <a class="btn btn-outline-primary" asp-page="/Administration/Plots/Edit" asp-route-id="@Model.Plot.Id">Редактировать</a>
+            <a class="btn btn-info" asp-page="/Administration/Plots/Ownerships/Index" asp-route-plotId="@Model.Plot.Id">Управление владельцами</a>
+            <a class="btn btn-outline-warning" asp-page="/Administration/Plots/Archive" asp-route-id="@Model.Plot.Id">@(Model.Plot.IsActive ? "Архивировать" : "Восстановить")</a>
+        }
         <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Index">К списку участков</a>
     </div>
 </div>
@@ -61,7 +65,10 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
                     <h2 class="h5 mb-0">Сводка по владельцам</h2>
-                    <a class="btn btn-sm btn-outline-info" asp-page="/Administration/Plots/Ownerships/Index" asp-route-plotId="@Model.Plot.Id">Управление владельцами</a>
+                    @if (isAdministrator)
+                    {
+                        <a class="btn btn-sm btn-outline-info" asp-page="/Administration/Plots/Ownerships/Index" asp-route-plotId="@Model.Plot.Id">Управление владельцами</a>
+                    }
                 </div>
                 <p><strong>Количество текущих владельцев:</strong> @Model.Plot.OwnersCount</p>
 

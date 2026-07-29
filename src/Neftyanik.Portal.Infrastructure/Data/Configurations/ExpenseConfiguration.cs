@@ -25,12 +25,19 @@ public class ExpenseConfiguration : IEntityTypeConfiguration<Expense>
         builder.Property(x => x.DocumentNumber)
             .HasMaxLength(100);
 
+        builder.Property(x => x.CancellationReason)
+            .HasMaxLength(500);
+
         builder.Property(x => x.AttachmentPath)
             .HasMaxLength(500);
 
         builder.Property(x => x.CreatedByUserId)
             .IsRequired()
             .HasMaxLength(450);
+
+        builder.HasIndex(x => x.AssociationElectricityReadingId)
+            .IsUnique()
+            .HasFilter("[AssociationElectricityReadingId] IS NOT NULL");
 
         builder.HasIndex(x => x.ExpenseDate);
 
@@ -42,6 +49,11 @@ public class ExpenseConfiguration : IEntityTypeConfiguration<Expense>
         builder.HasOne(x => x.CreatedByUser)
             .WithMany(x => x.CreatedExpenses)
             .HasForeignKey(x => x.CreatedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.AssociationElectricityReading)
+            .WithOne(x => x.SupplierExpense)
+            .HasForeignKey<Expense>(x => x.AssociationElectricityReadingId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.Ignore(x => x.CategoryId);

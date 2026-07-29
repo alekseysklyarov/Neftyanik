@@ -1,15 +1,16 @@
 @page "/Administration/Finance/Electricity/Tariffs"
 @model Neftyanik.Portal.Web.Pages.Administration.Finance.Electricity.Tariffs.IndexModel
 @{
-    ViewData["Title"] = "Тарифы электроэнергии";
+    ViewData["Title"] = "Тарифы поставщика";
 }
 
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
-        <h1 class="h2 mb-1">Тарифы электроэнергии</h1>
-        <p class="text-muted mb-0">Дневной и ночной тарифы используются для общего счётчика. Текущий тариф для пользователей показывается отдельно.</p>
+        <h1 class="h2 mb-1">Тарифы поставщика</h1>
+        <p class="text-muted mb-0">Дневной и ночной тарифы поставщика используются только для общего счётчика. Тарифы для пользователей ведутся отдельно и применяются для начислений участникам.</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
+        <a class="btn btn-outline-primary" asp-page="/Administration/Electricity/MemberTariffs/Index">Тарифы для участников</a>
         <a class="btn btn-primary" asp-page="/Administration/Finance/Electricity/Tariffs/Create">Добавить тариф</a>
         <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/Index">К финансам</a>
     </div>
@@ -19,7 +20,7 @@
     <div class="card-body p-0">
         @if (Model.Tariffs.Count == 0)
         {
-            <div class="p-4 text-center text-muted">Тарифы электроэнергии пока не добавлены.</div>
+            <div class="p-4 text-center text-muted">Тарифы поставщика пока не добавлены.</div>
         }
         else
         {
@@ -28,9 +29,9 @@
                     <thead class="table-light">
                         <tr>
                             <th>Действует с</th>
-                            <th>Дневной тариф общего счётчика</th>
-                            <th>Ночной тариф общего счётчика</th>
-                            <th>Тариф для пользователей</th>
+                            <th>Дневной тариф общего счётчика, грн/кВт·ч</th>
+                            <th>Ночной тариф общего счётчика, грн/кВт·ч</th>
+                            <th>Текущий тариф для пользователей, грн/кВт·ч</th>
                             <th>Создан</th>
                             <th>Создал</th>
                             <th class="text-end">Действия</th>

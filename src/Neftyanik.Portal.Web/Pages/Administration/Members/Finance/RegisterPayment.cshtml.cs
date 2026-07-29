@@ -13,7 +13,7 @@ using Neftyanik.Portal.Web.Pages.Finance;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Members.Finance;
 
-[Authorize(Roles = RoleNames.Administrator)]
+[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
 public class RegisterPaymentModel : PageModel
 {
     private static readonly PaymentMethod[] AllowedPaymentMethods = [PaymentMethod.Cash, PaymentMethod.Card];
@@ -34,6 +34,8 @@ public class RegisterPaymentModel : PageModel
     public IReadOnlyList<SelectListItem> PlotOptions { get; private set; } = [];
 
     public IReadOnlyList<SelectListItem> PaymentMethodOptions { get; private set; } = [];
+
+    public decimal CurrentCashAmount { get; private set; }
 
     public bool HasSinglePlot => PlotOptions.Count == 1;
 
@@ -277,6 +279,20 @@ public class RegisterPaymentModel : PageModel
                 Text = FinanceDisplayHelper.GetPaymentMethodText(method)
             })
             .ToList();
+
+        var cashPayments = await _dbContext.Payments
+            .AsNoTracking()
+            .Where(payment => payment.CancelledAtUtc == null && payment.PaymentMethod == PaymentMethod.Cash)
+            .Select(payment => (decimal?)payment.Amount)
+            .SumAsync(cancellationToken) ?? 0m;
+
+        var activeExpenses = await _dbContext.Expenses
+            .AsNoTracking()
+            .Where(expense => !expense.IsCancelled)
+            .Select(expense => (decimal?)expense.Amount)
+            .SumAsync(cancellationToken) ?? 0m;
+
+        CurrentCashAmount = cashPayments - activeExpenses;
 
         return true;
     }

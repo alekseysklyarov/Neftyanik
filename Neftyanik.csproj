@@ -60,8 +60,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationAccountantAuthorizationTests.cs" />
+    <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationExpenseTests.cs" />
+    <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationFinanceSummaryTests.cs" />
     <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationMemberAccountTests.cs" />
     <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationMemberResetPasswordTests.cs" />
+    <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationMemberTariffTests.cs" />
     <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationPlotChargeTests.cs" />
     <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationPlotOwnershipTests.cs" />
   </ItemGroup>

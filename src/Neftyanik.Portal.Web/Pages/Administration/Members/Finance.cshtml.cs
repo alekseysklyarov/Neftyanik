@@ -15,7 +15,7 @@ using Neftyanik.Portal.Web.Pages.Finance;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Members;
 
-[Authorize(Roles = RoleNames.Administrator)]
+[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
 public class FinanceModel : PageModel
 {
     private const int PageSize = 10;
@@ -63,6 +63,8 @@ public class FinanceModel : PageModel
     public IReadOnlyList<SelectListItem> InitializationMeterOptions { get; private set; } = [];
 
     public IReadOnlyList<SelectListItem> SetupPlotOptions { get; private set; } = [];
+
+    public MemberElectricityTariffInfoViewModel? CurrentMemberTariff { get; private set; }
 
     public int ChargeTotalPages { get; private set; } = 1;
 
@@ -594,6 +596,19 @@ public class FinanceModel : PageModel
     {
         try
         {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            CurrentMemberTariff = await _dbContext.MemberElectricityTariffs
+                .AsNoTracking()
+                .Where(item => item.EffectiveFrom <= today)
+                .OrderByDescending(item => item.EffectiveFrom)
+                .ThenByDescending(item => item.Id)
+                .Select(item => new MemberElectricityTariffInfoViewModel
+                {
+                    EffectiveFrom = item.EffectiveFrom,
+                    Rate = item.Rate
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
             var meters = await _dbContext.MemberElectricityMeters
                 .AsNoTracking()
                 .Where(meter => meter.MemberId == memberId)
@@ -678,6 +693,7 @@ public class FinanceModel : PageModel
             ElectricityMeters = [];
             ReadingMeterOptions = [];
             InitializationMeterOptions = [];
+            CurrentMemberTariff = null;
             IsElectricityFeatureAvailable = false;
             ElectricityFeatureWarningMessage = "Модуль электросчётчиков недоступен: необходимо применить обновление базы данных.";
         }
@@ -742,6 +758,13 @@ public class FinanceModel : PageModel
         public string Status => FinanceDisplayHelper.GetBalanceStatusText(Balance);
 
         public string BalanceStatusClass => FinanceDisplayHelper.GetBalanceStatusClass(Balance);
+    }
+
+    public sealed class MemberElectricityTariffInfoViewModel
+    {
+        public DateOnly EffectiveFrom { get; init; }
+
+        public decimal Rate { get; init; }
     }
 
     public sealed class ChargeItemViewModel

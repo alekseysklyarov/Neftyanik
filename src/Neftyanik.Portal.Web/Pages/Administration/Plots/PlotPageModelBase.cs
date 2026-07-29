@@ -8,7 +8,7 @@ using Neftyanik.Portal.Infrastructure.Data;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Plots;
 
-[Authorize(Roles = RoleNames.Administrator)]
+[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
 public abstract class PlotPageModelBase : PageModel
 {
     protected PlotPageModelBase(ApplicationDbContext dbContext, UserManager<ApplicationUser> userManager)

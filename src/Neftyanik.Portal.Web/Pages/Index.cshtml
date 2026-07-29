@@ -2,6 +2,7 @@
 @model IndexModel
 @{
     ViewData["Title"] = "Главная";
+    var canAccessAdministration = User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.Accountant);
 }
 
 <div class="p-4 p-md-5 mb-4 bg-light border rounded-3">
@@ -19,7 +20,7 @@
                     <a asp-page="/Member/Index" class="btn btn-primary">Личный кабинет</a>
                 }
 
-                @if (User.IsInRole(RoleNames.Administrator))
+                @if (canAccessAdministration)
                 {
                     <a asp-page="/Administration/Index" class="btn btn-outline-primary">Панель администратора</a>
                 }

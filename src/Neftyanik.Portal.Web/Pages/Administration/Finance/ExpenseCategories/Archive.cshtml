@@ -1,0 +1,46 @@
+@page "{id:int}"
+@model Neftyanik.Portal.Web.Pages.Administration.Finance.ExpenseCategories.ArchiveModel
+@{
+    ViewData["Title"] = Model.IsArchiveOperation ? "Архивирование типа расхода" : "Восстановление типа расхода";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h1 class="h3 mb-3">@ViewData["Title"]</h1>
+
+                <p>
+                    @if (Model.IsArchiveOperation)
+                    {
+                        <span>Вы собираетесь перевести в архив тип расхода <strong>@Model.ExpenseCategory.Name</strong>.</span>
+                    }
+                    else
+                    {
+                        <span>Вы собираетесь восстановить тип расхода <strong>@Model.ExpenseCategory.Name</strong> из архива.</span>
+                    }
+                </p>
+
+                <dl class="row mb-4">
+                    <dt class="col-sm-4">Использований</dt>
+                    <dd class="col-sm-8">@Model.ExpenseCategory.ExpensesCount</dd>
+                </dl>
+
+                @if (Model.ExpenseCategory.IsElectricityCategory && Model.IsArchiveOperation)
+                {
+                    <div class="alert alert-warning mb-4">Системный тип расхода для электроэнергии нельзя архивировать.</div>
+                    <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/ExpenseCategories/Index">Назад</a>
+                }
+                else
+                {
+                    <form method="post">
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn @(Model.IsArchiveOperation ? "btn-warning" : "btn-success")">@(Model.IsArchiveOperation ? "Перевести в архив" : "Восстановить")</button>
+                            <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/ExpenseCategories/Index">Отмена</a>
+                        </div>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+</div>

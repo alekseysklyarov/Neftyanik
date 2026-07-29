@@ -8,7 +8,7 @@ using Neftyanik.Portal.Domain.Entities;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Finance.Electricity.Tariffs;
 
-[Authorize(Roles = RoleNames.Administrator)]
+[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
 public class CreateModel : PageModel
 {
     private readonly IElectricityAccountingService _electricityAccountingService;

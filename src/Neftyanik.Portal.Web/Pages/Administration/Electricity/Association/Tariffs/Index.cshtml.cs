@@ -6,7 +6,7 @@ using Neftyanik.Portal.Infrastructure.Data;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Electricity.Association.Tariffs;
 
-[Authorize(Roles = RoleNames.Administrator)]
+[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
 public class IndexModel : PageModel
 {
     private readonly ApplicationDbContext _dbContext;

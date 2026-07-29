@@ -37,4 +37,6 @@ public class AssociationElectricityReading
     public string? CreatedByUserId { get; set; }
 
     public ApplicationUser? CreatedByUser { get; set; }
+
+    public Expense? SupplierExpense { get; set; }
 }

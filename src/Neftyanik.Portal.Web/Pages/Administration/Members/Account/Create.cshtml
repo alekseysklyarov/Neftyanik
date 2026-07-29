@@ -53,6 +53,12 @@
                     <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
                 </div>
                 <div class="col-12">
+                    <div class="form-check">
+                        <input asp-for="Input.MustChangePasswordOnLogin" class="form-check-input" />
+                        <label asp-for="Input.MustChangePasswordOnLogin" class="form-check-label"></label>
+                    </div>
+                </div>
+                <div class="col-12">
                     <div class="form-text">Передайте временный пароль пользователю безопасным способом.</div>
                 </div>
             </div>

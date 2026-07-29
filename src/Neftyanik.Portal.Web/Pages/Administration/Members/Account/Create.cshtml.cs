@@ -93,7 +93,7 @@ public class CreateModel : MemberAccountPageModelBase
             IsActive = member.IsActive,
             CreatedAt = DateTimeOffset.UtcNow,
             LockoutEnabled = true,
-            MustChangePassword = true
+            MustChangePassword = Input.MustChangePasswordOnLogin
         };
 
         await using var transaction = await DbContext.Database.BeginTransactionAsync(cancellationToken);
@@ -143,5 +143,8 @@ public class CreateModel : MemberAccountPageModelBase
         [Compare(nameof(TemporaryPassword), ErrorMessage = "Пароли не совпадают.")]
         [Display(Name = "Подтверждение пароля")]
         public string ConfirmPassword { get; set; } = string.Empty;
+
+        [Display(Name = "Сменить пароль при следующем входе")]
+        public bool MustChangePasswordOnLogin { get; set; }
     }
 }

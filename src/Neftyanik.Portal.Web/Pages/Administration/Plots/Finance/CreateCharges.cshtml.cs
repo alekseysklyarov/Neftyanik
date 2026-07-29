@@ -10,7 +10,7 @@ using Neftyanik.Portal.Infrastructure.Data;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Plots.Finance;
 
-[Microsoft.AspNetCore.Authorization.Authorize(Roles = RoleNames.Administrator)]
+[Microsoft.AspNetCore.Authorization.Authorize(Roles = RoleNames.AdministratorOrAccountant)]
 public class CreateChargesModel : PageModel
 {
     private readonly ApplicationDbContext _dbContext;

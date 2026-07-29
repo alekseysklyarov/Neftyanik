@@ -9,10 +9,10 @@ public class TariffInputModel
     public DateOnly? EffectiveFrom { get; set; }
 
     [Required(ErrorMessage = "Укажите дневной тариф поставщика.")]
-    [Range(typeof(decimal), "0", "999999999999999.9999", ErrorMessage = "Тариф не может быть отрицательным.")]
+    [Range(typeof(decimal), "0", "999999999999999", ErrorMessage = "Тариф не может быть отрицательным.")]
     public decimal? DayRate { get; set; }
 
     [Required(ErrorMessage = "Укажите ночной тариф поставщика.")]
-    [Range(typeof(decimal), "0", "999999999999999.9999", ErrorMessage = "Тариф не может быть отрицательным.")]
+    [Range(typeof(decimal), "0", "999999999999999", ErrorMessage = "Тариф не может быть отрицательным.")]
     public decimal? NightRate { get; set; }
 }

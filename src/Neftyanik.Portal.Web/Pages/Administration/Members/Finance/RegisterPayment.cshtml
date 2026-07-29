@@ -32,9 +32,13 @@
     </div>
 </div>
 
+<div class="alert alert-info" role="alert">
+    Сейчас в кассе должно быть <strong id="currentCashAmount" data-current-cash="@Model.CurrentCashAmount.ToString(System.Globalization.CultureInfo.InvariantCulture)">@Model.CurrentCashAmount.ToString("0.00") грн</strong>.
+</div>
+
 <div class="card shadow-sm">
     <div class="card-body">
-        <form method="post">
+        <form method="post" id="registerPaymentForm">
             <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
             <div class="row g-3">
                 <div class="col-md-6">
@@ -79,13 +83,78 @@
                 </div>
             </div>
             <div class="d-flex gap-2 mt-4 flex-wrap">
-                <button type="submit" class="btn btn-primary">Сохранить платеж</button>
+                <button type="button" class="btn btn-primary" id="openRegisterPaymentConfirmation">Сохранить платеж</button>
                 <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Finance" asp-route-id="@Model.Member.Id">Отмена</a>
             </div>
         </form>
     </div>
 </div>
 
+<div class="modal fade" id="registerPaymentConfirmationModal" tabindex="-1" aria-labelledby="registerPaymentConfirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="registerPaymentConfirmationModalLabel">Подтверждение регистрации платежа</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2" id="registerPaymentConfirmationMessage"></p>
+                <p class="mb-0 text-muted" id="registerPaymentCashChangeMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="confirmRegisterPayment">Подтвердить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const form = document.getElementById('registerPaymentForm');
+            const openButton = document.getElementById('openRegisterPaymentConfirmation');
+            const confirmButton = document.getElementById('confirmRegisterPayment');
+            const modalElement = document.getElementById('registerPaymentConfirmationModal');
+            const amountInput = document.getElementById('Input_Amount');
+            const paymentMethodSelect = document.getElementById('Input_PaymentMethod');
+            const currentCashElement = document.getElementById('currentCashAmount');
+            const confirmationMessage = document.getElementById('registerPaymentConfirmationMessage');
+            const cashChangeMessage = document.getElementById('registerPaymentCashChangeMessage');
+
+            if (!form || !openButton || !confirmButton || !modalElement || !amountInput || !paymentMethodSelect || !currentCashElement || !confirmationMessage || !cashChangeMessage || !window.bootstrap) {
+                return;
+            }
+
+            const modal = window.bootstrap.Modal.getOrCreateInstance(modalElement);
+
+            const formatAmount = value => `${value.toFixed(2)} грн`;
+
+            openButton.addEventListener('click', () => {
+                if (!form.reportValidity()) {
+                    return;
+                }
+
+                const currentCash = Number.parseFloat(currentCashElement.dataset.currentCash ?? '0');
+                const paymentAmount = Number.parseFloat(amountInput.value.replace(',', '.'));
+                const isCashPayment = paymentMethodSelect.value === 'Cash';
+                const nextCash = isCashPayment && Number.isFinite(paymentAmount)
+                    ? currentCash + paymentAmount
+                    : currentCash;
+
+                confirmationMessage.textContent = `Подтвердите регистрацию платежа на сумму ${Number.isFinite(paymentAmount) ? formatAmount(paymentAmount) : '0.00 грн'}.`;
+                cashChangeMessage.textContent = isCashPayment
+                    ? `Сейчас в кассе должно быть ${formatAmount(currentCash)}. После сохранения будет ${formatAmount(nextCash)}.`
+                    : `Сейчас в кассе должно быть ${formatAmount(currentCash)}. При безналичной оплате сумма в кассе не изменится.`;
+
+                modal.show();
+            });
+
+            confirmButton.addEventListener('click', () => {
+                modal.hide();
+                form.requestSubmit();
+            });
+        })();
+    </script>
 }

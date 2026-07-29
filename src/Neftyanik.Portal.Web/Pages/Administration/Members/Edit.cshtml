@@ -29,6 +29,15 @@
             <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
             <div class="row g-3">
+                @if (Model.HasLinkedAccount)
+                {
+                    <div class="col-md-6">
+                        <label asp-for="Input.Login" class="form-label"></label>
+                        <input asp-for="Input.Login" class="form-control" autocomplete="username" />
+                        <span asp-validation-for="Input.Login" class="text-danger"></span>
+                        <div class="form-text">Электронная почта может быть пустой, но логин для входа обязателен.</div>
+                    </div>
+                }
                 <div class="col-md-6">
                     <label asp-for="Input.FullName" class="form-label"></label>
                     <input asp-for="Input.FullName" class="form-control" />

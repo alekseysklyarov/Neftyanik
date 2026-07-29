@@ -9,6 +9,6 @@ public class TariffInputModel
     public DateOnly? EffectiveFrom { get; set; }
 
     [Required(ErrorMessage = "Укажите тариф для участников.")]
-    [Range(typeof(decimal), "0", "999999999999999.9999", ErrorMessage = "Тариф не может быть отрицательным.")]
+    [Range(typeof(decimal), "0", "999999999999999", ErrorMessage = "Тариф не может быть отрицательным.")]
     public decimal? Rate { get; set; }
 }

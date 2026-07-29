@@ -26,7 +26,17 @@ public class Expense
 
     public bool IsCancelled { get; set; }
 
+    public string? CancellationReason { get; set; }
+
+    public DateTimeOffset? CancelledAt { get; set; }
+
+    public DateTimeOffset? UpdatedAt { get; set; }
+
     public ExpenseCategory? ExpenseCategory { get; set; }
+
+    public long? AssociationElectricityReadingId { get; set; }
+
+    public AssociationElectricityReading? AssociationElectricityReading { get; set; }
 
     public int CategoryId
     {

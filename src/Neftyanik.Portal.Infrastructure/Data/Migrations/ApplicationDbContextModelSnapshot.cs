@@ -887,9 +887,19 @@ namespace Neftyanik.Portal.Infrastructure.Data.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<long?>("AssociationElectricityReadingId")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("AttachmentPath")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("CancellationReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTimeOffset?>("CancelledAt")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
@@ -921,7 +931,14 @@ namespace Neftyanik.Portal.Infrastructure.Data.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("AssociationElectricityReadingId")
+                        .IsUnique()
+                        .HasFilter("[AssociationElectricityReadingId] IS NOT NULL");
 
                     b.HasIndex("CreatedByUserId");
 
@@ -961,54 +978,54 @@ namespace Neftyanik.Portal.Infrastructure.Data.Migrations
                         {
                             Id = 1,
                             IsActive = true,
-                            Name = "Оплата электроэнергии"
+                            Name = "Электроэнергия"
                         },
                         new
                         {
                             Id = 2,
                             IsActive = true,
-                            Name = "Ремонт электросети"
+                            Name = "Охрана"
                         },
                         new
                         {
                             Id = 3,
                             IsActive = true,
-                            Name = "Ремонт дорог"
+                            Name = "Зарплата бухгалтеру и председателю"
                         },
                         new
                         {
                             Id = 4,
                             IsActive = true,
-                            Name = "Охрана"
+                            Name = "Покупка нового имущества для кооператива"
                         },
                         new
                         {
                             Id = 5,
                             IsActive = true,
-                            Name = "Вывоз мусора"
+                            Name = "Ремонт имущества для кооператива"
                         },
                         new
                         {
                             Id = 6,
                             IsActive = true,
-                            Name = "Обслуживание территории"
+                            Name = "Наемный труд для кооператива"
                         },
                         new
                         {
                             Id = 7,
-                            IsActive = true,
+                            IsActive = false,
                             Name = "Административные расходы"
                         },
                         new
                         {
                             Id = 8,
-                            IsActive = true,
+                            IsActive = false,
                             Name = "Налоги и банковские комиссии"
                         },
                         new
                         {
                             Id = 9,
-                            IsActive = true,
+                            IsActive = false,
                             Name = "Прочее"
                         });
                 });
@@ -1857,6 +1874,11 @@ namespace Neftyanik.Portal.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.Expense", b =>
                 {
+                    b.HasOne("Neftyanik.Portal.Domain.Entities.AssociationElectricityReading", "AssociationElectricityReading")
+                        .WithOne("SupplierExpense")
+                        .HasForeignKey("Neftyanik.Portal.Domain.Entities.Expense", "AssociationElectricityReadingId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Neftyanik.Portal.Domain.Entities.ApplicationUser", "CreatedByUser")
                         .WithMany("CreatedExpenses")
                         .HasForeignKey("CreatedByUserId")
@@ -1868,6 +1890,8 @@ namespace Neftyanik.Portal.Infrastructure.Data.Migrations
                         .HasForeignKey("ExpenseCategoryId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("AssociationElectricityReading");
 
                     b.Navigation("CreatedByUser");
 
@@ -2142,6 +2166,11 @@ namespace Neftyanik.Portal.Infrastructure.Data.Migrations
                     b.Navigation("UpdatedSystemSettings");
 
                     b.Navigation("UploadedDocuments");
+                });
+
+            modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.AssociationElectricityReading", b =>
+                {
+                    b.Navigation("SupplierExpense");
                 });
 
             modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.Charge", b =>

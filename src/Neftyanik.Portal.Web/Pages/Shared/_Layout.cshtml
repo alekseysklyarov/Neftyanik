@@ -7,6 +7,8 @@
     var userDisplayName = !string.IsNullOrWhiteSpace(currentUser?.DisplayName)
         ? currentUser.DisplayName
         : currentUser?.Email ?? User.Identity?.Name;
+    var isAdministrator = User.IsInRole(RoleNames.Administrator);
+    var canAccessAdministration = isAdministrator || User.IsInRole(RoleNames.Accountant);
     var successMessage = TempData["SuccessMessage"] as string;
     var errorMessage = TempData["ErrorMessage"] as string;
 }
@@ -38,7 +40,7 @@
                                 <a class="nav-link text-dark" asp-page="/Member/Index">Личный кабинет</a>
                             </li>
                         }
-                        @if (User.IsInRole(RoleNames.Administrator))
+                        @if (canAccessAdministration)
                         {
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-page="/Administration/Index">Администрирование</a>

@@ -8,7 +8,7 @@ using Neftyanik.Portal.Infrastructure.Data.Queries;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Finance;
 
-[Authorize(Roles = RoleNames.Administrator)]
+[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
 public class IndexModel : PageModel
 {
     private const int PageSize = 20;
@@ -32,6 +32,8 @@ public class IndexModel : PageModel
 
     public FinanceSummaryViewModel Summary { get; private set; } = new();
 
+    public int CurrentYear { get; private set; }
+
     public int TotalPages { get; private set; }
 
     public string EmptyStateMessage { get; private set; } = string.Empty;
@@ -41,6 +43,9 @@ public class IndexModel : PageModel
         Search = string.IsNullOrWhiteSpace(Search) ? null : Search.Trim();
         Status = NormalizeStatus(Status);
         PageNumber = PageNumber < 1 ? 1 : PageNumber;
+
+        CurrentYear = DateTime.Today.Year;
+        var currentYearStart = new DateOnly(CurrentYear, 1, 1);
 
         var balancesQuery = _dbContext.Plots
             .AsNoTracking()
@@ -89,10 +94,67 @@ public class IndexModel : PageModel
             })
             .ToListAsync(cancellationToken);
 
+        var totalActiveCharges = await _dbContext.Charges
+            .AsNoTracking()
+            .Where(charge => charge.CancelledAtUtc == null)
+            .SumAsync(charge => (decimal?)charge.Amount, cancellationToken) ?? 0m;
+
+        var totalActivePayments = await _dbContext.Payments
+            .AsNoTracking()
+            .Where(payment => payment.CancelledAtUtc == null)
+            .SumAsync(payment => (decimal?)payment.Amount, cancellationToken) ?? 0m;
+
+        var totalCashPayments = await _dbContext.Payments
+            .AsNoTracking()
+            .Where(payment => payment.CancelledAtUtc == null && payment.PaymentMethod == Domain.Enums.PaymentMethod.Cash)
+            .SumAsync(payment => (decimal?)payment.Amount, cancellationToken) ?? 0m;
+
+        var openingYearCashPayments = await _dbContext.Payments
+            .AsNoTracking()
+            .Where(payment => payment.CancelledAtUtc == null
+                && payment.PaymentMethod == Domain.Enums.PaymentMethod.Cash
+                && payment.PaymentDate < currentYearStart)
+            .SumAsync(payment => (decimal?)payment.Amount, cancellationToken) ?? 0m;
+
+        var totalActiveExpenses = await _dbContext.Expenses
+            .AsNoTracking()
+            .Where(expense => !expense.IsCancelled)
+            .SumAsync(expense => (decimal?)expense.Amount, cancellationToken) ?? 0m;
+
+        var openingYearExpenses = await _dbContext.Expenses
+            .AsNoTracking()
+            .Where(expense => !expense.IsCancelled && expense.ExpenseDate < currentYearStart)
+            .SumAsync(expense => (decimal?)expense.Amount, cancellationToken) ?? 0m;
+
+        var openingYearCharges = await _dbContext.Charges
+            .AsNoTracking()
+            .Where(charge => charge.CancelledAtUtc == null && charge.ChargeDate < currentYearStart)
+            .SumAsync(charge => (decimal?)charge.Amount, cancellationToken) ?? 0m;
+
+        var openingYearPayments = await _dbContext.Payments
+            .AsNoTracking()
+            .Where(payment => payment.CancelledAtUtc == null && payment.PaymentDate < currentYearStart)
+            .SumAsync(payment => (decimal?)payment.Amount, cancellationToken) ?? 0m;
+
+        var currentYearCharges = await _dbContext.Charges
+            .AsNoTracking()
+            .Where(charge => charge.CancelledAtUtc == null && charge.ChargeDate >= currentYearStart)
+            .SumAsync(charge => (decimal?)charge.Amount, cancellationToken) ?? 0m;
+
+        var currentYearPayments = await _dbContext.Payments
+            .AsNoTracking()
+            .Where(payment => payment.CancelledAtUtc == null && payment.PaymentDate >= currentYearStart)
+            .SumAsync(payment => (decimal?)payment.Amount, cancellationToken) ?? 0m;
+
         Summary = new FinanceSummaryViewModel
         {
-            TotalActiveCharges = await _dbContext.Charges.AsNoTracking().Where(charge => charge.CancelledAtUtc == null).SumAsync(charge => (decimal?)charge.Amount, cancellationToken) ?? 0m,
-            TotalActivePayments = await _dbContext.Payments.AsNoTracking().Where(payment => payment.CancelledAtUtc == null).SumAsync(payment => (decimal?)payment.Amount, cancellationToken) ?? 0m,
+            TotalActiveCharges = totalActiveCharges,
+            TotalActivePayments = totalActivePayments,
+            CurrentCashAmount = totalCashPayments - totalActiveExpenses,
+            OpeningYearCashAmount = openingYearCashPayments - openingYearExpenses,
+            CurrentYearCharges = currentYearCharges,
+            OpeningYearDebt = Math.Max(openingYearCharges - openingYearPayments, 0m),
+            CurrentYearDebt = Math.Max(currentYearCharges - currentYearPayments, 0m),
             PlotsWithDebtCount = await _dbContext.Plots.AsNoTracking().CountAsync(plot =>
                 (plot.Charges.Where(charge => charge.CancelledAtUtc == null).Sum(charge => (decimal?)charge.Amount) ?? 0m)
                 - (plot.Payments.Where(payment => payment.CancelledAtUtc == null).Sum(payment => (decimal?)payment.Amount) ?? 0m) > 0m,
@@ -139,6 +201,16 @@ public class IndexModel : PageModel
         public decimal TotalActiveCharges { get; set; }
 
         public decimal TotalActivePayments { get; set; }
+
+        public decimal CurrentCashAmount { get; set; }
+
+        public decimal OpeningYearCashAmount { get; set; }
+
+        public decimal CurrentYearCharges { get; set; }
+
+        public decimal OpeningYearDebt { get; set; }
+
+        public decimal CurrentYearDebt { get; set; }
 
         public decimal TotalCurrentDebt { get; set; }
 

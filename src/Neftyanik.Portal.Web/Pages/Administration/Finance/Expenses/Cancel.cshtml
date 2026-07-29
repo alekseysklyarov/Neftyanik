@@ -1,0 +1,49 @@
+@page "{id:long}/Cancel"
+@model Neftyanik.Portal.Web.Pages.Administration.Finance.Expenses.CancelModel
+@{
+    ViewData["Title"] = Model.IsCancelOperation ? "Отмена расхода" : "Восстановление расхода";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h1 class="h3 mb-3">@ViewData["Title"]</h1>
+                <p>
+                    @(Model.IsCancelOperation
+                        ? "Расход останется в системе, но будет исключён из активных финансовых итогов."
+                        : "Расход будет снова участвовать в активных финансовых итогах.")
+                </p>
+
+                <dl class="row mb-4">
+                    <dt class="col-sm-4">Дата расхода</dt>
+                    <dd class="col-sm-8">@Model.Expense.ExpenseDate.ToString("dd.MM.yyyy")</dd>
+
+                    <dt class="col-sm-4">Тип расхода</dt>
+                    <dd class="col-sm-8">@Model.Expense.CategoryName</dd>
+
+                    <dt class="col-sm-4">Сумма</dt>
+                    <dd class="col-sm-8">@Model.Expense.Amount.ToString("0.00")</dd>
+                </dl>
+
+                @if (Model.Expense.IsAssociationElectricityExpense)
+                {
+                    <div class="alert alert-info">Этот расход связан с показаниями общего электросчётчика.</div>
+                }
+
+                <form method="post" class="d-flex gap-2 flex-wrap">
+                    @if (Model.IsCancelOperation)
+                    {
+                        <div class="w-100 mb-3">
+                            <label asp-for="Input.CancellationReason" class="form-label"></label>
+                            <textarea asp-for="Input.CancellationReason" class="form-control" rows="3"></textarea>
+                            <span asp-validation-for="Input.CancellationReason" class="text-danger"></span>
+                        </div>
+                    }
+                    <button type="submit" class="btn @(Model.IsCancelOperation ? "btn-warning" : "btn-success")">@(Model.IsCancelOperation ? "Подтвердить отмену" : "Подтвердить восстановление")</button>
+                    <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/Expenses/Details" asp-route-id="@Model.Expense.Id">Отмена</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
