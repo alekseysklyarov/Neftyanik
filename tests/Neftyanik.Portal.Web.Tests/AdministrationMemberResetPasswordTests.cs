@@ -93,7 +93,7 @@ public class AdministrationMemberResetPasswordTests
             [new PasswordValidator<ApplicationUser>(), new SimplePasswordValidator()],
             new UpperInvariantLookupNormalizer(),
             new IdentityErrorDescriber(),
-            null,
+            new ServiceCollection().BuildServiceProvider(),
             NullLogger<UserManager<ApplicationUser>>.Instance);
     }
 }

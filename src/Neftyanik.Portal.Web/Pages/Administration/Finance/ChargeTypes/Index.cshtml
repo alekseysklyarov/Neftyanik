@@ -1,17 +1,17 @@
 @page
 @model Neftyanik.Portal.Web.Pages.Administration.Finance.ChargeTypes.IndexModel
 @{
-    ViewData["Title"] = "Типы начислений";
+    ViewData["Title"] = AppLocalizer.Get("Типы начислений", "Типи нарахувань", "Charge types");
 }
 
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
-        <h1 class="h2 mb-1">Типы начислений</h1>
-        <p class="text-muted mb-0">Справочник типов начислений для финансового учета.</p>
+        <h1 class="h2 mb-1">@AppLocalizer.Get("Типы начислений", "Типи нарахувань", "Charge types")</h1>
+        <p class="text-muted mb-0">@AppLocalizer.Get("Справочник типов начислений для финансового учета.", "Довідник типів нарахувань для фінансового обліку.", "Reference list of charge types for finance.")</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
-        <a class="btn btn-primary" asp-page="/Administration/Finance/ChargeTypes/Create">Добавить тип начисления</a>
-        <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/Index">Назад к финансам</a>
+        <a class="btn btn-primary" asp-page="/Administration/Finance/ChargeTypes/Create">@AppLocalizer.Get("Добавить тип начисления", "Додати тип нарахування", "Add charge type")</a>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/Index">@AppLocalizer.Get("Назад к финансам", "Назад до фінансів", "Back to finance")</a>
     </div>
 </div>
 
@@ -19,20 +19,20 @@
     <div class="card-body">
         <form method="get" class="row g-3 align-items-end">
             <div class="col-md-6">
-                <label asp-for="Search" class="form-label">Поиск</label>
-                <input asp-for="Search" class="form-control" placeholder="Наименование типа начисления" />
+                <label asp-for="Search" class="form-label">@AppLocalizer.Get("Поиск", "Пошук", "Search")</label>
+                <input asp-for="Search" class="form-control" placeholder="@AppLocalizer.Get("Наименование типа начисления", "Найменування типу нарахування", "Charge type name")" />
             </div>
             <div class="col-md-3">
-                <label asp-for="Status" class="form-label">Статус</label>
+                <label asp-for="Status" class="form-label">@AppLocalizer.Get("Статус", "Статус", "Status")</label>
                 <select asp-for="Status" class="form-select">
-                    <option value="active">Только активные</option>
-                    <option value="all">Все</option>
-                    <option value="archived">Только архивные</option>
+                    <option value="active">@AppLocalizer.Get("Только активные", "Лише активні", "Active only")</option>
+                    <option value="all">@AppLocalizer.Get("Все", "Усі", "All")</option>
+                    <option value="archived">@AppLocalizer.Get("Только архивные", "Лише архівні", "Archived only")</option>
                 </select>
             </div>
             <div class="col-md-3 d-flex gap-2">
-                <button type="submit" class="btn btn-outline-primary flex-fill">Найти</button>
-                <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/ChargeTypes/Index" asp-route-status="all">Сбросить</a>
+                <button type="submit" class="btn btn-outline-primary flex-fill">@AppLocalizer.Get("Найти", "Знайти", "Search")</button>
+                <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/ChargeTypes/Index" asp-route-status="all">@AppLocalizer.Get("Сбросить", "Скинути", "Reset")</a>
             </div>
         </form>
     </div>
@@ -50,12 +50,12 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th>Наименование</th>
-                            <th>Сумма по умолчанию</th>
-                            <th>Правила</th>
-                            <th>Статус</th>
-                            <th>Использований</th>
-                            <th class="text-end">Действия</th>
+                            <th>@AppLocalizer.Get("Наименование", "Найменування", "Name")</th>
+                            <th>@AppLocalizer.Get("Сумма по умолчанию", "Сума за замовчуванням", "Default amount")</th>
+                            <th>@AppLocalizer.Get("Правила", "Правила", "Rules")</th>
+                            <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
+                            <th>@AppLocalizer.Get("Использований", "Використань", "Usage count")</th>
+                            <th class="text-end">@AppLocalizer.Get("Действия", "Дії", "Actions")</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -68,15 +68,15 @@
                                     <div class="d-flex flex-wrap gap-1">
                                         @if (chargeType.IsDefault)
                                         {
-                                            <span class="badge text-bg-primary">По умолчанию</span>
+                                            <span class="badge text-bg-primary">@AppLocalizer.Get("По умолчанию", "За замовчуванням", "Default")</span>
                                         }
                                         @if (chargeType.IsYearly)
                                         {
-                                            <span class="badge text-bg-info">Ежегодный</span>
+                                            <span class="badge text-bg-info">@AppLocalizer.Get("Ежегодный", "Щорічний", "Yearly")</span>
                                         }
                                         @if (chargeType.OnlyOnOwnerChange)
                                         {
-                                            <span class="badge text-bg-warning">При смене владельца</span>
+                                            <span class="badge text-bg-warning">@AppLocalizer.Get("При смене владельца", "При зміні власника", "On owner change")</span>
                                         }
                                         @if (!chargeType.IsDefault && !chargeType.IsYearly && !chargeType.OnlyOnOwnerChange)
                                         {
@@ -87,19 +87,19 @@
                                 <td>
                                     @if (chargeType.IsActive)
                                     {
-                                        <span class="badge text-bg-success">Активен</span>
+                                        <span class="badge text-bg-success">@AppLocalizer.Get("Активен", "Активний", "Active")</span>
                                     }
                                     else
                                     {
-                                        <span class="badge text-bg-secondary">В архиве</span>
+                                        <span class="badge text-bg-secondary">@AppLocalizer.Get("В архиве", "В архіві", "Archived")</span>
                                     }
                                 </td>
                                 <td>@chargeType.ChargesCount</td>
                                 <td class="text-end">
                                     <div class="btn-group btn-group-sm" role="group">
-                                        <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/ChargeTypes/Details" asp-route-id="@chargeType.Id">Подробнее</a>
-                                        <a class="btn btn-outline-primary" asp-page="/Administration/Finance/ChargeTypes/Edit" asp-route-id="@chargeType.Id">Редактировать</a>
-                                        <a class="btn btn-outline-warning" asp-page="/Administration/Finance/ChargeTypes/Archive" asp-route-id="@chargeType.Id">@(chargeType.IsActive ? "Архивировать" : "Восстановить")</a>
+                                        <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/ChargeTypes/Details" asp-route-id="@chargeType.Id">@AppLocalizer.Get("Подробнее", "Детальніше", "Details")</a>
+                                        <a class="btn btn-outline-primary" asp-page="/Administration/Finance/ChargeTypes/Edit" asp-route-id="@chargeType.Id">@AppLocalizer.Get("Редактировать", "Редагувати", "Edit")</a>
+                                        <a class="btn btn-outline-warning" asp-page="/Administration/Finance/ChargeTypes/Archive" asp-route-id="@chargeType.Id">@(chargeType.IsActive ? AppLocalizer.Get("Архивировать", "Архівувати", "Archive") : AppLocalizer.Get("Восстановить", "Відновити", "Restore"))</a>
                                     </div>
                                 </td>
                             </tr>
@@ -113,10 +113,10 @@
 
 @if (Model.TotalPages > 1)
 {
-    <nav aria-label="Навигация по страницам" class="mt-4">
+    <nav aria-label="@AppLocalizer.Get("Навигация по страницам", "Навігація сторінками", "Pagination")" class="mt-4">
         <ul class="pagination justify-content-center flex-wrap">
             <li class="page-item @(Model.HasPreviousPage ? string.Empty : "disabled")">
-                <a class="page-link" asp-page="/Administration/Finance/ChargeTypes/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-pageNumber="@(Model.PageNumber - 1)">Назад</a>
+                <a class="page-link" asp-page="/Administration/Finance/ChargeTypes/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-pageNumber="@(Model.PageNumber - 1)">@AppLocalizer.Get("Назад", "Назад", "Previous")</a>
             </li>
             @for (var pageIndex = 1; pageIndex <= Model.TotalPages; pageIndex++)
             {
@@ -125,7 +125,7 @@
                 </li>
             }
             <li class="page-item @(Model.HasNextPage ? string.Empty : "disabled")">
-                <a class="page-link" asp-page="/Administration/Finance/ChargeTypes/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-pageNumber="@(Model.PageNumber + 1)">Вперёд</a>
+                <a class="page-link" asp-page="/Administration/Finance/ChargeTypes/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-pageNumber="@(Model.PageNumber + 1)">@AppLocalizer.Get("Вперёд", "Вперед", "Next")</a>
             </li>
         </ul>
     </nav>

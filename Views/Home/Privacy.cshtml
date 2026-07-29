@@ -1,6 +1,8 @@
-﻿@{
-    ViewData["Title"] = "Privacy Policy";
+@using Neftyanik.Portal.Web.Localization
+
+@{
+    ViewData["Title"] = AppLocalizer.Get("Конфиденциальность", "Конфіденційність", "Privacy");
 }
 <h1>@ViewData["Title"]</h1>
 
-<p>Use this page to detail your site's privacy policy.</p>
+<p>@AppLocalizer.Get("Используйте эту страницу для описания политики конфиденциальности сайта.", "Використовуйте цю сторінку для опису політики конфіденційності сайту.", "Use this page to describe the site's privacy policy.")</p>

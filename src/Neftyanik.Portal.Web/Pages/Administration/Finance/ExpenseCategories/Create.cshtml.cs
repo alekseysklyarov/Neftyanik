@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data;
+using Neftyanik.Portal.Web.Localization;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Finance.ExpenseCategories;
 
@@ -25,7 +26,7 @@ public class CreateModel : PageModel
     {
         if (await NameExistsAsync(null, cancellationToken))
         {
-            ModelState.AddModelError("Input.Name", "Тип расхода с таким наименованием уже существует.");
+            ModelState.AddModelError("Input.Name", AppLocalizer.Get("Тип расхода с таким наименованием уже существует.", "Тип витрати з такою назвою вже існує.", "An expense type with this name already exists."));
         }
 
         if (!ModelState.IsValid)
@@ -43,7 +44,7 @@ public class CreateModel : PageModel
         _dbContext.ExpenseCategories.Add(expenseCategory);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        TempData["SuccessMessage"] = "Тип расхода успешно создан.";
+        TempData["SuccessMessage"] = AppLocalizer.Get("Тип расхода успешно создан.", "Тип витрати успішно створено.", "The expense type has been created.");
         return RedirectToPage("/Administration/Finance/ExpenseCategories/Index");
     }
 

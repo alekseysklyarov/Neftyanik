@@ -1,16 +1,16 @@
 @page
 @model Neftyanik.Portal.Web.Pages.Administration.Finance.Settings.IndexModel
 @{
-    ViewData["Title"] = "Настройки финансов";
+    ViewData["Title"] = AppLocalizer.Get("Настройки финансов", "Налаштування фінансів", "Finance settings");
 }
 
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
-        <h1 class="h2 mb-1">Настройки финансов</h1>
-        <p class="text-muted mb-0">Справочники и настройки, используемые в финансовом учете.</p>
+        <h1 class="h2 mb-1">@AppLocalizer.Get("Настройки финансов", "Налаштування фінансів", "Finance settings")</h1>
+        <p class="text-muted mb-0">@AppLocalizer.Get("Справочники и настройки, используемые в финансовом учете.", "Довідники та налаштування, що використовуються у фінансовому обліку.", "Reference data and settings used in finance.")</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
-        <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/Index">К финансам</a>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/Index">@AppLocalizer.Get("К финансам", "До фінансів", "Back to finance")</a>
     </div>
 </div>
 
@@ -18,10 +18,10 @@
     <div class="col-md-6 col-xl-4">
         <div class="card h-100 shadow-sm">
             <div class="card-body d-flex flex-column">
-                <h2 class="h5">Типы расходов</h2>
-                <p class="text-muted flex-grow-1">Справочник категорий расходов товарищества.</p>
+                <h2 class="h5">@AppLocalizer.Get("Типы расходов", "Типи витрат", "Expense types")</h2>
+                <p class="text-muted flex-grow-1">@AppLocalizer.Get("Справочник категорий расходов товарищества.", "Довідник категорій витрат товариства.", "Reference list of association expense categories.")</p>
                 <div>
-                    <a class="btn btn-primary" asp-page="/Administration/Finance/ExpenseCategories/Index">Открыть</a>
+                    <a class="btn btn-primary" asp-page="/Administration/Finance/ExpenseCategories/Index">@AppLocalizer.Get("Открыть", "Відкрити", "Open")</a>
                 </div>
             </div>
         </div>
@@ -29,10 +29,10 @@
     <div class="col-md-6 col-xl-4">
         <div class="card h-100 shadow-sm">
             <div class="card-body d-flex flex-column">
-                <h2 class="h5">Тарифы поставщика</h2>
-                <p class="text-muted flex-grow-1">Тарифы поставщика для расчета расходов по общему счетчику.</p>
+                <h2 class="h5">@AppLocalizer.Get("Тарифы поставщика", "Тарифи постачальника", "Supplier tariffs")</h2>
+                <p class="text-muted flex-grow-1">@AppLocalizer.Get("Тарифы поставщика для расчета расходов по общему счетчику.", "Тарифи постачальника для розрахунку витрат за загальним лічильником.", "Supplier tariffs used to calculate shared meter expenses.")</p>
                 <div>
-                    <a class="btn btn-primary" asp-page="/Administration/Finance/Electricity/Tariffs/Index">Открыть</a>
+                    <a class="btn btn-primary" asp-page="/Administration/Finance/Electricity/Tariffs/Index">@AppLocalizer.Get("Открыть", "Відкрити", "Open")</a>
                 </div>
             </div>
         </div>
@@ -40,10 +40,10 @@
     <div class="col-md-6 col-xl-4">
         <div class="card h-100 shadow-sm">
             <div class="card-body d-flex flex-column">
-                <h2 class="h5">Тарифы для участников</h2>
-                <p class="text-muted flex-grow-1">Тарифы для расчёта начислений по электросчётчикам членов товарищества.</p>
+                <h2 class="h5">@AppLocalizer.Get("Тарифы для участников", "Тарифи для учасників", "Member tariffs")</h2>
+                <p class="text-muted flex-grow-1">@AppLocalizer.Get("Тарифы для расчёта начислений по электросчётчикам членов товарищества.", "Тарифи для розрахунку нарахувань за електролічильниками членів товариства.", "Tariffs used to calculate charges for members' electricity meters.")</p>
                 <div>
-                    <a class="btn btn-primary" asp-page="/Administration/Electricity/MemberTariffs/Index">Открыть</a>
+                    <a class="btn btn-primary" asp-page="/Administration/Electricity/MemberTariffs/Index">@AppLocalizer.Get("Открыть", "Відкрити", "Open")</a>
                 </div>
             </div>
         </div>
@@ -51,10 +51,10 @@
     <div class="col-md-6 col-xl-4">
         <div class="card h-100 shadow-sm">
             <div class="card-body d-flex flex-column">
-                <h2 class="h5">Типы начислений</h2>
-                <p class="text-muted flex-grow-1">Справочник типов начислений для участков и членов товарищества.</p>
+                <h2 class="h5">@AppLocalizer.Get("Типы начислений", "Типи нарахувань", "Charge types")</h2>
+                <p class="text-muted flex-grow-1">@AppLocalizer.Get("Справочник типов начислений для участков и членов товарищества.", "Довідник типів нарахувань для ділянок і членів товариства.", "Reference list of charge types for plots and members.")</p>
                 <div>
-                    <a class="btn btn-primary" asp-page="/Administration/Finance/ChargeTypes/Index">Открыть</a>
+                    <a class="btn btn-primary" asp-page="/Administration/Finance/ChargeTypes/Index">@AppLocalizer.Get("Открыть", "Відкрити", "Open")</a>
                 </div>
             </div>
         </div>

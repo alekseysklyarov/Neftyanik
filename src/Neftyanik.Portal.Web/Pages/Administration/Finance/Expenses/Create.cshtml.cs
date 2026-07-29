@@ -56,8 +56,13 @@ public class CreateModel : PageModel
             return Page();
         }
 
-        var expenseDate = Input.ExpenseDate.GetValueOrDefault();
-        var amount = Input.Amount.GetValueOrDefault();
+        if (Input.ExpenseCategoryId is null || Input.ExpenseDate is null || Input.Amount is null)
+        {
+            return Page();
+        }
+
+        var expenseDate = Input.ExpenseDate.Value;
+        var amount = Input.Amount.Value;
 
         var expense = new Expense
         {

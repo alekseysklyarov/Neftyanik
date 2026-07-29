@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data;
+using Neftyanik.Portal.Web.Localization;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Members.Plots;
 
@@ -46,30 +47,45 @@ public class CreateModel : PageModel
 
         if (!member.IsActive)
         {
-            ModelState.AddModelError(string.Empty, "Нельзя добавить участок архивному члену товарищества.");
+            ModelState.AddModelError(string.Empty, AppLocalizer.Get(
+                "Нельзя добавить участок архивному члену товарищества.",
+                "Не можна додати ділянку архівному члену товариства.",
+                "A plot cannot be added to an archived member."));
         }
 
         PlotOptions = await GetPlotOptionsAsync(Input.PlotId, cancellationToken);
         if (PlotOptions.Count == 0)
         {
-            ModelState.AddModelError(string.Empty, "Нет свободных участков, доступных для добавления.");
+            ModelState.AddModelError(string.Empty, AppLocalizer.Get(
+                "Нет свободных участков, доступных для добавления.",
+                "Немає вільних ділянок, доступних для додавання.",
+                "There are no available plots to add."));
         }
 
         if (Input.PlotId is null)
         {
-            ModelState.AddModelError("Input.PlotId", "Выберите участок.");
+            ModelState.AddModelError("Input.PlotId", AppLocalizer.Get(
+                "Выберите участок.",
+                "Виберіть ділянку.",
+                "Select a plot."));
         }
         else
         {
             if (await HasOpenOwnershipAsync(Input.PlotId.Value, cancellationToken))
             {
-                ModelState.AddModelError("Input.PlotId", "Выберите свободный участок из списка доступных.");
+                ModelState.AddModelError("Input.PlotId", AppLocalizer.Get(
+                    "Выберите свободный участок из списка доступных.",
+                    "Виберіть вільну ділянку зі списку доступних.",
+                    "Select an available plot from the list."));
             }
 
             var validPlotIds = PlotOptions.Select(option => option.Value).ToHashSet(StringComparer.Ordinal);
             if (!validPlotIds.Contains(Input.PlotId.Value.ToString()))
             {
-                ModelState.AddModelError("Input.PlotId", "Выберите свободный участок из списка доступных.");
+                ModelState.AddModelError("Input.PlotId", AppLocalizer.Get(
+                    "Выберите свободный участок из списка доступных.",
+                    "Виберіть вільну ділянку зі списку доступних.",
+                    "Select an available plot from the list."));
             }
         }
 
@@ -92,7 +108,10 @@ public class CreateModel : PageModel
 
         if (TempData is not null)
         {
-            TempData["SuccessMessage"] = "Участок успешно добавлен члену товарищества.";
+            TempData["SuccessMessage"] = AppLocalizer.Get(
+                "Участок успешно добавлен члену товарищества.",
+                "Ділянку успішно додано члену товариства.",
+                "The plot has been added to the member successfully.");
         }
 
         return RedirectToPage("/Administration/Members/Details", new { id = memberId });
@@ -157,8 +176,8 @@ public class CreateModel : PageModel
             {
                 Value = plot.Id.ToString(),
                 Text = string.IsNullOrWhiteSpace(plot.Address)
-                    ? $"Участок {plot.Number}"
-                    : $"Участок {plot.Number} — {plot.Address}"
+                    ? AppLocalizer.Get($"Участок {plot.Number}", $"Ділянка {plot.Number}", $"Plot {plot.Number}")
+                    : AppLocalizer.Get($"Участок {plot.Number} — {plot.Address}", $"Ділянка {plot.Number} — {plot.Address}", $"Plot {plot.Number} — {plot.Address}")
             })
             .ToList();
     }
@@ -187,15 +206,11 @@ public class CreateModel : PageModel
 
     public sealed class InputModel : IValidatableObject
     {
-        [Required(ErrorMessage = "Выберите участок.")]
-        [Display(Name = "Участок")]
         public int? PlotId { get; set; }
 
-        [Display(Name = "Доля владения, %")]
         public decimal? OwnershipShare { get; set; }
 
         [DataType(DataType.Date)]
-        [Display(Name = "Действует с")]
         public DateOnly? ValidFrom { get; set; }
 
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
@@ -203,7 +218,10 @@ public class CreateModel : PageModel
             if (OwnershipShare.HasValue && (OwnershipShare.Value <= 0m || OwnershipShare.Value > 100m))
             {
                 yield return new ValidationResult(
-                    "Доля владения должна быть больше 0 и не больше 100.",
+                    AppLocalizer.Get(
+                        "Доля владения должна быть больше 0 и не больше 100.",
+                        "Частка володіння має бути більшою за 0 і не більшою за 100.",
+                        "Ownership share must be greater than 0 and no more than 100."),
                     [nameof(OwnershipShare)]);
             }
         }

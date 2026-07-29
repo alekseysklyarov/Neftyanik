@@ -8,6 +8,7 @@ using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data;
 using Neftyanik.Portal.Infrastructure.Data.Queries;
+using Neftyanik.Portal.Web.Localization;
 using Neftyanik.Portal.Web.Pages.Finance;
 
 namespace Neftyanik.Portal.Web.Pages.Member.Plots.Finance;
@@ -334,8 +335,10 @@ public class IndexModel : PageModel
         public bool IsChargeCancelled { get; set; }
 
         public string ChargeStatusText => IsInitialReading
-            ? "Без начисления"
-            : IsChargeCancelled ? "Начисление отменено" : "Начислено";
+            ? AppLocalizer.Get("Без начисления", "Без нарахування", "No charge")
+            : IsChargeCancelled
+                ? AppLocalizer.Get("Начисление отменено", "Нарахування скасовано", "Charge cancelled")
+                : AppLocalizer.Get("Начислено", "Нараховано", "Charged");
     }
 
     private sealed class PlotOwnershipViewModel
@@ -365,9 +368,9 @@ public class IndexModel : PageModel
 
         public string BalanceStatusText => Balance switch
         {
-            > 0m => "Задолженность",
-            < 0m => "Переплата",
-            _ => "Оплачено"
+            > 0m => AppLocalizer.Get("Задолженность", "Заборгованість", "Debt"),
+            < 0m => AppLocalizer.Get("Переплата", "Переплата", "Overpayment"),
+            _ => AppLocalizer.Get("Оплачено", "Сплачено", "Paid")
         };
 
         public string BalanceStatusClass => Balance switch
@@ -401,7 +404,9 @@ public class IndexModel : PageModel
 
         public string? CancellationReason { get; init; }
 
-        public string StatusText => IsCancelled ? "Отменено" : "Активно";
+        public string StatusText => IsCancelled
+            ? AppLocalizer.Get("Отменено", "Скасовано", "Cancelled")
+            : AppLocalizer.Get("Активно", "Активно", "Active");
     }
 
     public sealed class PaymentItemViewModel
@@ -420,6 +425,8 @@ public class IndexModel : PageModel
 
         public string? CancellationReason { get; init; }
 
-        public string StatusText => IsCancelled ? "Отменено" : "Активно";
+        public string StatusText => IsCancelled
+            ? AppLocalizer.Get("Отменено", "Скасовано", "Cancelled")
+            : AppLocalizer.Get("Активно", "Активно", "Active");
     }
 }

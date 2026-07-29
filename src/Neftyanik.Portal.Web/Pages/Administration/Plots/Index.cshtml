@@ -1,19 +1,19 @@
 @page
 @model Neftyanik.Portal.Web.Pages.Administration.Plots.IndexModel
 @{
-    ViewData["Title"] = "Участки";
+    ViewData["Title"] = AppLocalizer.Get("Участки", "Ділянки", "Plots");
     var isAdministrator = User.IsInRole(RoleNames.Administrator);
 }
 
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
-        <h1 class="h2 mb-1">Участки</h1>
-        <p class="text-muted mb-0">Список участков товарищества.</p>
+        <h1 class="h2 mb-1">@AppLocalizer.Get("Участки", "Ділянки", "Plots")</h1>
+        <p class="text-muted mb-0">@AppLocalizer.Get("Список участков товарищества.", "Список ділянок товариства.", "List of association plots.")</p>
     </div>
     @if (isAdministrator)
     {
         <div>
-            <a class="btn btn-primary" asp-page="/Administration/Plots/Create">Добавить участок</a>
+            <a class="btn btn-primary" asp-page="/Administration/Plots/Create">@AppLocalizer.Get("Добавить участок", "Додати ділянку", "Add plot")</a>
         </div>
     }
 </div>
@@ -32,28 +32,28 @@
     <div class="card-body">
         <form method="get" class="row g-3 align-items-end">
             <div class="col-md-6">
-                <label asp-for="Search" class="form-label">Поиск</label>
-                <input asp-for="Search" class="form-control" placeholder="Номер, адрес или кадастровый номер" />
+                <label asp-for="Search" class="form-label">@AppLocalizer.Get("Поиск", "Пошук", "Search")</label>
+                <input asp-for="Search" class="form-control" placeholder="@AppLocalizer.Get("Номер, адрес или кадастровый номер", "Номер, адреса або кадастровий номер", "Number, address, or cadastral number")" />
             </div>
             <div class="col-md-3">
-                <label asp-for="Status" class="form-label">Статус</label>
+                <label asp-for="Status" class="form-label">@AppLocalizer.Get("Статус", "Статус", "Status")</label>
                 <select asp-for="Status" class="form-select">
-                    <option value="active">Только активные</option>
-                    <option value="all">Все</option>
-                    <option value="archived">Только архивные</option>
+                    <option value="active">@AppLocalizer.Get("Только активные", "Лише активні", "Active only")</option>
+                    <option value="all">@AppLocalizer.Get("Все", "Усі", "All")</option>
+                    <option value="archived">@AppLocalizer.Get("Только архивные", "Лише архівні", "Archived only")</option>
                 </select>
             </div>
             <div class="col-md-3">
-                <label asp-for="Ownership" class="form-label">Владельцы</label>
+                <label asp-for="Ownership" class="form-label">@AppLocalizer.Get("Владельцы", "Власники", "Owners")</label>
                 <select asp-for="Ownership" class="form-select">
-                    <option value="all">Все участки</option>
-                    <option value="withowners">Только с текущими владельцами</option>
-                    <option value="withoutowners">Только без текущих владельцев</option>
+                    <option value="all">@AppLocalizer.Get("Все участки", "Усі ділянки", "All plots")</option>
+                    <option value="withowners">@AppLocalizer.Get("Только с текущими владельцами", "Лише з поточними власниками", "With current owners only")</option>
+                    <option value="withoutowners">@AppLocalizer.Get("Только без текущих владельцев", "Лише без поточних власників", "Without current owners only")</option>
                 </select>
             </div>
             <div class="col-md-12 col-lg-3 d-flex gap-2">
-                <button type="submit" class="btn btn-outline-primary flex-fill">Найти</button>
-                <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Index">Сбросить</a>
+                <button type="submit" class="btn btn-outline-primary flex-fill">@AppLocalizer.Get("Найти", "Знайти", "Search")</button>
+                <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Index">@AppLocalizer.Get("Сбросить", "Скинути", "Reset")</a>
             </div>
         </form>
     </div>
@@ -77,10 +77,10 @@
 
                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 p-3 border-bottom">
                     <div>
-                        <h2 class="h5 mb-1">Список участков</h2>
-                        <p class="text-muted mb-0">Для начисления доступны только активные участки с текущими владельцами.</p>
+                        <h2 class="h5 mb-1">@AppLocalizer.Get("Список участков", "Список ділянок", "Plot list")</h2>
+                        <p class="text-muted mb-0">@AppLocalizer.Get("Для начисления доступны только активные участки с текущими владельцами.", "Для нарахування доступні лише активні ділянки з поточними власниками.", "Only active plots with current owners are available for charges.")</p>
                     </div>
-                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#bulkChargeModal">Начислить выбранным</button>
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#bulkChargeModal">@AppLocalizer.Get("Начислить выбранным", "Нарахувати вибраним", "Charge selected")</button>
                 </div>
 
                 <div class="table-responsive">
@@ -89,16 +89,16 @@
                             <tr>
                                 <th style="width: 1%;">
                                     <div class="form-check mb-0">
-                                        <input class="form-check-input" type="checkbox" id="select-all-plots" aria-label="Выбрать все участки" />
+                                        <input class="form-check-input" type="checkbox" id="select-all-plots" aria-label="@AppLocalizer.Get("Выбрать все участки", "Вибрати всі ділянки", "Select all plots")" />
                                     </div>
                                 </th>
-                                <th>Номер</th>
-                                <th>Адрес</th>
-                                <th>Площадь, соток</th>
-                                <th>Кадастровый номер</th>
-                                <th>Статус</th>
-                                <th>Владелец</th>
-                                <th class="text-end">Действия</th>
+                                <th>@AppLocalizer.Get("Номер", "Номер", "Number")</th>
+                                <th>@AppLocalizer.Get("Адрес", "Адреса", "Address")</th>
+                                <th>@AppLocalizer.Get("Площадь, соток", "Площа, соток", "Area, соток")</th>
+                                <th>@AppLocalizer.Get("Кадастровый номер", "Кадастровий номер", "Cadastral number")</th>
+                                <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
+                                <th>@AppLocalizer.Get("Владелец", "Власник", "Owner")</th>
+                                <th class="text-end">@AppLocalizer.Get("Действия", "Дії", "Actions")</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -110,11 +110,11 @@
                                         {
                                             @if (Model.ChargeInput.SelectedPlotIds.Contains(plot.Id))
                                             {
-                                                <input class="form-check-input" type="checkbox" name="ChargeInput.SelectedPlotIds" value="@plot.Id" checked aria-label="Выбрать участок @plot.Number" />
+                                                <input class="form-check-input" type="checkbox" name="ChargeInput.SelectedPlotIds" value="@plot.Id" checked aria-label="@AppLocalizer.Get($"Выбрать участок {plot.Number}", $"Вибрати ділянку {plot.Number}", $"Select plot {plot.Number}")" />
                                             }
                                             else
                                             {
-                                                <input class="form-check-input" type="checkbox" name="ChargeInput.SelectedPlotIds" value="@plot.Id" aria-label="Выбрать участок @plot.Number" />
+                                                <input class="form-check-input" type="checkbox" name="ChargeInput.SelectedPlotIds" value="@plot.Id" aria-label="@AppLocalizer.Get($"Выбрать участок {plot.Number}", $"Вибрати ділянку {plot.Number}", $"Select plot {plot.Number}")" />
                                             }
                                         }
                                         else
@@ -129,7 +129,7 @@
                                     <td>
                                         @if (!plot.IsActive)
                                         {
-                                            <span>анулировано</span>
+                                            <span>@AppLocalizer.Get("Аннулировано", "Анульовано", "Cancelled")</span>
                                         }
                                     </td>
                                     <td>
@@ -143,16 +143,16 @@
                                         }
                                         @if (!plot.CanCreateCharge)
                                         {
-                                            <div class="small text-muted">Начисление недоступно</div>
+                                            <div class="small text-muted">@AppLocalizer.Get("Начисление недоступно", "Нарахування недоступне", "Charge unavailable")</div>
                                         }
                                     </td>
                                     <td class="text-end">
                                         <div class="btn-group btn-group-sm" role="group">
-                                            <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Details" asp-route-id="@plot.Id">Подробнее</a>
+                                            <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Details" asp-route-id="@plot.Id">@AppLocalizer.Get("Подробнее", "Детальніше", "Details")</a>
                                             @if (isAdministrator)
                                             {
-                                                <a class="btn btn-outline-primary" asp-page="/Administration/Plots/Edit" asp-route-id="@plot.Id">Редактировать</a>
-                                                <a class="btn btn-outline-warning" asp-page="/Administration/Plots/Archive" asp-route-id="@plot.Id">@(plot.IsActive ? "Архивировать" : "Восстановить")</a>
+                                                <a class="btn btn-outline-primary" asp-page="/Administration/Plots/Edit" asp-route-id="@plot.Id">@AppLocalizer.Get("Редактировать", "Редагувати", "Edit")</a>
+                                                <a class="btn btn-outline-warning" asp-page="/Administration/Plots/Archive" asp-route-id="@plot.Id">@(plot.IsActive ? AppLocalizer.Get("Архивировать", "Архівувати", "Archive") : AppLocalizer.Get("Восстановить", "Відновити", "Restore"))</a>
                                             }
                                         </div>
                                     </td>
@@ -166,14 +166,14 @@
                     <div class="modal-dialog modal-lg modal-dialog-scrollable">
                         <div class="modal-content">
                             <div class="modal-header">
-                                <h2 class="modal-title h5" id="bulkChargeModalLabel">Начисление по выбранным участкам</h2>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                                <h2 class="modal-title h5" id="bulkChargeModalLabel">@AppLocalizer.Get("Начисление по выбранным участкам", "Нарахування за вибраними ділянками", "Charge selected plots")</h2>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@AppLocalizer.Get("Закрыть", "Закрити", "Close")"></button>
                             </div>
                             <div class="modal-body">
                                 <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
                                 <div class="mb-3">
-                                    <div class="fw-semibold">Выбранные участки</div>
+                                    <div class="fw-semibold">@AppLocalizer.Get("Выбранные участки", "Вибрані ділянки", "Selected plots")</div>
                                     <div id="bulk-charge-selected-count" class="text-muted small mb-2"></div>
                                     <ul id="bulk-charge-selected-plots" class="mb-0 ps-3"></ul>
                                     <span asp-validation-for="ChargeInput.SelectedPlotIds" class="text-danger"></span>
@@ -181,7 +181,7 @@
 
                                 <div class="row g-3">
                                     <div class="col-md-6">
-                                        <label asp-for="ChargeInput.ChargeTypeId" class="form-label"></label>
+                                        <label asp-for="ChargeInput.ChargeTypeId" class="form-label">@AppLocalizer.Get("Тип начисления", "Тип нарахування", "Charge type")</label>
                                         @if (Model.HasSingleChargeType)
                                         {
                                             <input type="hidden" asp-for="ChargeInput.ChargeTypeId" />
@@ -190,28 +190,28 @@
                                         else
                                         {
                                             <select asp-for="ChargeInput.ChargeTypeId" asp-items="Model.ChargeTypeOptions" class="form-select">
-                                                <option value="">Выберите тип начисления</option>
+                                                <option value="">@AppLocalizer.Get("Выберите тип начисления", "Виберіть тип нарахування", "Select charge type")</option>
                                             </select>
                                         }
                                         <span asp-validation-for="ChargeInput.ChargeTypeId" class="text-danger"></span>
                                     </div>
                                     <div class="col-md-6">
-                                        <label asp-for="ChargeInput.Amount" class="form-label"></label>
+                                        <label asp-for="ChargeInput.Amount" class="form-label">@AppLocalizer.Get("Сумма, грн", "Сума, грн", "Amount, UAH")</label>
                                         <input class="form-control" id="charge-amount-display" value="@(Model.ChargeInput.Amount.HasValue ? $"{Model.ChargeInput.Amount.Value:0.00} грн" : string.Empty)" readonly />
                                         <span asp-validation-for="ChargeInput.Amount" class="text-danger"></span>
                                     </div>
                                     <div class="col-md-6">
-                                        <label asp-for="ChargeInput.ChargeDate" class="form-label"></label>
+                                        <label asp-for="ChargeInput.ChargeDate" class="form-label">@AppLocalizer.Get("Дата начисления", "Дата нарахування", "Charge date")</label>
                                         <input class="form-control" value="@Model.CurrentChargeDateDisplay" readonly />
                                         <span asp-validation-for="ChargeInput.ChargeDate" class="text-danger"></span>
                                     </div>
                                     <div class="col-md-6">
-                                        <label asp-for="ChargeInput.DueDate" class="form-label"></label>
+                                        <label asp-for="ChargeInput.DueDate" class="form-label">@AppLocalizer.Get("Срок оплаты", "Строк оплати", "Due date")</label>
                                         <input asp-for="ChargeInput.DueDate" class="form-control" type="date" />
                                         <span asp-validation-for="ChargeInput.DueDate" class="text-danger"></span>
                                     </div>
                                     <div class="col-12">
-                                        <label asp-for="ChargeInput.Description" class="form-label"></label>
+                                        <label asp-for="ChargeInput.Description" class="form-label">@AppLocalizer.Get("Описание", "Опис", "Description")</label>
                                         <textarea asp-for="ChargeInput.Description" class="form-control" rows="3"></textarea>
                                         <span asp-validation-for="ChargeInput.Description" class="text-danger"></span>
                                     </div>
@@ -219,18 +219,18 @@
                                         <div class="form-check">
                                             <input class="form-check-input" type="checkbox" id="confirm-bulk-charge" required />
                                             <label class="form-check-label" for="confirm-bulk-charge">
-                                                Подтверждаю создание начислений для всех выбранных участков.
+                                                @AppLocalizer.Get("Подтверждаю создание начислений для всех выбранных участков.", "Підтверджую створення нарахувань для всіх вибраних ділянок.", "I confirm creating charges for all selected plots.")
                                             </label>
                                             <div class="invalid-feedback d-block" id="confirm-bulk-charge-validation" hidden>
-                                                Подтвердите создание начислений.
+                                                @AppLocalizer.Get("Подтвердите создание начислений.", "Підтвердьте створення нарахувань.", "Confirm the charge creation.")
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             <div class="modal-footer">
-                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
-                                <button type="submit" class="btn btn-primary" id="submit-bulk-charge">Создать начисления</button>
+                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@AppLocalizer.Get("Отмена", "Скасувати", "Cancel")</button>
+                                <button type="submit" class="btn btn-primary" id="submit-bulk-charge">@AppLocalizer.Get("Создать начисления", "Створити нарахування", "Create charges")</button>
                             </div>
                         </div>
                     </div>
@@ -242,7 +242,7 @@
 
 @if (Model.TotalPages > 1)
 {
-    <nav aria-label="Навигация по страницам" class="mt-4">
+    <nav aria-label="@AppLocalizer.Get("Навигация по страницам", "Навігація сторінками", "Pagination")" class="mt-4">
         <ul class="pagination justify-content-center flex-wrap">
             <li class="page-item @(Model.HasPreviousPage ? string.Empty : "disabled")">
                 <a class="page-link"
@@ -250,7 +250,7 @@
                    asp-route-search="@Model.Search"
                    asp-route-status="@Model.Status"
                    asp-route-ownership="@Model.Ownership"
-                   asp-route-pageNumber="@(Model.PageNumber - 1)">Назад</a>
+                   asp-route-pageNumber="@(Model.PageNumber - 1)">@AppLocalizer.Get("Назад", "Назад", "Previous")</a>
             </li>
             @for (var pageIndex = 1; pageIndex <= Model.TotalPages; pageIndex++)
             {
@@ -269,7 +269,7 @@
                    asp-route-search="@Model.Search"
                    asp-route-status="@Model.Status"
                    asp-route-ownership="@Model.Ownership"
-                   asp-route-pageNumber="@(Model.PageNumber + 1)">Вперёд</a>
+                   asp-route-pageNumber="@(Model.PageNumber + 1)">@AppLocalizer.Get("Вперёд", "Вперед", "Next")</a>
             </li>
         </ul>
     </nav>
@@ -279,6 +279,10 @@
     <partial name="_ValidationScriptsPartial" />
     <script>
         (() => {
+            const plotsNotSelectedText = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(AppLocalizer.Get("Участки не выбраны.", "Ділянки не вибрано.", "No plots selected.")));
+            const selectAtLeastOnePlotText = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(AppLocalizer.Get("Выберите хотя бы один участок в списке.", "Виберіть хоча б одну ділянку у списку.", "Select at least one plot from the list.")));
+            const selectedPlotsCountText = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(AppLocalizer.Get("Выбрано участков", "Вибрано ділянок", "Selected plots")));
+            const plotText = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(AppLocalizer.Get("Участок", "Ділянка", "Plot")));
             const selectAllCheckbox = document.getElementById('select-all-plots');
             const modalElement = document.getElementById('bulkChargeModal');
             const selectedPlotsList = document.getElementById('bulk-charge-selected-plots');
@@ -316,20 +320,20 @@
                 selectedPlotsList.innerHTML = '';
 
                 if (selectedRows.length === 0) {
-                    selectedPlotsCount.textContent = 'Участки не выбраны.';
+                    selectedPlotsCount.textContent = plotsNotSelectedText;
                     const item = document.createElement('li');
-                    item.textContent = 'Выберите хотя бы один участок в списке.';
+                    item.textContent = selectAtLeastOnePlotText;
                     selectedPlotsList.appendChild(item);
                     submitBulkChargeButton.disabled = true;
                     return;
                 }
 
-                selectedPlotsCount.textContent = `Выбрано участков: ${selectedRows.length}.`;
+                selectedPlotsCount.textContent = `${selectedPlotsCountText}: ${selectedRows.length}.`;
                 submitBulkChargeButton.disabled = false;
 
                 for (const row of selectedRows) {
                     const item = document.createElement('li');
-                    item.textContent = row.cells[1]?.textContent?.trim() || 'Участок';
+                    item.textContent = row.cells[1]?.textContent?.trim() || plotText;
                     selectedPlotsList.appendChild(item);
                 }
             };

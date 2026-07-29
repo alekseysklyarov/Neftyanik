@@ -1,16 +1,16 @@
 @page "/Member/Plots/{plotId:int}/Finance"
 @model Neftyanik.Portal.Web.Pages.Member.Plots.Finance.IndexModel
 @{
-    ViewData["Title"] = $"Финансы участка {Model.Plot.PlotNumber}";
+    ViewData["Title"] = AppLocalizer.Get($"Финансы участка {Model.Plot.PlotNumber}", $"Фінанси ділянки {Model.Plot.PlotNumber}", $"Plot finance {Model.Plot.PlotNumber}");
 }
 
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
-        <h1 class="h2 mb-1">Финансы участка @Model.Plot.PlotNumber</h1>
-        <p class="text-muted mb-1">@(string.IsNullOrWhiteSpace(Model.Plot.PlotAddress) ? "Адрес не указан" : Model.Plot.PlotAddress)</p>
+        <h1 class="h2 mb-1">@AppLocalizer.Get("Финансы участка", "Фінанси ділянки", "Plot finance") @Model.Plot.PlotNumber</h1>
+        <p class="text-muted mb-1">@(string.IsNullOrWhiteSpace(Model.Plot.PlotAddress) ? AppLocalizer.Get("Адрес не указан", "Адресу не вказано", "Address not specified") : Model.Plot.PlotAddress)</p>
     </div>
     <div>
-        <a class="btn btn-outline-secondary" asp-page="/Member/Index">Назад в личный кабинет</a>
+        <a class="btn btn-outline-secondary" asp-page="/Member/Index">@AppLocalizer.Get("Назад в личный кабинет", "Назад до особистого кабінету", "Back to dashboard")</a>
     </div>
 </div>
 
@@ -18,7 +18,7 @@
     <div class="col-md-4">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <h2 class="h6 text-muted">Начислено</h2>
+                <h2 class="h6 text-muted">@AppLocalizer.Get("Начислено", "Нараховано", "Charged")</h2>
                 <p class="display-6 mb-0">@Model.Plot.ActiveChargesTotal.ToString("0.00")</p>
             </div>
         </div>
@@ -26,7 +26,7 @@
     <div class="col-md-4">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <h2 class="h6 text-muted">Оплачено</h2>
+                <h2 class="h6 text-muted">@AppLocalizer.Get("Оплачено", "Сплачено", "Paid")</h2>
                 <p class="display-6 mb-0">@Model.Plot.ActivePaymentsTotal.ToString("0.00")</p>
             </div>
         </div>
@@ -34,7 +34,7 @@
     <div class="col-md-4">
         <div class="card shadow-sm h-100 @Model.Plot.BalanceCardClass">
             <div class="card-body">
-                <h2 class="h6 text-muted">Баланс</h2>
+                <h2 class="h6 text-muted">@AppLocalizer.Get("Баланс", "Баланс", "Balance")</h2>
                 <p class="display-6 mb-1 @Model.Plot.BalanceStatusClass">@Model.Plot.BalanceDisplayAmount.ToString("0.00")</p>
                 <p class="mb-0 @Model.Plot.BalanceStatusClass">@Model.Plot.BalanceStatusText</p>
             </div>
@@ -44,26 +44,26 @@
 
 <div class="card shadow-sm mb-4">
     <div class="card-header bg-white">
-        <h2 class="h5 mb-0">Электроэнергия</h2>
+        <h2 class="h5 mb-0">@AppLocalizer.Get("Электроэнергия", "Електроенергія", "Electricity")</h2>
     </div>
     <div class="card-body">
         @if (!Model.Electricity.HasHistory)
         {
-            <p class="text-muted mb-0">История показаний электроэнергии пока отсутствует.</p>
+            <p class="text-muted mb-0">@AppLocalizer.Get("История показаний электроэнергии пока отсутствует.", "Історія показань електроенергії поки відсутня.", "Electricity reading history is not available yet.")</p>
         }
         else
         {
             <div class="row g-3 mb-4">
                 <div class="col-md-4">
-                    <div class="text-muted small">Последняя дата показаний</div>
+                    <div class="text-muted small">@AppLocalizer.Get("Последняя дата показаний", "Остання дата показань", "Latest reading date")</div>
                     <div class="fw-semibold">@(Model.Electricity.LatestReadingDate.HasValue ? Model.Electricity.LatestReadingDate.Value.ToString("dd.MM.yyyy") : "—")</div>
                 </div>
                 <div class="col-md-4">
-                    <div class="text-muted small">Последнее дневное показание</div>
+                    <div class="text-muted small">@AppLocalizer.Get("Последнее дневное показание", "Останній денний показник", "Latest day reading")</div>
                     <div class="fw-semibold">@(Model.Electricity.LatestDayReading.HasValue ? $"{Model.Electricity.LatestDayReading.Value:0.000} кВт·ч" : "—")</div>
                 </div>
                 <div class="col-md-4">
-                    <div class="text-muted small">Последнее ночное показание</div>
+                    <div class="text-muted small">@AppLocalizer.Get("Последнее ночное показание", "Останній нічний показник", "Latest night reading")</div>
                     <div class="fw-semibold">@(Model.Electricity.LatestNightReading.HasValue ? $"{Model.Electricity.LatestNightReading.Value:0.000} кВт·ч" : "—")</div>
                 </div>
             </div>
@@ -72,13 +72,13 @@
                 @foreach (var reading in Model.Electricity.RecentReadings)
                 {
                     <div class="list-group-item">
-                        <div class="fw-semibold mb-1">@reading.ReadingDate.ToString("dd.MM.yyyy") — @(reading.IsInitialReading ? "Начальные показания" : "Начисление")</div>
-                        <div class="small text-muted">Расход день: @(reading.DayConsumption.HasValue ? $"{reading.DayConsumption.Value:0.000} кВт·ч" : "—")</div>
-                        <div class="small text-muted">Расход ночь: @(reading.NightConsumption.HasValue ? $"{reading.NightConsumption.Value:0.000} кВт·ч" : "—")</div>
-                        <div class="small text-muted">Дневной тариф: @(reading.DayRate.HasValue ? $"{reading.DayRate.Value:0.0000} грн/кВт·ч" : "—")</div>
-                        <div class="small text-muted">Ночной тариф: @(reading.NightRate.HasValue ? $"{reading.NightRate.Value:0.0000} грн/кВт·ч" : "—")</div>
-                        <div class="small text-muted">Начислено: @(reading.TotalAmount.HasValue ? $"{reading.TotalAmount.Value:0.00} грн" : "—")</div>
-                        <div class="small text-muted">Статус: @reading.ChargeStatusText</div>
+                        <div class="fw-semibold mb-1">@reading.ReadingDate.ToString("dd.MM.yyyy") — @(reading.IsInitialReading ? AppLocalizer.Get("Начальные показания", "Початкові показання", "Initial reading") : AppLocalizer.Get("Начисление", "Нарахування", "Charge"))</div>
+                        <div class="small text-muted">@AppLocalizer.Get("Расход день:", "Споживання день:", "Day consumption:") @(reading.DayConsumption.HasValue ? $"{reading.DayConsumption.Value:0.000} кВт·ч" : "—")</div>
+                        <div class="small text-muted">@AppLocalizer.Get("Расход ночь:", "Споживання ніч:", "Night consumption:") @(reading.NightConsumption.HasValue ? $"{reading.NightConsumption.Value:0.000} кВт·ч" : "—")</div>
+                        <div class="small text-muted">@AppLocalizer.Get("Дневной тариф:", "Денний тариф:", "Day tariff:") @(reading.DayRate.HasValue ? $"{reading.DayRate.Value:0.0000} грн/кВт·ч" : "—")</div>
+                        <div class="small text-muted">@AppLocalizer.Get("Ночной тариф:", "Нічний тариф:", "Night tariff:") @(reading.NightRate.HasValue ? $"{reading.NightRate.Value:0.0000} грн/кВт·ч" : "—")</div>
+                        <div class="small text-muted">@AppLocalizer.Get("Начислено:", "Нараховано:", "Charged:") @(reading.TotalAmount.HasValue ? $"{reading.TotalAmount.Value:0.00} грн" : "—")</div>
+                        <div class="small text-muted">@AppLocalizer.Get("Статус:", "Статус:", "Status:") @reading.ChargeStatusText</div>
                     </div>
                 }
             </div>
@@ -88,13 +88,13 @@
 
 <div class="card shadow-sm mb-4">
     <div class="card-header bg-white d-flex justify-content-between align-items-center gap-2">
-        <h2 class="h5 mb-0">Начисления</h2>
-        <span class="text-muted small">Страница @Model.ChargePage из @Model.ChargeTotalPages</span>
+        <h2 class="h5 mb-0">@AppLocalizer.Get("Начисления", "Нарахування", "Charges")</h2>
+        <span class="text-muted small">@AppLocalizer.Get($"Страница {Model.ChargePage} из {Model.ChargeTotalPages}", $"Сторінка {Model.ChargePage} з {Model.ChargeTotalPages}", $"Page {Model.ChargePage} of {Model.ChargeTotalPages}")</span>
     </div>
     <div class="card-body p-0">
         @if (Model.Charges.Count == 0)
         {
-            <div class="p-4 text-center text-muted">Начисления по участку отсутствуют.</div>
+            <div class="p-4 text-center text-muted">@AppLocalizer.Get("Начисления по участку отсутствуют.", "Нарахування за ділянкою відсутні.", "There are no charges for this plot.")</div>
         }
         else
         {
@@ -102,12 +102,12 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th>Дата начисления</th>
-                            <th>Тип начисления</th>
-                            <th>Сумма</th>
-                            <th>Срок оплаты</th>
-                            <th>Описание</th>
-                            <th>Статус</th>
+                            <th>@AppLocalizer.Get("Дата начисления", "Дата нарахування", "Charge date")</th>
+                            <th>@AppLocalizer.Get("Тип начисления", "Тип нарахування", "Charge type")</th>
+                            <th>@AppLocalizer.Get("Сумма", "Сума", "Amount")</th>
+                            <th>@AppLocalizer.Get("Срок оплаты", "Строк оплати", "Due date")</th>
+                            <th>@AppLocalizer.Get("Описание", "Опис", "Description")</th>
+                            <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -123,7 +123,7 @@
                                     @if (charge.IsCancelled)
                                     {
                                         <div><span class="badge text-bg-secondary">@charge.StatusText</span></div>
-                                        <small class="text-muted">@(string.IsNullOrWhiteSpace(charge.CancellationReason) ? "Причина не указана" : charge.CancellationReason)</small>
+                                        <small class="text-muted">@(string.IsNullOrWhiteSpace(charge.CancellationReason) ? AppLocalizer.Get("Причина не указана", "Причину не вказано", "Reason not specified") : charge.CancellationReason)</small>
                                     }
                                     else
                                     {
@@ -140,14 +140,14 @@
     @if (Model.ChargeTotalPages > 1)
     {
         <div class="card-footer bg-white">
-            <nav aria-label="Навигация по начислениям">
+            <nav aria-label="@AppLocalizer.Get("Навигация по начислениям", "Навігація нарахуваннями", "Charge pagination")">
                 <ul class="pagination pagination-sm mb-0">
                     <li class="page-item @(Model.HasChargePreviousPage ? string.Empty : "disabled")">
                         <a class="page-link"
                            asp-page="/Member/Plots/Finance/Index"
                            asp-route-plotId="@Model.Plot.PlotId"
                            asp-route-chargePage="@(Model.ChargePage - 1)"
-                           asp-route-paymentPage="@Model.PaymentPage">Назад</a>
+                           asp-route-paymentPage="@Model.PaymentPage">@AppLocalizer.Get("Назад", "Назад", "Previous")</a>
                     </li>
                     @for (var pageNumber = 1; pageNumber <= Model.ChargeTotalPages; pageNumber++)
                     {
@@ -164,7 +164,7 @@
                            asp-page="/Member/Plots/Finance/Index"
                            asp-route-plotId="@Model.Plot.PlotId"
                            asp-route-chargePage="@(Model.ChargePage + 1)"
-                           asp-route-paymentPage="@Model.PaymentPage">Вперед</a>
+                           asp-route-paymentPage="@Model.PaymentPage">@AppLocalizer.Get("Вперед", "Вперед", "Next")</a>
                     </li>
                 </ul>
             </nav>
@@ -174,13 +174,13 @@
 
 <div class="card shadow-sm">
     <div class="card-header bg-white d-flex justify-content-between align-items-center gap-2">
-        <h2 class="h5 mb-0">Платежи</h2>
-        <span class="text-muted small">Страница @Model.PaymentPage из @Model.PaymentTotalPages</span>
+        <h2 class="h5 mb-0">@AppLocalizer.Get("Платежи", "Платежі", "Payments")</h2>
+        <span class="text-muted small">@AppLocalizer.Get($"Страница {Model.PaymentPage} из {Model.PaymentTotalPages}", $"Сторінка {Model.PaymentPage} з {Model.PaymentTotalPages}", $"Page {Model.PaymentPage} of {Model.PaymentTotalPages}")</span>
     </div>
     <div class="card-body p-0">
         @if (Model.Payments.Count == 0)
         {
-            <div class="p-4 text-center text-muted">Платежи по участку отсутствуют.</div>
+            <div class="p-4 text-center text-muted">@AppLocalizer.Get("Платежи по участку отсутствуют.", "Платежі за ділянкою відсутні.", "There are no payments for this plot.")</div>
         }
         else
         {
@@ -188,12 +188,12 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th>Дата платежа</th>
-                            <th>Сумма</th>
-                            <th>Способ оплаты</th>
-                            <th>Номер документа</th>
-                            <th>Описание</th>
-                            <th>Статус</th>
+                            <th>@AppLocalizer.Get("Дата платежа", "Дата платежу", "Payment date")</th>
+                            <th>@AppLocalizer.Get("Сумма", "Сума", "Amount")</th>
+                            <th>@AppLocalizer.Get("Способ оплаты", "Спосіб оплати", "Payment method")</th>
+                            <th>@AppLocalizer.Get("Номер документа", "Номер документа", "Document number")</th>
+                            <th>@AppLocalizer.Get("Описание", "Опис", "Description")</th>
+                            <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -209,7 +209,7 @@
                                     @if (payment.IsCancelled)
                                     {
                                         <div><span class="badge text-bg-secondary">@payment.StatusText</span></div>
-                                        <small class="text-muted">@(string.IsNullOrWhiteSpace(payment.CancellationReason) ? "Причина не указана" : payment.CancellationReason)</small>
+                                        <small class="text-muted">@(string.IsNullOrWhiteSpace(payment.CancellationReason) ? AppLocalizer.Get("Причина не указана", "Причину не вказано", "Reason not specified") : payment.CancellationReason)</small>
                                     }
                                     else
                                     {
@@ -226,14 +226,14 @@
     @if (Model.PaymentTotalPages > 1)
     {
         <div class="card-footer bg-white">
-            <nav aria-label="Навигация по платежам">
+            <nav aria-label="@AppLocalizer.Get("Навигация по платежам", "Навігація платежами", "Payment pagination")">
                 <ul class="pagination pagination-sm mb-0">
                     <li class="page-item @(Model.HasPaymentPreviousPage ? string.Empty : "disabled")">
                         <a class="page-link"
                            asp-page="/Member/Plots/Finance/Index"
                            asp-route-plotId="@Model.Plot.PlotId"
                            asp-route-chargePage="@Model.ChargePage"
-                           asp-route-paymentPage="@(Model.PaymentPage - 1)">Назад</a>
+                           asp-route-paymentPage="@(Model.PaymentPage - 1)">@AppLocalizer.Get("Назад", "Назад", "Previous")</a>
                     </li>
                     @for (var pageNumber = 1; pageNumber <= Model.PaymentTotalPages; pageNumber++)
                     {
@@ -250,7 +250,7 @@
                            asp-page="/Member/Plots/Finance/Index"
                            asp-route-plotId="@Model.Plot.PlotId"
                            asp-route-chargePage="@Model.ChargePage"
-                           asp-route-paymentPage="@(Model.PaymentPage + 1)">Вперед</a>
+                           asp-route-paymentPage="@(Model.PaymentPage + 1)">@AppLocalizer.Get("Вперед", "Вперед", "Next")</a>
                     </li>
                 </ul>
             </nav>

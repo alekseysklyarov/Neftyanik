@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data;
+using Neftyanik.Portal.Web.Localization;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Members;
 
@@ -90,7 +91,10 @@ public class EditModel : PageModel
 
         if (HasLinkedAccount && string.IsNullOrWhiteSpace(Input.Login))
         {
-            ModelState.AddModelError($"{nameof(Input)}.{nameof(MemberInputModel.Login)}", "Укажите логин для входа.");
+            ModelState.AddModelError($"{nameof(Input)}.{nameof(MemberInputModel.Login)}", AppLocalizer.Get(
+                "Укажите логин для входа.",
+                "Вкажіть логін для входу.",
+                "Enter a login."));
         }
 
         if (!ModelState.IsValid)
@@ -110,7 +114,10 @@ public class EditModel : PageModel
             user = await _dbContext.Users.FirstOrDefaultAsync(item => item.Id == member.ApplicationUserId, cancellationToken);
             if (user is null)
             {
-                ModelState.AddModelError(string.Empty, "Связанная учетная запись не найдена.");
+                ModelState.AddModelError(string.Empty, AppLocalizer.Get(
+                    "Связанная учетная запись не найдена.",
+                    "Пов'язаний обліковий запис не знайдено.",
+                    "The linked account was not found."));
                 return Page();
             }
 
@@ -121,7 +128,10 @@ public class EditModel : PageModel
 
             if (duplicateLoginExists)
             {
-                ModelState.AddModelError($"{nameof(Input)}.{nameof(MemberInputModel.Login)}", "Пользователь с таким логином уже существует.");
+                ModelState.AddModelError($"{nameof(Input)}.{nameof(MemberInputModel.Login)}", AppLocalizer.Get(
+                    "Пользователь с таким логином уже существует.",
+                    "Користувач із таким логіном уже існує.",
+                    "A user with this login already exists."));
             }
         }
 
@@ -161,7 +171,10 @@ public class EditModel : PageModel
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        TempData["SuccessMessage"] = "Изменения по члену товарищества сохранены.";
+        TempData["SuccessMessage"] = AppLocalizer.Get(
+            "Изменения по члену товарищества сохранены.",
+            "Зміни щодо члена товариства збережено.",
+            "Member changes have been saved.");
         return RedirectToPage("/Administration/Members/Details", new { id = member.Id });
     }
 
@@ -199,11 +212,11 @@ public class EditModel : PageModel
 
             var message = error.Code switch
             {
-                nameof(IdentityErrorDescriber.DuplicateUserName) => "Пользователь с таким логином уже существует.",
-                nameof(IdentityErrorDescriber.InvalidUserName) => "Укажите корректный логин.",
-                nameof(IdentityErrorDescriber.DuplicateEmail) => "Пользователь с таким адресом электронной почты уже существует.",
+                nameof(IdentityErrorDescriber.DuplicateUserName) => AppLocalizer.Get("Пользователь с таким логином уже существует.", "Користувач із таким логіном уже існує.", "A user with this login already exists."),
+                nameof(IdentityErrorDescriber.InvalidUserName) => AppLocalizer.Get("Укажите корректный логин.", "Вкажіть коректний логін.", "Enter a valid login."),
+                nameof(IdentityErrorDescriber.DuplicateEmail) => AppLocalizer.Get("Пользователь с таким адресом электронной почты уже существует.", "Користувач із такою адресою електронної пошти вже існує.", "A user with this email address already exists."),
                 _ => string.IsNullOrWhiteSpace(error.Description)
-                    ? "Не удалось сохранить данные учетной записи."
+                    ? AppLocalizer.Get("Не удалось сохранить данные учетной записи.", "Не вдалося зберегти дані облікового запису.", "Could not save the account data.")
                     : error.Description
             };
 

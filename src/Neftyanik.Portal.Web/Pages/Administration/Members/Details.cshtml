@@ -8,17 +8,17 @@
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
         <h1 class="h2 mb-1">@Model.Member.FullName</h1>
-        <p class="text-muted mb-0">Подробная информация о члене товарищества.</p>
+        <p class="text-muted mb-0">@AppLocalizer.Get("Подробная информация о члене товарищества.", "Детальна інформація про члена товариства.", "Detailed member information.")</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
-        <a class="btn btn-outline-success" asp-page="/Administration/Members/Finance" asp-route-id="@Model.Member.Id">Финансы</a>
+        <a class="btn btn-outline-success" asp-page="/Administration/Members/Finance" asp-route-id="@Model.Member.Id">@AppLocalizer.Get("Финансы", "Фінанси", "Finance")</a>
         @if (isAdministrator)
         {
-            <a class="btn btn-primary" asp-page="/Administration/Members/Plots/Create" asp-route-memberId="@Model.Member.Id">Добавить участок</a>
-            <a class="btn btn-outline-primary" asp-page="/Administration/Members/Edit" asp-route-id="@Model.Member.Id">Редактировать</a>
-            <a class="btn btn-outline-warning" asp-page="/Administration/Members/Archive" asp-route-id="@Model.Member.Id">@(Model.Member.IsActive ? "Архивировать" : "Восстановить")</a>
+            <a class="btn btn-primary" asp-page="/Administration/Members/Plots/Create" asp-route-memberId="@Model.Member.Id">@AppLocalizer.Get("Добавить участок", "Додати ділянку", "Add plot")</a>
+            <a class="btn btn-outline-primary" asp-page="/Administration/Members/Edit" asp-route-id="@Model.Member.Id">@AppLocalizer.Get("Редактировать", "Редагувати", "Edit")</a>
+            <a class="btn btn-outline-warning" asp-page="/Administration/Members/Archive" asp-route-id="@Model.Member.Id">@(Model.Member.IsActive ? AppLocalizer.Get("Архивировать", "Архівувати", "Archive") : AppLocalizer.Get("Восстановить", "Відновити", "Restore"))</a>
         }
-        <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Index">К списку членов товарищества</a>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Index">@AppLocalizer.Get("К списку членов товарищества", "До списку членів товариства", "Back to members")</a>
     </div>
 </div>
 
@@ -26,39 +26,39 @@
     <div class="col-lg-6">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <h2 class="h5 mb-3">Основные сведения</h2>
+                <h2 class="h5 mb-3">@AppLocalizer.Get("Основные сведения", "Основні відомості", "Basic information")</h2>
                 <dl class="row mb-0">
-                    <dt class="col-sm-4">ФИО</dt>
+                    <dt class="col-sm-4">@AppLocalizer.Get("ФИО", "ПІБ", "Full name")</dt>
                     <dd class="col-sm-8">@Model.Member.FullName</dd>
 
-                    <dt class="col-sm-4">Телефон</dt>
+                    <dt class="col-sm-4">@AppLocalizer.Get("Телефон", "Телефон", "Phone")</dt>
                     <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Member.PhoneNumber) ? "—" : Model.Member.PhoneNumber)</dd>
 
-                    <dt class="col-sm-4">Электронная почта</dt>
+                    <dt class="col-sm-4">@AppLocalizer.Get("Электронная почта", "Електронна пошта", "Email")</dt>
                     <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Member.Email) ? "—" : Model.Member.Email)</dd>
 
-                    <dt class="col-sm-4">Дата вступления</dt>
+                    <dt class="col-sm-4">@AppLocalizer.Get("Дата вступления", "Дата вступу", "Join date")</dt>
                     <dd class="col-sm-8">@(Model.Member.JoinedAt.HasValue ? Model.Member.JoinedAt.Value.ToString("dd.MM.yyyy") : "—")</dd>
 
-                    <dt class="col-sm-4">Статус</dt>
+                    <dt class="col-sm-4">@AppLocalizer.Get("Статус", "Статус", "Status")</dt>
                     <dd class="col-sm-8">
                         @if (Model.Member.IsActive)
                         {
-                            <span class="badge text-bg-success">Активен</span>
+                            <span class="badge text-bg-success">@AppLocalizer.Get("Активен", "Активний", "Active")</span>
                         }
                         else
                         {
-                            <span class="badge text-bg-secondary">В архиве</span>
+                            <span class="badge text-bg-secondary">@AppLocalizer.Get("В архиве", "В архіві", "Archived")</span>
                         }
                     </dd>
 
-                    <dt class="col-sm-4">Связанная учётная запись</dt>
+                    <dt class="col-sm-4">@AppLocalizer.Get("Связанная учётная запись", "Пов'язаний обліковий запис", "Linked account")</dt>
                     <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Member.LinkedAccount) ? "—" : Model.Member.LinkedAccount)</dd>
 
-                    <dt class="col-sm-4">Создан</dt>
+                    <dt class="col-sm-4">@AppLocalizer.Get("Создан", "Створено", "Created")</dt>
                     <dd class="col-sm-8">@Model.Member.CreatedAtUtc.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</dd>
 
-                    <dt class="col-sm-4">Обновлён</dt>
+                    <dt class="col-sm-4">@AppLocalizer.Get("Обновлён", "Оновлено", "Updated")</dt>
                     <dd class="col-sm-8">@(Model.Member.UpdatedAtUtc.HasValue ? Model.Member.UpdatedAtUtc.Value.ToLocalTime().ToString("dd.MM.yyyy HH:mm") : "—")</dd>
                 </dl>
             </div>
@@ -68,50 +68,50 @@
         <div class="card shadow-sm h-100">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
-                    <h2 class="h5 mb-0">Учетная запись</h2>
+                    <h2 class="h5 mb-0">@AppLocalizer.Get("Учетная запись", "Обліковий запис", "Account")</h2>
                     @if (isAdministrator)
                     {
                         <div class="d-flex gap-2 flex-wrap">
                             @if (!Model.Member.Account.Exists)
                             {
-                                <a class="btn btn-sm btn-primary" asp-page="/Administration/Members/Account/Create" asp-route-memberId="@Model.Member.Id">Создать учетную запись</a>
+                                <a class="btn btn-sm btn-primary" asp-page="/Administration/Members/Account/Create" asp-route-memberId="@Model.Member.Id">@AppLocalizer.Get("Создать учетную запись", "Створити обліковий запис", "Create account")</a>
                             }
                             else
                             {
-                                <a class="btn btn-sm btn-outline-primary" asp-page="/Administration/Members/Account/ResetPassword" asp-route-memberId="@Model.Member.Id">Сбросить пароль</a>
-                                <a class="btn btn-sm btn-outline-secondary" asp-page="/Administration/Members/Account/Roles" asp-route-memberId="@Model.Member.Id">Права доступа</a>
-                                <a class="btn btn-sm @(Model.Member.Account.IsLockedOut ? "btn-outline-success" : "btn-outline-warning")" asp-page="/Administration/Members/Account/Lock" asp-route-memberId="@Model.Member.Id">@(Model.Member.Account.IsLockedOut ? "Разблокировать учетную запись" : "Заблокировать учетную запись")</a>
+                                <a class="btn btn-sm btn-outline-primary" asp-page="/Administration/Members/Account/ResetPassword" asp-route-memberId="@Model.Member.Id">@AppLocalizer.Get("Сбросить пароль", "Скинути пароль", "Reset password")</a>
+                                <a class="btn btn-sm btn-outline-secondary" asp-page="/Administration/Members/Account/Roles" asp-route-memberId="@Model.Member.Id">@AppLocalizer.Get("Права доступа", "Права доступу", "Access roles")</a>
+                                <a class="btn btn-sm @(Model.Member.Account.IsLockedOut ? "btn-outline-success" : "btn-outline-warning")" asp-page="/Administration/Members/Account/Lock" asp-route-memberId="@Model.Member.Id">@(Model.Member.Account.IsLockedOut ? AppLocalizer.Get("Разблокировать учетную запись", "Розблокувати обліковий запис", "Unlock account") : AppLocalizer.Get("Заблокировать учетную запись", "Заблокувати обліковий запис", "Lock account"))</a>
                             }
                         </div>
                     }
                 </div>
 
-                <p><strong>Статус:</strong> @Model.Member.Account.StatusText</p>
+                <p><strong>@AppLocalizer.Get("Статус:", "Статус:", "Status:")</strong> @Model.Member.Account.StatusText</p>
 
                 @if (Model.Member.Account.Exists)
                 {
                     <dl class="row mb-0">
-                        <dt class="col-sm-4">Логин</dt>
+                        <dt class="col-sm-4">@AppLocalizer.Get("Логин", "Логін", "Login")</dt>
                         <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Member.Account.Login) ? "—" : Model.Member.Account.Login)</dd>
 
                         <dt class="col-sm-4">Email</dt>
                         <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Member.Account.Email) ? "—" : Model.Member.Account.Email)</dd>
 
-                        <dt class="col-sm-4">Подтверждение email</dt>
-                        <dd class="col-sm-8">@(Model.Member.Account.EmailConfirmed ? "Подтверждён" : "Не подтверждён")</dd>
+                        <dt class="col-sm-4">@AppLocalizer.Get("Подтверждение email", "Підтвердження email", "Email confirmation")</dt>
+                        <dd class="col-sm-8">@(Model.Member.Account.EmailConfirmed ? AppLocalizer.Get("Подтверждён", "Підтверджено", "Confirmed") : AppLocalizer.Get("Не подтверждён", "Не підтверджено", "Not confirmed"))</dd>
 
-                        <dt class="col-sm-4">Блокировка</dt>
-                        <dd class="col-sm-8">@(Model.Member.Account.IsLockedOut ? "Учетная запись заблокирована" : "Нет")</dd>
+                        <dt class="col-sm-4">@AppLocalizer.Get("Блокировка", "Блокування", "Lockout")</dt>
+                        <dd class="col-sm-8">@(Model.Member.Account.IsLockedOut ? AppLocalizer.Get("Учетная запись заблокирована", "Обліковий запис заблоковано", "Account locked") : AppLocalizer.Get("Нет", "Ні", "No"))</dd>
 
-                        <dt class="col-sm-4">Смена пароля</dt>
-                        <dd class="col-sm-8">@(Model.Member.Account.MustChangePassword ? "Требуется при следующем входе" : "Не требуется")</dd>
+                        <dt class="col-sm-4">@AppLocalizer.Get("Смена пароля", "Зміна пароля", "Password change")</dt>
+                        <dd class="col-sm-8">@(Model.Member.Account.MustChangePassword ? AppLocalizer.Get("Требуется при следующем входе", "Потрібно при наступному вході", "Required on next sign-in") : AppLocalizer.Get("Не требуется", "Не потрібно", "Not required"))</dd>
 
-                        <dt class="col-sm-4">Роли</dt>
+                        <dt class="col-sm-4">@AppLocalizer.Get("Роли", "Ролі", "Roles")</dt>
                         <dd class="col-sm-8">@(Model.Member.Account.Roles.Count > 0 ? string.Join(", ", Model.Member.Account.Roles) : "—")</dd>
 
                         @if (!string.IsNullOrWhiteSpace(Model.Member.Account.IdentityUserId))
                         {
-                            <dt class="col-sm-4 text-muted small">ID пользователя</dt>
+                            <dt class="col-sm-4 text-muted small">@AppLocalizer.Get("ID пользователя", "ID користувача", "User ID")</dt>
                             <dd class="col-sm-8 text-muted small">@Model.Member.Account.IdentityUserId</dd>
                         }
                     </dl>
@@ -124,18 +124,18 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
                     <div>
-                        <h2 class="h5 mb-0">Текущие владения участками</h2>
+                        <h2 class="h5 mb-0">@AppLocalizer.Get("Текущие владения участками", "Поточні володіння ділянками", "Current plot ownerships")</h2>
                     </div>
                     @if (isAdministrator)
                     {
-                        <a class="btn btn-sm btn-outline-primary" asp-page="/Administration/Members/Plots/Create" asp-route-memberId="@Model.Member.Id">Добавить участок</a>
+                        <a class="btn btn-sm btn-outline-primary" asp-page="/Administration/Members/Plots/Create" asp-route-memberId="@Model.Member.Id">@AppLocalizer.Get("Добавить участок", "Додати ділянку", "Add plot")</a>
                     }
                 </div>
-                <p><strong>Количество активных владений:</strong> @Model.Member.ActiveOwnershipsCount</p>
+                <p><strong>@AppLocalizer.Get("Количество активных владений:", "Кількість активних володінь:", "Active ownership count:")</strong> @Model.Member.ActiveOwnershipsCount</p>
 
                 @if (Model.Member.CurrentPlots.Count == 0)
                 {
-                    <p class="text-muted mb-0">У этого члена товарищества нет активных владений участками.</p>
+                    <p class="text-muted mb-0">@AppLocalizer.Get("У этого члена товарищества нет активных владений участками.", "Цей член товариства не має активних володінь ділянками.", "This member has no active plot ownerships.")</p>
                 }
                 else
                 {
@@ -143,9 +143,9 @@
                         <table class="table table-sm align-middle mb-0">
                             <thead>
                                 <tr>
-                                    <th>Участок</th>
-                                    <th>Адрес</th>
-                                    <th>Действует с</th>
+                                    <th>@AppLocalizer.Get("Участок", "Ділянка", "Plot")</th>
+                                    <th>@AppLocalizer.Get("Адрес", "Адреса", "Address")</th>
+                                    <th>@AppLocalizer.Get("Действует с", "Діє з", "Effective from")</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -170,11 +170,11 @@
 
 <div class="card shadow-sm mt-4">
     <div class="card-body">
-        <h2 class="h5 mb-3">История владения участками</h2>
+        <h2 class="h5 mb-3">@AppLocalizer.Get("История владения участками", "Історія володіння ділянками", "Plot ownership history")</h2>
 
         @if (Model.Member.HistoricalPlots.Count == 0)
         {
-            <p class="text-muted mb-0">Завершённые записи владения участками отсутствуют.</p>
+            <p class="text-muted mb-0">@AppLocalizer.Get("Завершённые записи владения участками отсутствуют.", "Завершені записи володіння ділянками відсутні.", "There are no completed plot ownership records.")</p>
         }
         else
         {
@@ -182,10 +182,10 @@
                 <table class="table table-sm align-middle mb-0">
                     <thead>
                         <tr>
-                            <th>Участок</th>
-                            <th>Адрес</th>
-                            <th>Действует с</th>
-                            <th>Действует до</th>
+                            <th>@AppLocalizer.Get("Участок", "Ділянка", "Plot")</th>
+                            <th>@AppLocalizer.Get("Адрес", "Адреса", "Address")</th>
+                            <th>@AppLocalizer.Get("Действует с", "Діє з", "Effective from")</th>
+                            <th>@AppLocalizer.Get("Действует до", "Діє до", "Effective to")</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -206,11 +206,10 @@
         }
     </div>
 </div>
-</div>
 
 <div class="card shadow-sm mt-4">
     <div class="card-body">
-        <h2 class="h5 mb-3">Примечание</h2>
-        <p class="mb-0">@(string.IsNullOrWhiteSpace(Model.Member.Notes) ? "Примечание отсутствует." : Model.Member.Notes)</p>
+        <h2 class="h5 mb-3">@AppLocalizer.Get("Примечание", "Примітка", "Note")</h2>
+        <p class="mb-0">@(string.IsNullOrWhiteSpace(Model.Member.Notes) ? AppLocalizer.Get("Примечание отсутствует.", "Примітка відсутня.", "No note provided.") : Model.Member.Notes)</p>
     </div>
 </div>

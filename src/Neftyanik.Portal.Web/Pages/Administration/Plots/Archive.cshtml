@@ -1,34 +1,36 @@
 @page "{id:int}"
 @model Neftyanik.Portal.Web.Pages.Administration.Plots.ArchiveModel
 @{
-    ViewData["Title"] = Model.IsArchiveOperation ? "Архивация участка" : "Восстановление участка";
+    ViewData["Title"] = Model.IsArchiveOperation
+        ? AppLocalizer.Get("Архивация участка", "Архівація ділянки", "Archive plot")
+        : AppLocalizer.Get("Восстановление участка", "Відновлення ділянки", "Restore plot");
 }
 
 <div class="row justify-content-center">
     <div class="col-lg-8">
         <div class="card shadow-sm">
             <div class="card-body p-4">
-                <h1 class="h3 mb-3">@(Model.IsArchiveOperation ? "Архивация участка" : "Восстановление участка")</h1>
+                <h1 class="h3 mb-3">@(Model.IsArchiveOperation ? AppLocalizer.Get("Архивация участка", "Архівація ділянки", "Archive plot") : AppLocalizer.Get("Восстановление участка", "Відновлення ділянки", "Restore plot"))</h1>
 
                 <p>
                     @(Model.IsArchiveOperation
-                        ? "Вы собираетесь архивировать участок. Запись останется в системе и не будет удалена."
-                        : "Вы собираетесь восстановить участок из архива.")
+                        ? AppLocalizer.Get("Вы собираетесь архивировать участок. Запись останется в системе и не будет удалена.", "Ви збираєтеся архівувати ділянку. Запис залишиться в системі й не буде видалений.", "You are about to archive the plot. The record will remain in the system and will not be deleted.")
+                        : AppLocalizer.Get("Вы собираетесь восстановить участок из архива.", "Ви збираєтеся відновити ділянку з архіву.", "You are about to restore the plot from the archive."))
                 </p>
 
                 <dl class="row mb-4">
-                    <dt class="col-sm-4">Номер</dt>
+                    <dt class="col-sm-4">@AppLocalizer.Get("Номер", "Номер", "Number")</dt>
                     <dd class="col-sm-8">@Model.Plot.Number</dd>
 
-                    <dt class="col-sm-4">Адрес</dt>
+                    <dt class="col-sm-4">@AppLocalizer.Get("Адрес", "Адреса", "Address")</dt>
                     <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Plot.Address) ? "—" : Model.Plot.Address)</dd>
                 </dl>
 
                 <form method="post" class="d-flex gap-2">
                     <button type="submit" class="btn @(Model.IsArchiveOperation ? "btn-warning" : "btn-success")">
-                        @(Model.IsArchiveOperation ? "Подтвердить архивацию" : "Подтвердить восстановление")
+                        @(Model.IsArchiveOperation ? AppLocalizer.Get("Подтвердить архивацию", "Підтвердити архівацію", "Confirm archive") : AppLocalizer.Get("Подтвердить восстановление", "Підтвердити відновлення", "Confirm restore"))
                     </button>
-                    <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Details" asp-route-id="@Model.Plot.Id">Отмена</a>
+                    <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Details" asp-route-id="@Model.Plot.Id">@AppLocalizer.Get("Отмена", "Скасувати", "Cancel")</a>
                 </form>
             </div>
         </div>

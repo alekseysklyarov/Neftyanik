@@ -1,31 +1,31 @@
 @page "/Administration/Members/{memberId:int}/Account/Roles"
 @model Neftyanik.Portal.Web.Pages.Administration.Members.Account.RolesModel
 @{
-    ViewData["Title"] = "Права доступа";
+    ViewData["Title"] = AppLocalizer.Get("Права доступа", "Права доступу", "Access rights");
 }
 
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
-        <h1 class="h2 mb-1">Права доступа</h1>
-        <p class="text-muted mb-0">Член товарищества: @Model.Member.FullName</p>
+        <h1 class="h2 mb-1">@AppLocalizer.Get("Права доступа", "Права доступу", "Access rights")</h1>
+        <p class="text-muted mb-0">@AppLocalizer.Get("Член товарищества:", "Член товариства:", "Member:") @Model.Member.FullName</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
-        <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Details" asp-route-id="@Model.Member.Id">К карточке члена товарищества</a>
-        <a class="btn btn-outline-success" asp-page="/Administration/Members/Finance" asp-route-id="@Model.Member.Id">Финансы</a>
-        <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Index">К списку членов товарищества</a>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Details" asp-route-id="@Model.Member.Id">@AppLocalizer.Get("К карточке члена товарищества", "До картки члена товариства", "Back to member details")</a>
+        <a class="btn btn-outline-success" asp-page="/Administration/Members/Finance" asp-route-id="@Model.Member.Id">@AppLocalizer.Get("Финансы", "Фінанси", "Finance")</a>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Index">@AppLocalizer.Get("К списку членов товарищества", "До списку членів товариства", "Back to members")</a>
     </div>
 </div>
 
 <div class="card shadow-sm mb-4">
     <div class="card-body">
         <dl class="row mb-0">
-            <dt class="col-sm-4">ФИО</dt>
+            <dt class="col-sm-4">@AppLocalizer.Get("ФИО", "ПІБ", "Full name")</dt>
             <dd class="col-sm-8">@Model.Member.FullName</dd>
 
-            <dt class="col-sm-4">Логин / email</dt>
+            <dt class="col-sm-4">@AppLocalizer.Get("Логин / email", "Логін / email", "Login / email")</dt>
             <dd class="col-sm-8">@LoginEmailOrPlaceholder()</dd>
 
-            <dt class="col-sm-4">Текущие роли</dt>
+            <dt class="col-sm-4">@AppLocalizer.Get("Текущие роли", "Поточні ролі", "Current roles")</dt>
             <dd class="col-sm-8">@(Model.CurrentRoles.Count > 0 ? string.Join(", ", Model.CurrentRoles) : "—")</dd>
         </dl>
     </div>
@@ -38,16 +38,16 @@
 
             <div class="form-check mb-3">
                 <input asp-for="Input.IsAccountant" class="form-check-input" />
-                <label asp-for="Input.IsAccountant" class="form-check-label"></label>
+                <label asp-for="Input.IsAccountant" class="form-check-label">@AppLocalizer.Get("Назначить роль бухгалтера", "Призначити роль бухгалтера", "Assign accountant role")</label>
             </div>
 
             <div class="form-text mb-4">
-                Роль администратора на этой странице не изменяется. Учетная запись члена товарищества сохраняет остальные назначенные роли.
+                @AppLocalizer.Get("Роль администратора на этой странице не изменяется. Учетная запись члена товарищества сохраняет остальные назначенные роли.", "Роль адміністратора на цій сторінці не змінюється. Обліковий запис члена товариства зберігає інші призначені ролі.", "The administrator role is not changed on this page. The member account keeps any other assigned roles.")
             </div>
 
             <div class="d-flex gap-2 flex-wrap">
-                <button type="submit" class="btn btn-primary">Сохранить</button>
-                <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Details" asp-route-id="@Model.Member.Id">Отмена</a>
+                <button type="submit" class="btn btn-primary">@AppLocalizer.Get("Сохранить", "Зберегти", "Save")</button>
+                <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Details" asp-route-id="@Model.Member.Id">@AppLocalizer.Get("Отмена", "Скасувати", "Cancel")</a>
             </div>
         </form>
     </div>

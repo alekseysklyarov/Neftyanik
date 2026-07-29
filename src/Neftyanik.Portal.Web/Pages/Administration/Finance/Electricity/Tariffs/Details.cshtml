@@ -1,42 +1,42 @@
 @page "/Administration/Finance/Electricity/Tariffs/{id:int}"
 @model Neftyanik.Portal.Web.Pages.Administration.Finance.Electricity.Tariffs.DetailsModel
 @{
-    ViewData["Title"] = "Тариф поставщика";
+    ViewData["Title"] = AppLocalizer.Get("Тариф поставщика", "Тариф постачальника", "Supplier tariff");
 }
 
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
-        <h1 class="h2 mb-1">Тариф поставщика</h1>
-        <p class="text-muted mb-0">Тариф общего счётчика действует с @Model.Tariff.EffectiveFrom.ToString("dd.MM.yyyy")</p>
+        <h1 class="h2 mb-1">@AppLocalizer.Get("Тариф поставщика", "Тариф постачальника", "Supplier tariff")</h1>
+        <p class="text-muted mb-0">@AppLocalizer.Get("Тариф общего счётчика действует с", "Тариф загального лічильника діє з", "The shared meter tariff is effective from") @Model.Tariff.EffectiveFrom.ToString("dd.MM.yyyy")</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
-        <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/Electricity/Tariffs/Index">К списку тарифов</a>
-        <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/Index">К финансам</a>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/Electricity/Tariffs/Index">@AppLocalizer.Get("К списку тарифов", "До списку тарифів", "Back to tariffs")</a>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/Index">@AppLocalizer.Get("К финансам", "До фінансів", "Back to finance")</a>
     </div>
 </div>
 
 <div class="card shadow-sm">
     <div class="card-body">
         <dl class="row mb-0">
-            <dt class="col-sm-4">Действует с</dt>
+            <dt class="col-sm-4">@AppLocalizer.Get("Действует с", "Діє з", "Effective from")</dt>
             <dd class="col-sm-8">@Model.Tariff.EffectiveFrom.ToString("dd.MM.yyyy")</dd>
 
-            <dt class="col-sm-4">Дневной тариф общего счётчика</dt>
+            <dt class="col-sm-4">@AppLocalizer.Get("Дневной тариф общего счётчика", "Денний тариф загального лічильника", "Shared meter day tariff")</dt>
             <dd class="col-sm-8">@Model.Tariff.DayRate.ToString("0.0000") грн/кВт·ч</dd>
 
-            <dt class="col-sm-4">Ночной тариф общего счётчика</dt>
+            <dt class="col-sm-4">@AppLocalizer.Get("Ночной тариф общего счётчика", "Нічний тариф загального лічильника", "Shared meter night tariff")</dt>
             <dd class="col-sm-8">@Model.Tariff.NightRate.ToString("0.0000") грн/кВт·ч</dd>
 
-            <dt class="col-sm-4">Текущий тариф для пользователей</dt>
+            <dt class="col-sm-4">@AppLocalizer.Get("Текущий тариф для пользователей", "Поточний тариф для користувачів", "Current user tariff")</dt>
             <dd class="col-sm-8">@(Model.CurrentMemberRate.HasValue ? $"{Model.CurrentMemberRate.Value:0.0000} грн/кВт·ч" : "—")</dd>
 
-            <dt class="col-sm-4">Создан</dt>
+            <dt class="col-sm-4">@AppLocalizer.Get("Создан", "Створено", "Created")</dt>
             <dd class="col-sm-8">@Model.Tariff.CreatedAtUtc.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</dd>
 
-            <dt class="col-sm-4">Создал</dt>
+            <dt class="col-sm-4">@AppLocalizer.Get("Создал", "Створив", "Created by")</dt>
             <dd class="col-sm-8">@Model.Tariff.CreatedBy</dd>
 
-            <dt class="col-sm-4">Использований в начислениях</dt>
+            <dt class="col-sm-4">@AppLocalizer.Get("Использований в начислениях", "Використань у нарахуваннях", "Used in charges")</dt>
             <dd class="col-sm-8">@Model.Tariff.UsageCount</dd>
         </dl>
     </div>

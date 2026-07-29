@@ -1,18 +1,18 @@
 @page "{id:int}"
 @model Neftyanik.Portal.Web.Pages.Administration.Plots.EditModel
 @{
-    ViewData["Title"] = "Редактирование участка";
+    ViewData["Title"] = AppLocalizer.Get("Редактирование участка", "Редагування ділянки", "Edit plot");
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h1 class="h2 mb-1">Редактирование участка</h1>
-        <p class="text-muted mb-0">Измените данные участка и сохраните их.</p>
+        <h1 class="h2 mb-1">@AppLocalizer.Get("Редактирование участка", "Редагування ділянки", "Edit plot")</h1>
+        <p class="text-muted mb-0">@AppLocalizer.Get("Измените данные участка и сохраните их.", "Змініть дані ділянки та збережіть їх.", "Update the plot details and save them.")</p>
     </div>
     <div class="d-flex gap-2">
-        <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Details" asp-route-id="@Model.PlotId">Подробнее</a>
-        <a class="btn btn-outline-info" asp-page="/Administration/Plots/Ownerships/Index" asp-route-plotId="@Model.PlotId">Владельцы</a>
-        <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Index">К списку участков</a>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Details" asp-route-id="@Model.PlotId">@AppLocalizer.Get("Подробнее", "Детальніше", "Details")</a>
+        <a class="btn btn-outline-info" asp-page="/Administration/Plots/Ownerships/Index" asp-route-plotId="@Model.PlotId">@AppLocalizer.Get("Владельцы", "Власники", "Owners")</a>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Index">@AppLocalizer.Get("К списку участков", "До списку ділянок", "Back to plots")</a>
     </div>
 </div>
 
@@ -23,41 +23,41 @@
 
             <div class="row g-3">
                 <div class="col-md-6">
-                    <label asp-for="Input.Number" class="form-label"></label>
+                    <label asp-for="Input.Number" class="form-label">@AppLocalizer.Get("Номер участка", "Номер ділянки", "Plot number")</label>
                     <input asp-for="Input.Number" class="form-control" />
                     <span asp-validation-for="Input.Number" class="text-danger"></span>
                 </div>
                 <div class="col-md-6">
-                    <label asp-for="Input.CadastralNumber" class="form-label"></label>
+                    <label asp-for="Input.CadastralNumber" class="form-label">@AppLocalizer.Get("Кадастровый номер", "Кадастровий номер", "Cadastral number")</label>
                     <input asp-for="Input.CadastralNumber" class="form-control" />
                     <span asp-validation-for="Input.CadastralNumber" class="text-danger"></span>
                 </div>
                 <div class="col-12">
-                    <label asp-for="Input.Address" class="form-label"></label>
+                    <label asp-for="Input.Address" class="form-label">@AppLocalizer.Get("Адрес", "Адреса", "Address")</label>
                     <input asp-for="Input.Address" class="form-control" />
                     <span asp-validation-for="Input.Address" class="text-danger"></span>
                 </div>
                 <div class="col-md-6">
-                    <label asp-for="Input.AreaSquareMeters" class="form-label"></label>
+                    <label asp-for="Input.AreaSquareMeters" class="form-label">@AppLocalizer.Get("Площадь, соток", "Площа, соток", "Area, sotok")</label>
                     <input asp-for="Input.AreaSquareMeters" class="form-control" type="number" step="0.01" />
                     <span asp-validation-for="Input.AreaSquareMeters" class="text-danger"></span>
                 </div>
                 <div class="col-12">
-                    <label asp-for="Input.Notes" class="form-label"></label>
+                    <label asp-for="Input.Notes" class="form-label">@AppLocalizer.Get("Примечание", "Примітка", "Note")</label>
                     <textarea asp-for="Input.Notes" class="form-control" rows="5"></textarea>
                     <span asp-validation-for="Input.Notes" class="text-danger"></span>
                 </div>
                 <div class="col-12">
                     <div class="form-check">
                         <input asp-for="Input.IsActive" class="form-check-input" />
-                        <label asp-for="Input.IsActive" class="form-check-label"></label>
+                        <label asp-for="Input.IsActive" class="form-check-label">@AppLocalizer.Get("Активен", "Активний", "Active")</label>
                     </div>
                 </div>
             </div>
 
             <div class="d-flex gap-2 mt-4">
-                <button type="submit" class="btn btn-primary">Сохранить</button>
-                <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Details" asp-route-id="@Model.PlotId">Отмена</a>
+                <button type="submit" class="btn btn-primary">@AppLocalizer.Get("Сохранить", "Зберегти", "Save")</button>
+                <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Details" asp-route-id="@Model.PlotId">@AppLocalizer.Get("Отмена", "Скасувати", "Cancel")</a>
             </div>
         </form>
     </div>

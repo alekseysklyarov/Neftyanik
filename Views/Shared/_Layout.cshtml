@@ -1,18 +1,23 @@
-﻿@inject UserManager<ApplicationUser> UserManager
+@using System.Globalization
+@using Neftyanik.Portal.Web.Localization
+
+@inject UserManager<ApplicationUser> UserManager
 
 @{
     var currentUser = User.Identity?.IsAuthenticated == true ? await UserManager.GetUserAsync(User) : null;
     var userDisplayName = !string.IsNullOrWhiteSpace(currentUser?.DisplayName)
         ? currentUser.DisplayName
         : currentUser?.Email ?? User.Identity?.Name;
+    var currentCulture = CultureInfo.CurrentUICulture.Name;
+    var currentUrl = string.Concat(Context.Request.PathBase, Context.Request.Path, Context.Request.QueryString);
 }
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="@CultureInfo.CurrentUICulture.TwoLetterISOLanguageName">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Neftyanik</title>
+    <title>@ViewData["Title"] - @AppLocalizer.Get("Портал Нефтяник", "Портал Нафтовик", "Neftyanik Portal")</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Neftyanik.styles.css" asp-append-version="true" />
@@ -21,27 +26,39 @@
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Neftyanik</a>
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">@AppLocalizer.Get("Портал Нефтяник", "Портал Нафтовик", "Neftyanik Portal")</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+                        aria-expanded="false" aria-label="@AppLocalizer.Get("Переключить навигацию", "Перемкнути навігацію", "Toggle navigation")">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">@AppLocalizer.Get("Главная", "Головна", "Home")</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">@AppLocalizer.Get("Конфиденциальность", "Конфіденційність", "Privacy")</a>
                         </li>
                         @if (User.IsInRole(RoleNames.Administrator))
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-page="/Administration/Index">Administration</a>
+                                <a class="nav-link text-dark" asp-page="/Administration/Index">@AppLocalizer.Get("Администрирование", "Адміністрування", "Administration")</a>
                             </li>
                         }
                     </ul>
                     <ul class="navbar-nav align-items-sm-center">
+                        <li class="nav-item me-sm-3">
+                            <form asp-page="/Localization/SetLanguage" method="post" asp-antiforgery="true" class="d-flex align-items-center gap-2">
+                                <input type="hidden" name="returnUrl" value="@currentUrl" />
+                                <label class="visually-hidden" for="mvc-culture-selector">@AppLocalizer.Get("Язык", "Мова", "Language")</label>
+                                <select id="mvc-culture-selector" name="culture" class="form-select form-select-sm">
+                                    <option value="ru-RU" selected="@(currentCulture == "ru-RU")">Русский</option>
+                                    <option value="uk-UA" selected="@(currentCulture == "uk-UA")">Українська</option>
+                                    <option value="en-US" selected="@(currentCulture == "en-US")">English</option>
+                                </select>
+                                <button type="submit" class="btn btn-outline-secondary btn-sm">@AppLocalizer.Get("Применить", "Застосувати", "Apply")</button>
+                            </form>
+                        </li>
                         @if (User.Identity?.IsAuthenticated == true)
                         {
                             <li class="nav-item me-sm-2">
@@ -49,14 +66,14 @@
                             </li>
                             <li class="nav-item">
                                 <form asp-page="/Account/Logout" method="post" asp-antiforgery="true" class="d-inline">
-                                    <button type="submit" class="btn btn-link nav-link text-dark">Logout</button>
+                                    <button type="submit" class="btn btn-link nav-link text-dark">@AppLocalizer.Get("Выход", "Вийти", "Log out")</button>
                                 </form>
                             </li>
                         }
                         else
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-page="/Account/Login">Login</a>
+                                <a class="nav-link text-dark" asp-page="/Account/Login">@AppLocalizer.Get("Вход", "Вхід", "Log in")</a>
                             </li>
                         }
                     </ul>
@@ -72,7 +89,7 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2026 - Neftyanik - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            &copy; 2026 - @AppLocalizer.Get("Портал Нефтяник", "Портал Нафтовик", "Neftyanik Portal") - <a asp-area="" asp-controller="Home" asp-action="Privacy">@AppLocalizer.Get("Конфиденциальность", "Конфіденційність", "Privacy")</a>
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

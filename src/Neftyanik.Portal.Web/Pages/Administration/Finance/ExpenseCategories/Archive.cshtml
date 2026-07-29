@@ -1,7 +1,9 @@
 @page "{id:int}"
 @model Neftyanik.Portal.Web.Pages.Administration.Finance.ExpenseCategories.ArchiveModel
 @{
-    ViewData["Title"] = Model.IsArchiveOperation ? "Архивирование типа расхода" : "Восстановление типа расхода";
+    ViewData["Title"] = Model.IsArchiveOperation
+        ? AppLocalizer.Get("Архивирование типа расхода", "Архівування типу витрати", "Archive expense type")
+        : AppLocalizer.Get("Восстановление типа расхода", "Відновлення типу витрати", "Restore expense type");
 }
 
 <div class="row justify-content-center">
@@ -13,30 +15,30 @@
                 <p>
                     @if (Model.IsArchiveOperation)
                     {
-                        <span>Вы собираетесь перевести в архив тип расхода <strong>@Model.ExpenseCategory.Name</strong>.</span>
+                        <span>@AppLocalizer.Get("Вы собираетесь перевести в архив тип расхода", "Ви збираєтеся перевести в архів тип витрати", "You are about to archive the expense type") <strong>@Model.ExpenseCategory.Name</strong>.</span>
                     }
                     else
                     {
-                        <span>Вы собираетесь восстановить тип расхода <strong>@Model.ExpenseCategory.Name</strong> из архива.</span>
+                        <span>@AppLocalizer.Get("Вы собираетесь восстановить тип расхода", "Ви збираєтеся відновити тип витрати", "You are about to restore the expense type") <strong>@Model.ExpenseCategory.Name</strong> @AppLocalizer.Get("из архива.", "з архіву.", "from the archive.")</span>
                     }
                 </p>
 
                 <dl class="row mb-4">
-                    <dt class="col-sm-4">Использований</dt>
+                    <dt class="col-sm-4">@AppLocalizer.Get("Использований", "Використань", "Usage count")</dt>
                     <dd class="col-sm-8">@Model.ExpenseCategory.ExpensesCount</dd>
                 </dl>
 
                 @if (Model.ExpenseCategory.IsElectricityCategory && Model.IsArchiveOperation)
                 {
-                    <div class="alert alert-warning mb-4">Системный тип расхода для электроэнергии нельзя архивировать.</div>
-                    <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/ExpenseCategories/Index">Назад</a>
+                    <div class="alert alert-warning mb-4">@AppLocalizer.Get("Системный тип расхода для электроэнергии нельзя архивировать.", "Системний тип витрати для електроенергії не можна архівувати.", "The system expense type for electricity cannot be archived.")</div>
+                    <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/ExpenseCategories/Index">@AppLocalizer.Get("Назад", "Назад", "Back")</a>
                 }
                 else
                 {
                     <form method="post">
                         <div class="d-flex gap-2">
-                            <button type="submit" class="btn @(Model.IsArchiveOperation ? "btn-warning" : "btn-success")">@(Model.IsArchiveOperation ? "Перевести в архив" : "Восстановить")</button>
-                            <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/ExpenseCategories/Index">Отмена</a>
+                            <button type="submit" class="btn @(Model.IsArchiveOperation ? "btn-warning" : "btn-success")">@(Model.IsArchiveOperation ? AppLocalizer.Get("Перевести в архив", "Перевести в архів", "Archive") : AppLocalizer.Get("Восстановить", "Відновити", "Restore"))</button>
+                            <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/ExpenseCategories/Index">@AppLocalizer.Get("Отмена", "Скасувати", "Cancel")</a>
                         </div>
                     </form>
                 }

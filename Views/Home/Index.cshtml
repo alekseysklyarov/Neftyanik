@@ -1,8 +1,62 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@using Neftyanik.Portal.Web.Localization
+
+@{
+    ViewData["Title"] = AppLocalizer.Get("Главная", "Головна", "Home");
+    var canAccessAdministration = User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.Accountant);
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="p-4 p-md-5 mb-4 bg-light border rounded-3">
+    <div class="container-fluid py-2 px-0">
+        <h1 class="display-6 fw-semibold mb-3">Neftyanik Portal</h1>
+        <p class="lead mb-3">@AppLocalizer.Get("Портал садового товарищества для участников, бухгалтерии и администрации.", "Портал садового товариства для учасників, бухгалтерії та адміністрації.", "Garden association portal for members, accounting staff, and administrators.")</p>
+
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <p class="mb-4">@AppLocalizer.Get("Вы вошли в систему и можете перейти к доступным разделам портала.", "Ви увійшли до системи й можете перейти до доступних розділів порталу.", "You are signed in and can open the available portal sections.")</p>
+
+            <div class="d-flex flex-wrap gap-2">
+                @if (User.IsInRole(RoleNames.Member))
+                {
+                    <a asp-page="/Member/Index" class="btn btn-primary">@AppLocalizer.Get("Личный кабинет", "Особистий кабінет", "Member dashboard")</a>
+                }
+
+                @if (canAccessAdministration)
+                {
+                    <a asp-page="/Administration/Index" class="btn btn-outline-primary">@AppLocalizer.Get("Панель администратора", "Панель адміністратора", "Administration panel")</a>
+                }
+            </div>
+        }
+        else
+        {
+            <p class="mb-4">@AppLocalizer.Get("Для доступа к защищенным разделам войдите под своей учетной записью.", "Щоб отримати доступ до захищених розділів, увійдіть під своїм обліковим записом.", "Sign in with your account to access protected sections.")</p>
+            <a asp-page="/Account/Login" class="btn btn-primary">@AppLocalizer.Get("Войти", "Увійти", "Log in")</a>
+        }
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h2 class="h5">@AppLocalizer.Get("Участникам", "Учасникам", "For members")</h2>
+                <p class="mb-0">@AppLocalizer.Get("Просмотр начислений, платежей и информации по участкам.", "Перегляд нарахувань, платежів та інформації про ділянки.", "View charges, payments, and plot information.")</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h2 class="h5">@AppLocalizer.Get("Бухгалтерии", "Бухгалтерії", "For accounting")</h2>
+                <p class="mb-0">@AppLocalizer.Get("Подготовка к учету платежей, начислений и финансовой отчетности.", "Підготовка до обліку платежів, нарахувань та фінансової звітності.", "Prepare payment accounting, charges, and financial reporting.")</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h2 class="h5">@AppLocalizer.Get("Администрации", "Адміністрації", "For administrators")</h2>
+                <p class="mb-0">@AppLocalizer.Get("Контроль состояния системы и доступ к базовой административной панели.", "Контроль стану системи та доступ до базової адміністративної панелі.", "Monitor the system and access the administration panel.")</p>
+            </div>
+        </div>
+    </div>
 </div>

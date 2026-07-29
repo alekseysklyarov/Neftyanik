@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
+using Neftyanik.Portal.Web.Localization;
 using Neftyanik.Portal.Web.Security;
 
 namespace Neftyanik.Portal.Web.Pages.Account;
@@ -53,6 +54,8 @@ public class ChangeInitialPasswordModel : PageModel
             return RedirectToMemberDashboardOrHome();
         }
 
+        ValidateInput();
+
         if (!ModelState.IsValid)
         {
             return Page();
@@ -74,8 +77,48 @@ public class ChangeInitialPasswordModel : PageModel
         }
 
         await _signInManager.RefreshSignInAsync(user);
-        TempData["SuccessMessage"] = "Пароль успешно изменен.";
+        TempData["SuccessMessage"] = AppLocalizer.Get(
+            "Пароль успешно изменен.",
+            "Пароль успішно змінено.",
+            "The password has been changed successfully.");
         return RedirectToPage("/Member/Index");
+    }
+
+    private void ValidateInput()
+    {
+        if (string.IsNullOrWhiteSpace(Input.CurrentPassword))
+        {
+            ModelState.AddModelError($"{nameof(Input)}.{nameof(InputModel.CurrentPassword)}", AppLocalizer.Get(
+                "Введите текущий пароль.",
+                "Введіть поточний пароль.",
+                "Enter the current password."));
+        }
+
+        if (string.IsNullOrWhiteSpace(Input.NewPassword))
+        {
+            ModelState.AddModelError($"{nameof(Input)}.{nameof(InputModel.NewPassword)}", AppLocalizer.Get(
+                "Введите новый пароль.",
+                "Введіть новий пароль.",
+                "Enter a new password."));
+        }
+
+        if (string.IsNullOrWhiteSpace(Input.ConfirmNewPassword))
+        {
+            ModelState.AddModelError($"{nameof(Input)}.{nameof(InputModel.ConfirmNewPassword)}", AppLocalizer.Get(
+                "Подтвердите новый пароль.",
+                "Підтвердьте новий пароль.",
+                "Confirm the new password."));
+        }
+
+        if (!string.IsNullOrWhiteSpace(Input.NewPassword)
+            && !string.IsNullOrWhiteSpace(Input.ConfirmNewPassword)
+            && !string.Equals(Input.NewPassword, Input.ConfirmNewPassword, StringComparison.Ordinal))
+        {
+            ModelState.AddModelError($"{nameof(Input)}.{nameof(InputModel.ConfirmNewPassword)}", AppLocalizer.Get(
+                "Пароли не совпадают.",
+                "Паролі не збігаються.",
+                "The passwords do not match."));
+        }
     }
 
     private IActionResult RedirectToMemberDashboardOrHome()
@@ -90,20 +133,13 @@ public class ChangeInitialPasswordModel : PageModel
 
     public class InputModel
     {
-        [Required(ErrorMessage = "Введите текущий пароль.")]
         [DataType(DataType.Password)]
-        [Display(Name = "Текущий пароль")]
         public string CurrentPassword { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Введите новый пароль.")]
         [DataType(DataType.Password)]
-        [Display(Name = "Новый пароль")]
         public string NewPassword { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Подтвердите новый пароль.")]
         [DataType(DataType.Password)]
-        [Compare(nameof(NewPassword), ErrorMessage = "Пароли не совпадают.")]
-        [Display(Name = "Подтверждение нового пароля")]
         public string ConfirmNewPassword { get; set; } = string.Empty;
     }
 }

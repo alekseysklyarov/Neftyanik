@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data;
+using Neftyanik.Portal.Web.Localization;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Members.Account;
 
@@ -30,7 +31,10 @@ public class CreateModel : MemberAccountPageModelBase
 
         if (!string.IsNullOrWhiteSpace(member.ApplicationUserId))
         {
-            TempData["ErrorMessage"] = "Для этого члена товарищества учетная запись уже создана.";
+            TempData["ErrorMessage"] = AppLocalizer.Get(
+                "Для этого члена товарищества учетная запись уже создана.",
+                "Для цього члена товариства обліковий запис уже створено.",
+                "An account has already been created for this member.");
             return RedirectToPage("/Administration/Members/Details", new { id = memberId });
         }
 
@@ -59,19 +63,30 @@ public class CreateModel : MemberAccountPageModelBase
 
         if (!member.IsActive)
         {
-            ModelState.AddModelError(string.Empty, "Нельзя создать учетную запись для архивного члена товарищества.");
+            ModelState.AddModelError(string.Empty, AppLocalizer.Get(
+                "Нельзя создать учетную запись для архивного члена товарищества.",
+                "Не можна створити обліковий запис для архівного члена товариства.",
+                "An account cannot be created for an archived member."));
         }
 
         if (!string.IsNullOrWhiteSpace(member.ApplicationUserId))
         {
-            ModelState.AddModelError(string.Empty, "Для этого члена товарищества учетная запись уже создана.");
+            ModelState.AddModelError(string.Empty, AppLocalizer.Get(
+                "Для этого члена товарищества учетная запись уже создана.",
+                "Для цього члена товариства обліковий запис уже створено.",
+                "An account has already been created for this member."));
         }
+
+        ValidateInput();
 
         var login = Input.Login.Trim();
         var existingLoginUser = await UserManager.FindByNameAsync(login);
         if (existingLoginUser is not null)
         {
-            ModelState.AddModelError("Input.Login", "Пользователь с таким логином уже существует.");
+            ModelState.AddModelError("Input.Login", AppLocalizer.Get(
+                "Пользователь с таким логином уже существует.",
+                "Користувач із таким логіном уже існує.",
+                "A user with this login already exists."));
         }
 
         if (!ModelState.IsValid)
@@ -121,30 +136,62 @@ public class CreateModel : MemberAccountPageModelBase
 
         if (TempData is not null)
         {
-            TempData["SuccessMessage"] = "Учетная запись члена товарищества успешно создана.";
+            TempData["SuccessMessage"] = AppLocalizer.Get(
+                "Учетная запись члена товарищества успешно создана.",
+                "Обліковий запис члена товариства успішно створено.",
+                "The member account has been created successfully.");
         }
 
         return RedirectToPage("/Administration/Members/Details", new { id = memberId });
     }
 
+    private void ValidateInput()
+    {
+        if (string.IsNullOrWhiteSpace(Input.Login))
+        {
+            ModelState.AddModelError($"{nameof(Input)}.{nameof(InputModel.Login)}", AppLocalizer.Get(
+                "Укажите логин для входа.",
+                "Вкажіть логін для входу.",
+                "Enter a login."));
+        }
+
+        if (string.IsNullOrWhiteSpace(Input.TemporaryPassword))
+        {
+            ModelState.AddModelError($"{nameof(Input)}.{nameof(InputModel.TemporaryPassword)}", AppLocalizer.Get(
+                "Введите временный пароль.",
+                "Введіть тимчасовий пароль.",
+                "Enter a temporary password."));
+        }
+
+        if (string.IsNullOrWhiteSpace(Input.ConfirmPassword))
+        {
+            ModelState.AddModelError($"{nameof(Input)}.{nameof(InputModel.ConfirmPassword)}", AppLocalizer.Get(
+                "Подтвердите временный пароль.",
+                "Підтвердіть тимчасовий пароль.",
+                "Confirm the temporary password."));
+        }
+
+        if (!string.IsNullOrWhiteSpace(Input.TemporaryPassword)
+            && !string.IsNullOrWhiteSpace(Input.ConfirmPassword)
+            && !string.Equals(Input.TemporaryPassword, Input.ConfirmPassword, StringComparison.Ordinal))
+        {
+            ModelState.AddModelError($"{nameof(Input)}.{nameof(InputModel.ConfirmPassword)}", AppLocalizer.Get(
+                "Пароли не совпадают.",
+                "Паролі не збігаються.",
+                "The passwords do not match."));
+        }
+    }
+
     public class InputModel
     {
-        [Required(ErrorMessage = "Укажите логин для входа.")]
-        [Display(Name = "Логин")]
         public string Login { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Введите временный пароль.")]
         [DataType(DataType.Password)]
-        [Display(Name = "Временный пароль")]
         public string TemporaryPassword { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Подтвердите временный пароль.")]
         [DataType(DataType.Password)]
-        [Compare(nameof(TemporaryPassword), ErrorMessage = "Пароли не совпадают.")]
-        [Display(Name = "Подтверждение пароля")]
         public string ConfirmPassword { get; set; } = string.Empty;
 
-        [Display(Name = "Сменить пароль при следующем входе")]
         public bool MustChangePasswordOnLogin { get; set; }
     }
 }

@@ -1,14 +1,14 @@
 @page "/Member/Electricity/Meters/{meterId:int}/Readings/Create"
 @model Neftyanik.Portal.Web.Pages.Member.Electricity.Meters.Readings.CreateModel
 @{
-    ViewData["Title"] = "Передать показания";
+    ViewData["Title"] = AppLocalizer.Get("Передать показания", "Передати показання", "Submit readings");
 }
 
 <div class="row g-4">
     <div class="col-lg-8">
         <div class="card shadow-sm">
             <div class="card-body">
-                <h1 class="h3 mb-3">Передать показания</h1>
+                <h1 class="h3 mb-3">@AppLocalizer.Get("Передать показания", "Передати показання", "Submit readings")</h1>
                 <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
                 <form method="post" class="row g-3">
                     <div class="col-md-6">
@@ -17,13 +17,13 @@
                         <span asp-validation-for="Input.ReadingDate" class="text-danger"></span>
                     </div>
                     <div class="col-md-6">
-                        <label asp-for="Input.CurrentReading" class="form-label">Текущее показание, кВт·ч</label>
+                        <label asp-for="Input.CurrentReading" class="form-label">@AppLocalizer.Get("Текущее показание, кВт·ч", "Поточний показник, кВт·год", "Current reading, kWh")</label>
                         <input asp-for="Input.CurrentReading" class="form-control" />
                         <span asp-validation-for="Input.CurrentReading" class="text-danger"></span>
                     </div>
                     <div class="col-12 d-flex gap-2">
-                        <button type="submit" class="btn btn-primary">Сохранить</button>
-                        <a class="btn btn-outline-secondary" asp-page="/Member/Electricity/Index">Назад</a>
+                        <button type="submit" class="btn btn-primary">@AppLocalizer.Get("Сохранить", "Зберегти", "Save")</button>
+                        <a class="btn btn-outline-secondary" asp-page="/Member/Electricity/Index">@AppLocalizer.Get("Назад", "Назад", "Back")</a>
                     </div>
                 </form>
             </div>
@@ -32,23 +32,23 @@
     <div class="col-lg-4">
         <div class="card shadow-sm mb-3">
             <div class="card-body">
-                <h2 class="h5 mb-3">Сведения о счётчике</h2>
+                <h2 class="h5 mb-3">@AppLocalizer.Get("Сведения о счётчике", "Відомості про лічильник", "Meter details")</h2>
                 <dl class="mb-0">
-                    <dt>Счётчик</dt>
+                    <dt>@AppLocalizer.Get("Счётчик", "Лічильник", "Meter")</dt>
                     <dd>@Model.Meter.DisplayName</dd>
-                    <dt>Связанные участки</dt>
+                    <dt>@AppLocalizer.Get("Связанные участки", "Пов'язані ділянки", "Linked plots")</dt>
                     <dd>@string.Join(", ", Model.Meter.LinkedPlotNumbers)</dd>
-                    <dt>Расчётный участок</dt>
+                    <dt>@AppLocalizer.Get("Расчётный участок", "Розрахункова ділянка", "Billing plot")</dt>
                     <dd>@Model.Meter.BillingPlotNumber</dd>
-                    <dt>Предыдущая дата</dt>
+                    <dt>@AppLocalizer.Get("Предыдущая дата", "Попередня дата", "Previous date")</dt>
                     <dd>@Model.Meter.PreviousReadingDate?.ToString("dd.MM.yyyy")</dd>
-                    <dt>Предыдущее показание</dt>
+                    <dt>@AppLocalizer.Get("Предыдущее показание", "Попередній показник", "Previous reading")</dt>
                     <dd>@(Model.Meter.PreviousReading.HasValue ? $"{Model.Meter.PreviousReading.Value:0.000} кВт·ч" : "—")</dd>
-                    <dt>Тариф</dt>
+                    <dt>@AppLocalizer.Get("Тариф", "Тариф", "Tariff")</dt>
                     <dd>@(Model.Preview.Tariff is null ? "—" : $"{Model.Preview.Tariff.Rate:0.0000} грн/кВт·ч")</dd>
-                    <dt>Предварительный расход</dt>
+                    <dt>@AppLocalizer.Get("Предварительный расход", "Попереднє споживання", "Estimated consumption")</dt>
                     <dd>@(Model.Preview.Consumption.HasValue ? $"{Model.Preview.Consumption.Value:0.000} кВт·ч" : "—")</dd>
-                    <dt>Предварительная сумма</dt>
+                    <dt>@AppLocalizer.Get("Предварительная сумма", "Попередня сума", "Estimated amount")</dt>
                     <dd>@(Model.Preview.Amount.HasValue ? $"{Model.Preview.Amount.Value:0.00} грн" : "—")</dd>
                 </dl>
             </div>

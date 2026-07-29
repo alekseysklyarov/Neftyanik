@@ -46,7 +46,7 @@ public class AdministrationMemberTariffTests
             Array.Empty<IPasswordValidator<ApplicationUser>>(),
             new UpperInvariantLookupNormalizer(),
             new IdentityErrorDescriber(),
-            null,
+            new ServiceCollection().BuildServiceProvider(),
             NullLogger<UserManager<ApplicationUser>>.Instance);
 
         var service = new MemberElectricityService(dbContext);

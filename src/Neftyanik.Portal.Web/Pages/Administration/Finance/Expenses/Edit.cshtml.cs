@@ -102,6 +102,12 @@ public class EditModel : PageModel
             return NotFound();
         }
 
+        if (Input.ExpenseCategoryId is null || Input.ExpenseDate is null || Input.Amount is null)
+        {
+            IsEditable = true;
+            return Page();
+        }
+
         if (expense.AssociationElectricityReadingId.HasValue || expense.IsCancelled)
         {
             TempData["ErrorMessage"] = "Этот расход нельзя редактировать.";
@@ -109,8 +115,8 @@ public class EditModel : PageModel
         }
 
         expense.ExpenseCategoryId = Input.ExpenseCategoryId.Value;
-        expense.ExpenseDate = Input.ExpenseDate.GetValueOrDefault();
-        expense.Amount = Input.Amount.GetValueOrDefault();
+        expense.ExpenseDate = Input.ExpenseDate.Value;
+        expense.Amount = Input.Amount.Value;
         expense.Description = Input.Description.Trim();
         expense.Payee = Normalize(Input.Payee);
         expense.DocumentNumber = Normalize(Input.DocumentNumber);

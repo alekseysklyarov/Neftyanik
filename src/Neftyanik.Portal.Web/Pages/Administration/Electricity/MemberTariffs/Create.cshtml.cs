@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Neftyanik.Portal.Application.Electricity;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
+using Neftyanik.Portal.Web.Localization;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Electricity.MemberTariffs;
 
@@ -36,7 +37,7 @@ public class CreateModel : PageModel
 
         if (Input.Rate.HasValue && Input.Rate.Value < 0m)
         {
-            ModelState.AddModelError($"{nameof(Input)}.{nameof(TariffInputModel.Rate)}", "Тариф не может быть отрицательным.");
+            ModelState.AddModelError($"{nameof(Input)}.{nameof(TariffInputModel.Rate)}", AppLocalizer.Get("Тариф не может быть отрицательным.", "Тариф не може бути від'ємним.", "The tariff cannot be negative."));
         }
 
         if (!ModelState.IsValid)
@@ -54,11 +55,11 @@ public class CreateModel : PageModel
 
         if (!result.Succeeded)
         {
-            ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "Не удалось сохранить тариф для участников.");
+            ModelState.AddModelError(string.Empty, result.ErrorMessage ?? AppLocalizer.Get("Не удалось сохранить тариф для участников.", "Не вдалося зберегти тариф для учасників.", "Failed to save the member tariff."));
             return Page();
         }
 
-        TempData["SuccessMessage"] = "Тариф для участников сохранён.";
+        TempData["SuccessMessage"] = AppLocalizer.Get("Тариф для участников сохранён.", "Тариф для учасників збережено.", "The member tariff has been saved.");
         return RedirectToPage("/Administration/Electricity/MemberTariffs/Index");
     }
 

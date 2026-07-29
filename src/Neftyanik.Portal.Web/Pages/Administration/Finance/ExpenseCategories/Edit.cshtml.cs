@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Infrastructure.Data;
+using Neftyanik.Portal.Web.Localization;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Finance.ExpenseCategories;
 
@@ -67,7 +68,7 @@ public class EditModel : PageModel
 
         if (await NameExistsAsync(id, cancellationToken))
         {
-            ModelState.AddModelError("Input.Name", "Тип расхода с таким наименованием уже существует.");
+            ModelState.AddModelError("Input.Name", AppLocalizer.Get("Тип расхода с таким наименованием уже существует.", "Тип витрати з такою назвою вже існує.", "An expense type with this name already exists."));
         }
 
         if (!ModelState.IsValid)
@@ -87,7 +88,7 @@ public class EditModel : PageModel
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        TempData["SuccessMessage"] = "Изменения по типу расхода сохранены.";
+        TempData["SuccessMessage"] = AppLocalizer.Get("Изменения по типу расхода сохранены.", "Зміни типу витрати збережено.", "Expense type changes have been saved.");
         return RedirectToPage("/Administration/Finance/ExpenseCategories/Index");
     }
 

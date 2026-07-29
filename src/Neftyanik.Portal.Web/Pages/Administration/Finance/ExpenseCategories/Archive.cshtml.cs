@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Infrastructure.Data;
+using Neftyanik.Portal.Web.Localization;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Finance.ExpenseCategories;
 
@@ -43,7 +44,7 @@ public class ArchiveModel : PageModel
 
         if (expenseCategory.Id == ExpenseCategoryIds.ElectricityPayment && expenseCategory.IsActive)
         {
-            TempData["ErrorMessage"] = "Системный тип расхода 'Электроэнергия' нельзя перевести в архив.";
+            TempData["ErrorMessage"] = AppLocalizer.Get("Системный тип расхода 'Электроэнергия' нельзя перевести в архив.", "Системний тип витрати 'Електроенергія' не можна перевести в архів.", "The system expense type 'Electricity' cannot be archived.");
             return RedirectToPage("/Administration/Finance/ExpenseCategories/Index");
         }
 
@@ -53,8 +54,8 @@ public class ArchiveModel : PageModel
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         TempData["SuccessMessage"] = willArchive
-            ? "Тип расхода переведен в архив."
-            : "Тип расхода восстановлен из архива.";
+            ? AppLocalizer.Get("Тип расхода переведен в архив.", "Тип витрати переведено в архів.", "The expense type has been archived.")
+            : AppLocalizer.Get("Тип расхода восстановлен из архива.", "Тип витрати відновлено з архіву.", "The expense type has been restored from the archive.");
 
         return RedirectToPage("/Administration/Finance/ExpenseCategories/Index");
     }

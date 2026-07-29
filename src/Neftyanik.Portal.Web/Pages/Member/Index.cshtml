@@ -1,12 +1,12 @@
 @page "/Member"
 @model Neftyanik.Portal.Web.Pages.Member.IndexModel
 @{
-    ViewData["Title"] = $"Финансы: {Model.Dashboard.FullName}";
+    ViewData["Title"] = AppLocalizer.Get($"Финансы: {Model.Dashboard.FullName}", $"Фінанси: {Model.Dashboard.FullName}", $"Finance: {Model.Dashboard.FullName}");
 }
 
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
-        <h1 class="h4 mb-1">Финансы члена товарищества</h1>
+        <h1 class="h4 mb-1">@AppLocalizer.Get("Финансы члена товарищества", "Фінанси члена товариства", "Member finance")</h1>
         <p class="h1 text-muted mb-0">@Model.Dashboard.FullName</p>
     </div>
 
@@ -15,11 +15,11 @@
         <div>
             @if (Model.SingleReadyElectricityMeterId.HasValue)
             {
-                <a class="btn btn-outline-success" asp-page="/Member/Electricity/Meters/Readings/Create" asp-route-meterId="@Model.SingleReadyElectricityMeterId.Value">Внести показания электросчётчика</a>
+                <a class="btn btn-outline-success" asp-page="/Member/Electricity/Meters/Readings/Create" asp-route-meterId="@Model.SingleReadyElectricityMeterId.Value">@AppLocalizer.Get("Внести показания электросчётчика", "Внести показники електролічильника", "Enter meter readings")</a>
             }
             else
             {
-                <a class="btn btn-outline-success" asp-page="/Member/Electricity/Index">Внести показания электросчётчика</a>
+                <a class="btn btn-outline-success" asp-page="/Member/Electricity/Index">@AppLocalizer.Get("Внести показания электросчётчика", "Внести показники електролічильника", "Enter meter readings")</a>
             }
         </div>
     }
@@ -38,58 +38,58 @@
 @if (!Model.Dashboard.IsLinked)
 {
     <div class="alert alert-warning" role="alert">
-        Учетная запись не связана с карточкой члена товарищества. Обратитесь к администратору.
+        @AppLocalizer.Get("Учетная запись не связана с карточкой члена товарищества. Обратитесь к администратору.", "Обліковий запис не пов'язаний із карткою члена товариства. Зверніться до адміністратора.", "The account is not linked to a member record. Contact the administrator.")
     </div>
 }
 else
 {
     <div class="row g-4 mb-4">
         <div class="col-sm-6 col-xl-3">
-            <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">Активные участки</h2><p class="display-6 mb-0">@Model.Dashboard.ActivePlotsCount</p></div></div>
+            <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">@AppLocalizer.Get("Активные участки", "Активні ділянки", "Active plots")</h2><p class="display-6 mb-0">@Model.Dashboard.ActivePlotsCount</p></div></div>
         </div>
         <div class="col-sm-6 col-xl-3">
-            <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">Начислено</h2><p class="display-6 mb-0">@Model.Dashboard.TotalCharges.ToString("0.00")</p></div></div>
+            <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">@AppLocalizer.Get("Начислено", "Нараховано", "Charged")</h2><p class="display-6 mb-0">@Model.Dashboard.TotalCharges.ToString("0.00")</p></div></div>
         </div>
         <div class="col-sm-6 col-xl-3">
-            <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">Оплачено</h2><p class="display-6 mb-0">@Model.Dashboard.TotalPayments.ToString("0.00")</p></div></div>
+            <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">@AppLocalizer.Get("Оплачено", "Сплачено", "Paid")</h2><p class="display-6 mb-0">@Model.Dashboard.TotalPayments.ToString("0.00")</p></div></div>
         </div>
         <div class="col-sm-6 col-xl-3">
-            <div class="card h-100 shadow-sm @Model.Dashboard.BalanceCardClass"><div class="card-body"><h2 class="h6 text-muted">Баланс</h2><p class="display-6 mb-0 @Model.Dashboard.BalanceStatusClass">@Model.Dashboard.BalanceDisplayAmount.ToString("0.00")</p><div class="text-muted">@Model.Dashboard.BalanceStatusText</div></div></div>
+            <div class="card h-100 shadow-sm @Model.Dashboard.BalanceCardClass"><div class="card-body"><h2 class="h6 text-muted">@AppLocalizer.Get("Баланс", "Баланс", "Balance")</h2><p class="display-6 mb-0 @Model.Dashboard.BalanceStatusClass">@Model.Dashboard.BalanceDisplayAmount.ToString("0.00")</p><div class="text-muted">@Model.Dashboard.BalanceStatusText</div></div></div>
         </div>
     </div>
 
     <div class="card shadow-sm mb-4">
         <div class="card-header bg-white">
-            <h2 class="h5 mb-0">Основные сведения</h2>
+            <h2 class="h5 mb-0">@AppLocalizer.Get("Основные сведения", "Основні відомості", "Basic information")</h2>
         </div>
         <div class="card-body">
             <div class="row g-4">
                 <div class="col-lg-7">
                     <dl class="row mb-0">
-                        <dt class="col-sm-4">ФИО</dt>
+                        <dt class="col-sm-4">@AppLocalizer.Get("ФИО", "ПІБ", "Full name")</dt>
                         <dd class="col-sm-8">@Model.Dashboard.FullName</dd>
 
-                        <dt class="col-sm-4">Телефон</dt>
+                        <dt class="col-sm-4">@AppLocalizer.Get("Телефон", "Телефон", "Phone")</dt>
                         <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Dashboard.PhoneNumber) ? "—" : Model.Dashboard.PhoneNumber)</dd>
 
-                        <dt class="col-sm-4">Электронная почта</dt>
+                        <dt class="col-sm-4">@AppLocalizer.Get("Электронная почта", "Електронна пошта", "Email")</dt>
                         <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Dashboard.Email) ? "—" : Model.Dashboard.Email)</dd>
                     </dl>
 
-                    <div class="form-text mt-3">Логин для входа изменяется администратором.</div>
+                    <div class="form-text mt-3">@AppLocalizer.Get("Логин для входа изменяется администратором.", "Логін для входу змінюється адміністратором.", "The sign-in login can be changed by an administrator.")</div>
 
                     <div class="mt-4 d-flex gap-2 flex-wrap">
-                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editProfileModal">Редактировать</button>
-                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Изменить пароль</button>
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editProfileModal">@AppLocalizer.Get("Редактировать", "Редагувати", "Edit")</button>
+                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#changePasswordModal">@AppLocalizer.Get("Изменить пароль", "Змінити пароль", "Change password")</button>
                     </div>
                 </div>
                 <div class="col-lg-5">
                     <div class="d-flex flex-column gap-3 h-100">
                         <div class="border rounded p-3 bg-light">
-                            <p class="mb-2"><strong>Текущий телефон:</strong> @(string.IsNullOrWhiteSpace(Model.Dashboard.PhoneNumber) ? "—" : Model.Dashboard.PhoneNumber)</p>
-                            <p class="mb-2"><strong>Текущий email:</strong> @(string.IsNullOrWhiteSpace(Model.Dashboard.Email) ? "—" : Model.Dashboard.Email)</p>
-                            <p class="mb-2"><strong>Статус:</strong> @(Model.Dashboard.IsActive ? "Активен" : "В архиве")</p>
-                            <p class="mb-0"><strong>Финансовый статус:</strong> <span class="@Model.Dashboard.BalanceStatusClass">@Model.Dashboard.BalanceStatusText</span></p>
+                            <p class="mb-2"><strong>@AppLocalizer.Get("Текущий телефон:", "Поточний телефон:", "Current phone:")</strong> @(string.IsNullOrWhiteSpace(Model.Dashboard.PhoneNumber) ? "—" : Model.Dashboard.PhoneNumber)</p>
+                            <p class="mb-2"><strong>@AppLocalizer.Get("Текущий email:", "Поточний email:", "Current email:")</strong> @(string.IsNullOrWhiteSpace(Model.Dashboard.Email) ? "—" : Model.Dashboard.Email)</p>
+                            <p class="mb-2"><strong>@AppLocalizer.Get("Статус:", "Статус:", "Status:")</strong> @(Model.Dashboard.IsActive ? AppLocalizer.Get("Активен", "Активний", "Active") : AppLocalizer.Get("В архиве", "В архіві", "Archived"))</p>
+                            <p class="mb-0"><strong>@AppLocalizer.Get("Финансовый статус:", "Фінансовий статус:", "Financial status:")</strong> <span class="@Model.Dashboard.BalanceStatusClass">@Model.Dashboard.BalanceStatusText</span></p>
                         </div>
                     </div>
                 </div>
@@ -101,8 +101,8 @@ else
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2 class="modal-title h5" id="editProfileModalLabel">Редактировать информацию</h2>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                    <h2 class="modal-title h5" id="editProfileModalLabel">@AppLocalizer.Get("Редактировать информацию", "Редагувати інформацію", "Edit information")</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@AppLocalizer.Get("Закрыть", "Закрити", "Close")"></button>
                 </div>
                 <form method="post" asp-page-handler="UpdateProfile">
                     <div class="modal-body">
@@ -114,25 +114,25 @@ else
 
                         <div class="row g-3">
                             <div class="col-12">
-                                <label asp-for="Profile.FullName" class="form-label"></label>
+                                <label asp-for="Profile.FullName" class="form-label">@AppLocalizer.Get("ФИО", "ПІБ", "Full name")</label>
                                 <input asp-for="Profile.FullName" class="form-control" />
                                 <span asp-validation-for="Profile.FullName" class="text-danger"></span>
                             </div>
                             <div class="col-md-6">
-                                <label asp-for="Profile.PhoneNumber" class="form-label"></label>
+                                <label asp-for="Profile.PhoneNumber" class="form-label">@AppLocalizer.Get("Телефон", "Телефон", "Phone")</label>
                                 <input asp-for="Profile.PhoneNumber" class="form-control" />
                                 <span asp-validation-for="Profile.PhoneNumber" class="text-danger"></span>
                             </div>
                             <div class="col-md-6">
-                                <label asp-for="Profile.Email" class="form-label"></label>
+                                <label asp-for="Profile.Email" class="form-label">@AppLocalizer.Get("Электронная почта", "Електронна пошта", "Email")</label>
                                 <input asp-for="Profile.Email" class="form-control" />
                                 <span asp-validation-for="Profile.Email" class="text-danger"></span>
                             </div>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
-                        <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@AppLocalizer.Get("Отмена", "Скасувати", "Cancel")</button>
+                        <button type="submit" class="btn btn-primary">@AppLocalizer.Get("Сохранить изменения", "Зберегти зміни", "Save changes")</button>
                     </div>
                 </form>
             </div>
@@ -143,8 +143,8 @@ else
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2 class="modal-title h5" id="changePasswordModalLabel">Изменить пароль</h2>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                    <h2 class="modal-title h5" id="changePasswordModalLabel">@AppLocalizer.Get("Изменить пароль", "Змінити пароль", "Change password")</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@AppLocalizer.Get("Закрыть", "Закрити", "Close")"></button>
                 </div>
                 <form method="post" asp-page-handler="ChangePassword">
                     <div class="modal-body">
@@ -155,26 +155,26 @@ else
                         <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
                         <div class="mb-3">
-                            <label asp-for="ChangePassword.CurrentPassword" class="form-label"></label>
+                            <label asp-for="ChangePassword.CurrentPassword" class="form-label">@AppLocalizer.Get("Текущий пароль", "Поточний пароль", "Current password")</label>
                             <input asp-for="ChangePassword.CurrentPassword" class="form-control" type="password" autocomplete="current-password" />
                             <span asp-validation-for="ChangePassword.CurrentPassword" class="text-danger"></span>
                         </div>
 
                         <div class="mb-3">
-                            <label asp-for="ChangePassword.NewPassword" class="form-label"></label>
+                            <label asp-for="ChangePassword.NewPassword" class="form-label">@AppLocalizer.Get("Новый пароль", "Новий пароль", "New password")</label>
                             <input asp-for="ChangePassword.NewPassword" class="form-control" type="password" autocomplete="new-password" />
                             <span asp-validation-for="ChangePassword.NewPassword" class="text-danger"></span>
                         </div>
 
                         <div class="mb-3">
-                            <label asp-for="ChangePassword.ConfirmNewPassword" class="form-label"></label>
+                            <label asp-for="ChangePassword.ConfirmNewPassword" class="form-label">@AppLocalizer.Get("Подтверждение нового пароля", "Підтвердження нового пароля", "Confirm new password")</label>
                             <input asp-for="ChangePassword.ConfirmNewPassword" class="form-control" type="password" autocomplete="new-password" />
                             <span asp-validation-for="ChangePassword.ConfirmNewPassword" class="text-danger"></span>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
-                        <button type="submit" class="btn btn-primary">Изменить пароль</button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@AppLocalizer.Get("Отмена", "Скасувати", "Cancel")</button>
+                        <button type="submit" class="btn btn-primary">@AppLocalizer.Get("Изменить пароль", "Змінити пароль", "Change password")</button>
                     </div>
                 </form>
             </div>
@@ -183,12 +183,12 @@ else
 
     <div class="card shadow-sm mb-4">
         <div class="card-header bg-white">
-            <h2 class="h5 mb-0">Участки</h2>
+            <h2 class="h5 mb-0">@AppLocalizer.Get("Участки", "Ділянки", "Plots")</h2>
         </div>
         <div class="card-body p-0">
             @if (Model.Plots.Count == 0)
             {
-                <div class="p-4 text-center text-muted">У вас нет активных участков с финансовыми данными.</div>
+                <div class="p-4 text-center text-muted">@AppLocalizer.Get("У вас нет активных участков с финансовыми данными.", "У вас немає активних ділянок з фінансовими даними.", "You have no active plots with financial data.")</div>
             }
             else
             {
@@ -196,13 +196,13 @@ else
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th>Участок</th>
-                                <th>Адрес</th>
-                                <th>Начислено</th>
-                                <th>Оплачено</th>
-                                <th>Баланс</th>
-                                <th>Статус</th>
-                                <th class="text-end">Действия</th>
+                                <th>@AppLocalizer.Get("Участок", "Ділянка", "Plot")</th>
+                                <th>@AppLocalizer.Get("Адрес", "Адреса", "Address")</th>
+                                <th>@AppLocalizer.Get("Начислено", "Нараховано", "Charged")</th>
+                                <th>@AppLocalizer.Get("Оплачено", "Сплачено", "Paid")</th>
+                                <th>@AppLocalizer.Get("Баланс", "Баланс", "Balance")</th>
+                                <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
+                                <th class="text-end">@AppLocalizer.Get("Действия", "Дії", "Actions")</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -216,7 +216,7 @@ else
                                     <td class="@plot.BalanceStatusClass">@plot.BalanceDisplayAmount.ToString("0.00")</td>
                                     <td>@plot.Status</td>
                                     <td class="text-end">
-                                        <a class="btn btn-sm btn-outline-primary" asp-page="/Member/Plots/Finance/Index" asp-route-plotId="@plot.PlotId">Финансы</a>
+                                    <a class="btn btn-sm btn-outline-primary" asp-page="/Member/Plots/Finance/Index" asp-route-plotId="@plot.PlotId">@AppLocalizer.Get("Финансы", "Фінанси", "Finance")</a>
                                     </td>
                                 </tr>
                             }
@@ -232,15 +232,15 @@ else
             <div class="card shadow-sm h-100">
                 <div class="card-header bg-white">
                     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-                        <h2 class="h5 mb-0">Начисления</h2>
+                        <h2 class="h5 mb-0">@AppLocalizer.Get("Начисления", "Нарахування", "Charges")</h2>
                         <form method="get" class="d-flex flex-column flex-sm-row gap-2 align-items-sm-center">
                             <input type="hidden" asp-for="PaymentPage" />
                             <select asp-for="ChargeTypeId" asp-items="Model.ChargeTypeOptions" class="form-select form-select-sm">
-                                <option value="">Все типы</option>
+                                <option value="">@AppLocalizer.Get("Все типы", "Усі типи", "All types")</option>
                             </select>
                             <div class="d-flex gap-2">
-                                <button type="submit" class="btn btn-sm btn-outline-primary">Фильтр</button>
-                                <a class="btn btn-sm btn-outline-secondary" asp-page="/Member/Index" asp-route-paymentPage="@Model.PaymentPage">Сбросить</a>
+                                <button type="submit" class="btn btn-sm btn-outline-primary">@AppLocalizer.Get("Фильтр", "Фільтр", "Filter")</button>
+                                <a class="btn btn-sm btn-outline-secondary" asp-page="/Member/Index" asp-route-paymentPage="@Model.PaymentPage">@AppLocalizer.Get("Сбросить", "Скинути", "Reset")</a>
                             </div>
                         </form>
                     </div>
@@ -248,7 +248,7 @@ else
                 <div class="card-body p-0">
                     @if (Model.Charges.Count == 0)
                     {
-                        <div class="p-4 text-center text-muted">Начисления отсутствуют.</div>
+                        <div class="p-4 text-center text-muted">@AppLocalizer.Get("Начисления отсутствуют.", "Нарахування відсутні.", "No charges.")</div>
                     }
                     else
                     {
@@ -256,12 +256,12 @@ else
                             <table class="table table-hover align-middle mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Дата</th>
-                                        <th>Участок</th>
-                                        <th>Тип</th>
-                                        <th>Сумма</th>
-                                        <th>Срок</th>
-                                        <th>Статус</th>
+                                        <th>@AppLocalizer.Get("Дата", "Дата", "Date")</th>
+                                        <th>@AppLocalizer.Get("Участок", "Ділянка", "Plot")</th>
+                                        <th>@AppLocalizer.Get("Тип", "Тип", "Type")</th>
+                                        <th>@AppLocalizer.Get("Сумма", "Сума", "Amount")</th>
+                                        <th>@AppLocalizer.Get("Срок", "Строк", "Due")</th>
+                                        <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -281,11 +281,11 @@ else
                                                 <td colspan="6" class="small text-muted">
                                                     @if (!string.IsNullOrWhiteSpace(charge.Description))
                                                     {
-                                                        <div><strong>Описание:</strong> @charge.Description</div>
+                                                        <div><strong>@AppLocalizer.Get("Описание:", "Опис:", "Description:")</strong> @charge.Description</div>
                                                     }
                                                     @if (!string.IsNullOrWhiteSpace(charge.CancellationReason))
                                                     {
-                                                        <div><strong>Причина отмены:</strong> @charge.CancellationReason</div>
+                                                        <div><strong>@AppLocalizer.Get("Причина отмены:", "Причина скасування:", "Cancellation reason:")</strong> @charge.CancellationReason</div>
                                                     }
                                                 </td>
                                             </tr>
@@ -299,10 +299,10 @@ else
                 @if (Model.ChargeTotalPages > 1)
                 {
                     <div class="card-footer bg-white">
-                        <nav aria-label="Навигация по начислениям">
+                        <nav aria-label="@AppLocalizer.Get("Навигация по начислениям", "Навігація нарахуваннями", "Charge pagination")">
                             <ul class="pagination justify-content-center mb-0 flex-wrap">
                                 <li class="page-item @(Model.HasChargePreviousPage ? string.Empty : "disabled")">
-                                    <a class="page-link" asp-page="/Member/Index" asp-route-chargePage="@(Model.ChargePage - 1)" asp-route-paymentPage="@Model.PaymentPage" asp-route-chargeTypeId="@Model.ChargeTypeId">Назад</a>
+                                    <a class="page-link" asp-page="/Member/Index" asp-route-chargePage="@(Model.ChargePage - 1)" asp-route-paymentPage="@Model.PaymentPage" asp-route-chargeTypeId="@Model.ChargeTypeId">@AppLocalizer.Get("Назад", "Назад", "Previous")</a>
                                 </li>
                                 @for (var pageIndex = 1; pageIndex <= Model.ChargeTotalPages; pageIndex++)
                                 {
@@ -311,7 +311,7 @@ else
                                     </li>
                                 }
                                 <li class="page-item @(Model.HasChargeNextPage ? string.Empty : "disabled")">
-                                    <a class="page-link" asp-page="/Member/Index" asp-route-chargePage="@(Model.ChargePage + 1)" asp-route-paymentPage="@Model.PaymentPage" asp-route-chargeTypeId="@Model.ChargeTypeId">Вперёд</a>
+                                    <a class="page-link" asp-page="/Member/Index" asp-route-chargePage="@(Model.ChargePage + 1)" asp-route-paymentPage="@Model.PaymentPage" asp-route-chargeTypeId="@Model.ChargeTypeId">@AppLocalizer.Get("Вперёд", "Вперед", "Next")</a>
                                 </li>
                             </ul>
                         </nav>
@@ -322,12 +322,12 @@ else
         <div class="col-xl-6">
             <div class="card shadow-sm h-100">
                 <div class="card-header bg-white">
-                    <h2 class="h5 mb-0">Платежи</h2>
+                    <h2 class="h5 mb-0">@AppLocalizer.Get("Платежи", "Платежі", "Payments")</h2>
                 </div>
                 <div class="card-body p-0">
                     @if (Model.Payments.Count == 0)
                     {
-                        <div class="p-4 text-center text-muted">Платежи отсутствуют.</div>
+                        <div class="p-4 text-center text-muted">@AppLocalizer.Get("Платежи отсутствуют.", "Платежі відсутні.", "No payments.")</div>
                     }
                     else
                     {
@@ -335,12 +335,12 @@ else
                             <table class="table table-hover align-middle mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Дата</th>
-                                        <th>Участок</th>
-                                        <th>Сумма</th>
-                                        <th>Способ</th>
-                                        <th>Документ</th>
-                                        <th>Статус</th>
+                                        <th>@AppLocalizer.Get("Дата", "Дата", "Date")</th>
+                                        <th>@AppLocalizer.Get("Участок", "Ділянка", "Plot")</th>
+                                        <th>@AppLocalizer.Get("Сумма", "Сума", "Amount")</th>
+                                        <th>@AppLocalizer.Get("Способ", "Спосіб", "Method")</th>
+                                        <th>@AppLocalizer.Get("Документ", "Документ", "Document")</th>
+                                        <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -360,11 +360,11 @@ else
                                                 <td colspan="6" class="small text-muted">
                                                     @if (!string.IsNullOrWhiteSpace(payment.Description))
                                                     {
-                                                        <div><strong>Описание:</strong> @payment.Description</div>
+                                                        <div><strong>@AppLocalizer.Get("Описание:", "Опис:", "Description:")</strong> @payment.Description</div>
                                                     }
                                                     @if (!string.IsNullOrWhiteSpace(payment.CancellationReason))
                                                     {
-                                                        <div><strong>Причина отмены:</strong> @payment.CancellationReason</div>
+                                                        <div><strong>@AppLocalizer.Get("Причина отмены:", "Причина скасування:", "Cancellation reason:")</strong> @payment.CancellationReason</div>
                                                     }
                                                 </td>
                                             </tr>
@@ -378,10 +378,10 @@ else
                 @if (Model.PaymentTotalPages > 1)
                 {
                     <div class="card-footer bg-white">
-                        <nav aria-label="Навигация по платежам">
+                        <nav aria-label="@AppLocalizer.Get("Навигация по платежам", "Навігація платежами", "Payment pagination")">
                             <ul class="pagination justify-content-center mb-0 flex-wrap">
                                 <li class="page-item @(Model.HasPaymentPreviousPage ? string.Empty : "disabled")">
-                                    <a class="page-link" asp-page="/Member/Index" asp-route-chargePage="@Model.ChargePage" asp-route-paymentPage="@(Model.PaymentPage - 1)" asp-route-chargeTypeId="@Model.ChargeTypeId">Назад</a>
+                                    <a class="page-link" asp-page="/Member/Index" asp-route-chargePage="@Model.ChargePage" asp-route-paymentPage="@(Model.PaymentPage - 1)" asp-route-chargeTypeId="@Model.ChargeTypeId">@AppLocalizer.Get("Назад", "Назад", "Previous")</a>
                                 </li>
                                 @for (var pageIndex = 1; pageIndex <= Model.PaymentTotalPages; pageIndex++)
                                 {
@@ -390,7 +390,7 @@ else
                                     </li>
                                 }
                                 <li class="page-item @(Model.HasPaymentNextPage ? string.Empty : "disabled")">
-                                    <a class="page-link" asp-page="/Member/Index" asp-route-chargePage="@Model.ChargePage" asp-route-paymentPage="@(Model.PaymentPage + 1)" asp-route-chargeTypeId="@Model.ChargeTypeId">Вперёд</a>
+                                    <a class="page-link" asp-page="/Member/Index" asp-route-chargePage="@Model.ChargePage" asp-route-paymentPage="@(Model.PaymentPage + 1)" asp-route-chargeTypeId="@Model.ChargeTypeId">@AppLocalizer.Get("Вперёд", "Вперед", "Next")</a>
                                 </li>
                             </ul>
                         </nav>
@@ -410,12 +410,12 @@ else
     {
         <div class="card shadow-sm mt-4">
             <div class="card-header bg-white">
-                <h2 class="h5 mb-0">Электросчётчики</h2>
+                <h2 class="h5 mb-0">@AppLocalizer.Get("Электросчётчики", "Електролічильники", "Electricity meters")</h2>
             </div>
             <div class="card-body p-0">
                 @if (!Model.HasElectricityMeters)
                 {
-                    <div class="p-4 text-center text-muted">У участника пока нет привязанных электросчётчиков.</div>
+                    <div class="p-4 text-center text-muted">@AppLocalizer.Get("У участника пока нет привязанных электросчётчиков.", "У учасника поки немає прив'язаних електролічильників.", "The member has no linked electricity meters yet.")</div>
                 }
                 else
                 {
@@ -423,9 +423,9 @@ else
                         <table class="table table-hover align-middle mb-0">
                             <thead class="table-light">
                                 <tr>
-                                    <th>Счётчик</th>
-                                    <th>Расчётный участок</th>
-                                    <th>Статус</th>
+                                    <th>@AppLocalizer.Get("Счётчик", "Лічильник", "Meter")</th>
+                                    <th>@AppLocalizer.Get("Расчётный участок", "Розрахункова ділянка", "Billing plot")</th>
+                                    <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -437,15 +437,15 @@ else
                                         <td>
                                             @if (!meter.IsActive)
                                             {
-                                                <span class="badge text-bg-secondary">Неактивен</span>
+                                                <span class="badge text-bg-secondary">@AppLocalizer.Get("Неактивен", "Неактивний", "Inactive")</span>
                                             }
                                             else if (!meter.HasReadings)
                                             {
-                                                <span class="badge text-bg-warning">Требуется инициализация</span>
+                                                <span class="badge text-bg-warning">@AppLocalizer.Get("Требуется инициализация", "Потрібна ініціалізація", "Initialization required")</span>
                                             }
                                             else
                                             {
-                                                <span class="badge text-bg-success">Готов к работе</span>
+                                                <span class="badge text-bg-success">@AppLocalizer.Get("Готов к работе", "Готовий до роботи", "Ready")</span>
                                             }
                                         </td>
                                     </tr>
@@ -453,11 +453,11 @@ else
                                     <tr class="table-light">
                                         <td colspan="3">
                                             <div class="small">
-                                                <div class="fw-semibold mb-2">История показаний</div>
+                                                <div class="fw-semibold mb-2">@AppLocalizer.Get("История показаний", "Історія показань", "Reading history")</div>
 
                                                 @if (meter.Readings.Count == 0)
                                                 {
-                                                    <span class="text-muted">История отсутствует</span>
+                                                    <span class="text-muted">@AppLocalizer.Get("История отсутствует", "Історія відсутня", "No history")</span>
                                                 }
                                                 else
                                                 {
@@ -472,16 +472,16 @@ else
                                                                 <div class="d-flex flex-wrap gap-3 text-muted mt-1">
                                                                     @if (reading.IsInitialReading)
                                                                     {
-                                                                        <span>Начальные показания</span>
+                                                                        <span>@AppLocalizer.Get("Начальные показания", "Початкові показання", "Initial reading")</span>
                                                                     }
                                                                     else if (reading.Consumption.HasValue)
                                                                     {
-                                                                        <span>Расход: @reading.Consumption.Value.ToString("0.000")</span>
+                                                                        <span>@AppLocalizer.Get("Расход:", "Споживання:", "Consumption:") @reading.Consumption.Value.ToString("0.000")</span>
                                                                     }
 
                                                                     @if (reading.Amount.HasValue)
                                                                     {
-                                                                        <span>Начисление: @reading.Amount.Value.ToString("0.00") грн</span>
+                                                                        <span>@AppLocalizer.Get("Начисление:", "Нарахування:", "Charge:") @reading.Amount.Value.ToString("0.00") грн</span>
                                                                     }
                                                                 </div>
                                                             </div>

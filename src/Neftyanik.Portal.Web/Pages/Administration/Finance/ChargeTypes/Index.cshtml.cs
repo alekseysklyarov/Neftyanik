@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Infrastructure.Data;
+using Neftyanik.Portal.Web.Localization;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Finance.ChargeTypes;
 
@@ -78,8 +79,8 @@ public class IndexModel : PageModel
             .ToListAsync(cancellationToken);
 
         EmptyStateMessage = totalCount == 0 && string.IsNullOrWhiteSpace(Search) && Status == "all"
-            ? "Типы начислений пока не добавлены."
-            : "По выбранным условиям типы начислений не найдены.";
+            ? AppLocalizer.Get("Типы начислений пока не добавлены.", "Типи нарахувань ще не додані.", "No charge types have been added yet.")
+            : AppLocalizer.Get("По выбранным условиям типы начислений не найдены.", "За вибраними умовами типи нарахувань не знайдені.", "No charge types were found for the selected criteria.");
     }
 
     public bool HasPreviousPage => PageNumber > 1;

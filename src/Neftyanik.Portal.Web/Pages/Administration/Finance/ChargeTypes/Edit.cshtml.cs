@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Infrastructure.Data;
+using Neftyanik.Portal.Web.Localization;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Finance.ChargeTypes;
 
@@ -54,12 +55,12 @@ public class EditModel : PageModel
 
         if (await NameExistsAsync(id, cancellationToken))
         {
-            ModelState.AddModelError("Input.Name", "Тип начисления с таким наименованием уже существует.");
+            ModelState.AddModelError("Input.Name", AppLocalizer.Get("Тип начисления с таким наименованием уже существует.", "Тип нарахування з такою назвою вже існує.", "A charge type with this name already exists."));
         }
 
         if (await HasAnotherDefaultAsync(id, cancellationToken))
         {
-            ModelState.AddModelError("Input.IsDefault", "Тип начисления по умолчанию уже выбран. Снимите признак у другого активного типа начисления.");
+            ModelState.AddModelError("Input.IsDefault", AppLocalizer.Get("Тип начисления по умолчанию уже выбран. Снимите признак у другого активного типа начисления.", "Тип нарахування за замовчуванням уже вибрано. Зніміть ознаку з іншого активного типу нарахування.", "A default charge type has already been selected. Remove the flag from another active charge type."));
         }
 
         if (!ModelState.IsValid)
@@ -84,7 +85,7 @@ public class EditModel : PageModel
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        TempData["SuccessMessage"] = "Изменения по типу начисления сохранены.";
+        TempData["SuccessMessage"] = AppLocalizer.Get("Изменения по типу начисления сохранены.", "Зміни типу нарахування збережено.", "Charge type changes have been saved.");
         return RedirectToPage("/Administration/Finance/ChargeTypes/Details", new { id });
     }
 

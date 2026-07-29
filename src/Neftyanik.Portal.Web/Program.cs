@@ -7,6 +7,7 @@ using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure;
 using Neftyanik.Portal.Infrastructure.Data;
+using Neftyanik.Portal.Web.Localization;
 using Neftyanik.Portal.Web.Security;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -88,6 +89,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseRequestLocalization(LocalizationConfiguration.CreateOptions());
 app.UseStaticFiles();
 
 app.UseRouting();

@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Infrastructure.Data;
+using Neftyanik.Portal.Web.Localization;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Finance.ExpenseCategories;
 
@@ -77,8 +77,8 @@ public class IndexModel : PageModel
             .ToListAsync(cancellationToken);
 
         EmptyStateMessage = totalCount == 0 && string.IsNullOrWhiteSpace(Search) && Status == "all"
-            ? "Типы расходов пока не добавлены."
-            : "По выбранным условиям типы расходов не найдены.";
+            ? AppLocalizer.Get("Типы расходов пока не добавлены.", "Типи витрат ще не додані.", "No expense types have been added yet.")
+            : AppLocalizer.Get("По выбранным условиям типы расходов не найдены.", "За вибраними умовами типи витрат не знайдені.", "No expense types were found for the selected criteria.");
     }
 
     public bool HasPreviousPage => PageNumber > 1;

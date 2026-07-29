@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data;
+using Neftyanik.Portal.Web.Localization;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Members.Account;
 
@@ -33,14 +34,14 @@ public class LockModel : MemberAccountPageModelBase
 
         if (string.IsNullOrWhiteSpace(member.ApplicationUserId))
         {
-            TempData["ErrorMessage"] = "Для этого члена товарищества учетная запись еще не создана.";
+            TempData["ErrorMessage"] = AppLocalizer.Get("Для этого члена товарищества учетная запись еще не создана.", "Для цього члена товариства обліковий запис ще не створено.", "An account has not been created for this member yet.");
             return RedirectToPage("/Administration/Members/Details", new { id = memberId });
         }
 
         var user = await UserManager.FindByIdAsync(member.ApplicationUserId);
         if (user is null)
         {
-            TempData["ErrorMessage"] = "Связанная учетная запись не найдена.";
+            TempData["ErrorMessage"] = AppLocalizer.Get("Связанная учетная запись не найдена.", "Пов'язаний обліковий запис не знайдено.", "The linked account was not found.");
             return RedirectToPage("/Administration/Members/Details", new { id = memberId });
         }
 
@@ -50,7 +51,7 @@ public class LockModel : MemberAccountPageModelBase
         var currentUser = await UserManager.GetUserAsync(User);
         if (!Account.IsLockedOut && currentUser?.Id == user.Id)
         {
-            ModelState.AddModelError(string.Empty, "Нельзя заблокировать текущую учетную запись администратора через эту операцию.");
+            ModelState.AddModelError(string.Empty, AppLocalizer.Get("Нельзя заблокировать текущую учетную запись администратора через эту операцию.", "Не можна заблокувати поточний обліковий запис адміністратора через цю операцію.", "The current administrator account cannot be locked using this operation."));
             return Page();
         }
 
@@ -63,7 +64,7 @@ public class LockModel : MemberAccountPageModelBase
                 return Page();
             }
 
-            TempData["SuccessMessage"] = "Учетная запись пользователя разблокирована.";
+            TempData["SuccessMessage"] = AppLocalizer.Get("Учетная запись пользователя разблокирована.", "Обліковий запис користувача розблоковано.", "The user account has been unlocked.");
         }
         else
         {
@@ -84,7 +85,7 @@ public class LockModel : MemberAccountPageModelBase
                 return Page();
             }
 
-            TempData["SuccessMessage"] = "Учетная запись пользователя заблокирована.";
+            TempData["SuccessMessage"] = AppLocalizer.Get("Учетная запись пользователя заблокирована.", "Обліковий запис користувача заблоковано.", "The user account has been locked.");
         }
 
         return RedirectToPage("/Administration/Members/Details", new { id = memberId });
@@ -100,14 +101,14 @@ public class LockModel : MemberAccountPageModelBase
 
         if (string.IsNullOrWhiteSpace(member.ApplicationUserId))
         {
-            TempData["ErrorMessage"] = "Для этого члена товарищества учетная запись еще не создана.";
+            TempData["ErrorMessage"] = AppLocalizer.Get("Для этого члена товарищества учетная запись еще не создана.", "Для цього члена товариства обліковий запис ще не створено.", "An account has not been created for this member yet.");
             return RedirectToPage("/Administration/Members/Details", new { id = memberId });
         }
 
         var user = await UserManager.FindByIdAsync(member.ApplicationUserId);
         if (user is null)
         {
-            TempData["ErrorMessage"] = "Связанная учетная запись не найдена.";
+            TempData["ErrorMessage"] = AppLocalizer.Get("Связанная учетная запись не найдена.", "Пов'язаний обліковий запис не знайдено.", "The linked account was not found.");
             return RedirectToPage("/Administration/Members/Details", new { id = memberId });
         }
 

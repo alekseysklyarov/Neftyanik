@@ -1,18 +1,18 @@
 @page
 @model Neftyanik.Portal.Web.Pages.Administration.Finance.Expenses.Electricity.IndexModel
 @{
-    ViewData["Title"] = "Расход электроэнергии";
+    ViewData["Title"] = AppLocalizer.Get("Расход электроэнергии", "Витрати на електроенергію", "Electricity expense");
 }
 
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
-        <h1 class="h2 mb-1">Расход электроэнергии</h1>
-        <p class="text-muted mb-0">На этой странице вносятся показания общего электросчётчика. Расход создается автоматически по тарифам Т1 и Т2.</p>
+        <h1 class="h2 mb-1">@AppLocalizer.Get("Расход электроэнергии", "Витрати на електроенергію", "Electricity expense")</h1>
+        <p class="text-muted mb-0">@AppLocalizer.Get("На этой странице вносятся показания общего электросчётчика. Расход создается автоматически по тарифам Т1 и Т2.", "На цій сторінці вносяться показання загального електролічильника. Витрата створюється автоматично за тарифами Т1 і Т2.", "This page is used to enter shared electricity meter readings. The expense is created automatically using T1 and T2 tariffs.")</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
-        <a class="btn btn-outline-primary" asp-page="/Administration/Finance/Expenses/Index">Все расходы</a>
-        <a class="btn btn-outline-primary" asp-page="/Administration/Finance/Electricity/Tariffs/Index">Тарифы поставщика</a>
-        <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/Index">К финансам</a>
+        <a class="btn btn-outline-primary" asp-page="/Administration/Finance/Expenses/Index">@AppLocalizer.Get("Все расходы", "Усі витрати", "All expenses")</a>
+        <a class="btn btn-outline-primary" asp-page="/Administration/Finance/Electricity/Tariffs/Index">@AppLocalizer.Get("Тарифы поставщика", "Тарифи постачальника", "Supplier tariffs")</a>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/Index">@AppLocalizer.Get("К финансам", "До фінансів", "Back to finance")</a>
     </div>
 </div>
 
@@ -30,14 +30,14 @@
     <div class="col-xl-5">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <h2 class="h5 mb-3">@(Model.HasHistory ? "Новые показания" : "Начальные показания")</h2>
+                <h2 class="h5 mb-3">@(Model.HasHistory ? AppLocalizer.Get("Новые показания", "Нові показання", "New readings") : AppLocalizer.Get("Начальные показания", "Початкові показання", "Initial readings"))</h2>
 
                 @if (Model.HasHistory && Model.PreviousReading is not null)
                 {
                     <div class="alert alert-info" id="previousReadingInfo"
                          data-previous-day="@Model.PreviousReading.CurrentDayReading.ToString(System.Globalization.CultureInfo.InvariantCulture)"
                          data-previous-night="@Model.PreviousReading.CurrentNightReading.ToString(System.Globalization.CultureInfo.InvariantCulture)">
-                        Последние показания на @Model.PreviousReading.ReadingDate.ToString("dd.MM.yyyy"):
+                        @AppLocalizer.Get("Последние показания на", "Останні показання на", "Latest readings on") @Model.PreviousReading.ReadingDate.ToString("dd.MM.yyyy"):
                         Т1 @Model.PreviousReading.CurrentDayReading.ToString("0"),
                         Т2 @Model.PreviousReading.CurrentNightReading.ToString("0")
                     </div>
@@ -48,7 +48,7 @@
 
                     <div class="row g-3">
                         <div class="col-12">
-                            <label asp-for="Input.ReadingDate" class="form-label">Дата показаний</label>
+                            <label asp-for="Input.ReadingDate" class="form-label">@AppLocalizer.Get("Дата показаний", "Дата показань", "Reading date")</label>
                             <input asp-for="Input.ReadingDate" class="form-control" type="date" />
                             <span asp-validation-for="Input.ReadingDate" class="text-danger"></span>
                         </div>
@@ -67,7 +67,7 @@
                     @if (Model.HasHistory)
                     {
                         <hr class="my-4" />
-                        <h3 class="h6">Тарифы поставщика на дату</h3>
+                        <h3 class="h6">@AppLocalizer.Get("Тарифы поставщика на дату", "Тарифи постачальника на дату", "Supplier tariffs on date")</h3>
 
                         @if (Model.Preview.Tariff is null)
                         {
@@ -125,7 +125,7 @@
                                             @item.ReadingDate.ToString("dd.MM.yyyy")
                                             @if (item.IsInitialReading)
                                             {
-                                                <div class="small text-muted">Начальные</div>
+                                                <div class="small text-muted">@AppLocalizer.Get("Начальные", "Початкові", "Initial")</div>
                                             }
                                         </td>
                                         <td>@item.CurrentDayReading.ToString("0.000")</td>

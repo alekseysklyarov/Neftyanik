@@ -1,18 +1,18 @@
 @page "{id:int}"
 @model Neftyanik.Portal.Web.Pages.Administration.Members.EditModel
 @{
-    ViewData["Title"] = "Редактирование члена товарищества";
+    ViewData["Title"] = AppLocalizer.Get("Редактирование члена товарищества", "Редагування члена товариства", "Edit member");
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h1 class="h2 mb-1">Редактирование члена товарищества</h1>
-        <p class="text-muted mb-0">Измените данные карточки и сохраните их.</p>
+        <h1 class="h2 mb-1">@AppLocalizer.Get("Редактирование члена товарищества", "Редагування члена товариства", "Edit member")</h1>
+        <p class="text-muted mb-0">@AppLocalizer.Get("Измените данные карточки и сохраните их.", "Змініть дані картки та збережіть їх.", "Update the member record and save it.")</p>
     </div>
     <div class="d-flex gap-2">
-        <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Details" asp-route-id="@Model.MemberId">Подробнее</a>
-        <a class="btn btn-outline-success" asp-page="/Administration/Members/Finance" asp-route-id="@Model.MemberId">Финансы</a>
-        <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Index">К списку членов товарищества</a>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Details" asp-route-id="@Model.MemberId">@AppLocalizer.Get("Подробнее", "Детальніше", "Details")</a>
+        <a class="btn btn-outline-success" asp-page="/Administration/Members/Finance" asp-route-id="@Model.MemberId">@AppLocalizer.Get("Финансы", "Фінанси", "Finance")</a>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Index">@AppLocalizer.Get("К списку членов товарищества", "До списку членів товариства", "Back to members")</a>
     </div>
 </div>
 
@@ -21,7 +21,7 @@
         @if (!string.IsNullOrWhiteSpace(Model.LinkedAccount))
         {
             <div class="alert alert-info" role="alert">
-                Связанная учётная запись: <strong>@Model.LinkedAccount</strong>
+                @AppLocalizer.Get("Связанная учётная запись:", "Пов'язаний обліковий запис:", "Linked account:") <strong>@Model.LinkedAccount</strong>
             </div>
         }
 
@@ -32,48 +32,48 @@
                 @if (Model.HasLinkedAccount)
                 {
                     <div class="col-md-6">
-                        <label asp-for="Input.Login" class="form-label"></label>
+                        <label asp-for="Input.Login" class="form-label">@AppLocalizer.Get("Логин", "Логін", "Login")</label>
                         <input asp-for="Input.Login" class="form-control" autocomplete="username" />
                         <span asp-validation-for="Input.Login" class="text-danger"></span>
-                        <div class="form-text">Электронная почта может быть пустой, но логин для входа обязателен.</div>
+                        <div class="form-text">@AppLocalizer.Get("Электронная почта может быть пустой, но логин для входа обязателен.", "Електронна пошта може бути порожньою, але логін для входу обов'язковий.", "Email can be empty, but a login is required.")</div>
                     </div>
                 }
                 <div class="col-md-6">
-                    <label asp-for="Input.FullName" class="form-label"></label>
+                    <label asp-for="Input.FullName" class="form-label">@AppLocalizer.Get("ФИО", "ПІБ", "Full name")</label>
                     <input asp-for="Input.FullName" class="form-control" />
                     <span asp-validation-for="Input.FullName" class="text-danger"></span>
                 </div>
                 <div class="col-md-6">
-                    <label asp-for="Input.JoinedAt" class="form-label"></label>
+                    <label asp-for="Input.JoinedAt" class="form-label">@AppLocalizer.Get("Дата вступления", "Дата вступу", "Join date")</label>
                     <input asp-for="Input.JoinedAt" class="form-control" type="date" />
                     <span asp-validation-for="Input.JoinedAt" class="text-danger"></span>
                 </div>
                 <div class="col-md-6">
-                    <label asp-for="Input.PhoneNumber" class="form-label"></label>
+                    <label asp-for="Input.PhoneNumber" class="form-label">@AppLocalizer.Get("Телефон", "Телефон", "Phone")</label>
                     <input asp-for="Input.PhoneNumber" class="form-control" />
                     <span asp-validation-for="Input.PhoneNumber" class="text-danger"></span>
                 </div>
                 <div class="col-md-6">
-                    <label asp-for="Input.Email" class="form-label"></label>
+                    <label asp-for="Input.Email" class="form-label">@AppLocalizer.Get("Электронная почта", "Електронна пошта", "Email")</label>
                     <input asp-for="Input.Email" class="form-control" />
                     <span asp-validation-for="Input.Email" class="text-danger"></span>
                 </div>
                 <div class="col-12">
-                    <label asp-for="Input.Notes" class="form-label"></label>
+                    <label asp-for="Input.Notes" class="form-label">@AppLocalizer.Get("Примечание", "Примітка", "Note")</label>
                     <textarea asp-for="Input.Notes" class="form-control" rows="5"></textarea>
                     <span asp-validation-for="Input.Notes" class="text-danger"></span>
                 </div>
                 <div class="col-12">
                     <div class="form-check">
                         <input asp-for="Input.IsActive" class="form-check-input" />
-                        <label asp-for="Input.IsActive" class="form-check-label"></label>
+                        <label asp-for="Input.IsActive" class="form-check-label">@AppLocalizer.Get("Активен", "Активний", "Active")</label>
                     </div>
                 </div>
             </div>
 
             <div class="d-flex gap-2 mt-4">
-                <button type="submit" class="btn btn-primary">Сохранить</button>
-                <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Details" asp-route-id="@Model.MemberId">Отмена</a>
+                <button type="submit" class="btn btn-primary">@AppLocalizer.Get("Сохранить", "Зберегти", "Save")</button>
+                <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Details" asp-route-id="@Model.MemberId">@AppLocalizer.Get("Отмена", "Скасувати", "Cancel")</a>
             </div>
         </form>
     </div>

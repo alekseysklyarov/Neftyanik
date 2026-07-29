@@ -1,23 +1,23 @@
 @page "{id:int}"
 @model Neftyanik.Portal.Web.Pages.Administration.Plots.DetailsModel
 @{
-    ViewData["Title"] = $"Участок {Model.Plot.Number}";
+    ViewData["Title"] = AppLocalizer.Get($"Участок {Model.Plot.Number}", $"Ділянка {Model.Plot.Number}", $"Plot {Model.Plot.Number}");
     var isAdministrator = User.IsInRole(RoleNames.Administrator);
 }
 
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
-        <h1 class="h2 mb-1">Участок @Model.Plot.Number</h1>
-        <p class="text-muted mb-0">Подробная информация об участке.</p>
+        <h1 class="h2 mb-1">@AppLocalizer.Get("Участок", "Ділянка", "Plot") @Model.Plot.Number</h1>
+        <p class="text-muted mb-0">@AppLocalizer.Get("Подробная информация об участке.", "Детальна інформація про ділянку.", "Detailed plot information.")</p>
     </div>
     <div class="d-flex gap-2">
         @if (isAdministrator)
         {
-            <a class="btn btn-outline-primary" asp-page="/Administration/Plots/Edit" asp-route-id="@Model.Plot.Id">Редактировать</a>
-            <a class="btn btn-info" asp-page="/Administration/Plots/Ownerships/Index" asp-route-plotId="@Model.Plot.Id">Управление владельцами</a>
-            <a class="btn btn-outline-warning" asp-page="/Administration/Plots/Archive" asp-route-id="@Model.Plot.Id">@(Model.Plot.IsActive ? "Архивировать" : "Восстановить")</a>
+            <a class="btn btn-outline-primary" asp-page="/Administration/Plots/Edit" asp-route-id="@Model.Plot.Id">@AppLocalizer.Get("Редактировать", "Редагувати", "Edit")</a>
+            <a class="btn btn-info" asp-page="/Administration/Plots/Ownerships/Index" asp-route-plotId="@Model.Plot.Id">@AppLocalizer.Get("Управление владельцами", "Керування власниками", "Manage owners")</a>
+            <a class="btn btn-outline-warning" asp-page="/Administration/Plots/Archive" asp-route-id="@Model.Plot.Id">@(Model.Plot.IsActive ? AppLocalizer.Get("Архивировать", "Архівувати", "Archive") : AppLocalizer.Get("Восстановить", "Відновити", "Restore"))</a>
         }
-        <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Index">К списку участков</a>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Index">@AppLocalizer.Get("К списку участков", "До списку ділянок", "Back to plots")</a>
     </div>
 </div>
 
@@ -25,36 +25,36 @@
     <div class="col-lg-6">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <h2 class="h5 mb-3">Основные сведения</h2>
+                <h2 class="h5 mb-3">@AppLocalizer.Get("Основные сведения", "Основні відомості", "Basic information")</h2>
                 <dl class="row mb-0">
-                    <dt class="col-sm-4">Номер</dt>
+                    <dt class="col-sm-4">@AppLocalizer.Get("Номер", "Номер", "Number")</dt>
                     <dd class="col-sm-8">@Model.Plot.Number</dd>
 
-                    <dt class="col-sm-4">Адрес</dt>
+                    <dt class="col-sm-4">@AppLocalizer.Get("Адрес", "Адреса", "Address")</dt>
                     <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Plot.Address) ? "—" : Model.Plot.Address)</dd>
 
-                    <dt class="col-sm-4">Площадь, соток</dt>
+                    <dt class="col-sm-4">@AppLocalizer.Get("Площадь, соток", "Площа, соток", "Area, соток")</dt>
                     <dd class="col-sm-8">@(Model.Plot.AreaSquareMeters.HasValue ? Model.Plot.AreaSquareMeters.Value.ToString("0.###") : "—")</dd>
 
-                    <dt class="col-sm-4">Кадастровый номер</dt>
+                    <dt class="col-sm-4">@AppLocalizer.Get("Кадастровый номер", "Кадастровий номер", "Cadastral number")</dt>
                     <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Plot.CadastralNumber) ? "—" : Model.Plot.CadastralNumber)</dd>
 
-                    <dt class="col-sm-4">Статус</dt>
+                    <dt class="col-sm-4">@AppLocalizer.Get("Статус", "Статус", "Status")</dt>
                     <dd class="col-sm-8">
                         @if (Model.Plot.IsActive)
                         {
-                            <span class="badge text-bg-success">Активен</span>
+                            <span class="badge text-bg-success">@AppLocalizer.Get("Активен", "Активний", "Active")</span>
                         }
                         else
                         {
-                            <span class="badge text-bg-secondary">В архиве</span>
+                            <span class="badge text-bg-secondary">@AppLocalizer.Get("В архиве", "В архіві", "Archived")</span>
                         }
                     </dd>
 
-                    <dt class="col-sm-4">Создан</dt>
+                    <dt class="col-sm-4">@AppLocalizer.Get("Создан", "Створено", "Created")</dt>
                     <dd class="col-sm-8">@Model.Plot.CreatedAtUtc.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</dd>
 
-                    <dt class="col-sm-4">Обновлён</dt>
+                    <dt class="col-sm-4">@AppLocalizer.Get("Обновлён", "Оновлено", "Updated")</dt>
                     <dd class="col-sm-8">@(Model.Plot.UpdatedAtUtc.HasValue ? Model.Plot.UpdatedAtUtc.Value.ToLocalTime().ToString("dd.MM.yyyy HH:mm") : "—")</dd>
                 </dl>
             </div>
@@ -64,27 +64,27 @@
         <div class="card shadow-sm h-100">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
-                    <h2 class="h5 mb-0">Сводка по владельцам</h2>
+                    <h2 class="h5 mb-0">@AppLocalizer.Get("Сводка по владельцам", "Зведення щодо власників", "Owner summary")</h2>
                     @if (isAdministrator)
                     {
-                        <a class="btn btn-sm btn-outline-info" asp-page="/Administration/Plots/Ownerships/Index" asp-route-plotId="@Model.Plot.Id">Управление владельцами</a>
+                        <a class="btn btn-sm btn-outline-info" asp-page="/Administration/Plots/Ownerships/Index" asp-route-plotId="@Model.Plot.Id">@AppLocalizer.Get("Управление владельцами", "Керування власниками", "Manage owners")</a>
                     }
                 </div>
-                <p><strong>Количество текущих владельцев:</strong> @Model.Plot.OwnersCount</p>
+                <p><strong>@AppLocalizer.Get("Количество текущих владельцев:", "Кількість поточних власників:", "Current owner count:")</strong> @Model.Plot.OwnersCount</p>
 
                 @if (Model.Plot.CurrentOwnerships.Count == 0)
                 {
-                    <p class="text-muted mb-0">Для участка пока нет активных записей владения.</p>
+                    <p class="text-muted mb-0">@AppLocalizer.Get("Для участка пока нет активных записей владения.", "Для ділянки поки немає активних записів володіння.", "There are no active ownership records for this plot yet.")</p>
                 }
                 else
                 {
-                    <h3 class="h6 mt-4">Текущие владельцы</h3>
+                    <h3 class="h6 mt-4">@AppLocalizer.Get("Текущие владельцы", "Поточні власники", "Current owners")</h3>
                     <div class="table-responsive">
                         <table class="table table-sm align-middle mb-0">
                             <thead>
                                 <tr>
-                                    <th>Член товарищества</th>
-                                    <th>Действует с</th>
+                                    <th>@AppLocalizer.Get("Член товарищества", "Член товариства", "Member")</th>
+                                    <th>@AppLocalizer.Get("Действует с", "Діє з", "Effective from")</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -94,7 +94,7 @@
                                         <td>
                                             <div class="d-flex align-items-center gap-2 flex-wrap">
                                                 <a asp-page="/Administration/Members/Details" asp-route-id="@ownership.MemberId">@ownership.MemberFullName</a>
-                                                <a class="btn btn-sm btn-outline-success" asp-page="/Administration/Members/Finance" asp-route-id="@ownership.MemberId">Финансы</a>
+                                                <a class="btn btn-sm btn-outline-success" asp-page="/Administration/Members/Finance" asp-route-id="@ownership.MemberId">@AppLocalizer.Get("Финансы", "Фінанси", "Finance")</a>
                                             </div>
                                         </td>
                                         <td>@(ownership.ValidFrom.HasValue ? ownership.ValidFrom.Value.ToString("dd.MM.yyyy") : "—")</td>
@@ -111,23 +111,23 @@
 
 <div class="card shadow-sm mt-4">
     <div class="card-body">
-        <h2 class="h5 mb-3">Примечание</h2>
-        <p class="mb-0">@(string.IsNullOrWhiteSpace(Model.Plot.Notes) ? "Примечание отсутствует." : Model.Plot.Notes)</p>
+        <h2 class="h5 mb-3">@AppLocalizer.Get("Примечание", "Примітка", "Note")</h2>
+        <p class="mb-0">@(string.IsNullOrWhiteSpace(Model.Plot.Notes) ? AppLocalizer.Get("Примечание отсутствует.", "Примітка відсутня.", "No note provided.") : Model.Plot.Notes)</p>
     </div>
 </div>
 
 <div class="card shadow-sm mt-4">
     <div class="card-header bg-white">
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-            <h2 class="h5 mb-0">Начисления</h2>
+            <h2 class="h5 mb-0">@AppLocalizer.Get("Начисления", "Нарахування", "Charges")</h2>
             <form method="get" class="d-flex flex-column flex-sm-row gap-2 align-items-sm-center">
                 <input type="hidden" name="id" value="@Model.Plot.Id" />
                 <select asp-for="ChargeTypeId" asp-items="Model.ChargeTypeOptions" class="form-select form-select-sm">
-                    <option value="">Все типы</option>
+                    <option value="">@AppLocalizer.Get("Все типы", "Усі типи", "All types")</option>
                 </select>
                 <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-sm btn-outline-primary">Фильтр</button>
-                    <a class="btn btn-sm btn-outline-secondary" asp-page="/Administration/Plots/Details" asp-route-id="@Model.Plot.Id">Сбросить</a>
+                    <button type="submit" class="btn btn-sm btn-outline-primary">@AppLocalizer.Get("Фильтр", "Фільтр", "Filter")</button>
+                    <a class="btn btn-sm btn-outline-secondary" asp-page="/Administration/Plots/Details" asp-route-id="@Model.Plot.Id">@AppLocalizer.Get("Сбросить", "Скинути", "Reset")</a>
                 </div>
             </form>
         </div>
@@ -135,7 +135,7 @@
     <div class="card-body p-0">
         @if (Model.Plot.Charges.Count == 0)
         {
-            <div class="p-4 text-center text-muted">Начисления по участку отсутствуют.</div>
+            <div class="p-4 text-center text-muted">@AppLocalizer.Get("Начисления по участку отсутствуют.", "Нарахування за ділянкою відсутні.", "There are no charges for this plot.")</div>
         }
         else
         {
@@ -143,11 +143,11 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th>Дата</th>
-                            <th>Тип</th>
-                            <th>Сумма</th>
-                            <th>Срок</th>
-                            <th>Статус</th>
+                            <th>@AppLocalizer.Get("Дата", "Дата", "Date")</th>
+                            <th>@AppLocalizer.Get("Тип", "Тип", "Type")</th>
+                            <th>@AppLocalizer.Get("Сумма", "Сума", "Amount")</th>
+                            <th>@AppLocalizer.Get("Срок", "Строк", "Due date")</th>
+                            <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -166,11 +166,11 @@
                                     <td colspan="5" class="small text-muted">
                                         @if (!string.IsNullOrWhiteSpace(charge.Description))
                                         {
-                                            <div><strong>Описание:</strong> @charge.Description</div>
+                                            <div><strong>@AppLocalizer.Get("Описание:", "Опис:", "Description:")</strong> @charge.Description</div>
                                         }
                                         @if (!string.IsNullOrWhiteSpace(charge.CancellationReason))
                                         {
-                                            <div><strong>Причина отмены:</strong> @charge.CancellationReason</div>
+                                            <div><strong>@AppLocalizer.Get("Причина отмены:", "Причина скасування:", "Cancellation reason:")</strong> @charge.CancellationReason</div>
                                         }
                                     </td>
                                 </tr>

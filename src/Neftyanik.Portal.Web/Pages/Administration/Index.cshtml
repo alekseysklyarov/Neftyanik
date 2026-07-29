@@ -1,13 +1,13 @@
 @page "/Administration"
 @model Neftyanik.Portal.Web.Pages.Administration.IndexModel
 @{
-    ViewData["Title"] = "Администрирование";
+    ViewData["Title"] = AppLocalizer.Get("Администрирование", "Адміністрування", "Administration");
 }
 
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
     <div>
-        <h1 class="h2 mb-1">Панель администрирования</h1>
-        <p class="text-muted mb-0">Сводная информация о состоянии системы и приложения.</p>
+        <h1 class="h2 mb-1">@AppLocalizer.Get("Панель администрирования", "Панель адміністрування", "Administration dashboard")</h1>
+        <p class="text-muted mb-0">@AppLocalizer.Get("Сводная информация о состоянии системы и приложения.", "Зведена інформація про стан системи та застосунку.", "Summary information about the system and application state.")</p>
     </div>
 </div>
 
@@ -15,9 +15,11 @@
     <div class="col-sm-6 col-xl-3">
         <div class="card h-100 shadow-sm">
             <div class="card-body">
-                <h2 class="h6 text-muted">Подключение к базе данных</h2>
+                <h2 class="h6 text-muted">@AppLocalizer.Get("Подключение к базе данных", "Підключення до бази даних", "Database connection")</h2>
                 <p class="display-6 mb-0 @(Model.DatabaseAvailable ? "text-success" : "text-danger")">
-                    @(Model.DatabaseAvailable ? "Доступно" : "Недоступно")
+                    @(Model.DatabaseAvailable
+                        ? AppLocalizer.Get("Доступно", "Доступно", "Available")
+                        : AppLocalizer.Get("Недоступно", "Недоступно", "Unavailable"))
                 </p>
             </div>
         </div>
@@ -25,7 +27,7 @@
     <div class="col-sm-6 col-xl-3">
         <div class="card h-100 shadow-sm">
             <div class="card-body">
-                <h2 class="h6 text-muted">Пользователи</h2>
+                <h2 class="h6 text-muted">@AppLocalizer.Get("Пользователи", "Користувачі", "Users")</h2>
                 <p class="display-6 mb-0">@Model.RegisteredUsersCount</p>
             </div>
         </div>
@@ -33,7 +35,7 @@
     <div class="col-sm-6 col-xl-3">
         <div class="card h-100 shadow-sm">
             <div class="card-body">
-                <h2 class="h6 text-muted">Роли</h2>
+                <h2 class="h6 text-muted">@AppLocalizer.Get("Роли", "Ролі", "Roles")</h2>
                 <p class="display-6 mb-0">@Model.RolesCount</p>
             </div>
         </div>
@@ -41,7 +43,7 @@
     <div class="col-sm-6 col-xl-3">
         <div class="card h-100 shadow-sm">
             <div class="card-body">
-                <h2 class="h6 text-muted">Применённые миграции</h2>
+                <h2 class="h6 text-muted">@AppLocalizer.Get("Применённые миграции", "Застосовані міграції", "Applied migrations")</h2>
                 <p class="display-6 mb-0">@Model.AppliedMigrationsCount</p>
             </div>
         </div>
@@ -50,8 +52,8 @@
 
 <div class="card shadow-sm">
     <div class="card-body">
-        <h2 class="h5">Окружение</h2>
-        <p class="mb-0">Текущее окружение: <strong>@Model.EnvironmentName</strong></p>
+        <h2 class="h5">@AppLocalizer.Get("Окружение", "Середовище", "Environment")</h2>
+        <p class="mb-0">@AppLocalizer.Get("Текущее окружение:", "Поточне середовище:", "Current environment:") <strong>@Model.EnvironmentName</strong></p>
     </div>
 </div>
 
@@ -59,10 +61,10 @@
     <div class="col-md-6 col-xl-4">
         <div class="card h-100 shadow-sm">
             <div class="card-body d-flex flex-column">
-                <h2 class="h5">Управление участками</h2>
-                <p class="text-muted flex-grow-1">Просмотр, создание, редактирование и архивирование участков товарищества.</p>
+                <h2 class="h5">@AppLocalizer.Get("Управление участками", "Керування ділянками", "Plot management")</h2>
+                <p class="text-muted flex-grow-1">@AppLocalizer.Get("Просмотр, создание, редактирование и архивирование участков товарищества.", "Перегляд, створення, редагування та архівування ділянок товариства.", "View, create, edit, and archive association plots.")</p>
                 <div>
-                    <a class="btn btn-primary" asp-page="/Administration/Plots/Index">Перейти к участкам</a>
+                    <a class="btn btn-primary" asp-page="/Administration/Plots/Index">@AppLocalizer.Get("Перейти к участкам", "Перейти до ділянок", "Open plots")</a>
                 </div>
             </div>
         </div>
@@ -70,10 +72,10 @@
     <div class="col-md-6 col-xl-4">
         <div class="card h-100 shadow-sm">
             <div class="card-body d-flex flex-column">
-                <h2 class="h5">Управление членами товарищества</h2>
-                <p class="text-muted flex-grow-1">Просмотр, создание, редактирование и архивирование карточек членов товарищества.</p>
+                <h2 class="h5">@AppLocalizer.Get("Управление членами товарищества", "Керування членами товариства", "Member management")</h2>
+                <p class="text-muted flex-grow-1">@AppLocalizer.Get("Просмотр, создание, редактирование и архивирование карточек членов товарищества.", "Перегляд, створення, редагування та архівування карток членів товариства.", "View, create, edit, and archive member records.")</p>
                 <div>
-                    <a class="btn btn-primary" asp-page="/Administration/Members/Index">Перейти к членам товарищества</a>
+                    <a class="btn btn-primary" asp-page="/Administration/Members/Index">@AppLocalizer.Get("Перейти к членам товарищества", "Перейти до членів товариства", "Open members")</a>
                 </div>
             </div>
         </div>
@@ -81,10 +83,10 @@
     <div class="col-md-6 col-xl-4">
         <div class="card h-100 shadow-sm">
             <div class="card-body d-flex flex-column">
-                <h2 class="h5">Финансы</h2>
-                <p class="text-muted flex-grow-1">Сводка по начислениям, платежам и балансам участков товарищества.</p>
+                <h2 class="h5">@AppLocalizer.Get("Финансы", "Фінанси", "Finance")</h2>
+                <p class="text-muted flex-grow-1">@AppLocalizer.Get("Сводка по начислениям, платежам и балансам участков товарищества.", "Зведення щодо нарахувань, платежів і балансів ділянок товариства.", "Summary of charges, payments, and plot balances.")</p>
                 <div>
-                    <a class="btn btn-primary" asp-page="/Administration/Finance/Index">Перейти к финансам</a>
+                    <a class="btn btn-primary" asp-page="/Administration/Finance/Index">@AppLocalizer.Get("Перейти к финансам", "Перейти до фінансів", "Open finance")</a>
                 </div>
             </div>
         </div>

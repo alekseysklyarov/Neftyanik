@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Infrastructure.Data;
+using Neftyanik.Portal.Web.Localization;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Plots;
 
@@ -48,8 +49,8 @@ public class ArchiveModel : PageModel
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         TempData["SuccessMessage"] = willArchive
-            ? "Участок переведён в архив. Запись не была удалена."
-            : "Участок восстановлен из архива.";
+            ? AppLocalizer.Get("Участок переведён в архив. Запись не была удалена.", "Ділянку переведено в архів. Запис не було видалено.", "The plot has been archived. The record was not deleted.")
+            : AppLocalizer.Get("Участок восстановлен из архива.", "Ділянку відновлено з архіву.", "The plot has been restored from the archive.");
 
         return RedirectToPage("/Administration/Plots/Details", new { id = plot.Id });
     }

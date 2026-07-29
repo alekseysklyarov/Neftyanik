@@ -8,6 +8,7 @@ using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data;
 using Neftyanik.Portal.Infrastructure.Data.Queries;
+using Neftyanik.Portal.Web.Localization;
 
 namespace Neftyanik.Portal.Web.Pages.Member.Electricity.Meters.Readings;
 
@@ -42,7 +43,7 @@ public class CreateModel : PageModel
 
         if (!meter.HasInitialReading)
         {
-            TempData["ErrorMessage"] = "Начальные показания ещё не установлены администратором.";
+            TempData["ErrorMessage"] = AppLocalizer.Get("Начальные показания ещё не установлены администратором.", "Початкові показання ще не встановлені адміністратором.", "Initial readings have not been set by the administrator yet.");
             return RedirectToPage("/Member/Electricity/Index");
         }
 
@@ -62,7 +63,7 @@ public class CreateModel : PageModel
 
         if (!meter.HasInitialReading)
         {
-            TempData["ErrorMessage"] = "Начальные показания ещё не установлены администратором.";
+            TempData["ErrorMessage"] = AppLocalizer.Get("Начальные показания ещё не установлены администратором.", "Початкові показання ще не встановлені адміністратором.", "Initial readings have not been set by the administrator yet.");
             return RedirectToPage("/Member/Electricity/Index");
         }
 
@@ -86,11 +87,11 @@ public class CreateModel : PageModel
 
         if (!result.Succeeded)
         {
-            ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "Не удалось сохранить показания.");
+            ModelState.AddModelError(string.Empty, result.ErrorMessage ?? AppLocalizer.Get("Не удалось сохранить показания.", "Не вдалося зберегти показання.", "Failed to save the readings."));
             return Page();
         }
 
-        TempData["SuccessMessage"] = "Показания сохранены.";
+        TempData["SuccessMessage"] = AppLocalizer.Get("Показания сохранены.", "Показання збережено.", "Readings have been saved.");
         return RedirectToPage("/Member/Electricity/Meters/Readings/Index", new { meterId });
     }
 
@@ -120,7 +121,7 @@ public class CreateModel : PageModel
             {
                 Id = item.Id,
                 MemberId = item.MemberId,
-                DisplayName = !string.IsNullOrWhiteSpace(item.Name) ? item.Name : !string.IsNullOrWhiteSpace(item.MeterNumber) ? item.MeterNumber : $"Счетчик #{item.Id}",
+                DisplayName = !string.IsNullOrWhiteSpace(item.Name) ? item.Name : !string.IsNullOrWhiteSpace(item.MeterNumber) ? item.MeterNumber : AppLocalizer.Get($"Счетчик #{item.Id}", $"Лічильник #{item.Id}", $"Meter #{item.Id}"),
                 BillingPlotId = item.BillingPlotId,
                 BillingPlotNumber = item.BillingPlot != null ? item.BillingPlot.Number : "—",
                 LinkedPlotNumbers = item.MeterPlots.OrderBy(link => link.Plot != null ? link.Plot.Number : string.Empty)

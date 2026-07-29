@@ -1,17 +1,17 @@
 @page "/Member/Electricity/Meters/{meterId:int}/Readings"
 @model Neftyanik.Portal.Web.Pages.Member.Electricity.Meters.Readings.IndexModel
 @{
-    ViewData["Title"] = $"История показаний {Model.Meter.DisplayName}";
+    ViewData["Title"] = AppLocalizer.Get($"История показаний {Model.Meter.DisplayName}", $"Історія показань {Model.Meter.DisplayName}", $"Reading history {Model.Meter.DisplayName}");
 }
 
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
-        <h1 class="h2 mb-1">История показаний</h1>
+        <h1 class="h2 mb-1">@AppLocalizer.Get("История показаний", "Історія показань", "Reading history")</h1>
         <p class="text-muted mb-0">@Model.Meter.DisplayName</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
-        <a class="btn btn-primary" asp-page="/Member/Electricity/Meters/Readings/Create" asp-route-meterId="@Model.Meter.Id">Передать показания</a>
-        <a class="btn btn-outline-secondary" asp-page="/Member/Electricity/Index">Назад</a>
+        <a class="btn btn-primary" asp-page="/Member/Electricity/Meters/Readings/Create" asp-route-meterId="@Model.Meter.Id">@AppLocalizer.Get("Передать показания", "Передати показання", "Submit readings")</a>
+        <a class="btn btn-outline-secondary" asp-page="/Member/Electricity/Index">@AppLocalizer.Get("Назад", "Назад", "Back")</a>
     </div>
 </div>
 
@@ -20,18 +20,18 @@
         <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
                 <tr>
-                    <th>Дата</th>
-                    <th>Показание</th>
-                    <th>Расход</th>
-                    <th>Тариф</th>
-                    <th>Начислено</th>
-                    <th>Статус начисления</th>
+                    <th>@AppLocalizer.Get("Дата", "Дата", "Date")</th>
+                    <th>@AppLocalizer.Get("Показание", "Показник", "Reading")</th>
+                    <th>@AppLocalizer.Get("Расход", "Споживання", "Consumption")</th>
+                    <th>@AppLocalizer.Get("Тариф", "Тариф", "Tariff")</th>
+                    <th>@AppLocalizer.Get("Начислено", "Нараховано", "Charged")</th>
+                    <th>@AppLocalizer.Get("Статус начисления", "Статус нарахування", "Charge status")</th>
                 </tr>
             </thead>
             <tbody>
                 @if (Model.Readings.Count == 0)
                 {
-                    <tr><td colspan="6" class="text-center text-muted py-4">История показаний отсутствует.</td></tr>
+                    <tr><td colspan="6" class="text-center text-muted py-4">@AppLocalizer.Get("История показаний отсутствует.", "Історія показань відсутня.", "No reading history is available.")</td></tr>
                 }
                 else
                 {
@@ -42,7 +42,7 @@
                             <td>
                                 @if (item.IsInitialReading)
                                 {
-                                    <div class="fw-semibold">Начальные показания</div>
+                                    <div class="fw-semibold">@AppLocalizer.Get("Начальные показания", "Початкові показання", "Initial readings")</div>
                                 }
                                 <div>@item.CurrentReading.ToString("0.000") кВт·ч</div>
                             </td>
@@ -59,10 +59,10 @@
     @if (Model.TotalPages > 1)
     {
         <div class="card-footer bg-white">
-            <nav aria-label="Навигация по истории показаний">
+            <nav aria-label="@AppLocalizer.Get("Навигация по истории показаний", "Навігація історією показань", "Reading history pagination")">
                 <ul class="pagination pagination-sm mb-0">
                     <li class="page-item @(Model.HasPreviousPage ? string.Empty : "disabled")">
-                        <a class="page-link" asp-page="/Member/Electricity/Meters/Readings/Index" asp-route-meterId="@Model.Meter.Id" asp-route-pageNumber="@(Model.PageNumber - 1)">Назад</a>
+                        <a class="page-link" asp-page="/Member/Electricity/Meters/Readings/Index" asp-route-meterId="@Model.Meter.Id" asp-route-pageNumber="@(Model.PageNumber - 1)">@AppLocalizer.Get("Назад", "Назад", "Previous")</a>
                     </li>
                     @for (var pageIndex = 1; pageIndex <= Model.TotalPages; pageIndex++)
                     {
@@ -71,7 +71,7 @@
                         </li>
                     }
                     <li class="page-item @(Model.HasNextPage ? string.Empty : "disabled")">
-                        <a class="page-link" asp-page="/Member/Electricity/Meters/Readings/Index" asp-route-meterId="@Model.Meter.Id" asp-route-pageNumber="@(Model.PageNumber + 1)">Вперед</a>
+                        <a class="page-link" asp-page="/Member/Electricity/Meters/Readings/Index" asp-route-meterId="@Model.Meter.Id" asp-route-pageNumber="@(Model.PageNumber + 1)">@AppLocalizer.Get("Вперед", "Вперед", "Next")</a>
                     </li>
                 </ul>
             </nav>

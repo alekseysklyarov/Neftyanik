@@ -1,68 +1,68 @@
 @page
 @model Neftyanik.Portal.Web.Pages.Administration.Finance.Expenses.IndexModel
 @{
-    ViewData["Title"] = "Расходы";
+    ViewData["Title"] = AppLocalizer.Get("Расходы", "Витрати", "Expenses");
 }
 
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
-        <h1 class="h2 mb-1">Расходы</h1>
-        <p class="text-muted mb-0">Журнал расходов товарищества, включая оплату электроэнергии по общему счётчику.</p>
+        <h1 class="h2 mb-1">@AppLocalizer.Get("Расходы", "Витрати", "Expenses")</h1>
+        <p class="text-muted mb-0">@AppLocalizer.Get("Журнал расходов товарищества, включая оплату электроэнергии по общему счётчику.", "Журнал витрат товариства, включно з оплатою електроенергії за загальним лічильником.", "Association expense journal, including shared meter electricity payments.")</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
-        <a class="btn btn-primary" asp-page="/Administration/Finance/Expenses/Create">Добавить расход</a>
-        <a class="btn btn-outline-success" asp-page="/Administration/Finance/Expenses/Electricity/Index">Расход электроэнергии</a>
-        <a class="btn btn-outline-primary" asp-page="/Administration/Finance/ExpenseCategories/Index">Типы расходов</a>
-        <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/Index">К финансам</a>
+        <a class="btn btn-primary" asp-page="/Administration/Finance/Expenses/Create">@AppLocalizer.Get("Добавить расход", "Додати витрату", "Add expense")</a>
+        <a class="btn btn-outline-success" asp-page="/Administration/Finance/Expenses/Electricity/Index">@AppLocalizer.Get("Расход электроэнергии", "Витрати на електроенергію", "Electricity expense")</a>
+        <a class="btn btn-outline-primary" asp-page="/Administration/Finance/ExpenseCategories/Index">@AppLocalizer.Get("Типы расходов", "Типи витрат", "Expense types")</a>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/Index">@AppLocalizer.Get("К финансам", "До фінансів", "Back to finance")</a>
     </div>
 </div>
 
 <div class="row g-4 mb-4">
     <div class="col-sm-6 col-xl-3">
-        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">Активные расходы</h2><p class="display-6 mb-0">@Model.Summary.TotalActiveExpenses.ToString("0.00")</p></div></div>
+        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">@AppLocalizer.Get("Активные расходы", "Активні витрати", "Active expenses")</h2><p class="display-6 mb-0">@Model.Summary.TotalActiveExpenses.ToString("0.00")</p></div></div>
     </div>
     <div class="col-sm-6 col-xl-3">
-        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">Электроэнергия</h2><p class="display-6 mb-0">@Model.Summary.ElectricityExpenses.ToString("0.00")</p></div></div>
+        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">@AppLocalizer.Get("Электроэнергия", "Електроенергія", "Electricity")</h2><p class="display-6 mb-0">@Model.Summary.ElectricityExpenses.ToString("0.00")</p></div></div>
     </div>
     <div class="col-sm-6 col-xl-3">
-        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">Прочие расходы</h2><p class="display-6 mb-0">@Model.Summary.ManualExpenses.ToString("0.00")</p></div></div>
+        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">@AppLocalizer.Get("Прочие расходы", "Інші витрати", "Other expenses")</h2><p class="display-6 mb-0">@Model.Summary.ManualExpenses.ToString("0.00")</p></div></div>
     </div>
     <div class="col-sm-6 col-xl-3">
-        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">Количество</h2><p class="display-6 mb-0">@Model.Summary.ActiveExpensesCount</p></div></div>
+        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">@AppLocalizer.Get("Количество", "Кількість", "Count")</h2><p class="display-6 mb-0">@Model.Summary.ActiveExpensesCount</p></div></div>
     </div>
 </div>
 
 <div class="d-flex gap-2 flex-wrap mb-4">
-    <a class="btn @(Model.Kind == "all" ? "btn-primary" : "btn-outline-primary")" asp-page="/Administration/Finance/Expenses/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-expenseCategoryId="@Model.ExpenseCategoryId" asp-route-kind="all" asp-route-pageNumber="1">Все расходы</a>
-    <a class="btn @(Model.Kind == "electricity" ? "btn-primary" : "btn-outline-primary")" asp-page="/Administration/Finance/Expenses/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-expenseCategoryId="@Model.ExpenseCategoryId" asp-route-kind="electricity" asp-route-pageNumber="1">Только электроэнергия</a>
-    <a class="btn @(Model.Kind == "manual" ? "btn-primary" : "btn-outline-primary")" asp-page="/Administration/Finance/Expenses/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-expenseCategoryId="@Model.ExpenseCategoryId" asp-route-kind="manual" asp-route-pageNumber="1">Только обычные</a>
+    <a class="btn @(Model.Kind == "all" ? "btn-primary" : "btn-outline-primary")" asp-page="/Administration/Finance/Expenses/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-expenseCategoryId="@Model.ExpenseCategoryId" asp-route-kind="all" asp-route-pageNumber="1">@AppLocalizer.Get("Все расходы", "Усі витрати", "All expenses")</a>
+    <a class="btn @(Model.Kind == "electricity" ? "btn-primary" : "btn-outline-primary")" asp-page="/Administration/Finance/Expenses/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-expenseCategoryId="@Model.ExpenseCategoryId" asp-route-kind="electricity" asp-route-pageNumber="1">@AppLocalizer.Get("Только электроэнергия", "Лише електроенергія", "Electricity only")</a>
+    <a class="btn @(Model.Kind == "manual" ? "btn-primary" : "btn-outline-primary")" asp-page="/Administration/Finance/Expenses/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-expenseCategoryId="@Model.ExpenseCategoryId" asp-route-kind="manual" asp-route-pageNumber="1">@AppLocalizer.Get("Только обычные", "Лише звичайні", "Manual only")</a>
 </div>
 
 <div class="card shadow-sm mb-4">
     <div class="card-body">
         <form method="get" class="row g-3 align-items-end">
             <div class="col-md-5">
-                <label asp-for="Search" class="form-label">Поиск</label>
-                <input asp-for="Search" class="form-control" placeholder="Категория, получатель, документ или описание" />
+                <label asp-for="Search" class="form-label">@AppLocalizer.Get("Поиск", "Пошук", "Search")</label>
+                <input asp-for="Search" class="form-control" placeholder="@AppLocalizer.Get("Категория, получатель, документ или описание", "Категорія, отримувач, документ або опис", "Category, payee, document, or description")" />
             </div>
             <div class="col-md-3">
-                <label asp-for="ExpenseCategoryId" class="form-label">Тип расхода</label>
+                <label asp-for="ExpenseCategoryId" class="form-label">@AppLocalizer.Get("Тип расхода", "Тип витрати", "Expense type")</label>
                 <select asp-for="ExpenseCategoryId" asp-items="Model.ExpenseCategoryOptions" class="form-select">
-                    <option value="">Все типы</option>
+                    <option value="">@AppLocalizer.Get("Все типы", "Усі типи", "All types")</option>
                 </select>
             </div>
             <div class="col-md-2">
-                <label asp-for="Status" class="form-label">Статус</label>
+                <label asp-for="Status" class="form-label">@AppLocalizer.Get("Статус", "Статус", "Status")</label>
                 <select asp-for="Status" class="form-select">
-                    <option value="active">Только активные</option>
-                    <option value="all">Все</option>
-                    <option value="cancelled">Только отменённые</option>
+                    <option value="active">@AppLocalizer.Get("Только активные", "Лише активні", "Active only")</option>
+                    <option value="all">@AppLocalizer.Get("Все", "Усі", "All")</option>
+                    <option value="cancelled">@AppLocalizer.Get("Только отменённые", "Лише скасовані", "Cancelled only")</option>
                 </select>
             </div>
             <div class="col-md-2 d-flex gap-2">
                 <input type="hidden" asp-for="Kind" />
-                <button type="submit" class="btn btn-outline-primary flex-fill">Найти</button>
-                <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/Expenses/Index" asp-route-status="all" asp-route-kind="all">Сбросить</a>
+                <button type="submit" class="btn btn-outline-primary flex-fill">@AppLocalizer.Get("Найти", "Знайти", "Search")</button>
+                <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/Expenses/Index" asp-route-status="all" asp-route-kind="all">@AppLocalizer.Get("Сбросить", "Скинути", "Reset")</a>
             </div>
         </form>
     </div>
@@ -80,14 +80,14 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th>Дата</th>
-                            <th>Тип</th>
-                            <th>Сумма</th>
-                            <th>Получатель</th>
-                            <th>Документ</th>
-                            <th>Создал</th>
-                            <th>Статус</th>
-                            <th class="text-end">Действия</th>
+                            <th>@AppLocalizer.Get("Дата", "Дата", "Date")</th>
+                            <th>@AppLocalizer.Get("Тип", "Тип", "Type")</th>
+                            <th>@AppLocalizer.Get("Сумма", "Сума", "Amount")</th>
+                            <th>@AppLocalizer.Get("Получатель", "Отримувач", "Payee")</th>
+                            <th>@AppLocalizer.Get("Документ", "Документ", "Document")</th>
+                            <th>@AppLocalizer.Get("Создал", "Створив", "Created by")</th>
+                            <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
+                            <th class="text-end">@AppLocalizer.Get("Действия", "Дії", "Actions")</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -99,7 +99,7 @@
                                     <div class="fw-semibold">@item.CategoryName</div>
                                     @if (item.IsAssociationElectricityExpense)
                                     {
-                                        <div class="small text-muted">Общий счётчик, тарифы Т1/Т2</div>
+                                        <div class="small text-muted">@AppLocalizer.Get("Общий счётчик, тарифы Т1/Т2", "Загальний лічильник, тарифи Т1/Т2", "Shared meter, T1/T2 tariffs")</div>
                                     }
                                 </td>
                                 <td>@item.Amount.ToString("0.00")</td>
@@ -109,42 +109,42 @@
                                 <td>
                                     @if (item.IsCancelled)
                                     {
-                                        <span class="badge text-bg-secondary">Отменён</span>
+                                        <span class="badge text-bg-secondary">@AppLocalizer.Get("Отменён", "Скасований", "Cancelled")</span>
                                     }
                                     else
                                     {
-                                        <span class="badge text-bg-success">Активен</span>
+                                        <span class="badge text-bg-success">@AppLocalizer.Get("Активен", "Активний", "Active")</span>
                                     }
                                 </td>
                                 <td class="text-end">
                                     <div class="btn-group btn-group-sm" role="group">
-                                        <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/Expenses/Details" asp-route-id="@item.Id">Подробнее</a>
+                                        <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/Expenses/Details" asp-route-id="@item.Id">@AppLocalizer.Get("Подробнее", "Детальніше", "Details")</a>
                                         @if (item.CanEdit)
                                         {
-                                            <a class="btn btn-outline-primary" asp-page="/Administration/Finance/Expenses/Edit" asp-route-id="@item.Id">Редактировать</a>
+                                            <a class="btn btn-outline-primary" asp-page="/Administration/Finance/Expenses/Edit" asp-route-id="@item.Id">@AppLocalizer.Get("Редактировать", "Редагувати", "Edit")</a>
                                         }
-                                        <a class="btn btn-outline-warning" asp-page="/Administration/Finance/Expenses/Cancel" asp-route-id="@item.Id">@(item.IsCancelled ? "Восстановить" : "Отменить")</a>
+                                        <a class="btn btn-outline-warning" asp-page="/Administration/Finance/Expenses/Cancel" asp-route-id="@item.Id">@(item.IsCancelled ? AppLocalizer.Get("Восстановить", "Відновити", "Restore") : AppLocalizer.Get("Отменить", "Скасувати", "Cancel"))</a>
                                     </div>
                                 </td>
                             </tr>
                             <tr class="table-light">
                                 <td colspan="8" class="small text-muted">
-                                    <div><strong>Описание:</strong> @item.Description</div>
+                                    <div><strong>@AppLocalizer.Get("Описание:", "Опис:", "Description:")</strong> @item.Description</div>
                                     @if (item.IsAssociationElectricityExpense)
                                     {
                                         <div class="mt-1">
-                                            <strong>Показания общего счётчика:</strong>
+                                            <strong>@AppLocalizer.Get("Показания общего счётчика:", "Показання загального лічильника:", "Shared meter readings:")</strong>
                                             Т1 @(item.CurrentDayReading.HasValue ? item.CurrentDayReading.Value.ToString("0.000") : "—"),
                                             Т2 @(item.CurrentNightReading.HasValue ? item.CurrentNightReading.Value.ToString("0.000") : "—")
                                         </div>
                                         <div>
-                                            <strong>Расход:</strong>
+                                            <strong>@AppLocalizer.Get("Расход:", "Споживання:", "Consumption:")</strong>
                                             Т1 @(item.DayConsumption.HasValue ? item.DayConsumption.Value.ToString("0.000") : "—") кВт·ч,
                                             Т2 @(item.NightConsumption.HasValue ? item.NightConsumption.Value.ToString("0.000") : "—") кВт·ч,
-                                            всего @(item.TotalConsumption.HasValue ? item.TotalConsumption.Value.ToString("0.000") : "—") кВт·ч
+                                            @AppLocalizer.Get("всего", "усього", "total") @(item.TotalConsumption.HasValue ? item.TotalConsumption.Value.ToString("0.000") : "—") кВт·ч
                                         </div>
                                         <div>
-                                            <strong>Тариф поставщика:</strong>
+                                            <strong>@AppLocalizer.Get("Тариф поставщика:", "Тариф постачальника:", "Supplier tariff:")</strong>
                                             Т1 @(item.AppliedSupplierDayRate.HasValue ? item.AppliedSupplierDayRate.Value.ToString("0.0000") : "—") грн/кВт·ч,
                                             Т2 @(item.AppliedSupplierNightRate.HasValue ? item.AppliedSupplierNightRate.Value.ToString("0.0000") : "—") грн/кВт·ч
                                         </div>
@@ -161,10 +161,10 @@
 
 @if (Model.TotalPages > 1)
 {
-    <nav aria-label="Навигация по страницам" class="mt-4">
+    <nav aria-label="@AppLocalizer.Get("Навигация по страницам", "Навігація сторінками", "Pagination")" class="mt-4">
         <ul class="pagination justify-content-center flex-wrap">
             <li class="page-item @(Model.HasPreviousPage ? string.Empty : "disabled")">
-                <a class="page-link" asp-page="/Administration/Finance/Expenses/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-kind="@Model.Kind" asp-route-expenseCategoryId="@Model.ExpenseCategoryId" asp-route-pageNumber="@(Model.PageNumber - 1)">Назад</a>
+                <a class="page-link" asp-page="/Administration/Finance/Expenses/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-kind="@Model.Kind" asp-route-expenseCategoryId="@Model.ExpenseCategoryId" asp-route-pageNumber="@(Model.PageNumber - 1)">@AppLocalizer.Get("Назад", "Назад", "Previous")</a>
             </li>
             @for (var pageIndex = 1; pageIndex <= Model.TotalPages; pageIndex++)
             {
@@ -173,7 +173,7 @@
                 </li>
             }
             <li class="page-item @(Model.HasNextPage ? string.Empty : "disabled")">
-                <a class="page-link" asp-page="/Administration/Finance/Expenses/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-kind="@Model.Kind" asp-route-expenseCategoryId="@Model.ExpenseCategoryId" asp-route-pageNumber="@(Model.PageNumber + 1)">Вперёд</a>
+                <a class="page-link" asp-page="/Administration/Finance/Expenses/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-kind="@Model.Kind" asp-route-expenseCategoryId="@Model.ExpenseCategoryId" asp-route-pageNumber="@(Model.PageNumber + 1)">@AppLocalizer.Get("Вперёд", "Вперед", "Next")</a>
             </li>
         </ul>
     </nav>

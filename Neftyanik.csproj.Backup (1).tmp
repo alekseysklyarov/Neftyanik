@@ -1,0 +1,86 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <DefaultItemExcludes>$(DefaultItemExcludes);artifacts\**;bin\**;obj\**;src\**\bin\**;src\**\obj\**;tests\**;tests/**</DefaultItemExcludes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.8">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.8" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.8" />
+    <PackageReference Include="xunit.assert" Version="2.9.3" />
+    <PackageReference Include="xunit.extensibility.core" Version="2.9.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Program.cs" />
+    <Compile Remove="artifacts\**\*.cs" />
+    <Compile Remove="obj\**\*.cs" />
+    <Compile Remove="src\**\obj\**\*.cs" />
+    <Compile Remove="tests\**\*.cs" />
+    <Compile Remove="tests/**/*.cs" />
+    <Compile Remove="**\*.ide.g.cs" />
+    <Content Remove="artifacts\**" />
+    <Content Remove="bin\**" />
+    <Content Remove="obj\**" />
+    <Content Remove="src\**\bin\**" />
+    <Content Remove="src\**\obj\**" />
+    <Content Remove="tests\**\bin\**" />
+    <Content Remove="tests\**\obj\**" />
+    <Content Remove="tests/**/bin/**" />
+    <Content Remove="tests/**/obj/**" />
+    <None Remove="artifacts\**" />
+    <None Remove="bin\**" />
+    <None Remove="obj\**" />
+    <None Remove="src\**\bin\**" />
+    <None Remove="src\**\obj\**" />
+    <None Remove="tests\**\bin\**" />
+    <None Remove="tests\**\obj\**" />
+    <None Remove="tests/**/bin/**" />
+    <None Remove="tests/**/obj/**" />
+    <EmbeddedResource Remove="artifacts\**" />
+    <EmbeddedResource Remove="bin\**" />
+    <EmbeddedResource Remove="obj\**" />
+    <EmbeddedResource Remove="src\**\bin\**" />
+    <EmbeddedResource Remove="src\**\obj\**" />
+    <EmbeddedResource Remove="tests\**\bin\**" />
+    <EmbeddedResource Remove="tests\**\obj\**" />
+    <EmbeddedResource Remove="tests/**/bin/**" />
+    <EmbeddedResource Remove="tests/**/obj/**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationAccountantAuthorizationTests.cs" />
+    <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationExpenseTests.cs" />
+    <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationFinanceSummaryTests.cs" />
+    <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationMemberAccountTests.cs" />
+    <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationMemberResetPasswordTests.cs" />
+    <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationMemberTariffTests.cs" />
+    <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationPlotChargeTests.cs" />
+    <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationPlotOwnershipTests.cs" />
+    <Compile Include="tests\Neftyanik.Portal.Web.Tests\LocalizationConfigurationTests.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="src\Neftyanik.Portal.Domain\Entities\Legacy\" />
+    <Folder Include="src\Neftyanik.Portal.Web\Controllers\" />
+    <Folder Include="src\Neftyanik.Portal.Web\Models\" />
+    <Folder Include="src\Neftyanik.Portal.Web\Views\Member\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="tests\Neftyanik.Portal.Infrastructure.Tests\Neftyanik.Portal.Infrastructure.Tests.csproj" />
+    <None Include="tests\Neftyanik.Portal.Web.Tests\Neftyanik.Portal.Web.Tests.csproj" />
+  </ItemGroup>
+
+</Project>

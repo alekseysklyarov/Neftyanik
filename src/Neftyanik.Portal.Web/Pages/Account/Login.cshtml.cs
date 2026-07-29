@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Neftyanik.Portal.Domain.Entities;
+using Neftyanik.Portal.Web.Localization;
 
 namespace Neftyanik.Portal.Web.Pages.Account;
 
@@ -38,6 +39,8 @@ public class LoginModel : PageModel
     {
         ReturnUrl = returnUrl;
 
+        ValidateInput();
+
         if (!ModelState.IsValid)
         {
             return Page();
@@ -61,26 +64,46 @@ public class LoginModel : PageModel
 
         if (signInResult.IsLockedOut)
         {
-            ModelState.AddModelError(string.Empty, "Учетная запись временно заблокирована.");
+            ModelState.AddModelError(string.Empty, AppLocalizer.Get(
+                "Учетная запись временно заблокирована.",
+                "Обліковий запис тимчасово заблоковано.",
+                "The account is temporarily locked."));
             return Page();
         }
 
-        ModelState.AddModelError(string.Empty, "Неверный логин или пароль.");
+        ModelState.AddModelError(string.Empty, AppLocalizer.Get(
+            "Неверный логин или пароль.",
+            "Неправильний логін або пароль.",
+            "Invalid login or password."));
         return Page();
+    }
+
+    private void ValidateInput()
+    {
+        if (string.IsNullOrWhiteSpace(Input.Login))
+        {
+            ModelState.AddModelError($"{nameof(Input)}.{nameof(InputModel.Login)}", AppLocalizer.Get(
+                "Введите логин.",
+                "Введіть логін.",
+                "Enter a login."));
+        }
+
+        if (string.IsNullOrWhiteSpace(Input.Password))
+        {
+            ModelState.AddModelError($"{nameof(Input)}.{nameof(InputModel.Password)}", AppLocalizer.Get(
+                "Введите пароль.",
+                "Введіть пароль.",
+                "Enter a password."));
+        }
     }
 
     public class InputModel
     {
-        [Required(ErrorMessage = "Введите логин.")]
-        [Display(Name = "Логин")]
         public string Login { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Введите пароль.")]
         [DataType(DataType.Password)]
-        [Display(Name = "Пароль")]
         public string Password { get; set; } = string.Empty;
 
-        [Display(Name = "Запомнить меня")]
         public bool RememberMe { get; set; }
     }
 }

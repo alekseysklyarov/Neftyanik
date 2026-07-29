@@ -1,28 +1,28 @@
 @page "/Administration/Plots/{plotId:int}/Ownerships"
 @model Neftyanik.Portal.Web.Pages.Administration.Plots.Ownerships.IndexModel
 @{
-    ViewData["Title"] = $"Владельцы участка {Model.Plot.PlotNumber}";
+    ViewData["Title"] = AppLocalizer.Get($"Владельцы участка {Model.Plot.PlotNumber}", $"Власники ділянки {Model.Plot.PlotNumber}", $"Owners of plot {Model.Plot.PlotNumber}");
 }
 
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
-        <h1 class="h2 mb-1">Владельцы участка @Model.Plot.PlotNumber</h1>
-        <p class="text-muted mb-0">Управление текущими и завершёнными записями владения.</p>
+        <h1 class="h2 mb-1">@AppLocalizer.Get("Владельцы участка", "Власники ділянки", "Plot owners") @Model.Plot.PlotNumber</h1>
+        <p class="text-muted mb-0">@AppLocalizer.Get("Управление текущими и завершёнными записями владения.", "Керування поточними та завершеними записами володіння.", "Manage current and completed ownership records.")</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
         @if (!Model.Plot.HasOpenOwnership)
         {
-            <a class="btn btn-primary" asp-page="/Administration/Plots/Ownerships/Create" asp-route-plotId="@Model.Plot.PlotId">Добавить владельца</a>
+            <a class="btn btn-primary" asp-page="/Administration/Plots/Ownerships/Create" asp-route-plotId="@Model.Plot.PlotId">@AppLocalizer.Get("Добавить владельца", "Додати власника", "Add owner")</a>
         }
-        <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Details" asp-route-id="@Model.Plot.PlotId">К участку</a>
-        <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Index">К списку участков</a>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Details" asp-route-id="@Model.Plot.PlotId">@AppLocalizer.Get("К участку", "До ділянки", "Back to plot")</a>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Index">@AppLocalizer.Get("К списку участков", "До списку ділянок", "Back to plots")</a>
     </div>
 </div>
 
 @if (Model.Plot.HasOpenOwnership)
 {
     <div class="alert alert-info" role="alert">
-        У участка может быть только один владелец. Чтобы назначить нового, сначала завершите текущее владение.
+        @AppLocalizer.Get("У участка может быть только один владелец. Чтобы назначить нового, сначала завершите текущее владение.", "У ділянки може бути лише один власник. Щоб призначити нового, спочатку завершіть поточне володіння.", "A plot can have only one owner. To assign a new owner, first end the current ownership.")
     </div>
 }
 
@@ -30,23 +30,23 @@
     <div class="col-lg-4">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <h2 class="h5 mb-3">Сведения об участке</h2>
+                <h2 class="h5 mb-3">@AppLocalizer.Get("Сведения об участке", "Відомості про ділянку", "Plot information")</h2>
                 <dl class="row mb-0">
-                    <dt class="col-sm-4">Номер</dt>
+                    <dt class="col-sm-4">@AppLocalizer.Get("Номер", "Номер", "Number")</dt>
                     <dd class="col-sm-8">@Model.Plot.PlotNumber</dd>
 
-                    <dt class="col-sm-4">Адрес</dt>
+                    <dt class="col-sm-4">@AppLocalizer.Get("Адрес", "Адреса", "Address")</dt>
                     <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Plot.PlotAddress) ? "—" : Model.Plot.PlotAddress)</dd>
 
-                    <dt class="col-sm-4">Статус</dt>
+                    <dt class="col-sm-4">@AppLocalizer.Get("Статус", "Статус", "Status")</dt>
                     <dd class="col-sm-8">
                         @if (Model.Plot.PlotIsActive)
                         {
-                            <span class="badge text-bg-success">Активен</span>
+                            <span class="badge text-bg-success">@AppLocalizer.Get("Активен", "Активний", "Active")</span>
                         }
                         else
                         {
-                            <span class="badge text-bg-secondary">В архиве</span>
+                            <span class="badge text-bg-secondary">@AppLocalizer.Get("В архиве", "В архіві", "Archived")</span>
                         }
                     </dd>
                 </dl>
@@ -56,17 +56,17 @@
     <div class="col-lg-4">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <h2 class="h5 mb-3">Текущие владельцы</h2>
-                <p class="mb-2"><strong>Количество:</strong> @Model.Plot.ActiveOwnersCount</p>
-                <p class="mb-0 text-muted">У участка может быть только один текущий владелец.</p>
+                <h2 class="h5 mb-3">@AppLocalizer.Get("Текущие владельцы", "Поточні власники", "Current owners")</h2>
+                <p class="mb-2"><strong>@AppLocalizer.Get("Количество:", "Кількість:", "Count:")</strong> @Model.Plot.ActiveOwnersCount</p>
+                <p class="mb-0 text-muted">@AppLocalizer.Get("У участка может быть только один текущий владелец.", "У ділянки може бути лише один поточний власник.", "A plot can have only one current owner.")</p>
             </div>
         </div>
     </div>
     <div class="col-lg-4">
         <div class="card shadow-sm h-100">
             <div class="card-body d-flex flex-column">
-                <h2 class="h5 mb-3">История владения</h2>
-                <p class="text-muted flex-grow-1 mb-0">Здесь отображаются как активные владельцы, так и завершённые записи владения участком.</p>
+                <h2 class="h5 mb-3">@AppLocalizer.Get("История владения", "Історія володіння", "Ownership history")</h2>
+                <p class="text-muted flex-grow-1 mb-0">@AppLocalizer.Get("Здесь отображаются как активные владельцы, так и завершённые записи владения участком.", "Тут відображаються як активні власники, так і завершені записи володіння ділянкою.", "Both active owners and completed plot ownership records are shown here.")</p>
             </div>
         </div>
     </div>
@@ -74,12 +74,12 @@
 
 <div class="card shadow-sm mb-4">
     <div class="card-header bg-white">
-        <h2 class="h5 mb-0">Текущие владельцы</h2>
+        <h2 class="h5 mb-0">@AppLocalizer.Get("Текущие владельцы", "Поточні власники", "Current owners")</h2>
     </div>
     <div class="card-body p-0">
         @if (Model.CurrentOwnerships.Count == 0)
         {
-            <div class="p-4 text-center text-muted">Для участка пока нет активных владельцев.</div>
+            <div class="p-4 text-center text-muted">@AppLocalizer.Get("Для участка пока нет активных владельцев.", "Для ділянки поки немає активних власників.", "There are no active owners for this plot yet.")</div>
         }
         else
         {
@@ -87,12 +87,12 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th>Член товарищества</th>
-                            <th>Телефон</th>
-                            <th>Электронная почта</th>
-                            <th>Действует с</th>
-                            <th>Статус</th>
-                            <th class="text-end">Действия</th>
+                            <th>@AppLocalizer.Get("Член товарищества", "Член товариства", "Member")</th>
+                            <th>@AppLocalizer.Get("Телефон", "Телефон", "Phone")</th>
+                            <th>@AppLocalizer.Get("Электронная почта", "Електронна пошта", "Email")</th>
+                            <th>@AppLocalizer.Get("Действует с", "Діє з", "Effective from")</th>
+                            <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
+                            <th class="text-end">@AppLocalizer.Get("Действия", "Дії", "Actions")</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -105,12 +105,12 @@
                                 <td>@(string.IsNullOrWhiteSpace(ownership.MemberPhoneNumber) ? "—" : ownership.MemberPhoneNumber)</td>
                                 <td>@(string.IsNullOrWhiteSpace(ownership.MemberEmail) ? "—" : ownership.MemberEmail)</td>
                                 <td>@(ownership.ValidFrom.HasValue ? ownership.ValidFrom.Value.ToString("dd.MM.yyyy") : "—")</td>
-                                <td><span class="badge text-bg-success">Активный</span></td>
+                                <td><span class="badge text-bg-success">@AppLocalizer.Get("Активный", "Активний", "Active")</span></td>
                                 <td class="text-end">
                                     <div class="btn-group btn-group-sm" role="group">
-                                        <a class="btn btn-outline-success" asp-page="/Administration/Members/Finance" asp-route-id="@ownership.MemberId">Финансы</a>
-                                        <a class="btn btn-outline-primary" asp-page="/Administration/Plots/Ownerships/Edit" asp-route-plotId="@ownership.PlotId" asp-route-id="@ownership.Id">Редактировать</a>
-                                        <a class="btn btn-outline-warning" asp-page="/Administration/Plots/Ownerships/End" asp-route-plotId="@ownership.PlotId" asp-route-id="@ownership.Id">Аннулировать</a>
+                                        <a class="btn btn-outline-success" asp-page="/Administration/Members/Finance" asp-route-id="@ownership.MemberId">@AppLocalizer.Get("Финансы", "Фінанси", "Finance")</a>
+                                        <a class="btn btn-outline-primary" asp-page="/Administration/Plots/Ownerships/Edit" asp-route-plotId="@ownership.PlotId" asp-route-id="@ownership.Id">@AppLocalizer.Get("Редактировать", "Редагувати", "Edit")</a>
+                                        <a class="btn btn-outline-warning" asp-page="/Administration/Plots/Ownerships/End" asp-route-plotId="@ownership.PlotId" asp-route-id="@ownership.Id">@AppLocalizer.Get("Аннулировать", "Анулювати", "Cancel")</a>
                                     </div>
                                 </td>
                             </tr>
@@ -124,12 +124,12 @@
 
 <div class="card shadow-sm">
     <div class="card-header bg-white">
-        <h2 class="h5 mb-0">История владения</h2>
+        <h2 class="h5 mb-0">@AppLocalizer.Get("История владения", "Історія володіння", "Ownership history")</h2>
     </div>
     <div class="card-body p-0">
         @if (Model.HistoricalOwnerships.Count == 0)
         {
-            <div class="p-4 text-center text-muted">Завершённые записи владения отсутствуют.</div>
+            <div class="p-4 text-center text-muted">@AppLocalizer.Get("Завершённые записи владения отсутствуют.", "Завершені записи володіння відсутні.", "There are no completed ownership records.")</div>
         }
         else
         {
@@ -137,13 +137,13 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th>Член товарищества</th>
-                            <th>Телефон</th>
-                            <th>Электронная почта</th>
-                            <th>Действует с</th>
-                            <th>Действует до</th>
-                            <th>Статус</th>
-                            <th class="text-end">Действия</th>
+                            <th>@AppLocalizer.Get("Член товарищества", "Член товариства", "Member")</th>
+                            <th>@AppLocalizer.Get("Телефон", "Телефон", "Phone")</th>
+                            <th>@AppLocalizer.Get("Электронная почта", "Електронна пошта", "Email")</th>
+                            <th>@AppLocalizer.Get("Действует с", "Діє з", "Effective from")</th>
+                            <th>@AppLocalizer.Get("Действует до", "Діє до", "Effective to")</th>
+                            <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
+                            <th class="text-end">@AppLocalizer.Get("Действия", "Дії", "Actions")</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -157,12 +157,12 @@
                                 <td>@(string.IsNullOrWhiteSpace(ownership.MemberEmail) ? "—" : ownership.MemberEmail)</td>
                                 <td>@(ownership.ValidFrom.HasValue ? ownership.ValidFrom.Value.ToString("dd.MM.yyyy") : "—")</td>
                                 <td>@(ownership.ValidTo.HasValue ? ownership.ValidTo.Value.ToString("dd.MM.yyyy") : "—")</td>
-                                <td><span class="badge text-bg-secondary">Аннулирован</span></td>
+                                <td><span class="badge text-bg-secondary">@AppLocalizer.Get("Аннулирован", "Анульовано", "Cancelled")</span></td>
                                 <td class="text-end">
                                     <div class="btn-group btn-group-sm" role="group">
-                                        <a class="btn btn-outline-success" asp-page="/Administration/Members/Finance" asp-route-id="@ownership.MemberId">Финансы</a>
-                                        <a class="btn btn-outline-primary" asp-page="/Administration/Plots/Ownerships/Edit" asp-route-plotId="@ownership.PlotId" asp-route-id="@ownership.Id">Редактировать</a>
-                                        <a class="btn btn-outline-success" asp-page="/Administration/Plots/Ownerships/Restore" asp-route-plotId="@ownership.PlotId" asp-route-id="@ownership.Id">Возобновить владение</a>
+                                        <a class="btn btn-outline-success" asp-page="/Administration/Members/Finance" asp-route-id="@ownership.MemberId">@AppLocalizer.Get("Финансы", "Фінанси", "Finance")</a>
+                                        <a class="btn btn-outline-primary" asp-page="/Administration/Plots/Ownerships/Edit" asp-route-plotId="@ownership.PlotId" asp-route-id="@ownership.Id">@AppLocalizer.Get("Редактировать", "Редагувати", "Edit")</a>
+                                        <a class="btn btn-outline-success" asp-page="/Administration/Plots/Ownerships/Restore" asp-route-plotId="@ownership.PlotId" asp-route-id="@ownership.Id">@AppLocalizer.Get("Возобновить владение", "Відновити володіння", "Restore ownership")</a>
                                     </div>
                                 </td>
                             </tr>

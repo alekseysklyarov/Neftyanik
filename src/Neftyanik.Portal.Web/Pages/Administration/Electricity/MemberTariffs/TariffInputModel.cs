@@ -1,14 +1,35 @@
 using System.ComponentModel.DataAnnotations;
+using Neftyanik.Portal.Web.Localization;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Electricity.MemberTariffs;
 
-public class TariffInputModel
+public class TariffInputModel : IValidatableObject
 {
-    [Required(ErrorMessage = "Укажите дату начала действия.")]
     [DataType(DataType.Date)]
     public DateOnly? EffectiveFrom { get; set; }
 
-    [Required(ErrorMessage = "Укажите тариф для участников.")]
-    [Range(typeof(decimal), "0", "999999999999999", ErrorMessage = "Тариф не может быть отрицательным.")]
     public decimal? Rate { get; set; }
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (!EffectiveFrom.HasValue)
+        {
+            yield return new ValidationResult(
+                AppLocalizer.Get("Укажите дату начала действия.", "Вкажіть дату початку дії.", "Enter the effective start date."),
+                [nameof(EffectiveFrom)]);
+        }
+
+        if (!Rate.HasValue)
+        {
+            yield return new ValidationResult(
+                AppLocalizer.Get("Укажите тариф для участников.", "Вкажіть тариф для учасників.", "Enter the member tariff."),
+                [nameof(Rate)]);
+        }
+        else if (Rate.Value < 0m)
+        {
+            yield return new ValidationResult(
+                AppLocalizer.Get("Тариф не может быть отрицательным.", "Тариф не може бути від'ємним.", "The tariff cannot be negative."),
+                [nameof(Rate)]);
+        }
+    }
 }

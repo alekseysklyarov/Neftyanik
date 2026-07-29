@@ -1,19 +1,19 @@
 @page
 @model Neftyanik.Portal.Web.Pages.Administration.Members.IndexModel
 @{
-    ViewData["Title"] = "Члены товарищества";
+    ViewData["Title"] = AppLocalizer.Get("Члены товарищества", "Члени товариства", "Members");
     var isAdministrator = User.IsInRole(RoleNames.Administrator);
 }
 
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
-        <h1 class="h2 mb-1">Члены товарищества</h1>
-        <p class="text-muted mb-0">Список членов товарищества и их карточек.</p>
+        <h1 class="h2 mb-1">@AppLocalizer.Get("Члены товарищества", "Члени товариства", "Members")</h1>
+        <p class="text-muted mb-0">@AppLocalizer.Get("Список членов товарищества и их карточек.", "Список членів товариства та їхніх карток.", "List of members and their records.")</p>
     </div>
     @if (isAdministrator)
     {
         <div>
-            <a class="btn btn-primary" asp-page="/Administration/Members/Create">Добавить члена товарищества</a>
+            <a class="btn btn-primary" asp-page="/Administration/Members/Create">@AppLocalizer.Get("Добавить члена товарищества", "Додати члена товариства", "Add member")</a>
         </div>
     }
 </div>
@@ -22,20 +22,20 @@
     <div class="card-body">
         <form method="get" class="row g-3 align-items-end">
             <div class="col-md-6">
-                <label asp-for="Search" class="form-label">Поиск</label>
-                <input asp-for="Search" class="form-control" placeholder="ФИО или телефон" />
+                <label asp-for="Search" class="form-label">@AppLocalizer.Get("Поиск", "Пошук", "Search")</label>
+                <input asp-for="Search" class="form-control" placeholder="@AppLocalizer.Get("ФИО или телефон", "ПІБ або телефон", "Full name or phone")" />
             </div>
             <div class="col-md-3">
-                <label asp-for="Status" class="form-label">Статус</label>
+                <label asp-for="Status" class="form-label">@AppLocalizer.Get("Статус", "Статус", "Status")</label>
                 <select asp-for="Status" class="form-select">
-                    <option value="active">Только активные</option>
-                    <option value="all">Все</option>
-                    <option value="archived">Только архивные</option>
+                    <option value="active">@AppLocalizer.Get("Только активные", "Лише активні", "Active only")</option>
+                    <option value="all">@AppLocalizer.Get("Все", "Усі", "All")</option>
+                    <option value="archived">@AppLocalizer.Get("Только архивные", "Лише архівні", "Archived only")</option>
                 </select>
             </div>
             <div class="col-md-3 d-flex gap-2">
-                <button type="submit" class="btn btn-outline-primary flex-fill">Найти</button>
-                <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Index" asp-route-status="all">Сбросить</a>
+                <button type="submit" class="btn btn-outline-primary flex-fill">@AppLocalizer.Get("Найти", "Знайти", "Search")</button>
+                <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Index" asp-route-status="all">@AppLocalizer.Get("Сбросить", "Скинути", "Reset")</a>
             </div>
         </form>
     </div>
@@ -55,15 +55,15 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th>ФИО</th>
-                            <th>Телефон</th>
-                            <th>Дата вступления</th>
-                            <th>Статус</th>
-                            <th>Электричество (отключено)</th>
-                            <th>Активные владения</th>
-                            <th>Баланс</th>
-                            <th>Логин</th>
-                            <th class="text-end">Действия</th>
+                            <th>@AppLocalizer.Get("ФИО", "ПІБ", "Full name")</th>
+                            <th>@AppLocalizer.Get("Телефон", "Телефон", "Phone")</th>
+                            <th>@AppLocalizer.Get("Дата вступления", "Дата вступу", "Join date")</th>
+                            <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
+                            <th>@AppLocalizer.Get("Электричество (отключено)", "Електрика (відключено)", "Electricity (disconnected)")</th>
+                            <th>@AppLocalizer.Get("Активные владения", "Активні володіння", "Active ownerships")</th>
+                            <th>@AppLocalizer.Get("Баланс", "Баланс", "Balance")</th>
+                            <th>@AppLocalizer.Get("Логин", "Логін", "Login")</th>
+                            <th class="text-end">@AppLocalizer.Get("Действия", "Дії", "Actions")</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -80,13 +80,13 @@
                                     }
                                     else
                                     {
-                                        <span class="badge text-bg-secondary">В архиве</span>
+                                        <span class="badge text-bg-secondary">@AppLocalizer.Get("В архиве", "В архіві", "Archived")</span>
                                     }
                                 </td>
                                 <td>
                                     @if (member.IsElectricityDisconnected)
                                     {
-                                        <span>Аннулированный</span>
+                                        <span>@AppLocalizer.Get("Аннулированный", "Анульований", "Cancelled")</span>
                                     }
                                     else
                                     {
@@ -98,12 +98,12 @@
                                 <td>@(string.IsNullOrWhiteSpace(member.Login) ? "—" : member.Login)</td>
                                 <td class="text-end">
                                     <div class="btn-group btn-group-sm" role="group">
-                                        <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Details" asp-route-id="@member.Id">Подробнее</a>
-                                        <a class="btn btn-outline-success" asp-page="/Administration/Members/Finance" asp-route-id="@member.Id">Финансы</a>
+                                        <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Details" asp-route-id="@member.Id">@AppLocalizer.Get("Подробнее", "Детальніше", "Details")</a>
+                                        <a class="btn btn-outline-success" asp-page="/Administration/Members/Finance" asp-route-id="@member.Id">@AppLocalizer.Get("Финансы", "Фінанси", "Finance")</a>
                                         @if (isAdministrator)
                                         {
-                                            <a class="btn btn-outline-primary" asp-page="/Administration/Members/Edit" asp-route-id="@member.Id">Редактировать</a>
-                                            <a class="btn btn-outline-warning" asp-page="/Administration/Members/Archive" asp-route-id="@member.Id">@(member.IsActive ? "Архивировать" : "Восстановить")</a>
+                                            <a class="btn btn-outline-primary" asp-page="/Administration/Members/Edit" asp-route-id="@member.Id">@AppLocalizer.Get("Редактировать", "Редагувати", "Edit")</a>
+                                            <a class="btn btn-outline-warning" asp-page="/Administration/Members/Archive" asp-route-id="@member.Id">@(member.IsActive ? AppLocalizer.Get("Архивировать", "Архівувати", "Archive") : AppLocalizer.Get("Восстановить", "Відновити", "Restore"))</a>
                                         }
                                     </div>
                                 </td>
@@ -118,14 +118,14 @@
 
 @if (Model.TotalPages > 1)
 {
-    <nav aria-label="Навигация по страницам" class="mt-4">
+    <nav aria-label="@AppLocalizer.Get("Навигация по страницам", "Навігація сторінками", "Pagination")" class="mt-4">
         <ul class="pagination justify-content-center flex-wrap">
             <li class="page-item @(Model.HasPreviousPage ? string.Empty : "disabled")">
                 <a class="page-link"
                    asp-page="/Administration/Members/Index"
                    asp-route-search="@Model.Search"
                    asp-route-status="@Model.Status"
-                   asp-route-pageNumber="@(Model.PageNumber - 1)">Назад</a>
+                   asp-route-pageNumber="@(Model.PageNumber - 1)">@AppLocalizer.Get("Назад", "Назад", "Previous")</a>
             </li>
             @for (var pageIndex = 1; pageIndex <= Model.TotalPages; pageIndex++)
             {
@@ -142,7 +142,7 @@
                    asp-page="/Administration/Members/Index"
                    asp-route-search="@Model.Search"
                    asp-route-status="@Model.Status"
-                   asp-route-pageNumber="@(Model.PageNumber + 1)">Вперёд</a>
+                   asp-route-pageNumber="@(Model.PageNumber + 1)">@AppLocalizer.Get("Вперёд", "Вперед", "Next")</a>
             </li>
         </ul>
     </nav>

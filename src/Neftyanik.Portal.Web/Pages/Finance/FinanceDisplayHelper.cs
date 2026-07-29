@@ -1,4 +1,5 @@
 using Neftyanik.Portal.Domain.Enums;
+using Neftyanik.Portal.Web.Localization;
 
 namespace Neftyanik.Portal.Web.Pages.Finance;
 
@@ -8,10 +9,10 @@ internal static class FinanceDisplayHelper
     {
         return method switch
         {
-            PaymentMethod.Cash => "Наличные",
-            PaymentMethod.BankTransfer => "Банковский перевод",
-            PaymentMethod.Card => "Карта",
-            _ => "Другое"
+            PaymentMethod.Cash => AppLocalizer.Get("Наличные", "Готівка", "Cash"),
+            PaymentMethod.BankTransfer => AppLocalizer.Get("Банковский перевод", "Банківський переказ", "Bank transfer"),
+            PaymentMethod.Card => AppLocalizer.Get("Карта", "Картка", "Card"),
+            _ => AppLocalizer.Get("Другое", "Інше", "Other")
         };
     }
 
@@ -19,9 +20,9 @@ internal static class FinanceDisplayHelper
     {
         return balance switch
         {
-            > 0m => "Задолженность",
-            < 0m => "Переплата",
-            _ => "Задолженности нет"
+            > 0m => AppLocalizer.Get("Задолженность", "Заборгованість", "Debt"),
+            < 0m => AppLocalizer.Get("Переплата", "Переплата", "Overpayment"),
+            _ => AppLocalizer.Get("Задолженности нет", "Заборгованості немає", "No debt")
         };
     }
 

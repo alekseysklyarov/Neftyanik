@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Infrastructure.Data;
+using Neftyanik.Portal.Web.Localization;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Finance.Expenses;
 
@@ -164,8 +164,8 @@ public class IndexModel : PageModel
         };
 
         EmptyStateMessage = totalCount == 0 && string.IsNullOrWhiteSpace(Search) && !ExpenseCategoryId.HasValue && Status == "all"
-            ? "Расходы пока не зарегистрированы."
-            : "По выбранным условиям расходы не найдены.";
+            ? AppLocalizer.Get("Расходы пока не зарегистрированы.", "Витрати ще не зареєстровані.", "No expenses have been registered yet.")
+            : AppLocalizer.Get("По выбранным условиям расходы не найдены.", "За вибраними умовами витрати не знайдені.", "No expenses were found for the selected criteria.");
     }
 
     public bool HasPreviousPage => PageNumber > 1;

@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data;
+using Neftyanik.Portal.Web.Localization;
 
 namespace Neftyanik.Portal.Web.Pages.Member.Electricity;
 
@@ -88,7 +89,7 @@ public class IndexModel : PageModel
         public decimal? LatestConsumption { get; init; }
         public decimal? LatestChargeAmount { get; init; }
         public bool HasInitialReading { get; init; }
-        public string DisplayName => !string.IsNullOrWhiteSpace(Name) ? Name : !string.IsNullOrWhiteSpace(MeterNumber) ? MeterNumber : $"Счетчик #{Id}";
-        public string StatusMessage => HasInitialReading ? string.Empty : "Начальные показания ещё не установлены администратором.";
+        public string DisplayName => !string.IsNullOrWhiteSpace(Name) ? Name : !string.IsNullOrWhiteSpace(MeterNumber) ? MeterNumber : AppLocalizer.Get($"Счетчик #{Id}", $"Лічильник #{Id}", $"Meter #{Id}");
+        public string StatusMessage => HasInitialReading ? string.Empty : AppLocalizer.Get("Начальные показания ещё не установлены администратором.", "Початкові показання ще не встановлені адміністратором.", "Initial readings have not been set by the administrator yet.");
     }
 }

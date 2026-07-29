@@ -1,10 +1,10 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data;
+using Neftyanik.Portal.Web.Localization;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Members.Account;
 
@@ -52,7 +52,7 @@ public class RolesModel : MemberAccountPageModelBase
         var user = await UserManager.FindByIdAsync(Member.ApplicationUserId!);
         if (user is null)
         {
-            TempData["ErrorMessage"] = "Связанная учетная запись не найдена.";
+            TempData["ErrorMessage"] = AppLocalizer.Get("Связанная учетная запись не найдена.", "Пов'язаний обліковий запис не знайдено.", "The linked account was not found.");
             return RedirectToPage("/Administration/Members/Details", new { id = memberId });
         }
 
@@ -63,7 +63,7 @@ public class RolesModel : MemberAccountPageModelBase
         {
             if (isAccountant)
             {
-                TempData["SuccessMessage"] = "Изменения сохранены.";
+                TempData["SuccessMessage"] = AppLocalizer.Get("Изменения сохранены.", "Зміни збережено.", "Changes have been saved.");
                 return RedirectToPage("/Administration/Members/Details", new { id = memberId });
             }
 
@@ -78,7 +78,7 @@ public class RolesModel : MemberAccountPageModelBase
         {
             if (!isAccountant)
             {
-                TempData["SuccessMessage"] = "Изменения сохранены.";
+                TempData["SuccessMessage"] = AppLocalizer.Get("Изменения сохранены.", "Зміни збережено.", "Changes have been saved.");
                 return RedirectToPage("/Administration/Members/Details", new { id = memberId });
             }
 
@@ -95,8 +95,8 @@ public class RolesModel : MemberAccountPageModelBase
         }
 
         TempData["SuccessMessage"] = Input.IsAccountant
-            ? "Роль бухгалтера назначена."
-            : "Роль бухгалтера снята.";
+            ? AppLocalizer.Get("Роль бухгалтера назначена.", "Роль бухгалтера призначено.", "The accountant role has been assigned.")
+            : AppLocalizer.Get("Роль бухгалтера снята.", "Роль бухгалтера знято.", "The accountant role has been removed.");
 
         return RedirectToPage("/Administration/Members/Details", new { id = memberId });
     }
@@ -111,14 +111,14 @@ public class RolesModel : MemberAccountPageModelBase
 
         if (string.IsNullOrWhiteSpace(member.ApplicationUserId))
         {
-            TempData["ErrorMessage"] = "Для этого члена товарищества учетная запись еще не создана.";
+            TempData["ErrorMessage"] = AppLocalizer.Get("Для этого члена товарищества учетная запись еще не создана.", "Для цього члена товариства обліковий запис ще не створено.", "An account has not been created for this member yet.");
             return RedirectToPage("/Administration/Members/Details", new { id = memberId });
         }
 
         var user = await UserManager.FindByIdAsync(member.ApplicationUserId);
         if (user is null)
         {
-            TempData["ErrorMessage"] = "Связанная учетная запись не найдена.";
+            TempData["ErrorMessage"] = AppLocalizer.Get("Связанная учетная запись не найдена.", "Пов'язаний обліковий запис не знайдено.", "The linked account was not found.");
             return RedirectToPage("/Administration/Members/Details", new { id = memberId });
         }
 
@@ -161,7 +161,6 @@ public class RolesModel : MemberAccountPageModelBase
 
     public sealed class InputModel
     {
-        [Display(Name = "Назначить роль бухгалтера")]
         public bool IsAccountant { get; set; }
     }
 }

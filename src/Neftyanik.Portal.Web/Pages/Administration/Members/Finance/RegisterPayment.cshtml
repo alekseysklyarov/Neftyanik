@@ -1,17 +1,17 @@
 @page "/Administration/Members/Finance/{id:int}/RegisterPayment"
 @model Neftyanik.Portal.Web.Pages.Administration.Members.Finance.RegisterPaymentModel
 @{
-    ViewData["Title"] = $"Платеж: {Model.Member.FullName}";
+    ViewData["Title"] = AppLocalizer.Get($"Платеж: {Model.Member.FullName}", $"Платіж: {Model.Member.FullName}", $"Payment: {Model.Member.FullName}");
 }
 
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
-        <h1 class="h2 mb-1">Новый платеж</h1>
-        <p class="text-muted mb-0">Член товарищества: @Model.Member.FullName</p>
+        <h1 class="h2 mb-1">@AppLocalizer.Get("Новый платеж", "Новий платіж", "New payment")</h1>
+        <p class="text-muted mb-0">@AppLocalizer.Get("Член товарищества:", "Член товариства:", "Member:") @Model.Member.FullName</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
-        <a class="btn btn-outline-primary" asp-page="/Administration/Members/Finance" asp-route-id="@Model.Member.Id">К финансам участника</a>
-        <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Details" asp-route-id="@Model.Member.Id">Карточка члена товарищества</a>
+        <a class="btn btn-outline-primary" asp-page="/Administration/Members/Finance" asp-route-id="@Model.Member.Id">@AppLocalizer.Get("К финансам участника", "До фінансів учасника", "Back to member finance")</a>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Details" asp-route-id="@Model.Member.Id">@AppLocalizer.Get("Карточка члена товарищества", "Картка члена товариства", "Member details")</a>
     </div>
 </div>
 
@@ -19,14 +19,14 @@
     <div class="card-body">
         <div class="row g-3">
             <div class="col-md-4">
-                <p class="mb-1"><strong>Активные участки:</strong> @Model.Member.ActivePlotsCount</p>
-                <p class="mb-0"><strong>Телефон:</strong> @(string.IsNullOrWhiteSpace(Model.Member.PhoneNumber) ? "—" : Model.Member.PhoneNumber)</p>
+                <p class="mb-1"><strong>@AppLocalizer.Get("Активные участки:", "Активні ділянки:", "Active plots:")</strong> @Model.Member.ActivePlotsCount</p>
+                <p class="mb-0"><strong>@AppLocalizer.Get("Телефон:", "Телефон:", "Phone:")</strong> @(string.IsNullOrWhiteSpace(Model.Member.PhoneNumber) ? "—" : Model.Member.PhoneNumber)</p>
             </div>
             <div class="col-md-4">
                 <p class="mb-0"><strong>Email:</strong> @(string.IsNullOrWhiteSpace(Model.Member.Email) ? "—" : Model.Member.Email)</p>
             </div>
             <div class="col-md-4">
-                <p class="mb-0 text-muted">Платеж будет зарегистрирован по выбранному участку и автоматически распределён по задолженности всех текущих участков участника.</p>
+                <p class="mb-0 text-muted">@AppLocalizer.Get("Платеж будет зарегистрирован по выбранному участку и автоматически распределён по задолженности всех текущих участков участника.", "Платіж буде зареєстровано за вибраною ділянкою та автоматично розподілено за заборгованістю всіх поточних ділянок учасника.", "The payment will be registered for the selected plot and automatically allocated to the debts of all current plots of the member.")</p>
             </div>
         </div>
     </div>
@@ -51,13 +51,13 @@
                     else
                     {
                         <select asp-for="Input.PlotId" asp-items="Model.PlotOptions" class="form-select">
-                            <option value="">Не выбран</option>
+                            <option value="">@AppLocalizer.Get("Не выбран", "Не вибрано", "Not selected")</option>
                         </select>
                     }
                     <span asp-validation-for="Input.PlotId" class="text-danger"></span>
                 </div>
                 <div class="col-md-6">
-                    <label asp-for="Input.PaymentMethod" class="form-label"></label>
+                    <label asp-for="Input.PaymentMethod" class="form-label">@AppLocalizer.Get("Способ оплаты", "Спосіб оплати", "Payment method")</label>
                     <select asp-for="Input.PaymentMethod" asp-items="Model.PaymentMethodOptions" class="form-select"></select>
                     <span asp-validation-for="Input.PaymentMethod" class="text-danger"></span>
                 </div>
@@ -67,12 +67,12 @@
                     <span asp-validation-for="Input.Amount" class="text-danger"></span>
                 </div>
                 <div class="col-md-4">
-                    <label asp-for="Input.PaymentDate" class="form-label"></label>
+                    <label asp-for="Input.PaymentDate" class="form-label">@AppLocalizer.Get("Дата платежа", "Дата платежу", "Payment date")</label>
                     <input asp-for="Input.PaymentDate" class="form-control" type="date" />
                     <span asp-validation-for="Input.PaymentDate" class="text-danger"></span>
                 </div>
                 <div class="col-md-4">
-                    <label asp-for="Input.ReferenceNumber" class="form-label"></label>
+                    <label asp-for="Input.ReferenceNumber" class="form-label">@AppLocalizer.Get("Номер документа / квитанции", "Номер документа / квитанції", "Document / receipt number")</label>
                     <input asp-for="Input.ReferenceNumber" class="form-control" />
                     <span asp-validation-for="Input.ReferenceNumber" class="text-danger"></span>
                 </div>
@@ -83,8 +83,8 @@
                 </div>
             </div>
             <div class="d-flex gap-2 mt-4 flex-wrap">
-                <button type="button" class="btn btn-primary" id="openRegisterPaymentConfirmation">Сохранить платеж</button>
-                <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Finance" asp-route-id="@Model.Member.Id">Отмена</a>
+                <button type="button" class="btn btn-primary" id="openRegisterPaymentConfirmation">@AppLocalizer.Get("Сохранить платеж", "Зберегти платіж", "Save payment")</button>
+                <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Finance" asp-route-id="@Model.Member.Id">@AppLocalizer.Get("Отмена", "Скасувати", "Cancel")</a>
             </div>
         </form>
     </div>

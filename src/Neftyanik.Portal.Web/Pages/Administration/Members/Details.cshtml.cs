@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data;
+using Neftyanik.Portal.Web.Localization;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Members;
 
@@ -85,7 +86,7 @@ public class DetailsModel : PageModel
         {
             return new MemberAccountViewModel
             {
-                StatusText = "Учетная запись не создана"
+                StatusText = AppLocalizer.Get("Учетная запись не создана", "Обліковий запис не створено", "Account has not been created")
             };
         }
 
@@ -94,7 +95,7 @@ public class DetailsModel : PageModel
         {
             return new MemberAccountViewModel
             {
-                StatusText = "Учетная запись не создана",
+                StatusText = AppLocalizer.Get("Учетная запись не создана", "Обліковий запис не створено", "Account has not been created"),
                 IdentityUserId = applicationUserId
             };
         }
@@ -105,7 +106,9 @@ public class DetailsModel : PageModel
         return new MemberAccountViewModel
         {
             Exists = true,
-            StatusText = isLockedOut ? "Учетная запись заблокирована" : "Учетная запись активна",
+            StatusText = isLockedOut
+                ? AppLocalizer.Get("Учетная запись заблокирована", "Обліковий запис заблоковано", "Account is locked")
+                : AppLocalizer.Get("Учетная запись активна", "Обліковий запис активний", "Account is active"),
                 Login = user.UserName,
                 Email = user.Email,
             IdentityUserId = user.Id,

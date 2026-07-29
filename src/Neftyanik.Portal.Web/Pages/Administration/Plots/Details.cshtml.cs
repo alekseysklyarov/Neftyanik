@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Infrastructure.Data;
+using Neftyanik.Portal.Web.Localization;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Plots;
 
@@ -86,7 +87,7 @@ public class DetailsModel : PageModel
             .Select(item => new SelectListItem
             {
                 Value = item.Id.ToString(),
-                Text = string.IsNullOrWhiteSpace(item.Name) ? $"Тип #{item.Id}" : item.Name
+                Text = string.IsNullOrWhiteSpace(item.Name) ? AppLocalizer.Get($"Тип #{item.Id}", $"Тип #{item.Id}", $"Type #{item.Id}") : item.Name
             })
             .ToListAsync(cancellationToken);
 
@@ -181,6 +182,8 @@ public class DetailsModel : PageModel
 
         public string? CancellationReason { get; init; }
 
-        public string StatusText => IsCancelled ? "Аннулирован" : "Активный";
+        public string StatusText => IsCancelled
+            ? AppLocalizer.Get("Аннулирован", "Скасований", "Cancelled")
+            : AppLocalizer.Get("Активный", "Активний", "Active");
     }
 }

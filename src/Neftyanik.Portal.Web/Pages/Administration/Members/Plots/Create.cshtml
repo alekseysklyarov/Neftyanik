@@ -1,33 +1,33 @@
 @page
 @model Neftyanik.Portal.Web.Pages.Administration.Members.Plots.CreateModel
 @{
-    ViewData["Title"] = $"Добавить участок: {Model.Member.FullName}";
+    ViewData["Title"] = AppLocalizer.Get($"Добавить участок: {Model.Member.FullName}", $"Додати ділянку: {Model.Member.FullName}", $"Add plot: {Model.Member.FullName}");
 }
 
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
-        <h1 class="h2 mb-1">Добавить участок члену товарищества</h1>
+        <h1 class="h2 mb-1">@AppLocalizer.Get("Добавить участок члену товарищества", "Додати ділянку члену товариства", "Add plot to member")</h1>
         <p class="text-muted mb-0">@Model.Member.FullName</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
-        <a class="btn btn-outline-success" asp-page="/Administration/Members/Finance" asp-route-id="@Model.Member.Id">Финансы</a>
-        <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Details" asp-route-id="@Model.Member.Id">К карточке члена товарищества</a>
+        <a class="btn btn-outline-success" asp-page="/Administration/Members/Finance" asp-route-id="@Model.Member.Id">@AppLocalizer.Get("Финансы", "Фінанси", "Finance")</a>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Details" asp-route-id="@Model.Member.Id">@AppLocalizer.Get("К карточке члена товарищества", "До картки члена товариства", "Back to member details")</a>
     </div>
 </div>
 
 <div class="card shadow-sm mb-4">
     <div class="card-body">
         <dl class="row mb-0">
-            <dt class="col-sm-4">ФИО</dt>
+            <dt class="col-sm-4">@AppLocalizer.Get("ФИО", "ПІБ", "Full name")</dt>
             <dd class="col-sm-8">@Model.Member.FullName</dd>
 
-            <dt class="col-sm-4">Телефон</dt>
+            <dt class="col-sm-4">@AppLocalizer.Get("Телефон", "Телефон", "Phone")</dt>
             <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Member.PhoneNumber) ? "—" : Model.Member.PhoneNumber)</dd>
 
-            <dt class="col-sm-4">Электронная почта</dt>
+            <dt class="col-sm-4">@AppLocalizer.Get("Электронная почта", "Електронна пошта", "Email")</dt>
             <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Member.Email) ? "—" : Model.Member.Email)</dd>
 
-            <dt class="col-sm-4">Текущих владений</dt>
+            <dt class="col-sm-4">@AppLocalizer.Get("Текущих владений", "Поточних володінь", "Current ownerships")</dt>
             <dd class="col-sm-8">@Model.Member.ActiveOwnershipsCount</dd>
         </dl>
     </div>
@@ -36,13 +36,13 @@
 @if (!Model.Member.IsActive)
 {
     <div class="alert alert-warning" role="alert">
-        Нельзя добавить участок архивному члену товарищества.
+        @AppLocalizer.Get("Нельзя добавить участок архивному члену товарищества.", "Не можна додати ділянку архівному члену товариства.", "A plot cannot be added to an archived member.")
     </div>
 }
 else if (!Model.HasAvailablePlots)
 {
     <div class="alert alert-info" role="alert">
-        Нет свободных участков, доступных для добавления.
+        @AppLocalizer.Get("Нет свободных участков, доступных для добавления.", "Немає вільних ділянок, доступних для додавання.", "There are no available plots to add.")
     </div>
 }
 else
@@ -54,27 +54,27 @@ else
 
                 <div class="row g-3">
                     <div class="col-12">
-                        <label asp-for="Input.PlotId" class="form-label"></label>
+                        <label asp-for="Input.PlotId" class="form-label">@AppLocalizer.Get("Участок", "Ділянка", "Plot")</label>
                         <select asp-for="Input.PlotId" asp-items="Model.PlotOptions" class="form-select">
-                            <option value="">Выберите участок</option>
+                            <option value="">@AppLocalizer.Get("Выберите участок", "Виберіть ділянку", "Select plot")</option>
                         </select>
                         <span asp-validation-for="Input.PlotId" class="text-danger"></span>
                     </div>
                     <div class="col-md-6">
-                        <label asp-for="Input.ValidFrom" class="form-label"></label>
+                        <label asp-for="Input.ValidFrom" class="form-label">@AppLocalizer.Get("Действует с", "Діє з", "Effective from")</label>
                         <input asp-for="Input.ValidFrom" class="form-control" type="date" />
                         <span asp-validation-for="Input.ValidFrom" class="text-danger"></span>
                     </div>
                     <div class="col-md-6">
-                        <label asp-for="Input.OwnershipShare" class="form-label"></label>
+                        <label asp-for="Input.OwnershipShare" class="form-label">@AppLocalizer.Get("Доля владения, %", "Частка володіння, %", "Ownership share, %")</label>
                         <input asp-for="Input.OwnershipShare" class="form-control" type="number" step="0.01" min="0.01" max="100" />
                         <span asp-validation-for="Input.OwnershipShare" class="text-danger"></span>
                     </div>
                 </div>
 
                 <div class="d-flex gap-2 mt-4">
-                    <button type="submit" class="btn btn-primary">Добавить участок</button>
-                    <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Details" asp-route-id="@Model.Member.Id">Отмена</a>
+                    <button type="submit" class="btn btn-primary">@AppLocalizer.Get("Добавить участок", "Додати ділянку", "Add plot")</button>
+                    <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Details" asp-route-id="@Model.Member.Id">@AppLocalizer.Get("Отмена", "Скасувати", "Cancel")</a>
                 </div>
             </form>
         </div>

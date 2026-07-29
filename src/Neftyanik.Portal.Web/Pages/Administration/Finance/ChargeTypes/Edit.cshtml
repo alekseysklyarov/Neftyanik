@@ -1,17 +1,17 @@
 @page "{id:int}"
 @model Neftyanik.Portal.Web.Pages.Administration.Finance.ChargeTypes.EditModel
 @{
-    ViewData["Title"] = "Редактирование типа начисления";
+    ViewData["Title"] = AppLocalizer.Get("Редактирование типа начисления", "Редагування типу нарахування", "Edit charge type");
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
-        <h1 class="h2 mb-1">Редактирование типа начисления</h1>
-        <p class="text-muted mb-0">Измените параметры типа начисления.</p>
+        <h1 class="h2 mb-1">@AppLocalizer.Get("Редактирование типа начисления", "Редагування типу нарахування", "Edit charge type")</h1>
+        <p class="text-muted mb-0">@AppLocalizer.Get("Измените параметры типа начисления.", "Змініть параметри типу нарахування.", "Change the charge type settings.")</p>
     </div>
-    <div class="d-flex gap-2">
-        <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/ChargeTypes/Details" asp-route-id="@Model.ChargeTypeId">Подробнее</a>
-        <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/ChargeTypes/Index">К списку</a>
+    <div class="d-flex gap-2 flex-wrap">
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/ChargeTypes/Details" asp-route-id="@Model.ChargeTypeId">@AppLocalizer.Get("Подробнее", "Детальніше", "Details")</a>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/ChargeTypes/Index">@AppLocalizer.Get("К списку", "До списку", "Back to list")</a>
     </div>
 </div>
 
@@ -21,48 +21,48 @@
             <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
             <div class="row g-3">
                 <div class="col-md-6">
-                    <label asp-for="Input.Name" class="form-label"></label>
+                    <label asp-for="Input.Name" class="form-label">@AppLocalizer.Get("Наименование", "Найменування", "Name")</label>
                     <input asp-for="Input.Name" class="form-control" />
                     <span asp-validation-for="Input.Name" class="text-danger"></span>
                 </div>
                 <div class="col-md-6">
-                    <label asp-for="Input.DefaultAmount" class="form-label"></label>
+                    <label asp-for="Input.DefaultAmount" class="form-label">@AppLocalizer.Get("Сумма по умолчанию", "Сума за замовчуванням", "Default amount")</label>
                     <input asp-for="Input.DefaultAmount" class="form-control" type="number" step="0.01" />
                     <span asp-validation-for="Input.DefaultAmount" class="text-danger"></span>
                 </div>
                 <div class="col-12">
-                    <label asp-for="Input.Description" class="form-label"></label>
+                    <label asp-for="Input.Description" class="form-label">@AppLocalizer.Get("Описание", "Опис", "Description")</label>
                     <textarea asp-for="Input.Description" class="form-control" rows="4"></textarea>
                     <span asp-validation-for="Input.Description" class="text-danger"></span>
                 </div>
                 <div class="col-md-4">
                     <div class="form-check">
                         <input asp-for="Input.IsDefault" class="form-check-input" />
-                        <label asp-for="Input.IsDefault" class="form-check-label"></label>
+                        <label asp-for="Input.IsDefault" class="form-check-label">@AppLocalizer.Get("По умолчанию", "За замовчуванням", "Default")</label>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="form-check">
                         <input asp-for="Input.IsYearly" class="form-check-input" />
-                        <label asp-for="Input.IsYearly" class="form-check-label"></label>
+                        <label asp-for="Input.IsYearly" class="form-check-label">@AppLocalizer.Get("Ежегодный", "Щорічний", "Yearly")</label>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="form-check">
                         <input asp-for="Input.OnlyOnOwnerChange" class="form-check-input" />
-                        <label asp-for="Input.OnlyOnOwnerChange" class="form-check-label"></label>
+                        <label asp-for="Input.OnlyOnOwnerChange" class="form-check-label">@AppLocalizer.Get("Только при смене владельца", "Лише при зміні власника", "Only on owner change")</label>
                     </div>
                 </div>
                 <div class="col-12">
                     <div class="form-check">
                         <input asp-for="Input.IsActive" class="form-check-input" />
-                        <label asp-for="Input.IsActive" class="form-check-label"></label>
+                        <label asp-for="Input.IsActive" class="form-check-label">@AppLocalizer.Get("Активен", "Активний", "Active")</label>
                     </div>
                 </div>
             </div>
             <div class="d-flex gap-2 mt-4">
-                <button type="submit" class="btn btn-primary">Сохранить</button>
-                <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/ChargeTypes/Details" asp-route-id="@Model.ChargeTypeId">Отмена</a>
+                <button type="submit" class="btn btn-primary">@AppLocalizer.Get("Сохранить", "Зберегти", "Save")</button>
+                <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/ChargeTypes/Details" asp-route-id="@Model.ChargeTypeId">@AppLocalizer.Get("Отмена", "Скасувати", "Cancel")</a>
             </div>
         </form>
     </div>

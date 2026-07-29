@@ -1,17 +1,17 @@
 @page
 @model Neftyanik.Portal.Web.Pages.Administration.Electricity.MemberTariffs.IndexModel
 @{
-    ViewData["Title"] = "Тариф для участников";
+    ViewData["Title"] = AppLocalizer.Get("Тариф для участников", "Тариф для учасників", "Member tariff");
 }
 
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
-        <h1 class="h2 mb-1">Тариф для участников</h1>
-        <p class="text-muted mb-0">Используется для расчёта начислений по индивидуальным однотарифным счётчикам.</p>
+        <h1 class="h2 mb-1">@AppLocalizer.Get("Тариф для участников", "Тариф для учасників", "Member tariff")</h1>
+        <p class="text-muted mb-0">@AppLocalizer.Get("Используется для расчёта начислений по индивидуальным однотарифным счётчикам.", "Використовується для розрахунку нарахувань за індивідуальними однотарифними лічильниками.", "Used to calculate charges for individual single-rate meters.")</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
-        <a class="btn btn-primary" asp-page="/Administration/Electricity/MemberTariffs/Create">Добавить тариф</a>
-        <a class="btn btn-outline-secondary" asp-page="/Administration/Electricity/Meters/Index">Счётчики участников</a>
+        <a class="btn btn-primary" asp-page="/Administration/Electricity/MemberTariffs/Create">@AppLocalizer.Get("Добавить тариф", "Додати тариф", "Add tariff")</a>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Electricity/Meters/Index">@AppLocalizer.Get("Счётчики участников", "Лічильники учасників", "Member meters")</a>
     </div>
 </div>
 
@@ -20,17 +20,17 @@
         <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
                 <tr>
-                    <th>Действует с</th>
-                    <th>Тариф</th>
-                    <th>Текущий</th>
-                    <th>Создан</th>
-                    <th>Кем создан</th>
+                    <th>@AppLocalizer.Get("Действует с", "Діє з", "Effective from")</th>
+                    <th>@AppLocalizer.Get("Тариф", "Тариф", "Tariff")</th>
+                    <th>@AppLocalizer.Get("Текущий", "Поточний", "Current")</th>
+                    <th>@AppLocalizer.Get("Создан", "Створено", "Created")</th>
+                    <th>@AppLocalizer.Get("Кем создан", "Ким створено", "Created by")</th>
                 </tr>
             </thead>
             <tbody>
                 @if (Model.Tariffs.Count == 0)
                 {
-                    <tr><td colspan="5" class="text-center text-muted py-4">Тариф для участников пока не задан.</td></tr>
+                    <tr><td colspan="5" class="text-center text-muted py-4">@AppLocalizer.Get("Тариф для участников пока не задан.", "Тариф для учасників ще не задано.", "The member tariff has not been set yet.")</td></tr>
                 }
                 else
                 {
@@ -39,7 +39,7 @@
                         <tr>
                             <td>@item.EffectiveFrom.ToString("dd.MM.yyyy")</td>
                             <td>@item.Rate.ToString("0.0000") грн/кВт·ч</td>
-                            <td>@(item.IsCurrent ? "Да" : "—")</td>
+                            <td>@(item.IsCurrent ? AppLocalizer.Get("Да", "Так", "Yes") : "—")</td>
                             <td>@item.CreatedAtUtc.ToString("dd.MM.yyyy HH:mm")</td>
                             <td>@item.CreatedBy</td>
                         </tr>

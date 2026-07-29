@@ -7,6 +7,7 @@ using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data;
 using Neftyanik.Portal.Infrastructure.Data.Queries;
+using Neftyanik.Portal.Web.Localization;
 
 namespace Neftyanik.Portal.Web.Pages.Member.Electricity.Meters.Readings;
 
@@ -99,7 +100,7 @@ public class IndexModel : PageModel
             .Select(item => new MeterContextViewModel
             {
                 Id = item.Id,
-                DisplayName = !string.IsNullOrWhiteSpace(item.Name) ? item.Name : !string.IsNullOrWhiteSpace(item.MeterNumber) ? item.MeterNumber : $"Счетчик #{item.Id}"
+                DisplayName = !string.IsNullOrWhiteSpace(item.Name) ? item.Name : !string.IsNullOrWhiteSpace(item.MeterNumber) ? item.MeterNumber : AppLocalizer.Get($"Счетчик #{item.Id}", $"Лічильник #{item.Id}", $"Meter #{item.Id}")
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -145,6 +146,10 @@ public class IndexModel : PageModel
         public decimal? Amount { get; init; }
         public bool IsInitialReading { get; init; }
         public bool IsChargeCancelled { get; init; }
-        public string ChargeStatusText => IsInitialReading ? "Без начисления" : IsChargeCancelled ? "Начисление отменено" : "Начислено";
+        public string ChargeStatusText => IsInitialReading
+            ? AppLocalizer.Get("Без начисления", "Без нарахування", "No charge")
+            : IsChargeCancelled
+                ? AppLocalizer.Get("Начисление отменено", "Нарахування скасовано", "Charge cancelled")
+                : AppLocalizer.Get("Начислено", "Нараховано", "Charged");
     }
 }

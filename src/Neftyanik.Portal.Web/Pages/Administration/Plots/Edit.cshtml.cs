@@ -5,6 +5,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Infrastructure.Data;
+using Neftyanik.Portal.Web.Localization;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Plots;
 
@@ -54,7 +55,10 @@ public class EditModel : PageModel
 
         if (!string.IsNullOrWhiteSpace(Input.Number) && await PlotNumberExistsAsync(id, cancellationToken))
         {
-            ModelState.AddModelError("Input.Number", "Участок с таким номером уже существует.");
+            ModelState.AddModelError("Input.Number", AppLocalizer.Get(
+                "Участок с таким номером уже существует.",
+                "Ділянка з таким номером уже існує.",
+                "A plot with this number already exists."));
         }
 
         if (!ModelState.IsValid)
@@ -82,11 +86,17 @@ public class EditModel : PageModel
         }
         catch (DbUpdateException exception) when (IsUniquePlotNumberViolation(exception))
         {
-            ModelState.AddModelError("Input.Number", "Участок с таким номером уже существует.");
+            ModelState.AddModelError("Input.Number", AppLocalizer.Get(
+                "Участок с таким номером уже существует.",
+                "Ділянка з таким номером уже існує.",
+                "A plot with this number already exists."));
             return Page();
         }
 
-        TempData["SuccessMessage"] = "Изменения по участку сохранены.";
+        TempData["SuccessMessage"] = AppLocalizer.Get(
+            "Изменения по участку сохранены.",
+            "Зміни щодо ділянки збережено.",
+            "Plot changes have been saved.");
         return RedirectToPage("/Administration/Plots/Details", new { id = plot.Id });
     }
 

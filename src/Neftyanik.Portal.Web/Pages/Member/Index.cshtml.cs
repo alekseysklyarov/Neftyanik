@@ -11,6 +11,7 @@ using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data;
 using Neftyanik.Portal.Infrastructure.Data.Queries;
 using Neftyanik.Portal.Web.Pages.Finance;
+using Neftyanik.Portal.Web.Localization;
 using Neftyanik.Portal.Web.Security;
 
 namespace Neftyanik.Portal.Web.Pages.Member;
@@ -116,7 +117,10 @@ public class IndexModel : PageModel
             .FirstOrDefaultAsync(item => item.ApplicationUserId == user.Id, cancellationToken);
         if (member is null)
         {
-            TempData["ErrorMessage"] = "Учетная запись не связана с карточкой члена товарищества. Обратитесь к администратору.";
+            TempData["ErrorMessage"] = AppLocalizer.Get(
+                "Учетная запись не связана с карточкой члена товарищества. Обратитесь к администратору.",
+                "Обліковий запис не пов'язаний із карткою члена товариства. Зверніться до адміністратора.",
+                "The account is not linked to a member record. Contact the administrator.");
             return RedirectToPage();
         }
 
@@ -126,7 +130,10 @@ public class IndexModel : PageModel
 
         if (string.IsNullOrWhiteSpace(Profile.FullName))
         {
-            ModelState.AddModelError($"{nameof(Profile)}.{nameof(ProfileInputModel.FullName)}", "Укажите ФИО.");
+            ModelState.AddModelError($"{nameof(Profile)}.{nameof(ProfileInputModel.FullName)}", AppLocalizer.Get(
+                "Укажите ФИО.",
+                "Вкажіть ПІБ.",
+                "Enter the full name."));
         }
 
         if (!string.IsNullOrWhiteSpace(Profile.Email))
@@ -138,7 +145,10 @@ public class IndexModel : PageModel
 
             if (duplicateEmailExists)
             {
-                ModelState.AddModelError($"{nameof(Profile)}.{nameof(ProfileInputModel.Email)}", "Пользователь с таким адресом электронной почты уже существует.");
+                ModelState.AddModelError($"{nameof(Profile)}.{nameof(ProfileInputModel.Email)}", AppLocalizer.Get(
+                    "Пользователь с таким адресом электронной почты уже существует.",
+                    "Користувач із такою адресою електронної пошти вже існує.",
+                    "A user with this email address already exists."));
             }
         }
 
@@ -182,7 +192,10 @@ public class IndexModel : PageModel
         await _dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
-        TempData["SuccessMessage"] = "Основные сведения обновлены.";
+        TempData["SuccessMessage"] = AppLocalizer.Get(
+            "Основные сведения обновлены.",
+            "Основні відомості оновлено.",
+            "Profile details have been updated.");
         return RedirectToPage(new { chargePage = ChargePage, paymentPage = PaymentPage, chargeTypeId = ChargeTypeId });
     }
 
@@ -221,7 +234,10 @@ public class IndexModel : PageModel
             return Page();
         }
 
-        TempData["SuccessMessage"] = "Пароль успешно изменен.";
+        TempData["SuccessMessage"] = AppLocalizer.Get(
+            "Пароль успешно изменен.",
+            "Пароль успішно змінено.",
+            "The password has been changed successfully.");
         return RedirectToPage(new { chargePage = ChargePage, paymentPage = PaymentPage, chargeTypeId = ChargeTypeId });
     }
 
@@ -251,7 +267,7 @@ public class IndexModel : PageModel
         {
             Dashboard = new MemberDashboardViewModel
             {
-                FullName = !string.IsNullOrWhiteSpace(user.DisplayName) ? user.DisplayName : user.Email ?? user.UserName ?? "Пользователь",
+                FullName = !string.IsNullOrWhiteSpace(user.DisplayName) ? user.DisplayName : user.Email ?? user.UserName ?? AppLocalizer.Get("Пользователь", "Користувач", "User"),
                 Email = user.Email,
                 PhoneNumber = user.PhoneNumber,
                 IsLinked = false
@@ -340,7 +356,7 @@ public class IndexModel : PageModel
             .Select(item => new SelectListItem
             {
                 Value = item.ChargeTypeId.ToString(),
-                Text = string.IsNullOrWhiteSpace(item.Name) ? $"Тип #{item.ChargeTypeId}" : item.Name
+                Text = string.IsNullOrWhiteSpace(item.Name) ? AppLocalizer.Get($"Тип #{item.ChargeTypeId}", $"Тип #{item.ChargeTypeId}", $"Type #{item.ChargeTypeId}") : item.Name
             })
             .ToListAsync(cancellationToken);
 
@@ -445,12 +461,15 @@ public class IndexModel : PageModel
 
         if (nameParts.Length == 0)
         {
-            return ("Член", "Товарищества", "Член товарищества");
+            return (
+                AppLocalizer.Get("Член", "Член", "Member"),
+                AppLocalizer.Get("Товарищества", "Товариства", "Association"),
+                AppLocalizer.Get("Член товарищества", "Член товариства", "Association member"));
         }
 
         if (nameParts.Length == 1)
         {
-            return (TrimToLength(nameParts[0], 100), "Товарищества", trimmedFullName);
+            return (TrimToLength(nameParts[0], 100), AppLocalizer.Get("Товарищества", "Товариства", "Association"), trimmedFullName);
         }
 
         var firstName = TrimToLength(string.Join(' ', nameParts[..^1]), 100);
@@ -458,12 +477,12 @@ public class IndexModel : PageModel
 
         if (string.IsNullOrWhiteSpace(firstName))
         {
-            firstName = "Член";
+            firstName = AppLocalizer.Get("Член", "Член", "Member");
         }
 
         if (string.IsNullOrWhiteSpace(lastName))
         {
-            lastName = "Товарищества";
+            lastName = AppLocalizer.Get("Товарищества", "Товариства", "Association");
         }
 
         return (firstName, lastName, trimmedFullName);
@@ -490,41 +509,104 @@ public class IndexModel : PageModel
         public IReadOnlyList<PlotViewModel> Plots { get; set; } = [];
     }
 
-    public sealed class ProfileInputModel
+    public sealed class ProfileInputModel : IValidatableObject
     {
-        [Required(ErrorMessage = "Укажите ФИО.")]
-        [StringLength(200, ErrorMessage = "ФИО не должно превышать 200 символов.")]
-        [Display(Name = "ФИО")]
         public string FullName { get; set; } = string.Empty;
 
-        [StringLength(50, ErrorMessage = "Номер телефона не должен превышать 50 символов.")]
-        [Phone(ErrorMessage = "Введите корректный номер телефона.")]
-        [Display(Name = "Телефон")]
         public string? PhoneNumber { get; set; }
 
-        [StringLength(256, ErrorMessage = "Электронная почта не должна превышать 256 символов.")]
-        [EmailAddress(ErrorMessage = "Введите корректный адрес электронной почты.")]
-        [Display(Name = "Электронная почта")]
         public string? Email { get; set; }
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (string.IsNullOrWhiteSpace(FullName))
+            {
+                yield return new ValidationResult(
+                    AppLocalizer.Get("Укажите ФИО.", "Вкажіть ПІБ.", "Enter the full name."),
+                    [nameof(FullName)]);
+            }
+            else if (FullName.Trim().Length > 200)
+            {
+                yield return new ValidationResult(
+                    AppLocalizer.Get("ФИО не должно превышать 200 символов.", "ПІБ не повинно перевищувати 200 символів.", "The full name must not exceed 200 characters."),
+                    [nameof(FullName)]);
+            }
+
+            if (!string.IsNullOrWhiteSpace(PhoneNumber))
+            {
+                if (PhoneNumber.Trim().Length > 50)
+                {
+                    yield return new ValidationResult(
+                        AppLocalizer.Get("Номер телефона не должен превышать 50 символов.", "Номер телефону не повинен перевищувати 50 символів.", "The phone number must not exceed 50 characters."),
+                        [nameof(PhoneNumber)]);
+                }
+                else if (!new PhoneAttribute().IsValid(PhoneNumber))
+                {
+                    yield return new ValidationResult(
+                        AppLocalizer.Get("Введите корректный номер телефона.", "Введіть коректний номер телефону.", "Enter a valid phone number."),
+                        [nameof(PhoneNumber)]);
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(Email))
+            {
+                if (Email.Trim().Length > 256)
+                {
+                    yield return new ValidationResult(
+                        AppLocalizer.Get("Электронная почта не должна превышать 256 символов.", "Електронна пошта не повинна перевищувати 256 символів.", "The email must not exceed 256 characters."),
+                        [nameof(Email)]);
+                }
+                else if (!new EmailAddressAttribute().IsValid(Email))
+                {
+                    yield return new ValidationResult(
+                        AppLocalizer.Get("Введите корректный адрес электронной почты.", "Введіть коректну адресу електронної пошти.", "Enter a valid email address."),
+                        [nameof(Email)]);
+                }
+            }
+        }
     }
 
-    public sealed class ChangePasswordInputModel
+    public sealed class ChangePasswordInputModel : IValidatableObject
     {
-        [Required(ErrorMessage = "Введите текущий пароль.")]
         [DataType(DataType.Password)]
-        [Display(Name = "Текущий пароль")]
         public string CurrentPassword { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Введите новый пароль.")]
         [DataType(DataType.Password)]
-        [Display(Name = "Новый пароль")]
         public string NewPassword { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Подтвердите новый пароль.")]
         [DataType(DataType.Password)]
-        [Compare(nameof(NewPassword), ErrorMessage = "Пароли не совпадают.")]
-        [Display(Name = "Подтверждение нового пароля")]
         public string ConfirmNewPassword { get; set; } = string.Empty;
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (string.IsNullOrWhiteSpace(CurrentPassword))
+            {
+                yield return new ValidationResult(
+                    AppLocalizer.Get("Введите текущий пароль.", "Введіть поточний пароль.", "Enter the current password."),
+                    [nameof(CurrentPassword)]);
+            }
+
+            if (string.IsNullOrWhiteSpace(NewPassword))
+            {
+                yield return new ValidationResult(
+                    AppLocalizer.Get("Введите новый пароль.", "Введіть новий пароль.", "Enter a new password."),
+                    [nameof(NewPassword)]);
+            }
+
+            if (string.IsNullOrWhiteSpace(ConfirmNewPassword))
+            {
+                yield return new ValidationResult(
+                    AppLocalizer.Get("Подтвердите новый пароль.", "Підтвердьте новий пароль.", "Confirm the new password."),
+                    [nameof(ConfirmNewPassword)]);
+            }
+            else if (!string.IsNullOrWhiteSpace(NewPassword)
+                && !string.Equals(NewPassword, ConfirmNewPassword, StringComparison.Ordinal))
+            {
+                yield return new ValidationResult(
+                    AppLocalizer.Get("Пароли не совпадают.", "Паролі не збігаються.", "Passwords do not match."),
+                    [nameof(ConfirmNewPassword)]);
+            }
+        }
     }
 
     private async Task<Dictionary<int, decimal>> LoadPaymentTotalsByPlotAsync(int[] plotIds, CancellationToken cancellationToken)
@@ -638,7 +720,7 @@ public class IndexModel : PageModel
         {
             ElectricityMeters = [];
             IsElectricityFeatureAvailable = false;
-            ElectricityFeatureWarningMessage = "Модуль электросчётчиков недоступен: необходимо применить обновление базы данных.";
+            ElectricityFeatureWarningMessage = AppLocalizer.Get("Модуль электросчётчиков недоступен: необходимо применить обновление базы данных.", "Модуль електролічильників недоступний: необхідно застосувати оновлення бази даних.", "The electricity meter module is unavailable: a database update must be applied.");
         }
     }
 
@@ -729,7 +811,9 @@ public class IndexModel : PageModel
 
         public string? CancellationReason { get; init; }
 
-        public string StatusText => IsCancelled ? "Отменено" : "Активно";
+        public string StatusText => IsCancelled
+            ? AppLocalizer.Get("Отменено", "Скасовано", "Cancelled")
+            : AppLocalizer.Get("Активно", "Активно", "Active");
     }
 
     public sealed class PaymentItemViewModel
@@ -752,7 +836,9 @@ public class IndexModel : PageModel
 
         public string? CancellationReason { get; init; }
 
-        public string StatusText => IsCancelled ? "Отменено" : "Активно";
+        public string StatusText => IsCancelled
+            ? AppLocalizer.Get("Отменено", "Скасовано", "Cancelled")
+            : AppLocalizer.Get("Активно", "Активно", "Active");
     }
 
     public sealed record MemberElectricityMeterItemViewModel
@@ -777,7 +863,7 @@ public class IndexModel : PageModel
 
         public IReadOnlyList<MemberElectricityReadingHistoryItemViewModel> Readings { get; init; } = [];
 
-        public string DisplayName => !string.IsNullOrWhiteSpace(Name) ? Name : !string.IsNullOrWhiteSpace(MeterNumber) ? MeterNumber : $"Счётчик #{Id}";
+        public string DisplayName => !string.IsNullOrWhiteSpace(Name) ? Name : !string.IsNullOrWhiteSpace(MeterNumber) ? MeterNumber : AppLocalizer.Get($"Счётчик #{Id}", $"Лічильник #{Id}", $"Meter #{Id}");
     }
 
     public sealed class MemberElectricityReadingHistoryItemViewModel

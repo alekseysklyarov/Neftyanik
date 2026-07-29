@@ -8,6 +8,7 @@ using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data;
 using Neftyanik.Portal.Infrastructure.Data.Queries;
+using Neftyanik.Portal.Web.Localization;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Members.Finance;
 
@@ -47,13 +48,13 @@ public class CreateChargeModel : PageModel
 
         if (PlotOptions.Count == 0)
         {
-            TempData["ErrorMessage"] = "У участника нет активных участков для начисления.";
+            TempData["ErrorMessage"] = AppLocalizer.Get("У участника нет активных участков для начисления.", "У учасника немає активних ділянок для нарахування.", "The member has no active plots for charging.");
             return RedirectToPage("/Administration/Members/Finance", new { id });
         }
 
         if (ChargeTypeOptions.Count == 0)
         {
-            TempData["ErrorMessage"] = "Сначала создайте активный тип начисления.";
+            TempData["ErrorMessage"] = AppLocalizer.Get("Сначала создайте активный тип начисления.", "Спочатку створіть активний тип нарахування.", "Create an active charge type first.");
             return RedirectToPage("/Administration/Members/Finance", new { id });
         }
 
@@ -76,13 +77,15 @@ public class CreateChargeModel : PageModel
 
         if (PlotOptions.Count == 0)
         {
-            ModelState.AddModelError(string.Empty, "У участника нет активных участков для начисления.");
+            ModelState.AddModelError(string.Empty, AppLocalizer.Get("У участника нет активных участков для начисления.", "У учасника немає активних ділянок для нарахування.", "The member has no active plots for charging."));
         }
 
         if (ChargeTypeOptions.Count == 0)
         {
-            ModelState.AddModelError(string.Empty, "Нет доступных активных типов начислений.");
+            ModelState.AddModelError(string.Empty, AppLocalizer.Get("Нет доступных активных типов начислений.", "Немає доступних активних типів нарахувань.", "There are no available active charge types."));
         }
+
+        ValidateInput();
 
         if (!Input.ChargeTypeId.HasValue && ChargeTypeOptions.Count > 0)
         {
@@ -97,21 +100,21 @@ public class CreateChargeModel : PageModel
         var validPlotIds = PlotOptions.Select(option => option.Value).ToHashSet(StringComparer.Ordinal);
         if (!validPlotIds.Contains(Input.PlotId!.Value.ToString()))
         {
-            ModelState.AddModelError(nameof(Input.PlotId), "Выберите участок из списка текущих владений участника.");
+            ModelState.AddModelError(nameof(Input.PlotId), AppLocalizer.Get("Выберите участок из списка текущих владений участника.", "Виберіть ділянку зі списку поточних володінь учасника.", "Select a plot from the member's current ownerships."));
             return Page();
         }
 
         var validChargeTypeIds = ChargeTypeOptions.Select(option => option.Value).ToHashSet(StringComparer.Ordinal);
         if (!validChargeTypeIds.Contains(Input.ChargeTypeId!.Value.ToString()))
         {
-            ModelState.AddModelError(nameof(Input.ChargeTypeId), "Выберите активный тип начисления.");
+            ModelState.AddModelError(nameof(Input.ChargeTypeId), AppLocalizer.Get("Выберите активный тип начисления.", "Виберіть активний тип нарахування.", "Select an active charge type."));
             return Page();
         }
 
         var chargeTypeRules = GetChargeTypeRules(Input.ChargeTypeId.Value);
         if (chargeTypeRules is null)
         {
-            ModelState.AddModelError(nameof(Input.ChargeTypeId), "Выберите активный тип начисления.");
+            ModelState.AddModelError(nameof(Input.ChargeTypeId), AppLocalizer.Get("Выберите активный тип начисления.", "Виберіть активний тип нарахування.", "Select an active charge type."));
             return Page();
         }
 
@@ -132,7 +135,7 @@ public class CreateChargeModel : PageModel
 
             if (duplicateExists)
             {
-                ModelState.AddModelError(string.Empty, "Для этого участка уже существует ежегодное начисление выбранного типа за указанный год.");
+                ModelState.AddModelError(string.Empty, AppLocalizer.Get("Для этого участка уже существует ежегодное начисление выбранного типа за указанный год.", "Для цієї ділянки вже існує щорічне нарахування вибраного типу за вказаний рік.", "An annual charge of the selected type already exists for this plot for the specified year."));
                 return Page();
             }
         }
@@ -151,7 +154,7 @@ public class CreateChargeModel : PageModel
 
             if (currentOwnership is null)
             {
-                ModelState.AddModelError(string.Empty, "Начисление этого типа можно создать только для участка с текущим владельцем на дату начисления.");
+                ModelState.AddModelError(string.Empty, AppLocalizer.Get("Начисление этого типа можно создать только для участка с текущим владельцем на дату начисления.", "Нарахування цього типу можна створити лише для ділянки з поточним власником на дату нарахування.", "This charge type can only be created for a plot with a current owner on the charge date."));
                 return Page();
             }
 
@@ -169,7 +172,7 @@ public class CreateChargeModel : PageModel
 
             if (duplicateExists)
             {
-                ModelState.AddModelError(string.Empty, "Начисление этого типа уже создавалось для текущего владельца участка.");
+                ModelState.AddModelError(string.Empty, AppLocalizer.Get("Начисление этого типа уже создавалось для текущего владельца участка.", "Нарахування цього типу вже створювалося для поточного власника ділянки.", "This charge type has already been created for the current plot owner."));
                 return Page();
             }
         }
@@ -191,8 +194,31 @@ public class CreateChargeModel : PageModel
         _dbContext.Charges.Add(charge);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        TempData["SuccessMessage"] = "Начисление сохранено.";
+        TempData["SuccessMessage"] = AppLocalizer.Get("Начисление сохранено.", "Нарахування збережено.", "The charge has been saved.");
         return RedirectToPage("/Administration/Members/Finance", new { id });
+    }
+
+    private void ValidateInput()
+    {
+        if (Input.PlotId is null)
+        {
+            ModelState.AddModelError($"{nameof(Input)}.{nameof(MemberChargeInputModel.PlotId)}", AppLocalizer.Get("Выберите участок.", "Виберіть ділянку.", "Select a plot."));
+        }
+
+        if (Input.ChargeTypeId is null)
+        {
+            ModelState.AddModelError($"{nameof(Input)}.{nameof(MemberChargeInputModel.ChargeTypeId)}", AppLocalizer.Get("Выберите тип начисления.", "Виберіть тип нарахування.", "Select a charge type."));
+        }
+
+        if (Input.Amount is null)
+        {
+            ModelState.AddModelError($"{nameof(Input)}.{nameof(MemberChargeInputModel.Amount)}", AppLocalizer.Get("Укажите сумму начисления.", "Вкажіть суму нарахування.", "Enter a charge amount."));
+        }
+
+        if (Input.ChargeDate is null)
+        {
+            ModelState.AddModelError($"{nameof(Input)}.{nameof(MemberChargeInputModel.ChargeDate)}", AppLocalizer.Get("Укажите дату начисления.", "Вкажіть дату нарахування.", "Enter a charge date."));
+        }
     }
 
     private async Task<bool> LoadPageStateAsync(int memberId, CancellationToken cancellationToken)
@@ -228,8 +254,8 @@ public class CreateChargeModel : PageModel
             {
                 Value = ownership.PlotId.ToString(),
                 Text = ownership.Plot != null
-                    ? $"Участок {ownership.Plot.Number}{(string.IsNullOrWhiteSpace(ownership.Plot.Address) ? string.Empty : $" — {ownership.Plot.Address}")}"
-                    : $"Участок #{ownership.PlotId}"
+                    ? AppLocalizer.Get($"Участок {ownership.Plot.Number}{(string.IsNullOrWhiteSpace(ownership.Plot.Address) ? string.Empty : $" — {ownership.Plot.Address}")}", $"Ділянка {ownership.Plot.Number}{(string.IsNullOrWhiteSpace(ownership.Plot.Address) ? string.Empty : $" — {ownership.Plot.Address}")}", $"Plot {ownership.Plot.Number}{(string.IsNullOrWhiteSpace(ownership.Plot.Address) ? string.Empty : $" — {ownership.Plot.Address}")}")
+                    : AppLocalizer.Get($"Участок #{ownership.PlotId}", $"Ділянка #{ownership.PlotId}", $"Plot #{ownership.PlotId}")
             })
             .Distinct()
             .ToListAsync(cancellationToken);
@@ -294,22 +320,22 @@ public class CreateChargeModel : PageModel
 
         if (chargeType.DefaultAmount.HasValue)
         {
-            suffixes.Add($"{chargeType.DefaultAmount.Value:0.00} грн по умолчанию");
+            suffixes.Add(AppLocalizer.Get($"{chargeType.DefaultAmount.Value:0.00} грн по умолчанию", $"{chargeType.DefaultAmount.Value:0.00} грн за замовчуванням", $"{chargeType.DefaultAmount.Value:0.00} UAH by default"));
         }
 
         if (chargeType.IsDefault)
         {
-            suffixes.Add("по умолчанию");
+            suffixes.Add(AppLocalizer.Get("по умолчанию", "за замовчуванням", "default"));
         }
 
         if (chargeType.IsYearly)
         {
-            suffixes.Add("ежегодный");
+            suffixes.Add(AppLocalizer.Get("ежегодный", "щорічний", "yearly"));
         }
 
         if (chargeType.OnlyOnOwnerChange)
         {
-            suffixes.Add("при смене владельца");
+            suffixes.Add(AppLocalizer.Get("при смене владельца", "при зміні власника", "on owner change"));
         }
 
         return suffixes.Count == 0

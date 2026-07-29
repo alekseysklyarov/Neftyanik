@@ -1,36 +1,38 @@
 @page "/Administration/Members/{memberId:int}/Account/Lock"
 @model Neftyanik.Portal.Web.Pages.Administration.Members.Account.LockModel
 @{
-    ViewData["Title"] = Model.IsUnlockOperation ? "Разблокировка учетной записи" : "Блокировка учетной записи";
+    ViewData["Title"] = Model.IsUnlockOperation
+        ? AppLocalizer.Get("Разблокировка учетной записи", "Розблокування облікового запису", "Unlock account")
+        : AppLocalizer.Get("Блокировка учетной записи", "Блокування облікового запису", "Lock account");
 }
 
 <div class="row justify-content-center">
     <div class="col-lg-8">
         <div class="card shadow-sm">
             <div class="card-body p-4">
-                <h1 class="h3 mb-3">@(Model.IsUnlockOperation ? "Разблокировка учетной записи" : "Блокировка учетной записи")</h1>
-                <p class="text-muted">Член товарищества: @Model.Member.FullName</p>
+                <h1 class="h3 mb-3">@(Model.IsUnlockOperation ? AppLocalizer.Get("Разблокировка учетной записи", "Розблокування облікового запису", "Unlock account") : AppLocalizer.Get("Блокировка учетной записи", "Блокування облікового запису", "Lock account"))</h1>
+                <p class="text-muted">@AppLocalizer.Get("Член товарищества:", "Член товариства:", "Member:") @Model.Member.FullName</p>
 
                 <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
                 <dl class="row mb-4">
-                    <dt class="col-sm-4">Логин / email</dt>
+                    <dt class="col-sm-4">@AppLocalizer.Get("Логин / email", "Логін / email", "Login / email")</dt>
                     <dd class="col-sm-8">@Model.Account.LoginEmail</dd>
 
-                    <dt class="col-sm-4">Статус</dt>
-                    <dd class="col-sm-8">@(Model.Account.IsLockedOut ? "Учетная запись заблокирована" : "Учетная запись активна")</dd>
+                    <dt class="col-sm-4">@AppLocalizer.Get("Статус", "Статус", "Status")</dt>
+                    <dd class="col-sm-8">@(Model.Account.IsLockedOut ? AppLocalizer.Get("Учетная запись заблокирована", "Обліковий запис заблоковано", "The account is locked") : AppLocalizer.Get("Учетная запись активна", "Обліковий запис активний", "The account is active"))</dd>
                 </dl>
 
                 <p>
                     @(Model.IsUnlockOperation
-                        ? "Подтвердите разблокировку учетной записи пользователя."
-                        : "Подтвердите блокировку учетной записи пользователя. Учетная запись не будет удалена и связь с членом товарищества сохранится.")
+                        ? AppLocalizer.Get("Подтвердите разблокировку учетной записи пользователя.", "Підтвердьте розблокування облікового запису користувача.", "Confirm unlocking the user account.")
+                        : AppLocalizer.Get("Подтвердите блокировку учетной записи пользователя. Учетная запись не будет удалена и связь с членом товарищества сохранится.", "Підтвердьте блокування облікового запису користувача. Обліковий запис не буде видалено, а зв'язок із членом товариства збережеться.", "Confirm locking the user account. The account will not be deleted and the link to the member will be preserved."))
                 </p>
 
                 <form method="post" class="d-flex gap-2 flex-wrap">
-                    <button type="submit" class="btn @(Model.IsUnlockOperation ? "btn-success" : "btn-warning")">@(Model.IsUnlockOperation ? "Подтвердить разблокировку" : "Подтвердить блокировку")</button>
-                    <a class="btn btn-outline-success" asp-page="/Administration/Members/Finance" asp-route-id="@Model.Member.Id">Финансы</a>
-                    <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Details" asp-route-id="@Model.Member.Id">Отмена</a>
+                    <button type="submit" class="btn @(Model.IsUnlockOperation ? "btn-success" : "btn-warning")">@(Model.IsUnlockOperation ? AppLocalizer.Get("Подтвердить разблокировку", "Підтвердити розблокування", "Confirm unlock") : AppLocalizer.Get("Подтвердить блокировку", "Підтвердити блокування", "Confirm lock"))</button>
+                    <a class="btn btn-outline-success" asp-page="/Administration/Members/Finance" asp-route-id="@Model.Member.Id">@AppLocalizer.Get("Финансы", "Фінанси", "Finance")</a>
+                    <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Details" asp-route-id="@Model.Member.Id">@AppLocalizer.Get("Отмена", "Скасувати", "Cancel")</a>
                 </form>
             </div>
         </div>

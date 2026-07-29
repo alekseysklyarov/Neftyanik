@@ -1,26 +1,26 @@
 @page "{id:int}/Finance"
 @model Neftyanik.Portal.Web.Pages.Administration.Members.FinanceModel
 @{
-    ViewData["Title"] = $"Финансы: {Model.Member.FullName}";
+    ViewData["Title"] = AppLocalizer.Get($"Финансы: {Model.Member.FullName}", $"Фінанси: {Model.Member.FullName}", $"Finance: {Model.Member.FullName}");
 }
 
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
-        <h1 class="h4 mb-1">Финансы члена товарищества</h1>
+        <h1 class="h4 mb-1">@AppLocalizer.Get("Финансы члена товарищества", "Фінанси члена товариства", "Member finance")</h1>
         <p class="h1 text-muted mb-0">@Model.Member.FullName</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
         @if (Model.Plots.Count > 0)
         {
-            <a class="btn btn-primary" asp-page="/Administration/Members/Finance/CreateCharge" asp-route-id="@Model.Member.Id">Добавить начисление</a>
-            <a class="btn btn-outline-primary" asp-page="/Administration/Members/Finance/RegisterPayment" asp-route-id="@Model.Member.Id">Зарегистрировать платеж</a>
+            <a class="btn btn-primary" asp-page="/Administration/Members/Finance/CreateCharge" asp-route-id="@Model.Member.Id">@AppLocalizer.Get("Добавить начисление", "Додати нарахування", "Add charge")</a>
+            <a class="btn btn-outline-primary" asp-page="/Administration/Members/Finance/RegisterPayment" asp-route-id="@Model.Member.Id">@AppLocalizer.Get("Зарегистрировать платеж", "Зареєструвати платіж", "Register payment")</a>
         }
         @if (Model.CanEnterElectricityReading)
         {
-            <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#electricityReadingModal">Внести показание электросчётчика</button>
+            <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#electricityReadingModal">@AppLocalizer.Get("Внести показание электросчётчика", "Внести показник електролічильника", "Enter meter reading")</button>
         }
-        <a class="btn btn-outline-primary" asp-page="/Administration/Members/Details" asp-route-id="@Model.Member.Id">Карточка члена товарищества</a>
-        <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Index">К списку членов товарищества</a>
+        <a class="btn btn-outline-primary" asp-page="/Administration/Members/Details" asp-route-id="@Model.Member.Id">@AppLocalizer.Get("Карточка члена товарищества", "Картка члена товариства", "Member details")</a>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Index">@AppLocalizer.Get("К списку членов товарищества", "До списку членів товариства", "Back to members")</a>
     </div>
 </div>
 
@@ -68,12 +68,12 @@
 
 <div class="card shadow-sm mb-4">
     <div class="card-header bg-white">
-        <h2 class="h5 mb-0">Участки</h2>
+        <h2 class="h5 mb-0">@AppLocalizer.Get("Участки", "Ділянки", "Plots")</h2>
     </div>
     <div class="card-body p-0">
         @if (Model.Plots.Count == 0)
         {
-            <div class="p-4 text-center text-muted">У этого члена товарищества нет активных участков с финансовыми данными.</div>
+            <div class="p-4 text-center text-muted">@AppLocalizer.Get("У этого члена товарищества нет активных участков с финансовыми данными.", "У цього члена товариства немає активних ділянок з фінансовими даними.", "This member has no active plots with financial data.")</div>
         }
         else
         {
@@ -81,13 +81,13 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th>Участок</th>
-                            <th>Адрес</th>
-                            <th>Начислено</th>
-                            <th>Оплачено</th>
-                            <th>Баланс</th>
-                            <th>Статус</th>
-                            <th class="text-end">Действия</th>
+                            <th>@AppLocalizer.Get("Участок", "Ділянка", "Plot")</th>
+                            <th>@AppLocalizer.Get("Адрес", "Адреса", "Address")</th>
+                            <th>@AppLocalizer.Get("Начислено", "Нараховано", "Charged")</th>
+                            <th>@AppLocalizer.Get("Оплачено", "Сплачено", "Paid")</th>
+                            <th>@AppLocalizer.Get("Баланс", "Баланс", "Balance")</th>
+                            <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
+                            <th class="text-end">@AppLocalizer.Get("Действия", "Дії", "Actions")</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -287,15 +287,15 @@ else
 {
     <div class="card shadow-sm mb-4">
         <div class="card-header bg-white d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-            <h2 class="h5 mb-0">Электросчётчики</h2>
+            <h2 class="h5 mb-0">@AppLocalizer.Get("Электросчётчики", "Електролічильники", "Electricity meters")</h2>
             <div class="d-flex gap-2 flex-wrap">
                 @if (Model.CanSetupElectricityMeter)
                 {
-                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#electricitySetupModal">Инициализировать электросчётчик</button>
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#electricitySetupModal">@AppLocalizer.Get("Инициализировать электросчётчик", "Ініціалізувати електролічильник", "Initialize meter")</button>
                 }
                 @if (Model.CanInitializeElectricity)
                 {
-                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#electricityInitializationModal">Инициализировать значения</button>
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#electricityInitializationModal">@AppLocalizer.Get("Инициализировать значения", "Ініціалізувати значення", "Initialize values")</button>
                 }
             </div>
         </div>
@@ -305,31 +305,31 @@ else
                 {
                     <div class="alert alert-warning mb-0 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3" role="alert">
                         <div>
-                            <div class="fw-semibold">Тариф для участников не задан.</div>
-                            <div class="small">Тарифы со страницы общих тарифов не используются для начислений участникам.</div>
+                            <div class="fw-semibold">@AppLocalizer.Get("Тариф для участников не задан.", "Тариф для учасників не задано.", "The member tariff is not set.")</div>
+                            <div class="small">@AppLocalizer.Get("Тарифы со страницы общих тарифов не используются для начислений участникам.", "Тарифи зі сторінки загальних тарифів не використовуються для нарахувань учасникам.", "Tariffs from the common tariff page are not used for member charges.")</div>
                         </div>
-                        <a class="btn btn-sm btn-outline-primary" asp-page="/Administration/Electricity/MemberTariffs/Index">Тариф для участников</a>
+                        <a class="btn btn-sm btn-outline-primary" asp-page="/Administration/Electricity/MemberTariffs/Index">@AppLocalizer.Get("Тариф для участников", "Тариф для учасників", "Member tariff")</a>
                     </div>
                 }
                 else
                 {
                     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 small">
                         <div>
-                            <span class="text-muted">Текущий тариф для участников:</span>
+                            <span class="text-muted">@AppLocalizer.Get("Текущий тариф для участников:", "Поточний тариф для учасників:", "Current member tariff:")</span>
                             <strong>@Model.CurrentMemberTariff.Rate.ToString("0.0000") грн/кВт·ч</strong>
-                            <span class="text-muted">с @Model.CurrentMemberTariff.EffectiveFrom.ToString("dd.MM.yyyy")</span>
+                            <span class="text-muted">@AppLocalizer.Get("с", "з", "from") @Model.CurrentMemberTariff.EffectiveFrom.ToString("dd.MM.yyyy")</span>
                         </div>
-                        <a class="btn btn-sm btn-outline-primary" asp-page="/Administration/Electricity/MemberTariffs/Index">Изменить тариф</a>
+                        <a class="btn btn-sm btn-outline-primary" asp-page="/Administration/Electricity/MemberTariffs/Index">@AppLocalizer.Get("Изменить тариф", "Змінити тариф", "Change tariff")</a>
                     </div>
                 }
             </div>
             @if (!Model.HasElectricityMeters)
             {
                 <div class="p-4 text-center text-muted">
-                    <div>У участника пока нет привязанных электросчётчиков.</div>
+                    <div>@AppLocalizer.Get("У участника пока нет привязанных электросчётчиков.", "У учасника поки немає прив'язаних електролічильників.", "The member has no linked electricity meters yet.")</div>
                     @if (Model.CanSetupElectricityMeter)
                     {
-                        <button type="button" class="btn btn-sm btn-outline-primary mt-3" data-bs-toggle="modal" data-bs-target="#electricitySetupModal">Привязать счётчик и сохранить начальные показания</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary mt-3" data-bs-toggle="modal" data-bs-target="#electricitySetupModal">@AppLocalizer.Get("Привязать счётчик и сохранить начальные показания", "Прив'язати лічильник і зберегти початкові показання", "Link meter and save initial readings")</button>
                     }
                 </div>
             }
@@ -339,9 +339,9 @@ else
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th>Счётчик</th>
-                                <th>Расчётный участок</th>
-                                <th>Статус</th>
+                                <th>@AppLocalizer.Get("Счётчик", "Лічильник", "Meter")</th>
+                                <th>@AppLocalizer.Get("Расчётный участок", "Розрахункова ділянка", "Billing plot")</th>
+                                <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -353,26 +353,26 @@ else
                                     <td>
                                         @if (!meter.IsActive)
                                         {
-                                            <span class="badge text-bg-secondary">Неактивен</span>
+                                            <span class="badge text-bg-secondary">@AppLocalizer.Get("Неактивен", "Неактивний", "Inactive")</span>
                                         }
                                         else if (!meter.HasReadings)
                                         {
-                                            <span class="badge text-bg-warning">Требуется инициализация</span>
+                                            <span class="badge text-bg-warning">@AppLocalizer.Get("Требуется инициализация", "Потрібна ініціалізація", "Initialization required")</span>
                                         }
                                         else
                                         {
-                                            <span class="badge text-bg-success">Готов к работе</span>
+                                            <span class="badge text-bg-success">@AppLocalizer.Get("Готов к работе", "Готовий до роботи", "Ready")</span>
                                         }
                                     </td>
                                 </tr>
                                 <tr class="table-light">
                                     <td colspan="3">
                                         <div class="small">
-                                            <div class="fw-semibold mb-2">История показаний</div>
+                                            <div class="fw-semibold mb-2">@AppLocalizer.Get("История показаний", "Історія показань", "Reading history")</div>
 
                                             @if (meter.Readings.Count == 0)
                                             {
-                                                <span class="text-muted">История отсутствует</span>
+                                                <span class="text-muted">@AppLocalizer.Get("История отсутствует", "Історія відсутня", "No history")</span>
                                             }
                                             else
                                             {
@@ -387,16 +387,16 @@ else
                                                             <div class="d-flex flex-wrap gap-3 text-muted mt-1">
                                                                 @if (reading.IsInitialReading)
                                                                 {
-                                                                    <span>Начальные показания</span>
+                                                                    <span>@AppLocalizer.Get("Начальные показания", "Початкові показання", "Initial reading")</span>
                                                                 }
                                                                 else if (reading.Consumption.HasValue)
                                                                 {
-                                                                    <span>Расход: @reading.Consumption.Value.ToString("0.###") кВт·ч</span>
+                                                                    <span>@AppLocalizer.Get("Расход:", "Споживання:", "Consumption:") @reading.Consumption.Value.ToString("0.###") кВт·ч</span>
                                                                 }
 
                                                                 @if (reading.Amount.HasValue)
                                                                 {
-                                                                    <span>Начисление: @reading.Amount.Value.ToString("0.00") грн</span>
+                                                                    <span>@AppLocalizer.Get("Начисление:", "Нарахування:", "Charge:") @reading.Amount.Value.ToString("0.00") грн</span>
                                                                 }
                                                             </div>
                                                         </div>
@@ -421,22 +421,22 @@ else
                 <input asp-for="ChargePage" type="hidden" />
                 <input asp-for="PaymentPage" type="hidden" />
                 <div class="modal-header">
-                    <h2 class="modal-title h5" id="electricityReadingModalLabel">Ввод показаний электросчётчика</h2>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                    <h2 class="modal-title h5" id="electricityReadingModalLabel">@AppLocalizer.Get("Ввод показаний электросчётчика", "Введення показників електролічильника", "Enter meter readings")</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@AppLocalizer.Get("Закрыть", "Закрити", "Close")"></button>
                 </div>
                 <div class="modal-body">
                     <div asp-validation-summary="All" class="alert alert-danger @(ViewContext.ViewData.ModelState.ErrorCount > 0 ? string.Empty : "d-none")" role="alert"></div>
                     @if (Model.CurrentMemberTariff is null)
                     {
                         <div class="alert alert-warning" role="alert">
-                            Для сохранения показаний сначала добавьте тариф для участников.
-                            <a asp-page="/Administration/Electricity/MemberTariffs/Index">Открыть тарифы для участников</a>
+                            @AppLocalizer.Get("Для сохранения показаний сначала добавьте тариф для участников.", "Щоб зберегти показання, спочатку додайте тариф для учасників.", "Add a member tariff before saving readings.")
+                            <a asp-page="/Administration/Electricity/MemberTariffs/Index">@AppLocalizer.Get("Открыть тарифы для участников", "Відкрити тарифи для учасників", "Open member tariffs")</a>
                         </div>
                     }
                     <div class="mb-3">
                         <label asp-for="ReadingInput.MeterId" class="form-label"></label>
                         <select asp-for="ReadingInput.MeterId" asp-items="Model.ReadingMeterOptions" class="form-select">
-                            <option value="">Выберите счётчик</option>
+                            <option value="">@AppLocalizer.Get("Выберите счётчик", "Виберіть лічильник", "Select meter")</option>
                         </select>
                         <span asp-validation-for="ReadingInput.MeterId" class="text-danger"></span>
                     </div>
@@ -452,8 +452,8 @@ else
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="submit" class="btn btn-success">Сохранить показания</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@AppLocalizer.Get("Отмена", "Скасувати", "Cancel")</button>
+                    <button type="submit" class="btn btn-success">@AppLocalizer.Get("Сохранить показания", "Зберегти показання", "Save readings")</button>
                 </div>
             </form>
         </div>
@@ -467,15 +467,15 @@ else
                 <input asp-for="ChargePage" type="hidden" />
                 <input asp-for="PaymentPage" type="hidden" />
                 <div class="modal-header">
-                    <h2 class="modal-title h5" id="electricitySetupModalLabel">Инициализация электросчётчика</h2>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                    <h2 class="modal-title h5" id="electricitySetupModalLabel">@AppLocalizer.Get("Инициализация электросчётчика", "Ініціалізація електролічильника", "Meter initialization")</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@AppLocalizer.Get("Закрыть", "Закрити", "Close")"></button>
                 </div>
                 <div class="modal-body">
                     <div asp-validation-summary="All" class="alert alert-danger @(ViewContext.ViewData.ModelState.ErrorCount > 0 ? string.Empty : "d-none")" role="alert"></div>
                     <div class="mb-3">
                         <label asp-for="SetupInput.BillingPlotId" class="form-label"></label>
                         <select asp-for="SetupInput.BillingPlotId" asp-items="Model.SetupPlotOptions" class="form-select">
-                            <option value="">Выберите участок</option>
+                            <option value="">@AppLocalizer.Get("Выберите участок", "Виберіть ділянку", "Select plot")</option>
                         </select>
                         <span asp-validation-for="SetupInput.BillingPlotId" class="text-danger"></span>
                     </div>
@@ -506,8 +506,8 @@ else
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="submit" class="btn btn-primary">Сохранить начальные значения</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@AppLocalizer.Get("Отмена", "Скасувати", "Cancel")</button>
+                    <button type="submit" class="btn btn-primary">@AppLocalizer.Get("Сохранить начальные значения", "Зберегти початкові значення", "Save initial values")</button>
                 </div>
             </form>
         </div>
@@ -521,15 +521,15 @@ else
                 <input asp-for="ChargePage" type="hidden" />
                 <input asp-for="PaymentPage" type="hidden" />
                 <div class="modal-header">
-                    <h2 class="modal-title h5" id="electricityInitializationModalLabel">Инициализация значений электросчётчика</h2>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                    <h2 class="modal-title h5" id="electricityInitializationModalLabel">@AppLocalizer.Get("Инициализация значений электросчётчика", "Ініціалізація значень електролічильника", "Initialize meter values")</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@AppLocalizer.Get("Закрыть", "Закрити", "Close")"></button>
                 </div>
                 <div class="modal-body">
                     <div asp-validation-summary="All" class="alert alert-danger @(ViewContext.ViewData.ModelState.ErrorCount > 0 ? string.Empty : "d-none")" role="alert"></div>
                     <div class="mb-3">
                         <label asp-for="InitializationInput.MeterId" class="form-label"></label>
                         <select asp-for="InitializationInput.MeterId" asp-items="Model.InitializationMeterOptions" class="form-select">
-                            <option value="">Выберите счётчик</option>
+                            <option value="">@AppLocalizer.Get("Выберите счётчик", "Виберіть лічильник", "Select meter")</option>
                         </select>
                         <span asp-validation-for="InitializationInput.MeterId" class="text-danger"></span>
                     </div>
@@ -550,8 +550,8 @@ else
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="submit" class="btn btn-primary">Сохранить начальные значения</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@AppLocalizer.Get("Отмена", "Скасувати", "Cancel")</button>
+                    <button type="submit" class="btn btn-primary">@AppLocalizer.Get("Сохранить начальные значения", "Зберегти початкові значення", "Save initial values")</button>
                 </div>
             </form>
         </div>
