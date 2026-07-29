@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -130,7 +131,7 @@ public class FinanceModel : PageModel
         }
 
         ModelState.Clear();
-        if (!TryValidateModel(ReadingInput, nameof(ReadingInput)))
+        if (!ValidateInputModel(ReadingInput, nameof(ReadingInput)))
         {
             ReopenReadingModal = true;
             return Page();
@@ -196,7 +197,7 @@ public class FinanceModel : PageModel
         }
 
         ModelState.Clear();
-        if (!TryValidateModel(SetupInput, nameof(SetupInput)))
+        if (!ValidateInputModel(SetupInput, nameof(SetupInput)))
         {
             ReopenSetupModal = true;
             return Page();
@@ -274,7 +275,7 @@ public class FinanceModel : PageModel
         }
 
         ModelState.Clear();
-        if (!TryValidateModel(InitializationInput, nameof(InitializationInput)))
+        if (!ValidateInputModel(InitializationInput, nameof(InitializationInput)))
         {
             ReopenInitializationModal = true;
             return Page();
@@ -591,6 +592,30 @@ public class FinanceModel : PageModel
         }
 
         return string.Empty;
+    }
+
+    private bool ValidateInputModel(object model, string prefix)
+    {
+        var validationResults = new List<ValidationResult>();
+        var validationContext = new ValidationContext(model);
+        var isValid = Validator.TryValidateObject(model, validationContext, validationResults, validateAllProperties: true);
+
+        foreach (var validationResult in validationResults)
+        {
+            if (validationResult.MemberNames.Any())
+            {
+                foreach (var memberName in validationResult.MemberNames)
+                {
+                    ModelState.AddModelError($"{prefix}.{memberName}", validationResult.ErrorMessage ?? "Некорректное значение.");
+                }
+            }
+            else
+            {
+                ModelState.AddModelError(prefix, validationResult.ErrorMessage ?? "Некорректное значение.");
+            }
+        }
+
+        return isValid;
     }
 
     private async Task LoadElectricityStateAsync(int memberId, CancellationToken cancellationToken)

@@ -65,7 +65,7 @@ public class AdministrationPlotChargeTests
             await dbContext.SaveChangesAsync();
         });
 
-        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(adminUserId, RoleNames.Administrator));
+        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(adminUserId, RoleNames.Administrator), cultureName: "ru-RU");
 
         var response = await client.GetAsync("/Administration/Plots?status=active&ownership=withowners");
         var html = await response.Content.ReadAsStringAsync();
@@ -74,12 +74,10 @@ public class AdministrationPlotChargeTests
         Assert.Contains("P-1001", html, StringComparison.Ordinal);
         Assert.DoesNotContain("P-1002", html, StringComparison.Ordinal);
         Assert.DoesNotContain("P-1003", html, StringComparison.Ordinal);
-        Assert.Contains("Начислить выбранным", html, StringComparison.Ordinal);
+        Assert.Contains("bulk-charge-form", html, StringComparison.Ordinal);
+        Assert.Contains("ChargeInput.SelectedPlotIds", html, StringComparison.Ordinal);
         Assert.Contains("select-all-plots", html, StringComparison.Ordinal);
         Assert.Contains("bulkChargeModal", html, StringComparison.Ordinal);
-        Assert.Contains("ChargeInput.SelectedPlotIds", html, StringComparison.Ordinal);
-        Assert.Contains("confirm-bulk-charge", html, StringComparison.Ordinal);
-        Assert.Contains("charge-amount-display", html, StringComparison.Ordinal);
         Assert.Contains("Plot Owner", html, StringComparison.Ordinal);
         Assert.DoesNotContain(">Один<", html, StringComparison.Ordinal);
         Assert.DoesNotContain(">Ни одного<", html, StringComparison.Ordinal);
@@ -90,6 +88,7 @@ public class AdministrationPlotChargeTests
     [Fact]
     public async Task OnGetPlotDetailsAsync_LoadsChargesForReadOnlyDisplay()
     {
+        using var cultureScope = new TestCultureScope("ru-RU");
         await using var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
 

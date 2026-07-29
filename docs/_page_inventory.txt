@@ -1,0 +1,74 @@
+Error.cshtml|/Error|
+Index.cshtml|/Index|
+Privacy.cshtml|/Privacy|
+Account/AccessDenied.cshtml|/Account/AccessDenied|[AllowAnonymous]
+Account/ChangeInitialPassword.cshtml|/Account/ChangeInitialPassword|[Authorize]
+Account/Login.cshtml|/Account/Login|[AllowAnonymous]
+Account/Logout.cshtml|/Account/Logout|
+Administration/Index.cshtml|/Administration|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Electricity/Association/Create.cshtml|/Administration/Electricity/Association/Create|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Electricity/Association/Index.cshtml|/Administration/Electricity/Association|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Electricity/Association/Initial.cshtml|/Administration/Electricity/Association/Initial|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Electricity/Association/Tariffs/Create.cshtml|/Administration/Electricity/Association/Tariffs/Create|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Electricity/Association/Tariffs/Index.cshtml|/Administration/Electricity/Association/Tariffs|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Electricity/MemberTariffs/Create.cshtml|/Administration/Electricity/MemberTariffs/Create|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Electricity/MemberTariffs/Index.cshtml|/Administration/Electricity/MemberTariffs|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Electricity/Meters/Create.cshtml|/Administration/Electricity/Meters/Create|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Electricity/Meters/Details.cshtml|/Administration/Electricity/Meters/{id:int}|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Electricity/Meters/Edit.cshtml|/Administration/Electricity/Meters/{id:int}/Edit|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Electricity/Meters/Index.cshtml|/Administration/Electricity/Meters|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Electricity/Meters/Initial.cshtml|/Administration/Electricity/Meters/{id:int}/Initial|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Electricity/Meters/Readings/Create.cshtml|/Administration/Electricity/Meters/{id:int}/Readings/Create|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Electricity/Meters/Readings/Index.cshtml|/Administration/Electricity/Meters/{id:int}/Readings|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Finance/Index.cshtml|/Administration/Finance|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Finance/ChargeTypes/Archive.cshtml|{id:int}|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Finance/ChargeTypes/Create.cshtml|/Administration/Finance/ChargeTypes/Create|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Finance/ChargeTypes/Details.cshtml|{id:int}|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Finance/ChargeTypes/Edit.cshtml|{id:int}|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Finance/ChargeTypes/Index.cshtml|/Administration/Finance/ChargeTypes|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Finance/Electricity/Tariffs/Create.cshtml|/Administration/Finance/Electricity/Tariffs/Create|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Finance/Electricity/Tariffs/Details.cshtml|/Administration/Finance/Electricity/Tariffs/{id:int}|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Finance/Electricity/Tariffs/Index.cshtml|/Administration/Finance/Electricity/Tariffs|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Finance/ExpenseCategories/Archive.cshtml|{id:int}|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Finance/ExpenseCategories/Create.cshtml|/Administration/Finance/ExpenseCategories/Create|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Finance/ExpenseCategories/Edit.cshtml|{id:int}|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Finance/ExpenseCategories/Index.cshtml|/Administration/Finance/ExpenseCategories|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Finance/Expenses/Cancel.cshtml|{id:long}/Cancel|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Finance/Expenses/Create.cshtml|/Administration/Finance/Expenses/Create|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Finance/Expenses/Details.cshtml|{id:long}|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Finance/Expenses/Edit.cshtml|{id:long}/Edit|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Finance/Expenses/Index.cshtml|/Administration/Finance/Expenses|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Finance/Expenses/Electricity/Index.cshtml|/Administration/Finance/Expenses/Electricity|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Finance/Settings/Index.cshtml|/Administration/Finance/Settings|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Members/Archive.cshtml|{id:int}|[Authorize(Roles = RoleNames.Administrator)]
+Administration/Members/Create.cshtml|/Administration/Members/Create|[Authorize(Roles = RoleNames.Administrator)]
+Administration/Members/Details.cshtml|{id:int}|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Members/Edit.cshtml|{id:int}|[Authorize(Roles = RoleNames.Administrator)]
+Administration/Members/Finance.cshtml|{id:int}/Finance|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Members/Index.cshtml|/Administration/Members|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Members/Account/Create.cshtml|/Administration/Members/{memberId:int}/Account/Create|
+Administration/Members/Account/Lock.cshtml|/Administration/Members/{memberId:int}/Account/Lock|
+Administration/Members/Account/ResetPassword.cshtml|/Administration/Members/{memberId:int}/Account/ResetPassword|
+Administration/Members/Account/Roles.cshtml|/Administration/Members/{memberId:int}/Account/Roles|
+Administration/Members/Finance/CreateCharge.cshtml|/Administration/Members/Finance/{id:int}/CreateCharge|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Members/Finance/RegisterPayment.cshtml|/Administration/Members/Finance/{id:int}/RegisterPayment|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Members/Plots/Create.cshtml|/Administration/Members/Plots/Create|[Authorize(Roles = RoleNames.Administrator)]
+Administration/Plots/Archive.cshtml|{id:int}|[Authorize(Roles = RoleNames.Administrator)]
+Administration/Plots/Create.cshtml|/Administration/Plots/Create|[Authorize(Roles = RoleNames.Administrator)]
+Administration/Plots/Details.cshtml|{id:int}|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Plots/Edit.cshtml|{id:int}|[Authorize(Roles = RoleNames.Administrator)]
+Administration/Plots/Index.cshtml|/Administration/Plots|[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
+Administration/Plots/Electricity/Create.cshtml|/Administration/Plots/{plotId:int}/Electricity/Create|
+Administration/Plots/Electricity/Index.cshtml|/Administration/Plots/{plotId:int}/Electricity|
+Administration/Plots/Electricity/Initial.cshtml|/Administration/Plots/{plotId:int}/Electricity/Initial|
+Administration/Plots/Ownerships/Create.cshtml|/Administration/Plots/{plotId:int}/Ownerships/Create|
+Administration/Plots/Ownerships/Edit.cshtml|/Administration/Plots/{plotId:int}/Ownerships/{id:int}/Edit|
+Administration/Plots/Ownerships/End.cshtml|/Administration/Plots/{plotId:int}/Ownerships/{id:int}/End|
+Administration/Plots/Ownerships/Index.cshtml|/Administration/Plots/{plotId:int}/Ownerships|
+Administration/Plots/Ownerships/Restore.cshtml|/Administration/Plots/{plotId:int}/Ownerships/{id:int}/Restore|
+Localization/SetLanguage.cshtml|/Localization/SetLanguage|
+Member/Index.cshtml|/Member|[Authorize(Roles = RoleNames.Member + "," + RoleNames.Administrator)]
+Member/Electricity/Index.cshtml|/Member/Electricity|[Authorize(Roles = RoleNames.Member)]
+Member/Electricity/Meters/Readings/Create.cshtml|/Member/Electricity/Meters/{meterId:int}/Readings/Create|[Authorize(Roles = RoleNames.Member)]
+Member/Electricity/Meters/Readings/Index.cshtml|/Member/Electricity/Meters/{meterId:int}/Readings|[Authorize(Roles = RoleNames.Member)]
+Member/Plots/Finance/Index.cshtml|/Member/Plots/{plotId:int}/Finance|[Authorize(Roles = RoleNames.Member)]

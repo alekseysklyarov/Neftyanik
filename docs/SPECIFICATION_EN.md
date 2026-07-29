@@ -1,152 +1,55 @@
-\# Application Specification
+# Application Specification
 
+# Neftyanik Gardening Association Portal
 
+## Purpose
 
-\# Neftyanik Gardening Association Portal
-
-
-
-
-
-\## Purpose
-
-
-
-A web application for managing a gardening association.
-
-
+A Razor Pages application for a gardening association.
 
 The system provides:
 
+- user and role management;
+- plot and ownership management;
+- association and member electricity accounting;
+- charges, payments, and allocations;
+- expenses and financial reporting;
+- news, documents, and system settings.
 
+## User roles
 
-\- user management;
+### Member
 
-\- land plot management;
+- view owned plots;
+- view charges, payments, and balances;
+- view assigned electricity meters;
+- submit readings for active member meters.
 
-\- electricity accounting;
+### Accountant
 
-\- payments;
+- manage readings, charges, payments, and expenses;
+- manage association supplier tariffs;
+- manage member electricity tariffs.
 
-\- expenses;
+### Administrator
 
-\- financial reporting;
+- manage users, roles, plots, ownership, and global settings.
 
-\- news and documents.
+## Electricity architecture
 
+### Association electricity
 
+- `AssociationElectricityReading` stores day/night readings for the shared association meter;
+- `AssociationElectricityTariff` stores day/night supplier tariffs;
+- `AssociationElectricityService` resolves tariffs only from `AssociationElectricityTariff`;
+- shared electricity produces `Expense` records.
 
+### Member electricity
 
-
-\## User Roles
-
-
-
-\### Member
-
-
-
-Capabilities:
-
-
-
-\- register and login;
-
-\- view owned plots;
-
-\- submit electricity meter readings;
-
-\- view electricity consumption;
-
-\- view debts;
-
-\- view payment history.
-
-
-
-
-
-\### Accountant
-
-
-
-Capabilities:
-
-
-
-\- manage payments;
-
-\- approve meter readings;
-
-\- create charges;
-
-\- manage expenses;
-
-\- generate reports.
-
-
-
-
-
-\### Administrator
-
-
-
-Capabilities:
-
-
-
-\- manage users;
-
-\- manage roles;
-
-\- manage system settings;
-
-\- manage news and documents.
-
-
-
-
-
-\## Land Plots
-
-
-
-Rules:
-
-
-
-\- one user can own multiple plots;
-
-\- each plot has one owner;
-
-\- each plot has a number and area.
-
-
-
-
-
-\## Electricity
-
-
-
-Requirements:
-
-
-
-\- support individual meters;
-
-\- support common association meter;
-
-\- store meter reading history;
-
-\- calculate electricity charges.
-
-
-
-
-
-Electricity calculation:
+- `MemberElectricityMeter` is a single-rate member meter with one billing plot;
+- `MemberElectricityMeterPlot` links one meter to one or more member-owned plots;
+- `MemberElectricityReading` stores reading history and calculated amounts;
+- `MemberElectricityTariff` stores the single-rate tariff history;
+- approved member readings produce `Charge` records.
 
 
 

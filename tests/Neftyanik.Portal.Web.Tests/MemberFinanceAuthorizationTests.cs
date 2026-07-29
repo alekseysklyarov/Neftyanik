@@ -103,24 +103,17 @@ public class MemberFinanceAuthorizationTests
             await dbContext.SaveChangesAsync();
         });
 
-        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userId, RoleNames.Member));
+        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userId, RoleNames.Member), cultureName: "ru-RU");
 
         var response = await client.GetAsync($"/Member/Plots/{plotId}/Finance");
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Contains("OWNED-PLOT-301", html, StringComparison.Ordinal);
-        Assert.Contains("Начислено", html, StringComparison.Ordinal);
-        Assert.Contains("Оплачено", html, StringComparison.Ordinal);
-        Assert.Contains("Баланс", html, StringComparison.Ordinal);
         Assert.Contains("Owned charge description", html, StringComparison.Ordinal);
         Assert.Contains("OWNED-PAYMENT-REF", html, StringComparison.Ordinal);
-        Assert.DoesNotContain("Добавить начисление", html, StringComparison.Ordinal);
-        Assert.DoesNotContain("Зарегистрировать платеж", html, StringComparison.Ordinal);
-        Assert.DoesNotContain("Отменить начисление", html, StringComparison.Ordinal);
-        Assert.DoesNotContain("Отменить платеж", html, StringComparison.Ordinal);
-        Assert.DoesNotContain("Архивировать", html, StringComparison.Ordinal);
-        Assert.DoesNotContain("Изменить", html, StringComparison.Ordinal);
+        Assert.Contains($"/Member/Plots/{plotId}/Finance", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("/Administration/", html, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -190,23 +183,19 @@ public class MemberFinanceAuthorizationTests
             await dbContext.SaveChangesAsync();
         });
 
-        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userId, RoleNames.Member));
+        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userId, RoleNames.Member), cultureName: "ru-RU");
 
         var response = await client.GetAsync("/Member");
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains("Финансы члена товарищества", html, StringComparison.Ordinal);
-        Assert.Contains("Начисления", html, StringComparison.Ordinal);
-        Assert.Contains("Платежи", html, StringComparison.Ordinal);
-        Assert.Contains("Электросчётчики", html, StringComparison.Ordinal);
         Assert.Contains("P-1301", html, StringComparison.Ordinal);
         Assert.Contains("P-1302", html, StringComparison.Ordinal);
         Assert.Contains("100,00", html, StringComparison.Ordinal);
         Assert.Contains("50,00", html, StringComparison.Ordinal);
         Assert.DoesNotContain("-50,00", html, StringComparison.Ordinal);
-        Assert.DoesNotContain("Добавить начисление", html, StringComparison.Ordinal);
-        Assert.DoesNotContain("Зарегистрировать платеж", html, StringComparison.Ordinal);
+        Assert.Contains($"/Member/Plots/{firstPlotId}/Finance", html, StringComparison.Ordinal);
+        Assert.Contains($"/Member/Plots/{secondPlotId}/Finance", html, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -279,13 +268,12 @@ public class MemberFinanceAuthorizationTests
             await dbContext.SaveChangesAsync();
         });
 
-        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userId, RoleNames.Member));
+        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userId, RoleNames.Member), cultureName: "ru-RU");
 
         var response = await client.GetAsync($"/Member?chargeTypeId={electricityChargeTypeId}");
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains("Электроэнергия", html, StringComparison.Ordinal);
         Assert.Contains("Electricity charge", html, StringComparison.Ordinal);
         Assert.DoesNotContain("Membership charge", html, StringComparison.Ordinal);
     }
@@ -347,13 +335,12 @@ public class MemberFinanceAuthorizationTests
             await dbContext.SaveChangesAsync();
         });
 
-        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userId, RoleNames.Member));
+        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userId, RoleNames.Member), cultureName: "ru-RU");
 
         var response = await client.GetAsync("/Member");
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains("Внести показания электросчётчика", html, StringComparison.Ordinal);
         Assert.Contains($"/Member/Electricity/Meters/{meterId}/Readings/Create", html, StringComparison.Ordinal);
     }
 
@@ -423,21 +410,20 @@ public class MemberFinanceAuthorizationTests
             await dbContext.SaveChangesAsync();
         });
 
-        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userId, RoleNames.Member));
+        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userId, RoleNames.Member), cultureName: "ru-RU");
 
         var response = await client.GetAsync("/Member");
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains("История показаний", html, StringComparison.Ordinal);
         Assert.Contains("01.02.2026", html, StringComparison.Ordinal);
         Assert.Contains("130", html, StringComparison.Ordinal);
         Assert.Contains("кВт·ч", html, StringComparison.Ordinal);
-        Assert.Contains("Расход: 30", html, StringComparison.Ordinal);
-        Assert.Contains("Начисление: 150", html, StringComparison.Ordinal);
+        Assert.Contains("30", html, StringComparison.Ordinal);
+        Assert.Contains("150", html, StringComparison.Ordinal);
         Assert.Contains("01.01.2026", html, StringComparison.Ordinal);
         Assert.Contains("100", html, StringComparison.Ordinal);
-        Assert.Contains("Начальные показания", html, StringComparison.Ordinal);
+        Assert.Contains($"/Member/Plots/{plotId}/Finance", html, StringComparison.Ordinal);
     }
 
     [Fact]

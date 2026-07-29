@@ -31,10 +31,6 @@ public class Plot
 
     public List<PlotOwnershipHistory> OwnershipHistory { get; set; } = [];
 
-    public List<MeterPlot> MeterPlots { get; set; } = [];
-
-    public List<ElectricityReading> ElectricityReadings { get; set; } = [];
-
     public List<MemberElectricityMeterPlot> MemberElectricityMeterPlots { get; set; } = [];
 
     public List<MemberElectricityMeter> BillingMemberElectricityMeters { get; set; } = [];

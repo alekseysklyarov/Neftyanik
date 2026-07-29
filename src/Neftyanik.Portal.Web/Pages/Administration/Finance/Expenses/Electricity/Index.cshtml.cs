@@ -184,19 +184,6 @@ public class IndexModel : PageModel
             })
             .FirstOrDefaultAsync(cancellationToken);
 
-        tariff ??= await _dbContext.ElectricityTariffs
-            .AsNoTracking()
-            .Where(item => item.EffectiveFrom <= readingDate)
-            .OrderByDescending(item => item.EffectiveFrom)
-            .ThenByDescending(item => item.Id)
-            .Select(item => new TariffViewModel
-            {
-                EffectiveFrom = item.EffectiveFrom,
-                DayRate = item.DayRate,
-                NightRate = item.NightRate
-            })
-            .FirstOrDefaultAsync(cancellationToken);
-
         if (PreviousReading is null)
         {
             return new PreviewViewModel { Tariff = tariff };

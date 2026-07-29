@@ -280,17 +280,19 @@ public class RegisterPaymentModel : PageModel
             })
             .ToList();
 
-        var cashPayments = await _dbContext.Payments
+        var cashPayments = (await _dbContext.Payments
             .AsNoTracking()
             .Where(payment => payment.CancelledAtUtc == null && payment.PaymentMethod == PaymentMethod.Cash)
-            .Select(payment => (decimal?)payment.Amount)
-            .SumAsync(cancellationToken) ?? 0m;
+            .Select(payment => payment.Amount)
+            .ToListAsync(cancellationToken))
+            .Sum();
 
-        var activeExpenses = await _dbContext.Expenses
+        var activeExpenses = (await _dbContext.Expenses
             .AsNoTracking()
             .Where(expense => !expense.IsCancelled)
-            .Select(expense => (decimal?)expense.Amount)
-            .SumAsync(cancellationToken) ?? 0m;
+            .Select(expense => expense.Amount)
+            .ToListAsync(cancellationToken))
+            .Sum();
 
         CurrentCashAmount = cashPayments - activeExpenses;
 

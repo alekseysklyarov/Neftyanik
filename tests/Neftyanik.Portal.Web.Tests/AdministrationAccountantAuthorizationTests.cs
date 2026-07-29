@@ -36,7 +36,7 @@ public class AdministrationAccountantAuthorizationTests
         using var factory = new PortalWebApplicationFactory();
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser("accountant-user", RoleNames.Accountant));
 
-        var response = await client.GetAsync("/Administration/Plots/Ownerships?plotId=1");
+        var response = await client.GetAsync("/Administration/Plots/1/Ownerships");
 
         Assert.Equal(HttpStatusCode.Found, response.StatusCode);
         Assert.StartsWith("http://localhost/Account/AccessDenied", response.Headers.Location?.OriginalString, StringComparison.Ordinal);

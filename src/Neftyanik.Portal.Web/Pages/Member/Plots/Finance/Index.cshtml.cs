@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Hosting;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data;
@@ -37,8 +36,6 @@ public class IndexModel : PageModel
     public IReadOnlyList<ChargeItemViewModel> Charges { get; private set; } = [];
 
     public IReadOnlyList<PaymentItemViewModel> Payments { get; private set; } = [];
-
-    public ElectricitySummaryViewModel Electricity { get; private set; } = new();
 
     public int ChargeTotalPages { get; private set; } = 1;
 
@@ -218,127 +215,7 @@ public class IndexModel : PageModel
                 })
                 .ToList();
 
-            Electricity = new ElectricitySummaryViewModel();
-
-            var hasElectricityHistory = await _dbContext.ElectricityReadings
-                .AsNoTracking()
-                .AnyAsync(reading => reading.PlotId == plotId, cancellationToken);
-
-            if (hasElectricityHistory)
-            {
-                var latestReading = await _dbContext.ElectricityReadings
-                    .AsNoTracking()
-                    .Where(reading => reading.PlotId == plotId)
-                    .OrderByDescending(reading => reading.ReadingDate)
-                    .ThenByDescending(reading => reading.Id)
-                    .Select(reading => new
-                    {
-                        reading.ReadingDate,
-                        reading.CurrentDayReading,
-                        reading.CurrentNightReading
-                    })
-                    .FirstAsync(cancellationToken);
-
-                Electricity = new ElectricitySummaryViewModel
-                {
-                    HasHistory = true,
-                    LatestReadingDate = latestReading.ReadingDate,
-                    LatestDayReading = latestReading.CurrentDayReading,
-                    LatestNightReading = latestReading.CurrentNightReading
-                };
-
-                var recentReadings = await _dbContext.ElectricityReadings
-                    .AsNoTracking()
-                    .Where(reading => reading.PlotId == plotId)
-                    .OrderByDescending(reading => reading.ReadingDate)
-                    .ThenByDescending(reading => reading.Id)
-                    .Take(5)
-                    .Select(reading => new
-                    {
-                        reading.ReadingDate,
-                        reading.IsInitialReading,
-                        reading.DayConsumption,
-                        reading.NightConsumption,
-                        reading.DayRate,
-                        reading.NightRate,
-                        reading.TotalAmount,
-                        reading.ChargeId
-                    })
-                    .ToListAsync(cancellationToken);
-
-                var cancelledChargeIds = recentReadings
-                    .Where(reading => reading.ChargeId.HasValue)
-                    .Select(reading => reading.ChargeId!.Value)
-                    .ToArray();
-
-                HashSet<long> cancelledChargeIdSet = [];
-                if (cancelledChargeIds.Length > 0)
-                {
-                    cancelledChargeIdSet = (await _dbContext.Charges
-                        .AsNoTracking()
-                        .Where(charge => cancelledChargeIds.Contains(charge.Id) && charge.CancelledAtUtc != null)
-                        .Select(charge => charge.Id)
-                        .ToListAsync(cancellationToken))
-                        .ToHashSet();
-                }
-
-                Electricity.RecentReadings = recentReadings
-                    .Select(reading => new ElectricityReadingItemViewModel
-                    {
-                        ReadingDate = reading.ReadingDate,
-                        IsInitialReading = reading.IsInitialReading,
-                        DayConsumption = reading.DayConsumption,
-                        NightConsumption = reading.NightConsumption,
-                        DayRate = reading.DayRate,
-                        NightRate = reading.NightRate,
-                        TotalAmount = reading.TotalAmount,
-                        ChargeId = reading.ChargeId,
-                        IsChargeCancelled = reading.ChargeId.HasValue && cancelledChargeIdSet.Contains(reading.ChargeId.Value)
-                    })
-                    .ToList();
-            }
-
         return Page();
-    }
-
-    public sealed class ElectricitySummaryViewModel
-    {
-        public bool HasHistory { get; init; }
-
-        public DateOnly? LatestReadingDate { get; init; }
-
-        public decimal? LatestDayReading { get; init; }
-
-        public decimal? LatestNightReading { get; init; }
-
-        public IReadOnlyList<ElectricityReadingItemViewModel> RecentReadings { get; set; } = [];
-    }
-
-    public sealed class ElectricityReadingItemViewModel
-    {
-        public DateOnly ReadingDate { get; init; }
-
-        public bool IsInitialReading { get; init; }
-
-        public decimal? DayConsumption { get; init; }
-
-        public decimal? NightConsumption { get; init; }
-
-        public decimal? DayRate { get; init; }
-
-        public decimal? NightRate { get; init; }
-
-        public decimal? TotalAmount { get; init; }
-
-        public long? ChargeId { get; init; }
-
-        public bool IsChargeCancelled { get; set; }
-
-        public string ChargeStatusText => IsInitialReading
-            ? AppLocalizer.Get("Без начисления", "Без нарахування", "No charge")
-            : IsChargeCancelled
-                ? AppLocalizer.Get("Начисление отменено", "Нарахування скасовано", "Charge cancelled")
-                : AppLocalizer.Get("Начислено", "Нараховано", "Charged");
     }
 
     private sealed class PlotOwnershipViewModel

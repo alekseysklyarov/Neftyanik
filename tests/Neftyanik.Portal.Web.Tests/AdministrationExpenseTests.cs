@@ -153,7 +153,7 @@ public class AdministrationExpenseTests
     }
 
     [Fact]
-    public async Task CreateAssociationElectricityReadingAsync_UsesFinanceSupplierTariff_WhenAssociationTariffIsMissing()
+    public async Task CreateAssociationElectricityReadingAsync_ReturnsValidationError_WhenAssociationTariffIsMissing()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
@@ -178,15 +178,6 @@ public class AdministrationExpenseTests
             IsActive = true
         });
 
-        dbContext.ElectricityTariffs.Add(new ElectricityTariff
-        {
-            EffectiveFrom = new DateOnly(2026, 1, 1),
-            DayRate = 4.50m,
-            NightRate = 2.25m,
-            CreatedAtUtc = DateTimeOffset.UtcNow,
-            CreatedByUserId = "accountant-user"
-        });
-
         await dbContext.SaveChangesAsync();
 
         var service = new AssociationElectricityService(dbContext);
@@ -209,17 +200,8 @@ public class AdministrationExpenseTests
                 "accountant-user"),
             CancellationToken.None);
 
-        Assert.True(readingResult.Succeeded);
-        Assert.Equal(540m, readingResult.TotalAmount);
-
-        Assert.Empty(await dbContext.Expenses.AsNoTracking().ToListAsync());
-
-        var expenseResult = await service.CreateExpenseAsync(
-            new CreateAssociationElectricityExpenseRequest(readingResult.ReadingId!.Value, "accountant-user"),
-            CancellationToken.None);
-
-        Assert.True(expenseResult.Succeeded);
-        Assert.Equal(540m, expenseResult.TotalAmount);
+        Assert.False(readingResult.Succeeded);
+        Assert.Equal("Для указанной даты не найден тариф поставщика.", readingResult.ErrorMessage);
     }
 
     [Fact]
@@ -346,8 +328,10 @@ public class AdministrationExpenseTests
                 Payee = "Новый поставщик",
                 DocumentNumber = "DOC-2"
             },
-            TempData = new TempDataDictionary(new DefaultHttpContext(), new TestTempDataProvider())
+            PageContext = TestPageModelContext.CreatePageContext("user-1", "expense-user-1")
         };
+
+        model.TempData = TestPageModelContext.CreateTempData(model.PageContext.HttpContext);
 
         var result = await model.OnPostAsync(101, CancellationToken.None);
 
@@ -418,8 +402,10 @@ public class AdministrationExpenseTests
             {
                 CancellationReason = "Ошибка в документе"
             },
-            TempData = new TempDataDictionary(new DefaultHttpContext(), new TestTempDataProvider())
+            PageContext = TestPageModelContext.CreatePageContext("user-1", "expense-user-1")
         };
+
+        model.TempData = TestPageModelContext.CreateTempData(model.PageContext.HttpContext);
 
         var firstResult = await model.OnPostAsync(102, CancellationToken.None);
         var firstRedirect = Assert.IsType<RedirectToPageResult>(firstResult);

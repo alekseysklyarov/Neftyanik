@@ -291,19 +291,10 @@ public class AdministrationMemberAccountTests
             },
             ChargePage = 2,
             PaymentPage = 3,
-            PageContext = new PageContext
-            {
-                HttpContext = new DefaultHttpContext
-                {
-                    User = new ClaimsPrincipal(new ClaimsIdentity(
-                    [
-                        new Claim(ClaimTypes.NameIdentifier, user.Id),
-                        new Claim(ClaimTypes.Name, user.UserName!)
-                    ],
-                    "TestAuth"))
-                }
-            }
+            PageContext = TestPageModelContext.CreatePageContext(user.Id, user.UserName)
         };
+
+        model.TempData = TestPageModelContext.CreateTempData(model.PageContext.HttpContext);
 
         var result = await model.OnPostUpdateProfileAsync(CancellationToken.None);
 
@@ -397,19 +388,10 @@ public class AdministrationMemberAccountTests
                 NewPassword = "def456",
                 ConfirmNewPassword = "def456"
             },
-            PageContext = new PageContext
-            {
-                HttpContext = new DefaultHttpContext
-                {
-                    User = new ClaimsPrincipal(new ClaimsIdentity(
-                    [
-                        new Claim(ClaimTypes.NameIdentifier, user.Id),
-                        new Claim(ClaimTypes.Name, user.UserName!)
-                    ],
-                    "TestAuth"))
-                }
-            }
+            PageContext = TestPageModelContext.CreatePageContext(user.Id, user.UserName)
         };
+
+        model.TempData = TestPageModelContext.CreateTempData(model.PageContext.HttpContext);
 
         var result = await model.OnPostChangePasswordAsync(CancellationToken.None);
 
@@ -489,14 +471,10 @@ public class AdministrationMemberAccountTests
                 PhoneNumber = "+380501234567",
                 IsActive = true
             },
-            PageContext = new PageContext
-            {
-                HttpContext = new DefaultHttpContext
-                {
-                    User = new ClaimsPrincipal(new ClaimsIdentity())
-                }
-            }
+            PageContext = TestPageModelContext.CreatePageContext()
         };
+
+        model.TempData = TestPageModelContext.CreateTempData(model.PageContext.HttpContext);
 
         var result = await model.OnPostAsync(28, CancellationToken.None);
 
@@ -582,14 +560,10 @@ public class AdministrationMemberAccountTests
             {
                 IsAccountant = true
             },
-            PageContext = new PageContext
-            {
-                HttpContext = new DefaultHttpContext
-                {
-                    User = new ClaimsPrincipal(new ClaimsIdentity())
-                }
-            }
+            PageContext = TestPageModelContext.CreatePageContext()
         };
+
+        model.TempData = TestPageModelContext.CreateTempData(model.PageContext.HttpContext);
 
         var result = await model.OnPostAsync(27, CancellationToken.None);
 

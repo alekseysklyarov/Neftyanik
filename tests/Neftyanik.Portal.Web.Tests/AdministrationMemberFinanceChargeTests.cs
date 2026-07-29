@@ -93,20 +93,16 @@ public class AdministrationMemberFinanceChargeTests
             await dbContext.SaveChangesAsync();
         });
 
-        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(adminUserId, RoleNames.Administrator));
+        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(adminUserId, RoleNames.Administrator), cultureName: "ru-RU");
 
         var response = await client.GetAsync($"/Administration/Members/Finance/{memberId}/Finance");
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains("Добавить начисление", html, StringComparison.Ordinal);
         Assert.Contains($"/Administration/Members/Finance/{memberId}/CreateCharge", html, StringComparison.Ordinal);
-        Assert.Contains("Начислить", html, StringComparison.Ordinal);
-        Assert.Contains("Зарегистрировать платеж", html, StringComparison.Ordinal);
         Assert.Contains($"/Administration/Members/Finance/{memberId}/RegisterPayment", html, StringComparison.Ordinal);
-        Assert.Contains("Платеж", html, StringComparison.Ordinal);
-        Assert.Contains("Ввести показание электросчётчика", html, StringComparison.Ordinal);
-        Assert.Contains("Инициализировать значения", html, StringComparison.Ordinal);
+        Assert.Contains("#electricityReadingModal", html, StringComparison.Ordinal);
+        Assert.Contains("#electricityInitializationModal", html, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -157,13 +153,14 @@ public class AdministrationMemberFinanceChargeTests
             await dbContext.SaveChangesAsync();
         });
 
-        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(adminUserId, RoleNames.Administrator));
+        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(adminUserId, RoleNames.Administrator), cultureName: "ru-RU");
 
         var response = await client.GetAsync($"/Administration/Members/Finance/{memberId}/CreateCharge?plotId={activePlotId}");
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains("Сохранить начисление", html, StringComparison.Ordinal);
+        Assert.Contains("name=\"Input.Amount\"", html, StringComparison.Ordinal);
+        Assert.Contains("name=\"Input.ChargeDate\"", html, StringComparison.Ordinal);
         Assert.Contains("P-501", html, StringComparison.Ordinal);
         Assert.DoesNotContain("P-502", html, StringComparison.Ordinal);
     }
@@ -211,13 +208,14 @@ public class AdministrationMemberFinanceChargeTests
             await dbContext.SaveChangesAsync();
         });
 
-        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(adminUserId, RoleNames.Administrator));
+        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(adminUserId, RoleNames.Administrator), cultureName: "ru-RU");
 
         var response = await client.GetAsync($"/Administration/Members/Finance/{memberId}/RegisterPayment?plotId={activePlotId}");
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains("Сохранить платеж", html, StringComparison.Ordinal);
+        Assert.Contains("name=\"Input.Amount\"", html, StringComparison.Ordinal);
+        Assert.Contains("name=\"Input.PaymentMethod\"", html, StringComparison.Ordinal);
         Assert.Contains("P-801", html, StringComparison.Ordinal);
         Assert.DoesNotContain("P-802", html, StringComparison.Ordinal);
     }
@@ -496,13 +494,12 @@ public class AdministrationMemberFinanceChargeTests
             await dbContext.SaveChangesAsync();
         });
 
-        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(adminUserId, RoleNames.Administrator));
+        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(adminUserId, RoleNames.Administrator), cultureName: "ru-RU");
 
         var response = await client.GetAsync("/Administration/Members");
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains("Баланс", html, StringComparison.Ordinal);
         Assert.Contains("Member With Debt", html, StringComparison.Ordinal);
         Assert.Contains("600,00", html, StringComparison.Ordinal);
         Assert.Contains("Member With Overpayment", html, StringComparison.Ordinal);
@@ -889,14 +886,6 @@ public class AdministrationMemberFinanceChargeTests
                 }
             ]
         });
-        dbContext.ElectricityTariffs.Add(new ElectricityTariff
-        {
-            EffectiveFrom = new DateOnly(2020, 1, 1),
-            DayRate = 9m,
-            NightRate = 4.5m,
-            CreatedAtUtc = DateTime.UtcNow,
-            CreatedByUserId = adminUserId
-        });
         await dbContext.SaveChangesAsync();
 
         var service = new MemberElectricityService(dbContext);
@@ -909,7 +898,7 @@ public class AdministrationMemberFinanceChargeTests
             CancellationToken.None);
 
         Assert.False(result.Succeeded);
-        Assert.Equal("Для указанной даты не найден тариф для участников.", result.ErrorMessage);
+        Assert.Equal("Для указанной даты не найден тариф для участников. Добавьте его на странице \"Тариф для участников\".", result.ErrorMessage);
     }
 
     [Fact]

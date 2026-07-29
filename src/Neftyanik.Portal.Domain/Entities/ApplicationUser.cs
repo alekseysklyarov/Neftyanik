@@ -24,10 +24,6 @@ public class ApplicationUser : IdentityUser
 
     public List<PlotOwnershipHistory> PlotOwnershipHistoryRecords { get; set; } = [];
 
-    public List<MeterReading> SubmittedMeterReadings { get; set; } = [];
-
-    public List<MeterReading> ApprovedMeterReadings { get; set; } = [];
-
     public List<Expense> CreatedExpenses { get; set; } = [];
 
     public List<NewsArticle> CreatedNewsArticles { get; set; } = [];
@@ -36,13 +32,7 @@ public class ApplicationUser : IdentityUser
 
     public List<AuditLog> AuditLogs { get; set; } = [];
 
-    public List<ElectricityMeter> ElectricityMeters { get; set; } = [];
-
     public List<Charge> CreatedCharges { get; set; } = [];
-
-    public List<ElectricityReading> CreatedElectricityReadings { get; set; } = [];
-
-    public List<ElectricityTariff> CreatedElectricityTariffs { get; set; } = [];
 
     public List<AssociationElectricityReading> CreatedAssociationElectricityReadings { get; set; } = [];
 

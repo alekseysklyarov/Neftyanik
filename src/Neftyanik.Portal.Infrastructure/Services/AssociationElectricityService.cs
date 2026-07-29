@@ -333,20 +333,7 @@ public sealed class AssociationElectricityService : IAssociationElectricityServi
 
     private async Task<SupplierTariffSnapshot?> GetApplicableSupplierTariffAsync(DateOnly readingDate, CancellationToken cancellationToken)
     {
-        var associationTariff = await _dbContext.AssociationElectricityTariffs
-            .AsNoTracking()
-            .Where(item => item.EffectiveFrom <= readingDate)
-            .OrderByDescending(item => item.EffectiveFrom)
-            .ThenByDescending(item => item.Id)
-            .Select(item => new SupplierTariffSnapshot(item.DayRate, item.NightRate))
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (associationTariff is not null)
-        {
-            return associationTariff;
-        }
-
-        return await _dbContext.ElectricityTariffs
+        return await _dbContext.AssociationElectricityTariffs
             .AsNoTracking()
             .Where(item => item.EffectiveFrom <= readingDate)
             .OrderByDescending(item => item.EffectiveFrom)

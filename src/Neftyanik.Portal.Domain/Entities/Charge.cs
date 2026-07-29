@@ -33,8 +33,6 @@ public class Charge : IValidatableObject
 
     public ApplicationUser? CreatedByUser { get; set; }
 
-    public ElectricityReading? ElectricityReading { get; set; }
-
     public MemberElectricityReading? MemberElectricityReading { get; set; }
 
     public DateTime? CancelledAtUtc { get; set; }

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -57,17 +58,20 @@ public sealed class PortalWebApplicationFactory : WebApplicationFactory<Program>
         });
     }
 
-    public HttpClient CreateAnonymousClient(bool allowAutoRedirect = false)
+    public HttpClient CreateAnonymousClient(bool allowAutoRedirect = false, string? cultureName = null)
     {
-        return CreateClient(new WebApplicationFactoryClientOptions
+        var client = CreateClient(new WebApplicationFactoryClientOptions
         {
             AllowAutoRedirect = allowAutoRedirect
         });
+
+        ApplyCulture(client, cultureName);
+        return client;
     }
 
-    public HttpClient CreateAuthenticatedClient(TestAuthenticatedUser user, bool allowAutoRedirect = false)
+    public HttpClient CreateAuthenticatedClient(TestAuthenticatedUser user, bool allowAutoRedirect = false, string? cultureName = null)
     {
-        var client = CreateAnonymousClient(allowAutoRedirect);
+        var client = CreateAnonymousClient(allowAutoRedirect, cultureName);
         client.DefaultRequestHeaders.Add(TestAuthenticationHandler.UserIdHeaderName, user.UserId);
 
         if (user.Roles.Length > 0)
@@ -76,6 +80,20 @@ public sealed class PortalWebApplicationFactory : WebApplicationFactory<Program>
         }
 
         return client;
+    }
+
+    private static void ApplyCulture(HttpClient client, string? cultureName)
+    {
+        if (string.IsNullOrWhiteSpace(cultureName))
+        {
+            return;
+        }
+
+        client.DefaultRequestHeaders.AcceptLanguage.Clear();
+        client.DefaultRequestHeaders.AcceptLanguage.ParseAdd(cultureName);
+        client.DefaultRequestHeaders.Add(
+            "Cookie",
+            $"{CookieRequestCultureProvider.DefaultCookieName}={CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(cultureName))}");
     }
 
     public async Task ExecuteDbContextAsync(Func<ApplicationDbContext, Task> action)

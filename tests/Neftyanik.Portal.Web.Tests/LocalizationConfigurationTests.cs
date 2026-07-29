@@ -16,14 +16,11 @@ public class LocalizationConfigurationTests
     public void CreateOptions_ConfiguresDefaultAndSupportedCultures()
     {
         var options = LocalizationConfiguration.CreateOptions();
+        var supportedCultures = new[] { "uk-UA", "ru-RU", "en-US" };
 
         Assert.Equal(LocalizationConfiguration.DefaultCultureName, options.DefaultRequestCulture.Culture.Name);
-        Assert.Equal(
-            ["uk-UA", "ru-RU", "en-US"],
-            options.SupportedCultures!.Select(culture => culture.Name).ToArray());
-        Assert.Equal(
-            ["uk-UA", "ru-RU", "en-US"],
-            options.SupportedUICultures!.Select(culture => culture.Name).ToArray());
+        Assert.Equal(supportedCultures, options.SupportedCultures!.Select(culture => culture.Name).ToArray());
+        Assert.Equal(supportedCultures, options.SupportedUICultures!.Select(culture => culture.Name).ToArray());
         Assert.True(options.ApplyCurrentCultureToResponseHeaders);
     }
 
@@ -36,7 +33,7 @@ public class LocalizationConfigurationTests
 
         var redirect = Assert.IsType<LocalRedirectResult>(result);
         Assert.Equal("/Member/Index", redirect.Url);
-        Assert.Contains("c=uk-UA|uic=uk-UA", model.Response.Headers.SetCookie.ToString());
+        Assert.Contains("c=uk-UA|uic=uk-UA", Uri.UnescapeDataString(model.Response.Headers.SetCookie.ToString()));
         Assert.Contains("path=/", model.Response.Headers.SetCookie.ToString(), StringComparison.OrdinalIgnoreCase);
     }
 
@@ -48,8 +45,10 @@ public class LocalizationConfigurationTests
         var result = model.OnPost("de-DE", "https://example.com/external");
 
         var redirect = Assert.IsType<LocalRedirectResult>(result);
-        Assert.Equal("~/", redirect.Url);
-        Assert.Contains($"c={LocalizationConfiguration.DefaultCultureName}|uic={LocalizationConfiguration.DefaultCultureName}", model.Response.Headers.SetCookie.ToString());
+        Assert.Equal("/", redirect.Url);
+        Assert.Contains(
+            $"c={LocalizationConfiguration.DefaultCultureName}|uic={LocalizationConfiguration.DefaultCultureName}",
+            Uri.UnescapeDataString(model.Response.Headers.SetCookie.ToString()));
     }
 
     private static SetLanguageModel CreateModel()

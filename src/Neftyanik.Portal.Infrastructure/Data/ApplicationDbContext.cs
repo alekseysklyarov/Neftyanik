@@ -21,16 +21,6 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<PlotOwnershipHistory> PlotOwnershipHistories => Set<PlotOwnershipHistory>();
 
-    public DbSet<ElectricityMeter> ElectricityMeters => Set<ElectricityMeter>();
-
-    public DbSet<MeterPlot> MeterPlots => Set<MeterPlot>();
-
-    public DbSet<MeterReading> MeterReadings => Set<MeterReading>();
-
-    public DbSet<ElectricityReading> ElectricityReadings => Set<ElectricityReading>();
-
-    public DbSet<ElectricityTariff> ElectricityTariffs => Set<ElectricityTariff>();
-
     public DbSet<AssociationElectricityReading> AssociationElectricityReadings => Set<AssociationElectricityReading>();
 
     public DbSet<AssociationElectricityTariff> AssociationElectricityTariffs => Set<AssociationElectricityTariff>();

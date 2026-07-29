@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -68,10 +68,12 @@
     <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationMemberTariffTests.cs" />
     <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationPlotChargeTests.cs" />
     <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationPlotOwnershipTests.cs" />
+    <Compile Include="tests\Neftyanik.Portal.Web.Tests\Infrastructure\TestPageModelContext.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="src\Neftyanik.Portal.Domain\Entities\Legacy\" />
+    <Folder Include="src\Neftyanik.Portal.Infrastructure\Data\Migrations\" />
     <Folder Include="src\Neftyanik.Portal.Web\Controllers\" />
     <Folder Include="src\Neftyanik.Portal.Web\Models\" />
     <Folder Include="src\Neftyanik.Portal.Web\Views\Member\" />

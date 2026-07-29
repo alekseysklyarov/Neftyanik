@@ -29,25 +29,25 @@ public class ApplicationDbContextModelTests
     }
 
     [Fact]
-    public void ElectricityMeter_HasUniqueIndex_OnSerialNumber()
+    public void MemberElectricityReading_HasUniqueCompositeIndex_OnMeterIdAndReadingDate()
     {
         using var context = CreateContext();
-        var entityType = context.Model.FindEntityType(typeof(ElectricityMeter));
+        var entityType = context.Model.FindEntityType(typeof(MemberElectricityReading));
 
-        var index = entityType!.GetIndexes().Single(x => x.Properties.Select(p => p.Name).SequenceEqual([nameof(ElectricityMeter.SerialNumber)]));
+        var index = entityType!.GetIndexes().Single(x => x.Properties.Select(p => p.Name).SequenceEqual([nameof(MemberElectricityReading.MemberElectricityMeterId), nameof(MemberElectricityReading.ReadingDate)]));
 
         Assert.True(index.IsUnique);
     }
 
     [Fact]
-    public void MeterReading_HasUniqueCompositeIndex_OnMeterIdAndReadingDate()
+    public void MemberElectricityMeterPlot_HasCompositePrimaryKey_OnMeterIdAndPlotId()
     {
         using var context = CreateContext();
-        var entityType = context.Model.FindEntityType(typeof(MeterReading));
+        var entityType = context.Model.FindEntityType(typeof(MemberElectricityMeterPlot));
+        var primaryKey = entityType!.FindPrimaryKey();
 
-        var index = entityType!.GetIndexes().Single(x => x.Properties.Select(p => p.Name).SequenceEqual([nameof(MeterReading.MeterId), nameof(MeterReading.ReadingDate)]));
-
-        Assert.True(index.IsUnique);
+        Assert.NotNull(primaryKey);
+        Assert.True(primaryKey!.Properties.Select(p => p.Name).SequenceEqual([nameof(MemberElectricityMeterPlot.MemberElectricityMeterId), nameof(MemberElectricityMeterPlot.PlotId)]));
     }
 
     [Fact]
@@ -73,14 +73,20 @@ public class ApplicationDbContextModelTests
     }
 
     [Fact]
-    public void MeterPlot_HasCompositePrimaryKey_OnMeterIdPlotIdAndValidFrom()
+    public void LegacyElectricityTables_AreNotIncludedInModel()
     {
         using var context = CreateContext();
-        var entityType = context.Model.FindEntityType(typeof(MeterPlot));
-        var primaryKey = entityType!.FindPrimaryKey();
 
-        Assert.NotNull(primaryKey);
-        Assert.True(primaryKey!.Properties.Select(p => p.Name).SequenceEqual([nameof(MeterPlot.MeterId), nameof(MeterPlot.PlotId), nameof(MeterPlot.ValidFrom)]));
+        var tableNames = context.Model.GetEntityTypes()
+            .Select(entityType => entityType.GetTableName())
+            .Where(tableName => tableName is not null)
+            .ToHashSet(StringComparer.Ordinal);
+
+        Assert.DoesNotContain("ElectricityMeters", tableNames);
+        Assert.DoesNotContain("MeterPlots", tableNames);
+        Assert.DoesNotContain("MeterReadings", tableNames);
+        Assert.DoesNotContain("ElectricityReadings", tableNames);
+        Assert.DoesNotContain("ElectricityTariffs", tableNames);
     }
 
     [Fact]
@@ -94,14 +100,16 @@ public class ApplicationDbContextModelTests
     }
 
     [Fact]
-    public void MeterReading_Values_HaveMeterPrecision()
+    public void MemberElectricityReading_Values_HaveExpectedPrecision()
     {
         using var context = CreateContext();
-        var entityType = context.Model.FindEntityType(typeof(MeterReading))!;
+        var entityType = context.Model.FindEntityType(typeof(MemberElectricityReading))!;
 
-        AssertPropertyPrecision(entityType, nameof(MeterReading.TotalValue), 18, 3);
-        AssertPropertyPrecision(entityType, nameof(MeterReading.DayValue), 18, 3);
-        AssertPropertyPrecision(entityType, nameof(MeterReading.NightValue), 18, 3);
+        AssertPropertyPrecision(entityType, nameof(MemberElectricityReading.PreviousReading), 18, 3);
+        AssertPropertyPrecision(entityType, nameof(MemberElectricityReading.CurrentReading), 18, 3);
+        AssertPropertyPrecision(entityType, nameof(MemberElectricityReading.Consumption), 18, 3);
+        AssertPropertyPrecision(entityType, nameof(MemberElectricityReading.AppliedMemberRate), 18, 4);
+        AssertPropertyPrecision(entityType, nameof(MemberElectricityReading.Amount), 18, 2);
     }
 
     [Fact]
@@ -122,7 +130,7 @@ public class ApplicationDbContextModelTests
     {
         using var context = CreateContext();
 
-        AssertDeleteBehavior<MeterReading, ElectricityMeter>(context, DeleteBehavior.Restrict);
+        AssertDeleteBehavior<MemberElectricityReading, MemberElectricityMeter>(context, DeleteBehavior.Restrict);
         AssertDeleteBehavior<Expense, ExpenseCategory>(context, DeleteBehavior.Restrict);
         AssertDeleteBehavior<Charge, Plot>(context, DeleteBehavior.Restrict);
         AssertDeleteBehavior<Charge, ApplicationUser>(context, DeleteBehavior.Restrict, nameof(Charge.CreatedByUserId));
