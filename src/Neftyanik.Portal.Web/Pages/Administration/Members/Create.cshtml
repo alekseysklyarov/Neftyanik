@@ -1,4 +1,5 @@
 @page
+@using Neftyanik.Portal.Domain.Enums
 @model Neftyanik.Portal.Web.Pages.Administration.Members.CreateModel
 @{
     ViewData["Title"] = "Новый член товарищества";
@@ -38,10 +39,24 @@
                     <input asp-for="Input.Email" class="form-control" />
                     <span asp-validation-for="Input.Email" class="text-danger"></span>
                 </div>
+                <div class="col-md-6">
+                    <label asp-for="Input.ElectricityMeterType" class="form-label"></label>
+                    <select asp-for="Input.ElectricityMeterType" class="form-select">
+                        <option value="@MemberElectricityMeterType.SingleRate">Однозонный</option>
+                        <option value="@MemberElectricityMeterType.DayNight">Двухзонный</option>
+                    </select>
+                    <span asp-validation-for="Input.ElectricityMeterType" class="text-danger"></span>
+                </div>
                 <div class="col-12">
                     <label asp-for="Input.Notes" class="form-label"></label>
                     <textarea asp-for="Input.Notes" class="form-control" rows="5"></textarea>
                     <span asp-validation-for="Input.Notes" class="text-danger"></span>
+                </div>
+                <div class="col-12">
+                    <div class="form-check">
+                        <input asp-for="Input.IsElectricityDisconnected" class="form-check-input" />
+                        <label asp-for="Input.IsElectricityDisconnected" class="form-check-label"></label>
+                    </div>
                 </div>
                 <div class="col-12">
                     <div class="form-check">

@@ -17,10 +17,18 @@
                         <span asp-validation-for="Input.ReadingDate" class="text-danger"></span>
                     </div>
                     <div class="col-md-6">
-                        <label asp-for="Input.CurrentReading" class="form-label">Начальное показание, кВт·ч</label>
+                        <label asp-for="Input.CurrentReading" class="form-label">@(Model.Meter.RequiresNightReading ? "Начальное дневное показание, кВт·ч" : "Начальное показание, кВт·ч")</label>
                         <input asp-for="Input.CurrentReading" class="form-control" />
                         <span asp-validation-for="Input.CurrentReading" class="text-danger"></span>
                     </div>
+                    @if (Model.Meter.RequiresNightReading)
+                    {
+                        <div class="col-md-6">
+                            <label asp-for="Input.CurrentNightReading" class="form-label">Начальное ночное показание, кВт·ч</label>
+                            <input asp-for="Input.CurrentNightReading" class="form-control" />
+                            <span asp-validation-for="Input.CurrentNightReading" class="text-danger"></span>
+                        </div>
+                    }
                     <div class="col-12 d-flex gap-2">
                         <button type="submit" class="btn btn-primary">Сохранить</button>
                         <a class="btn btn-outline-secondary" asp-page="/Administration/Electricity/Meters/Details" asp-route-id="@Model.Meter.Id">Назад</a>
@@ -38,6 +46,8 @@
                     <dd>@Model.Meter.DisplayName</dd>
                     <dt>Участник</dt>
                     <dd>@Model.Meter.MemberName</dd>
+                    <dt>Тип счётчика</dt>
+                    <dd>@(Model.Meter.RequiresNightReading ? "Двухзонный" : "Однозонный")</dd>
                     <dt>Связанные участки</dt>
                     <dd>@string.Join(", ", Model.Meter.LinkedPlotNumbers)</dd>
                     <dt>Расчётный участок</dt>

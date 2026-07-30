@@ -18,11 +18,19 @@ public class MemberElectricityReadingInputModel
     [Display(Name = "Текущее показание")]
     public decimal? CurrentReading { get; set; }
 
+    [Display(Name = "Ночное показание")]
+    public decimal? CurrentNightReading { get; set; }
+
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
         if (CurrentReading.HasValue && CurrentReading.Value < 0m)
         {
             yield return new ValidationResult("Показание не может быть отрицательным.", [nameof(CurrentReading)]);
+        }
+
+        if (CurrentNightReading.HasValue && CurrentNightReading.Value < 0m)
+        {
+            yield return new ValidationResult("Ночное показание не может быть отрицательным.", [nameof(CurrentNightReading)]);
         }
     }
 }

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Neftyanik.Portal.Infrastructure.Data;
 
@@ -11,13 +12,15 @@ using Neftyanik.Portal.Infrastructure.Data;
 namespace Neftyanik.Portal.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260730100818_AddMemberNightTariffAndMeterType")]
+    partial class AddMemberNightTariffAndMeterType
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.8")
+                .HasAnnotation("ProductVersion", "8.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -861,11 +864,6 @@ namespace Neftyanik.Portal.Infrastructure.Migrations
                         .HasColumnType("bit")
                         .HasDefaultValue(true);
 
-                    b.Property<bool>("IsElectricityDisconnected")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
-
                     b.Property<DateOnly?>("JoinedAt")
                         .HasColumnType("date");
 
@@ -962,10 +960,6 @@ namespace Neftyanik.Portal.Infrastructure.Migrations
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<decimal?>("CurrentNightReading")
-                        .HasPrecision(18, 3)
-                        .HasColumnType("decimal(18,3)");
-
                     b.Property<decimal>("CurrentReading")
                         .HasPrecision(18, 3)
                         .HasColumnType("decimal(18,3)");
@@ -1002,8 +996,6 @@ namespace Neftyanik.Portal.Infrastructure.Migrations
                             t.HasCheckConstraint("CK_MemberElectricityReadings_Amount_NonNegative", "[Amount] IS NULL OR [Amount] >= 0");
 
                             t.HasCheckConstraint("CK_MemberElectricityReadings_AppliedMemberRate_NonNegative", "[AppliedMemberRate] IS NULL OR [AppliedMemberRate] >= 0");
-
-                            t.HasCheckConstraint("CK_MemberElectricityReadings_CurrentNightReading_NonNegative", "[CurrentNightReading] IS NULL OR [CurrentNightReading] >= 0");
 
                             t.HasCheckConstraint("CK_MemberElectricityReadings_CurrentReading_NonNegative", "[CurrentReading] >= 0");
                         });

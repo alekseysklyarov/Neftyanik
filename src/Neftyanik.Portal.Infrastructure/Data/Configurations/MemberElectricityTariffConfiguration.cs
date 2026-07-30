@@ -11,6 +11,7 @@ public class MemberElectricityTariffConfiguration : IEntityTypeConfiguration<Mem
         builder.ToTable("MemberElectricityTariffs", tableBuilder =>
         {
             tableBuilder.HasCheckConstraint("CK_MemberElectricityTariffs_Rate_NonNegative", "[Rate] >= 0");
+            tableBuilder.HasCheckConstraint("CK_MemberElectricityTariffs_NightRate_NonNegative", "[NightRate] IS NULL OR [NightRate] >= 0");
         });
 
         builder.HasKey(x => x.Id);
@@ -19,6 +20,9 @@ public class MemberElectricityTariffConfiguration : IEntityTypeConfiguration<Mem
             .HasColumnType("date");
 
         builder.Property(x => x.Rate)
+            .HasPrecision(18, 4);
+
+        builder.Property(x => x.NightRate)
             .HasPrecision(18, 4);
 
         builder.Property(x => x.CreatedAtUtc)

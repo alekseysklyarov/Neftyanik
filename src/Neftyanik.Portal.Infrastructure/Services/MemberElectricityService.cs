@@ -3,9 +3,11 @@ using Microsoft.EntityFrameworkCore.Storage;
 using Neftyanik.Portal.Application.Electricity;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
+using Neftyanik.Portal.Domain.Enums;
 using Neftyanik.Portal.Infrastructure.Data;
 using Neftyanik.Portal.Infrastructure.Data.Queries;
 using System.Globalization;
+using ChargeTypeEntity = Neftyanik.Portal.Domain.Entities.ChargeType;
 
 namespace Neftyanik.Portal.Infrastructure.Services;
 
@@ -27,6 +29,11 @@ public sealed class MemberElectricityService : IMemberElectricityService
             return ElectricityOperationResult.Failure("Тариф для участников не может быть отрицательным.");
         }
 
+        if (request.NightRate.HasValue && request.NightRate.Value < 0m)
+        {
+            return ElectricityOperationResult.Failure("Ночной тариф для участников не может быть отрицательным.");
+        }
+
         var exists = await _dbContext.MemberElectricityTariffs
             .AsNoTracking()
             .AnyAsync(tariff => tariff.EffectiveFrom == request.EffectiveFrom, cancellationToken);
@@ -40,6 +47,7 @@ public sealed class MemberElectricityService : IMemberElectricityService
         {
             EffectiveFrom = request.EffectiveFrom,
             Rate = request.Rate,
+            NightRate = request.NightRate,
             CreatedAtUtc = DateTimeOffset.UtcNow,
             CreatedByUserId = request.CreatedByUserId
         });
@@ -63,6 +71,11 @@ public sealed class MemberElectricityService : IMemberElectricityService
             return ElectricityReadingOperationResult.Failure("Показание не может быть отрицательным.");
         }
 
+        if (request.CurrentNightReading.HasValue && request.CurrentNightReading.Value < 0m)
+        {
+            return ElectricityReadingOperationResult.Failure("Ночное показание не может быть отрицательным.");
+        }
+
         if (request.OpeningDebtAmount < 0m)
         {
             return ElectricityReadingOperationResult.Failure("Начальная задолженность не может быть отрицательной.");
@@ -70,6 +83,7 @@ public sealed class MemberElectricityService : IMemberElectricityService
 
         var meter = await _dbContext.MemberElectricityMeters
             .Include(item => item.BillingPlot)
+            .Include(item => item.Member)
             .FirstOrDefaultAsync(item => item.Id == request.MeterId, cancellationToken);
 
         if (meter is null)
@@ -86,11 +100,19 @@ public sealed class MemberElectricityService : IMemberElectricityService
             return ElectricityReadingOperationResult.Failure("Начальные показания можно внести только один раз.");
         }
 
+        var meterType = meter.Member?.ElectricityMeterType ?? MemberElectricityMeterType.SingleRate;
+        var nightReadingValidationError = ValidateNightReading(meterType, request.CurrentNightReading);
+        if (nightReadingValidationError is not null)
+        {
+            return ElectricityReadingOperationResult.Failure(nightReadingValidationError);
+        }
+
         var reading = new MemberElectricityReading
         {
             MemberElectricityMeterId = request.MeterId,
             ReadingDate = request.ReadingDate,
             CurrentReading = request.CurrentReading,
+            CurrentNightReading = NormalizeNightReading(meterType, request.CurrentNightReading),
             IsInitialReading = true,
             CreatedAtUtc = DateTimeOffset.UtcNow,
             CreatedByUserId = request.CreatedByUserId,
@@ -206,6 +228,11 @@ public sealed class MemberElectricityService : IMemberElectricityService
             return MemberElectricityMeterInitializationOperationResult.Failure("Показание не может быть отрицательным.");
         }
 
+        if (request.CurrentNightReading.HasValue && request.CurrentNightReading.Value < 0m)
+        {
+            return MemberElectricityMeterInitializationOperationResult.Failure("Ночное показание не может быть отрицательным.");
+        }
+
         if (request.OpeningDebtAmount < 0m)
         {
             return MemberElectricityMeterInitializationOperationResult.Failure("Начальная задолженность не может быть отрицательной.");
@@ -215,6 +242,18 @@ public sealed class MemberElectricityService : IMemberElectricityService
         if (!validationResult.Succeeded)
         {
             return MemberElectricityMeterInitializationOperationResult.Failure(validationResult.ErrorMessage ?? "Не удалось сохранить счётчик.");
+        }
+
+        var meterType = await _dbContext.Members
+            .AsNoTracking()
+            .Where(member => member.Id == request.MemberId)
+            .Select(member => member.ElectricityMeterType)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var nightReadingValidationError = ValidateNightReading(meterType, request.CurrentNightReading);
+        if (nightReadingValidationError is not null)
+        {
+            return MemberElectricityMeterInitializationOperationResult.Failure(nightReadingValidationError);
         }
 
         var meter = new MemberElectricityMeter
@@ -237,6 +276,7 @@ public sealed class MemberElectricityService : IMemberElectricityService
             MemberElectricityMeter = meter,
             ReadingDate = request.ReadingDate,
             CurrentReading = request.CurrentReading,
+            CurrentNightReading = NormalizeNightReading(meterType, request.CurrentNightReading),
             IsInitialReading = true,
             CreatedAtUtc = DateTimeOffset.UtcNow,
             CreatedByUserId = request.CreatedByUserId,
@@ -378,7 +418,7 @@ public sealed class MemberElectricityService : IMemberElectricityService
         return MemberElectricityMeterOperationResult.Success(meter.Id);
     }
 
-    public async Task<MemberElectricityReadingEntryContext?> GetReadingEntryContextAsync(int meterId, DateOnly readingDate, decimal? currentReading, CancellationToken cancellationToken = default)
+    public async Task<MemberElectricityReadingEntryContext?> GetReadingEntryContextAsync(int meterId, DateOnly readingDate, decimal? currentReading, decimal? currentNightReading, CancellationToken cancellationToken = default)
     {
         var meter = await _dbContext.MemberElectricityMeters
             .AsNoTracking()
@@ -388,6 +428,7 @@ public sealed class MemberElectricityService : IMemberElectricityService
                 item.Id,
                 item.MemberId,
                 MemberName = item.Member != null ? item.Member.FullName : "—",
+                MeterType = item.Member != null ? item.Member.ElectricityMeterType : MemberElectricityMeterType.SingleRate,
                 DisplayName = !string.IsNullOrWhiteSpace(item.Name)
                     ? item.Name
                     : !string.IsNullOrWhiteSpace(item.MeterNumber)
@@ -413,6 +454,11 @@ public sealed class MemberElectricityService : IMemberElectricityService
                     .OrderByDescending(reading => reading.ReadingDate)
                     .ThenByDescending(reading => reading.Id)
                     .Select(reading => (decimal?)reading.CurrentReading)
+                    .FirstOrDefault(),
+                PreviousNightReading = item.Readings
+                    .OrderByDescending(reading => reading.ReadingDate)
+                    .ThenByDescending(reading => reading.Id)
+                    .Select(reading => reading.CurrentNightReading)
                     .FirstOrDefault()
             })
             .FirstOrDefaultAsync(cancellationToken);
@@ -433,19 +479,28 @@ public sealed class MemberElectricityService : IMemberElectricityService
 
         var tariff = await GetApplicableMemberTariffAsync(readingDate, cancellationToken);
 
-        var consumption = currentReading.HasValue && meter.PreviousReading.HasValue
+        var dayConsumption = currentReading.HasValue && meter.PreviousReading.HasValue
             ? currentReading.Value - meter.PreviousReading.Value
             : (decimal?)null;
 
-        var amount = tariff is not null && consumption.HasValue && consumption.Value >= 0m
-            ? RoundMoney(consumption.Value * tariff.Rate)
+        var nightConsumption = currentNightReading.HasValue && meter.PreviousNightReading.HasValue
+            ? currentNightReading.Value - meter.PreviousNightReading.Value
             : (decimal?)null;
+
+        var consumption = meter.MeterType == MemberElectricityMeterType.DayNight
+            ? dayConsumption.HasValue && nightConsumption.HasValue
+                ? dayConsumption.Value + nightConsumption.Value
+                : (decimal?)null
+            : dayConsumption;
+
+        var amount = CalculateReadingAmount(meter.MeterType, tariff, dayConsumption, nightConsumption);
 
         return new MemberElectricityReadingEntryContext(
             meter.Id,
             meter.MemberId,
             meter.MemberName,
             meter.DisplayName,
+            meter.MeterType,
             meter.IsActive,
             meter.BillingPlotId,
             meter.BillingPlotNumber,
@@ -456,6 +511,7 @@ public sealed class MemberElectricityService : IMemberElectricityService
             meter.HasInitialReading,
             meter.PreviousReadingDate,
             meter.PreviousReading,
+            meter.PreviousNightReading,
             tariff,
             consumption,
             amount);
@@ -468,13 +524,26 @@ public sealed class MemberElectricityService : IMemberElectricityService
             return ElectricityReadingOperationResult.Failure("Показание не может быть отрицательным.");
         }
 
-        var meterExists = await _dbContext.MemberElectricityMeters
-            .AsNoTracking()
-            .AnyAsync(meter => meter.Id == request.MeterId, cancellationToken);
+        if (request.CurrentNightReading.HasValue && request.CurrentNightReading.Value < 0m)
+        {
+            return ElectricityReadingOperationResult.Failure("Ночное показание не может быть отрицательным.");
+        }
 
-        if (!meterExists)
+        var meterType = await _dbContext.MemberElectricityMeters
+            .AsNoTracking()
+            .Where(meter => meter.Id == request.MeterId)
+            .Select(meter => (MemberElectricityMeterType?)meter.Member!.ElectricityMeterType)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (!meterType.HasValue)
         {
             return ElectricityReadingOperationResult.Failure("Счетчик не найден.");
+        }
+
+        var nightReadingValidationError = ValidateNightReading(meterType.Value, request.CurrentNightReading);
+        if (nightReadingValidationError is not null)
+        {
+            return ElectricityReadingOperationResult.Failure(nightReadingValidationError);
         }
 
         var hasHistory = await _dbContext.MemberElectricityReadings
@@ -491,6 +560,7 @@ public sealed class MemberElectricityService : IMemberElectricityService
             MemberElectricityMeterId = request.MeterId,
             ReadingDate = request.ReadingDate,
             CurrentReading = request.CurrentReading,
+            CurrentNightReading = NormalizeNightReading(meterType.Value, request.CurrentNightReading),
             IsInitialReading = true,
             CreatedAtUtc = DateTimeOffset.UtcNow,
             CreatedByUserId = request.CreatedByUserId,
@@ -527,7 +597,12 @@ public sealed class MemberElectricityService : IMemberElectricityService
             return ElectricityReadingOperationResult.Failure("Показание не может быть отрицательным.");
         }
 
-        var meter = await GetReadingEntryContextAsync(request.MeterId, request.ReadingDate, request.CurrentReading, cancellationToken);
+        if (request.CurrentNightReading.HasValue && request.CurrentNightReading.Value < 0m)
+        {
+            return ElectricityReadingOperationResult.Failure("Ночное показание не может быть отрицательным.");
+        }
+
+        var meter = await GetReadingEntryContextAsync(request.MeterId, request.ReadingDate, request.CurrentReading, request.CurrentNightReading, cancellationToken);
 
         if (meter is null)
         {
@@ -554,6 +629,19 @@ public sealed class MemberElectricityService : IMemberElectricityService
             return ElectricityReadingOperationResult.Failure("Начальные показания ещё не установлены администратором.");
         }
 
+        if (meter.MeterType == MemberElectricityMeterType.DayNight)
+        {
+            if (!request.CurrentNightReading.HasValue)
+            {
+                return ElectricityReadingOperationResult.Failure("Укажите ночное показание для двухзонного счётчика.");
+            }
+
+            if (!meter.PreviousNightReading.HasValue)
+            {
+                return ElectricityReadingOperationResult.Failure("Для двухзонного счётчика не заданы начальные ночные показания.");
+            }
+        }
+
         if (request.ReadingDate <= meter.PreviousReadingDate.Value)
         {
             return ElectricityReadingOperationResult.Failure("Дата новых показаний должна быть позже последней сохраненной даты.");
@@ -564,15 +652,35 @@ public sealed class MemberElectricityService : IMemberElectricityService
             return ElectricityReadingOperationResult.Failure("Текущее показание не может быть меньше предыдущего.");
         }
 
+        if (meter.MeterType == MemberElectricityMeterType.DayNight && request.CurrentNightReading!.Value < meter.PreviousNightReading!.Value)
+        {
+            return ElectricityReadingOperationResult.Failure("Ночное показание не может быть меньше предыдущего.");
+        }
+
         var readingIncrease = request.CurrentReading - meter.PreviousReading.Value;
         if (readingIncrease > MaxReadingIncrease)
         {
             return ElectricityReadingOperationResult.Failure($"Изменение показаний не может превышать {MaxReadingIncrease:0} кВт·ч.");
         }
 
+        decimal? nightReadingIncrease = null;
+        if (meter.MeterType == MemberElectricityMeterType.DayNight)
+        {
+            nightReadingIncrease = request.CurrentNightReading!.Value - meter.PreviousNightReading!.Value;
+            if (nightReadingIncrease > MaxReadingIncrease)
+            {
+                return ElectricityReadingOperationResult.Failure($"Изменение ночных показаний не может превышать {MaxReadingIncrease:0} кВт·ч.");
+            }
+        }
+
         if (meter.Tariff is null)
         {
             return ElectricityReadingOperationResult.Failure("Для указанной даты не найден тариф для участников. Добавьте его на странице \"Тариф для участников\".");
+        }
+
+        if (meter.MeterType == MemberElectricityMeterType.DayNight && !meter.Tariff.NightRate.HasValue)
+        {
+            return ElectricityReadingOperationResult.Failure("Для указанной даты не найден ночной тариф для участников. Добавьте его на странице \"Тариф для участников\".");
         }
 
         var tariff = meter.Tariff.Rate;
@@ -596,6 +704,7 @@ public sealed class MemberElectricityService : IMemberElectricityService
             MemberElectricityMeterId = request.MeterId,
             ReadingDate = request.ReadingDate,
             CurrentReading = request.CurrentReading,
+            CurrentNightReading = meter.MeterType == MemberElectricityMeterType.DayNight ? request.CurrentNightReading : null,
             AppliedMemberRate = tariff,
             Amount = amount,
             IsInitialReading = false,
@@ -707,7 +816,7 @@ public sealed class MemberElectricityService : IMemberElectricityService
         return MemberElectricityMeterValidationResult.Success(distinctPlotIds);
     }
 
-    private async Task<ChargeType> GetOrCreateElectricityChargeTypeAsync(CancellationToken cancellationToken)
+    private async Task<ChargeTypeEntity> GetOrCreateElectricityChargeTypeAsync(CancellationToken cancellationToken)
     {
         var existingChargeType = await _dbContext.ChargeTypes
             .FirstOrDefaultAsync(chargeType => chargeType.Code == ChargeTypeCodes.Electricity, cancellationToken);
@@ -717,7 +826,7 @@ public sealed class MemberElectricityService : IMemberElectricityService
             return existingChargeType;
         }
 
-        var chargeType = new ChargeType
+        var chargeType = new ChargeTypeEntity
         {
             Code = ChargeTypeCodes.Electricity,
             Name = "Электроэнергия",
@@ -736,7 +845,7 @@ public sealed class MemberElectricityService : IMemberElectricityService
             .Where(item => item.EffectiveFrom <= readingDate)
             .OrderByDescending(item => item.EffectiveFrom)
             .ThenByDescending(item => item.Id)
-            .Select(item => new MemberElectricityTariffSnapshot(item.EffectiveFrom, item.Rate))
+            .Select(item => new MemberElectricityTariffSnapshot(item.EffectiveFrom, item.Rate, item.NightRate))
             .FirstOrDefaultAsync(cancellationToken);
     }
 
@@ -747,6 +856,31 @@ public sealed class MemberElectricityService : IMemberElectricityService
             "Электроэнергия за {0:dd.MM.yyyy}: расход {1:0.000} кВт·ч",
             readingDate.ToDateTime(TimeOnly.MinValue),
             consumption);
+    }
+
+    private static decimal? CalculateReadingAmount(MemberElectricityMeterType meterType, MemberElectricityTariffSnapshot? tariff, decimal? dayConsumption, decimal? nightConsumption)
+    {
+        if (tariff is null)
+        {
+            return null;
+        }
+
+        if (meterType == MemberElectricityMeterType.DayNight)
+        {
+            if (!dayConsumption.HasValue || !nightConsumption.HasValue || dayConsumption.Value < 0m || nightConsumption.Value < 0m || !tariff.NightRate.HasValue)
+            {
+                return null;
+            }
+
+            return RoundMoney(dayConsumption.Value * tariff.Rate + nightConsumption.Value * tariff.NightRate.Value);
+        }
+
+        if (!dayConsumption.HasValue || dayConsumption.Value < 0m)
+        {
+            return null;
+        }
+
+        return RoundMoney(dayConsumption.Value * tariff.Rate);
     }
 
     private static string BuildOpeningDebtDescription(DateOnly readingDate)
@@ -760,6 +894,21 @@ public sealed class MemberElectricityService : IMemberElectricityService
     private static decimal RoundMoney(decimal value)
     {
         return Math.Round(value, 2, MidpointRounding.AwayFromZero);
+    }
+
+    private static string? ValidateNightReading(MemberElectricityMeterType meterType, decimal? currentNightReading)
+    {
+        if (meterType == MemberElectricityMeterType.DayNight && !currentNightReading.HasValue)
+        {
+            return "Укажите ночное показание для двухзонного счётчика.";
+        }
+
+        return null;
+    }
+
+    private static decimal? NormalizeNightReading(MemberElectricityMeterType meterType, decimal? currentNightReading)
+    {
+        return meterType == MemberElectricityMeterType.DayNight ? currentNightReading : null;
     }
 
     private static string? Normalize(string? value)

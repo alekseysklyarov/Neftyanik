@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Neftyanik.Portal.Domain.Entities;
+using Neftyanik.Portal.Domain.Enums;
 using Neftyanik.Portal.Infrastructure.Data;
 using System.Linq;
 using Xunit;
@@ -59,6 +60,30 @@ public class ElectricityModelTests
         AssertPropertyPrecision(associationTariffType, nameof(AssociationElectricityTariff.DayRate), 18, 4);
         AssertPropertyPrecision(associationTariffType, nameof(AssociationElectricityTariff.NightRate), 18, 4);
         AssertPropertyPrecision(memberTariffType, nameof(MemberElectricityTariff.Rate), 18, 4);
+        AssertPropertyPrecision(memberTariffType, nameof(MemberElectricityTariff.NightRate), 18, 4);
+    }
+
+    [Fact]
+    public void MemberElectricityReading_Properties_HaveExpectedPrecision()
+    {
+        using var context = CreateContext();
+        var entityType = context.Model.FindEntityType(typeof(MemberElectricityReading))!;
+
+        AssertPropertyPrecision(entityType, nameof(MemberElectricityReading.CurrentReading), 18, 3);
+        AssertPropertyPrecision(entityType, nameof(MemberElectricityReading.CurrentNightReading), 18, 3);
+        AssertPropertyPrecision(entityType, nameof(MemberElectricityReading.AppliedMemberRate), 18, 4);
+        AssertPropertyPrecision(entityType, nameof(MemberElectricityReading.Amount), 18, 2);
+    }
+
+    [Fact]
+    public void Member_ElectricityMeterType_HasSingleRateDefault()
+    {
+        using var context = CreateContext();
+        var memberType = context.Model.FindEntityType(typeof(Member))!;
+        var property = memberType.FindProperty(nameof(Member.ElectricityMeterType));
+
+        Assert.NotNull(property);
+        Assert.Equal(MemberElectricityMeterType.SingleRate, property!.GetDefaultValue());
     }
 
     [Fact]

@@ -42,6 +42,8 @@ public class EditModel : PageModel
                 item.FullName,
                 item.PhoneNumber,
                 item.Email,
+                item.ElectricityMeterType,
+                item.IsElectricityDisconnected,
                 item.JoinedAt,
                 item.Notes,
                 item.IsActive,
@@ -68,6 +70,8 @@ public class EditModel : PageModel
             FullName = member.FullName,
             PhoneNumber = member.PhoneNumber,
             Email = member.Email,
+            ElectricityMeterType = member.ElectricityMeterType,
+            IsElectricityDisconnected = member.IsElectricityDisconnected,
             JoinedAt = member.JoinedAt,
             Notes = member.Notes,
             IsActive = member.IsActive
@@ -143,6 +147,8 @@ public class EditModel : PageModel
         member.FullName = Input.FullName;
         member.PhoneNumber = Input.PhoneNumber;
         member.Email = Input.Email;
+        member.ElectricityMeterType = Input.ElectricityMeterType;
+        member.IsElectricityDisconnected = Input.IsElectricityDisconnected;
         member.JoinedAt = Input.JoinedAt;
         member.Notes = Input.Notes;
         member.IsActive = Input.IsActive;

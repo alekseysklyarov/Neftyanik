@@ -28,10 +28,16 @@ public class IndexModel : PageModel
     public string? Search { get; set; }
 
     [BindProperty(SupportsGet = true)]
-    public string Status { get; set; } = "active";
+    public string Status { get; set; } = "all";
 
     [BindProperty(SupportsGet = true)]
     public string Ownership { get; set; } = "all";
+
+    [BindProperty(SupportsGet = true)]
+    public string SortBy { get; set; } = "number";
+
+    [BindProperty(SupportsGet = true)]
+    public string SortDirection { get; set; } = "asc";
 
     [BindProperty(SupportsGet = true)]
     public int PageNumber { get; set; } = 1;
@@ -40,6 +46,8 @@ public class IndexModel : PageModel
     public PlotChargeInputModel ChargeInput { get; set; } = new();
 
     public IReadOnlyList<PlotListItem> Plots { get; private set; } = [];
+
+    public IReadOnlyList<SelectablePlotListItem> SelectablePlots { get; private set; } = [];
 
     public IReadOnlyList<SelectListItem> ChargeTypeOptions { get; private set; } = [];
 
@@ -248,6 +256,8 @@ public class IndexModel : PageModel
                 search = Search,
                 status = Status,
                 ownership = Ownership,
+            sortBy = SortBy,
+            sortDirection = SortDirection,
                 pageNumber = PageNumber
             });
         }
@@ -307,6 +317,8 @@ public class IndexModel : PageModel
             search = Search,
             status = Status,
             ownership = Ownership,
+            sortBy = SortBy,
+            sortDirection = SortDirection,
             pageNumber = PageNumber
         });
     }
@@ -315,44 +327,8 @@ public class IndexModel : PageModel
     {
         var currentDate = DateOnly.FromDateTime(DateTime.Now);
 
-        IQueryable<Plot> query = _dbContext.Plots.AsNoTracking();
-
-        if (!string.IsNullOrWhiteSpace(Search))
-        {
-            query = query.Where(plot =>
-                plot.Number.Contains(Search) ||
-                (plot.Address != null && plot.Address.Contains(Search)) ||
-                (plot.CadastralNumber != null && plot.CadastralNumber.Contains(Search)));
-        }
-
-        query = Status switch
-        {
-            "archived" => query.Where(plot => !plot.IsActive),
-            "all" => query,
-            _ => query.Where(plot => plot.IsActive)
-        };
-
-        query = Ownership switch
-        {
-            "withowners" => query.Where(plot => plot.PlotOwnerships.Any(ownership => (!ownership.ValidFrom.HasValue || ownership.ValidFrom.Value <= currentDate)
-                && (!ownership.ValidTo.HasValue || ownership.ValidTo.Value >= currentDate))),
-            "withoutowners" => query.Where(plot => !plot.PlotOwnerships.Any(ownership => (!ownership.ValidFrom.HasValue || ownership.ValidFrom.Value <= currentDate)
-                && (!ownership.ValidTo.HasValue || ownership.ValidTo.Value >= currentDate))),
-            _ => query
-        };
-
-        TotalCount = await query.CountAsync(cancellationToken);
-        TotalPages = TotalCount == 0 ? 1 : (int)Math.Ceiling(TotalCount / (double)PageSize);
-
-        if (PageNumber > TotalPages)
-        {
-            PageNumber = TotalPages;
-        }
-
-        Plots = await query
-            .OrderBy(plot => plot.Number)
-            .Skip((PageNumber - 1) * PageSize)
-            .Take(PageSize)
+        IQueryable<PlotListItem> query = _dbContext.Plots
+            .AsNoTracking()
             .Select(plot => new PlotListItem
             {
                 Id = plot.Id,
@@ -381,10 +357,56 @@ public class IndexModel : PageModel
                     .FirstOrDefault(),
                 CanCreateCharge = plot.IsActive && plot.PlotOwnerships.Any(ownership => (!ownership.ValidFrom.HasValue || ownership.ValidFrom.Value <= currentDate)
                     && (!ownership.ValidTo.HasValue || ownership.ValidTo.Value >= currentDate))
+            });
+
+        if (!string.IsNullOrWhiteSpace(Search))
+        {
+            query = query.Where(plot =>
+                plot.Number.Contains(Search) ||
+                (plot.Address != null && plot.Address.Contains(Search)) ||
+                (plot.CadastralNumber != null && plot.CadastralNumber.Contains(Search)) ||
+                (plot.OwnerFullName != null && plot.OwnerFullName.Contains(Search)));
+        }
+
+        query = Status switch
+        {
+            "archived" => query.Where(plot => !plot.IsActive),
+            "all" => query,
+            _ => query.Where(plot => plot.IsActive)
+        };
+
+        query = Ownership switch
+        {
+            "withowners" => query.Where(plot => plot.OwnersCount > 0),
+            "withoutowners" => query.Where(plot => plot.OwnersCount == 0),
+            _ => query
+        };
+
+        query = ApplySorting(query);
+
+        SelectablePlots = await query
+            .Where(plot => plot.CanCreateCharge)
+            .Select(plot => new SelectablePlotListItem
+            {
+                Id = plot.Id,
+                Number = plot.Number
             })
             .ToListAsync(cancellationToken);
 
-        EmptyStateMessage = TotalCount == 0 && string.IsNullOrWhiteSpace(Search) && Status == "all"
+        TotalCount = await query.CountAsync(cancellationToken);
+        TotalPages = TotalCount == 0 ? 1 : (int)Math.Ceiling(TotalCount / (double)PageSize);
+
+        if (PageNumber > TotalPages)
+        {
+            PageNumber = TotalPages;
+        }
+
+        Plots = await query
+            .Skip((PageNumber - 1) * PageSize)
+            .Take(PageSize)
+            .ToListAsync(cancellationToken);
+
+        EmptyStateMessage = TotalCount == 0 && string.IsNullOrWhiteSpace(Search) && Status == "all" && Ownership == "all"
             ? "Участки пока не добавлены."
             : "По выбранным условиям участки не найдены.";
     }
@@ -469,6 +491,23 @@ public class IndexModel : PageModel
 
     public bool HasNextPage => PageNumber < TotalPages;
 
+    public string GetNextSortDirection(string sortBy)
+    {
+        return string.Equals(SortBy, sortBy, StringComparison.OrdinalIgnoreCase) && SortDirection == "asc"
+            ? "desc"
+            : "asc";
+    }
+
+    public string GetSortIndicator(string sortBy)
+    {
+        if (!string.Equals(SortBy, sortBy, StringComparison.OrdinalIgnoreCase))
+        {
+            return string.Empty;
+        }
+
+        return SortDirection == "desc" ? "↓" : "↑";
+    }
+
     public sealed class PlotListItem
     {
         public int Id { get; init; }
@@ -490,6 +529,13 @@ public class IndexModel : PageModel
         public string? OwnerFullName { get; init; }
 
         public bool CanCreateCharge { get; init; }
+    }
+
+    public sealed class SelectablePlotListItem
+    {
+        public int Id { get; init; }
+
+        public string Number { get; init; } = string.Empty;
     }
 
     private sealed class SelectedPlotChargeCandidate
@@ -540,6 +586,8 @@ public class IndexModel : PageModel
     {
         Status = NormalizeStatus(Status);
         Ownership = NormalizeOwnership(Ownership);
+        SortBy = NormalizeSortBy(SortBy);
+        SortDirection = NormalizeSortDirection(SortDirection);
         PageNumber = PageNumber < 1 ? 1 : PageNumber;
         Search = Normalize(Search);
     }
@@ -559,5 +607,42 @@ public class IndexModel : PageModel
         return ChargeTypeDefaultAmounts.TryGetValue(chargeTypeId.Value, out var amount)
             ? amount
             : null;
+    }
+
+    private IQueryable<PlotListItem> ApplySorting(IQueryable<PlotListItem> query)
+    {
+        return (SortBy, SortDirection) switch
+        {
+            ("address", "desc") => query.OrderByDescending(plot => plot.Address).ThenBy(plot => plot.Number),
+            ("address", _) => query.OrderBy(plot => plot.Address).ThenBy(plot => plot.Number),
+            ("area", "desc") => query.OrderByDescending(plot => plot.AreaSquareMeters).ThenBy(plot => plot.Number),
+            ("area", _) => query.OrderBy(plot => plot.AreaSquareMeters).ThenBy(plot => plot.Number),
+            ("cadastral", "desc") => query.OrderByDescending(plot => plot.CadastralNumber).ThenBy(plot => plot.Number),
+            ("cadastral", _) => query.OrderBy(plot => plot.CadastralNumber).ThenBy(plot => plot.Number),
+            ("status", "desc") => query.OrderBy(plot => plot.IsActive).ThenBy(plot => plot.Number),
+            ("status", _) => query.OrderByDescending(plot => plot.IsActive).ThenBy(plot => plot.Number),
+            ("owner", "desc") => query.OrderByDescending(plot => plot.OwnerFullName).ThenBy(plot => plot.Number),
+            ("owner", _) => query.OrderBy(plot => plot.OwnerFullName).ThenBy(plot => plot.Number),
+            ("number", "desc") => query.OrderByDescending(plot => plot.Number),
+            _ => query.OrderBy(plot => plot.Number)
+        };
+    }
+
+    private static string NormalizeSortBy(string? sortBy)
+    {
+        return sortBy?.ToLowerInvariant() switch
+        {
+            "address" => "address",
+            "area" => "area",
+            "cadastral" => "cadastral",
+            "status" => "status",
+            "owner" => "owner",
+            _ => "number"
+        };
+    }
+
+    private static string NormalizeSortDirection(string? sortDirection)
+    {
+        return string.Equals(sortDirection, "desc", StringComparison.OrdinalIgnoreCase) ? "desc" : "asc";
     }
 }

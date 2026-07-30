@@ -1,5 +1,7 @@
 namespace Neftyanik.Portal.Application.Electricity;
 
+using Neftyanik.Portal.Domain.Enums;
+
 public interface IMemberElectricityService
 {
     Task<ElectricityOperationResult> CreateTariffAsync(CreateMemberElectricityTariffRequest request, CancellationToken cancellationToken = default);
@@ -10,7 +12,7 @@ public interface IMemberElectricityService
 
     Task<MemberElectricityMeterOperationResult> UpdateMeterAsync(UpdateMemberElectricityMeterRequest request, CancellationToken cancellationToken = default);
 
-    Task<MemberElectricityReadingEntryContext?> GetReadingEntryContextAsync(int meterId, DateOnly readingDate, decimal? currentReading, CancellationToken cancellationToken = default);
+    Task<MemberElectricityReadingEntryContext?> GetReadingEntryContextAsync(int meterId, DateOnly readingDate, decimal? currentReading, decimal? currentNightReading, CancellationToken cancellationToken = default);
 
     Task<ElectricityReadingOperationResult> CreateInitialReadingAsync(CreateMemberElectricityInitialReadingRequest request, CancellationToken cancellationToken = default);
 
@@ -22,6 +24,7 @@ public interface IMemberElectricityService
 public sealed record CreateMemberElectricityTariffRequest(
     DateOnly EffectiveFrom,
     decimal Rate,
+    decimal? NightRate,
     string? CreatedByUserId);
 
 public sealed record CreateMemberElectricityMeterRequest(
@@ -42,6 +45,7 @@ public sealed record CreateMemberElectricityMeterInitializationRequest(
     IReadOnlyCollection<int> PlotIds,
     DateOnly ReadingDate,
     decimal CurrentReading,
+    decimal? CurrentNightReading,
     decimal OpeningDebtAmount,
     string? CreatedByUserId,
     bool SubmittedByMember = false);
@@ -60,6 +64,7 @@ public sealed record CreateMemberElectricityInitialReadingRequest(
     int MeterId,
     DateOnly ReadingDate,
     decimal CurrentReading,
+    decimal? CurrentNightReading,
     string? CreatedByUserId,
     bool SubmittedByMember = false);
 
@@ -67,6 +72,7 @@ public sealed record CreateMemberElectricityInitializationRequest(
     int MeterId,
     DateOnly ReadingDate,
     decimal CurrentReading,
+    decimal? CurrentNightReading,
     decimal OpeningDebtAmount,
     string? CreatedByUserId,
     bool SubmittedByMember = false);
@@ -75,6 +81,7 @@ public sealed record CreateMemberElectricityReadingRequest(
     int MeterId,
     DateOnly ReadingDate,
     decimal CurrentReading,
+    decimal? CurrentNightReading,
     string? CreatedByUserId,
     bool SubmittedByMember = false);
 
@@ -108,6 +115,7 @@ public sealed record MemberElectricityReadingEntryContext(
     int MemberId,
     string MemberName,
     string DisplayName,
+    MemberElectricityMeterType MeterType,
     bool IsActive,
     int BillingPlotId,
     string BillingPlotNumber,
@@ -118,10 +126,12 @@ public sealed record MemberElectricityReadingEntryContext(
     bool HasInitialReading,
     DateOnly? PreviousReadingDate,
     decimal? PreviousReading,
+    decimal? PreviousNightReading,
     MemberElectricityTariffSnapshot? Tariff,
     decimal? Consumption,
     decimal? Amount);
 
 public sealed record MemberElectricityTariffSnapshot(
     DateOnly EffectiveFrom,
-    decimal Rate);
+    decimal Rate,
+    decimal? NightRate);

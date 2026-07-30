@@ -7,7 +7,7 @@
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
         <h1 class="h2 mb-1">@AppLocalizer.Get("Тариф для участников", "Тариф для учасників", "Member tariff")</h1>
-        <p class="text-muted mb-0">@AppLocalizer.Get("Используется для расчёта начислений по индивидуальным однотарифным счётчикам.", "Використовується для розрахунку нарахувань за індивідуальними однотарифними лічильниками.", "Used to calculate charges for individual single-rate meters.")</p>
+        <p class="text-muted mb-0">@AppLocalizer.Get("Используется для расчёта начислений по индивидуальным однозонным и двухзонным счётчикам.", "Використовується для розрахунку нарахувань за індивідуальними однозонними та двозонними лічильниками.", "Used to calculate charges for individual single-rate and day/night meters.")</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
         <a class="btn btn-primary" asp-page="/Administration/Electricity/MemberTariffs/Create">@AppLocalizer.Get("Добавить тариф", "Додати тариф", "Add tariff")</a>
@@ -21,7 +21,8 @@
             <thead class="table-light">
                 <tr>
                     <th>@AppLocalizer.Get("Действует с", "Діє з", "Effective from")</th>
-                    <th>@AppLocalizer.Get("Тариф", "Тариф", "Tariff")</th>
+                    <th>@AppLocalizer.Get("Дневной/однозонный тариф", "Денний/однозонний тариф", "Day/single-rate tariff")</th>
+                    <th>@AppLocalizer.Get("Ночной тариф", "Нічний тариф", "Night tariff")</th>
                     <th>@AppLocalizer.Get("Текущий", "Поточний", "Current")</th>
                     <th>@AppLocalizer.Get("Создан", "Створено", "Created")</th>
                     <th>@AppLocalizer.Get("Кем создан", "Ким створено", "Created by")</th>
@@ -30,7 +31,7 @@
             <tbody>
                 @if (Model.Tariffs.Count == 0)
                 {
-                    <tr><td colspan="5" class="text-center text-muted py-4">@AppLocalizer.Get("Тариф для участников пока не задан.", "Тариф для учасників ще не задано.", "The member tariff has not been set yet.")</td></tr>
+                    <tr><td colspan="6" class="text-center text-muted py-4">@AppLocalizer.Get("Тариф для участников пока не задан.", "Тариф для учасників ще не задано.", "The member tariff has not been set yet.")</td></tr>
                 }
                 else
                 {
@@ -39,6 +40,7 @@
                         <tr>
                             <td>@item.EffectiveFrom.ToString("dd.MM.yyyy")</td>
                             <td>@item.Rate.ToString("0.0000") грн/кВт·ч</td>
+                            <td>@(item.NightRate.HasValue ? $"{item.NightRate.Value:0.0000} грн/кВт·ч" : "—")</td>
                             <td>@(item.IsCurrent ? AppLocalizer.Get("Да", "Так", "Yes") : "—")</td>
                             <td>@item.CreatedAtUtc.ToString("dd.MM.yyyy HH:mm")</td>
                             <td>@item.CreatedBy</td>

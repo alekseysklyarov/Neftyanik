@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Domain.Constants;
+using Neftyanik.Portal.Domain.Enums;
 using Neftyanik.Portal.Infrastructure.Data;
 using Neftyanik.Portal.Infrastructure.Data.Queries;
 using Neftyanik.Portal.Web.Pages.Finance;
@@ -24,7 +25,13 @@ public class IndexModel : PageModel
     public string? Search { get; set; }
 
     [BindProperty(SupportsGet = true)]
-    public string Status { get; set; } = "active";
+    public string Status { get; set; } = "all";
+
+    [BindProperty(SupportsGet = true)]
+    public string SortBy { get; set; } = "fullname";
+
+    [BindProperty(SupportsGet = true)]
+    public string SortDirection { get; set; } = "asc";
 
     [BindProperty(SupportsGet = true)]
     public int PageNumber { get; set; } = 1;
@@ -40,10 +47,7 @@ public class IndexModel : PageModel
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
         var currentDate = DateOnly.FromDateTime(DateTime.Now);
-        var normalizedStatus = NormalizeStatus(Status);
-        Status = normalizedStatus;
-        PageNumber = PageNumber < 1 ? 1 : PageNumber;
-        Search = string.IsNullOrWhiteSpace(Search) ? null : Search.Trim();
+        NormalizeFilterState();
 
         var query = _dbContext.Members.AsNoTracking().AsQueryable();
 
@@ -55,36 +59,23 @@ public class IndexModel : PageModel
                 (member.Email != null && member.Email.Contains(Search)));
         }
 
-        query = normalizedStatus switch
+        query = Status switch
         {
             "archived" => query.Where(member => !member.IsActive),
             "all" => query,
             _ => query.Where(member => member.IsActive)
         };
 
-        TotalCount = await query.CountAsync(cancellationToken);
-        TotalPages = TotalCount == 0 ? 1 : (int)Math.Ceiling(TotalCount / (double)PageSize);
-
-        if (PageNumber > TotalPages)
-        {
-            PageNumber = TotalPages;
-        }
-
-        Members = await query
-            .OrderBy(member => member.FullName)
-            .Skip((PageNumber - 1) * PageSize)
-            .Take(PageSize)
+        var members = await query
             .Select(member => new MemberListItem
             {
                 Id = member.Id,
                 FullName = member.FullName,
                 PhoneNumber = member.PhoneNumber,
+                ElectricityMeterType = member.ElectricityMeterType,
+                IsElectricityDisconnected = member.IsElectricityDisconnected,
                 JoinedAt = member.JoinedAt,
                 IsActive = member.IsActive,
-                IsElectricityDisconnected = member.MemberElectricityMeters.Any()
-                    && !member.MemberElectricityMeters.Any(meter => meter.IsActive),
-                ActiveOwnershipsCount = member.PlotOwnerships.Count(ownership => (!ownership.ValidFrom.HasValue || ownership.ValidFrom.Value <= currentDate)
-                    && (!ownership.ValidTo.HasValue || ownership.ValidTo.Value >= currentDate)),
                 Login = member.ApplicationUserId == null
                     ? null
                     : member.ApplicationUser != null
@@ -93,10 +84,10 @@ public class IndexModel : PageModel
             })
             .ToListAsync(cancellationToken);
 
-        if (Members.Count > 0)
+        if (members.Count > 0)
         {
-            var memberIds = Members.Select(member => member.Id).ToArray();
-            var memberPlotPairs = await _dbContext.PlotOwnerships
+            var memberIds = members.Select(member => member.Id).ToArray();
+            var currentOwnerships = await _dbContext.PlotOwnerships
                 .AsNoTracking()
                 .WhereCurrentOn(currentDate)
                 .Where(ownership => memberIds.Contains(ownership.MemberId))
@@ -105,8 +96,15 @@ public class IndexModel : PageModel
                     ownership.MemberId,
                     ownership.PlotId
                 })
-                .Distinct()
                 .ToListAsync(cancellationToken);
+
+            var activeOwnershipsCountByMember = currentOwnerships
+                .GroupBy(item => item.MemberId)
+                .ToDictionary(group => group.Key, group => group.Count());
+
+            var memberPlotPairs = currentOwnerships
+                .Distinct()
+                .ToList();
 
             var plotIds = memberPlotPairs
                 .Select(item => item.PlotId)
@@ -147,15 +145,27 @@ public class IndexModel : PageModel
                     group => group.Key,
                     group => group.Sum(item => chargeTotalsByPlot.GetValueOrDefault(item.PlotId) - paymentTotalsByPlot.GetValueOrDefault(item.PlotId)));
 
-            Members = Members
-                .Select(member => member with
-                {
-                    Balance = balancesByMember.GetValueOrDefault(member.Id)
-                })
-                .ToList();
+            foreach (var member in members)
+            {
+                member.ActiveOwnershipsCount = activeOwnershipsCountByMember.GetValueOrDefault(member.Id);
+                member.Balance = balancesByMember.GetValueOrDefault(member.Id);
+            }
         }
 
-        EmptyStateMessage = TotalCount == 0 && string.IsNullOrWhiteSpace(Search) && normalizedStatus == "all"
+        TotalCount = members.Count;
+        TotalPages = TotalCount == 0 ? 1 : (int)Math.Ceiling(TotalCount / (double)PageSize);
+
+        if (PageNumber > TotalPages)
+        {
+            PageNumber = TotalPages;
+        }
+
+        Members = ApplySorting(members)
+            .Skip((PageNumber - 1) * PageSize)
+            .Take(PageSize)
+            .ToList();
+
+        EmptyStateMessage = TotalCount == 0 && string.IsNullOrWhiteSpace(Search) && Status == "all"
             ? "Члены товарищества пока не добавлены."
             : "По выбранным условиям члены товарищества не найдены.";
     }
@@ -164,7 +174,24 @@ public class IndexModel : PageModel
 
     public bool HasNextPage => PageNumber < TotalPages;
 
-    public sealed record MemberListItem
+    public string GetNextSortDirection(string sortBy)
+    {
+        return string.Equals(SortBy, sortBy, StringComparison.OrdinalIgnoreCase) && SortDirection == "asc"
+            ? "desc"
+            : "asc";
+    }
+
+    public string GetSortIndicator(string sortBy)
+    {
+        if (!string.Equals(SortBy, sortBy, StringComparison.OrdinalIgnoreCase))
+        {
+            return string.Empty;
+        }
+
+        return SortDirection == "desc" ? "↓" : "↑";
+    }
+
+    public sealed class MemberListItem
     {
         public int Id { get; init; }
 
@@ -172,17 +199,19 @@ public class IndexModel : PageModel
 
         public string? PhoneNumber { get; init; }
 
+        public MemberElectricityMeterType ElectricityMeterType { get; init; }
+
         public DateOnly? JoinedAt { get; init; }
 
         public bool IsActive { get; init; }
 
         public bool IsElectricityDisconnected { get; init; }
 
-        public int ActiveOwnershipsCount { get; init; }
+        public int ActiveOwnershipsCount { get; set; }
 
         public string? Login { get; init; }
 
-        public decimal Balance { get; init; }
+        public decimal Balance { get; set; }
 
         public string BalanceStatusText => FinanceDisplayHelper.GetBalanceStatusText(Balance);
 
@@ -201,5 +230,57 @@ public class IndexModel : PageModel
             "archived" => "archived",
             _ => "active"
         };
+    }
+
+    private void NormalizeFilterState()
+    {
+        Status = NormalizeStatus(Status);
+        SortBy = NormalizeSortBy(SortBy);
+        SortDirection = NormalizeSortDirection(SortDirection);
+        PageNumber = PageNumber < 1 ? 1 : PageNumber;
+        Search = string.IsNullOrWhiteSpace(Search) ? null : Search.Trim();
+    }
+
+    private IEnumerable<MemberListItem> ApplySorting(IEnumerable<MemberListItem> members)
+    {
+        return (SortBy, SortDirection) switch
+        {
+            ("phone", "desc") => members.OrderByDescending(member => member.PhoneNumber).ThenBy(member => member.FullName),
+            ("phone", _) => members.OrderBy(member => member.PhoneNumber).ThenBy(member => member.FullName),
+            ("joinedat", "desc") => members.OrderByDescending(member => member.JoinedAt).ThenBy(member => member.FullName),
+            ("joinedat", _) => members.OrderBy(member => member.JoinedAt).ThenBy(member => member.FullName),
+            ("status", "desc") => members.OrderBy(member => member.IsActive ? 1 : 0).ThenBy(member => member.FullName),
+            ("status", _) => members.OrderBy(member => member.IsActive ? 0 : 1).ThenBy(member => member.FullName),
+            ("electricity", "desc") => members.OrderByDescending(member => member.IsElectricityDisconnected).ThenBy(member => member.FullName),
+            ("electricity", _) => members.OrderBy(member => member.IsElectricityDisconnected).ThenBy(member => member.FullName),
+            ("ownerships", "desc") => members.OrderByDescending(member => member.ActiveOwnershipsCount).ThenBy(member => member.FullName),
+            ("ownerships", _) => members.OrderBy(member => member.ActiveOwnershipsCount).ThenBy(member => member.FullName),
+            ("balance", "desc") => members.OrderByDescending(member => member.Balance).ThenBy(member => member.FullName),
+            ("balance", _) => members.OrderBy(member => member.Balance).ThenBy(member => member.FullName),
+            ("login", "desc") => members.OrderByDescending(member => member.Login).ThenBy(member => member.FullName),
+            ("login", _) => members.OrderBy(member => member.Login).ThenBy(member => member.FullName),
+            ("fullname", "desc") => members.OrderByDescending(member => member.FullName),
+            _ => members.OrderBy(member => member.FullName)
+        };
+    }
+
+    private static string NormalizeSortBy(string? sortBy)
+    {
+        return sortBy?.ToLowerInvariant() switch
+        {
+            "phone" => "phone",
+            "joinedat" => "joinedat",
+            "status" => "status",
+            "electricity" => "electricity",
+            "ownerships" => "ownerships",
+            "balance" => "balance",
+            "login" => "login",
+            _ => "fullname"
+        };
+    }
+
+    private static string NormalizeSortDirection(string? sortDirection)
+    {
+        return string.Equals(sortDirection, "desc", StringComparison.OrdinalIgnoreCase) ? "desc" : "asc";
     }
 }

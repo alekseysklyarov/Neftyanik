@@ -17,6 +17,9 @@ public class MemberElectricityInitializationInputModel : IValidatableObject
     [Display(Name = "Текущее показание")]
     public decimal? CurrentReading { get; set; }
 
+    [Display(Name = "Ночное показание")]
+    public decimal? CurrentNightReading { get; set; }
+
     [Display(Name = "Текущая задолженность по электроэнергии, грн")]
     public decimal? OpeningDebtAmount { get; set; }
 
@@ -25,6 +28,11 @@ public class MemberElectricityInitializationInputModel : IValidatableObject
         if (CurrentReading.HasValue && CurrentReading.Value < 0m)
         {
             yield return new ValidationResult("Показание не может быть отрицательным.", [nameof(CurrentReading)]);
+        }
+
+        if (CurrentNightReading.HasValue && CurrentNightReading.Value < 0m)
+        {
+            yield return new ValidationResult("Ночное показание не может быть отрицательным.", [nameof(CurrentNightReading)]);
         }
 
         if (OpeningDebtAmount.HasValue && OpeningDebtAmount.Value < 0m)

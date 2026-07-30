@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Neftyanik.Portal.Domain.Enums;
 
 namespace Neftyanik.Portal.Domain.Entities;
 
@@ -22,6 +23,10 @@ public class Member
     public string? ApplicationUserId { get; set; }
 
     public ApplicationUser? ApplicationUser { get; set; }
+
+    public MemberElectricityMeterType ElectricityMeterType { get; set; } = MemberElectricityMeterType.SingleRate;
+
+    public bool IsElectricityDisconnected { get; set; }
 
     public DateOnly? JoinedAt { get; set; }
 

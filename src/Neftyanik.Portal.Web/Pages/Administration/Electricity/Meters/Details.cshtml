@@ -65,7 +65,20 @@
                     <dt class="col-sm-5">Последняя дата</dt>
                     <dd class="col-sm-7">@(Model.Meter.LatestReadingDate.HasValue ? Model.Meter.LatestReadingDate.Value.ToString("dd.MM.yyyy") : "—")</dd>
                     <dt class="col-sm-5">Последнее показание</dt>
-                    <dd class="col-sm-7">@(Model.Meter.LatestReading.HasValue ? $"{Model.Meter.LatestReading.Value:0.000} кВт·ч" : "—")</dd>
+                    <dd class="col-sm-7">
+                        @if (Model.Meter.LatestReading.HasValue)
+                        {
+                            <div>Т1 @(Model.Meter.LatestReading.Value.ToString("0.000")) кВт·ч</div>
+                            @if (Model.Meter.LatestNightReading.HasValue)
+                            {
+                                <div>Т2 @(Model.Meter.LatestNightReading.Value.ToString("0.000")) кВт·ч</div>
+                            }
+                        }
+                        else
+                        {
+                            @:—
+                        }
+                    </dd>
                     <dt class="col-sm-5">Последнее начисление</dt>
                     <dd class="col-sm-7">@(Model.Meter.LatestChargedAmount.HasValue ? $"{Model.Meter.LatestChargedAmount.Value:0.00} грн" : "—")</dd>
                     <dt class="col-sm-5">Количество записей</dt>

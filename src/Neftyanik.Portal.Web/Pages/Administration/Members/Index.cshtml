@@ -1,4 +1,5 @@
 @page
+@using Neftyanik.Portal.Domain.Enums
 @model Neftyanik.Portal.Web.Pages.Administration.Members.IndexModel
 @{
     ViewData["Title"] = AppLocalizer.Get("Члены товарищества", "Члени товариства", "Members");
@@ -21,6 +22,8 @@
 <div class="card shadow-sm mb-4">
     <div class="card-body">
         <form method="get" class="row g-3 align-items-end">
+            <input asp-for="SortBy" type="hidden" />
+            <input asp-for="SortDirection" type="hidden" />
             <div class="col-md-6">
                 <label asp-for="Search" class="form-label">@AppLocalizer.Get("Поиск", "Пошук", "Search")</label>
                 <input asp-for="Search" class="form-control" placeholder="@AppLocalizer.Get("ФИО или телефон", "ПІБ або телефон", "Full name or phone")" />
@@ -28,8 +31,8 @@
             <div class="col-md-3">
                 <label asp-for="Status" class="form-label">@AppLocalizer.Get("Статус", "Статус", "Status")</label>
                 <select asp-for="Status" class="form-select">
-                    <option value="active">@AppLocalizer.Get("Только активные", "Лише активні", "Active only")</option>
                     <option value="all">@AppLocalizer.Get("Все", "Усі", "All")</option>
+                    <option value="active">@AppLocalizer.Get("Только активные", "Лише активні", "Active only")</option>
                     <option value="archived">@AppLocalizer.Get("Только архивные", "Лише архівні", "Archived only")</option>
                 </select>
             </div>
@@ -43,6 +46,9 @@
 
 <div class="card shadow-sm">
     <div class="card-body p-0">
+        <div class="d-flex justify-content-between align-items-center px-3 pt-3 text-muted small">
+            <span>@AppLocalizer.Get("Количество записей", "Кількість записів", "Record count"): @Model.TotalCount</span>
+        </div>
         @if (Model.Members.Count == 0)
         {
             <div class="p-4 text-center text-muted">
@@ -55,14 +61,31 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th>@AppLocalizer.Get("ФИО", "ПІБ", "Full name")</th>
-                            <th>@AppLocalizer.Get("Телефон", "Телефон", "Phone")</th>
-                            <th>@AppLocalizer.Get("Дата вступления", "Дата вступу", "Join date")</th>
-                            <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
-                            <th>@AppLocalizer.Get("Электричество (отключено)", "Електрика (відключено)", "Electricity (disconnected)")</th>
-                            <th>@AppLocalizer.Get("Активные владения", "Активні володіння", "Active ownerships")</th>
-                            <th>@AppLocalizer.Get("Баланс", "Баланс", "Balance")</th>
-                            <th>@AppLocalizer.Get("Логин", "Логін", "Login")</th>
+                            <th>
+                                <a class="text-decoration-none link-dark" asp-page="/Administration/Members/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-sortBy="fullname" asp-route-sortDirection="@Model.GetNextSortDirection("fullname")">@AppLocalizer.Get("ФИО", "ПІБ", "Full name") @Model.GetSortIndicator("fullname")</a>
+                            </th>
+                            <th>
+                                <a class="text-decoration-none link-dark" asp-page="/Administration/Members/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-sortBy="phone" asp-route-sortDirection="@Model.GetNextSortDirection("phone")">@AppLocalizer.Get("Телефон", "Телефон", "Phone") @Model.GetSortIndicator("phone")</a>
+                            </th>
+                            <th>@AppLocalizer.Get("Тип счётчика", "Тип лічильника", "Meter type")</th>
+                            <th>
+                                <a class="text-decoration-none link-dark" asp-page="/Administration/Members/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-sortBy="joinedat" asp-route-sortDirection="@Model.GetNextSortDirection("joinedat")">@AppLocalizer.Get("Дата вступления", "Дата вступу", "Join date") @Model.GetSortIndicator("joinedat")</a>
+                            </th>
+                            <th>
+                                <a class="text-decoration-none link-dark" asp-page="/Administration/Members/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-sortBy="status" asp-route-sortDirection="@Model.GetNextSortDirection("status")">@AppLocalizer.Get("Статус", "Статус", "Status") @Model.GetSortIndicator("status")</a>
+                            </th>
+                            <th>
+                                <a class="text-decoration-none link-dark" asp-page="/Administration/Members/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-sortBy="electricity" asp-route-sortDirection="@Model.GetNextSortDirection("electricity")">@AppLocalizer.Get("Электрика отключена", "Електрику відключено", "Electricity disconnected") @Model.GetSortIndicator("electricity")</a>
+                            </th>
+                            <th>
+                                <a class="text-decoration-none link-dark" asp-page="/Administration/Members/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-sortBy="ownerships" asp-route-sortDirection="@Model.GetNextSortDirection("ownerships")">@AppLocalizer.Get("Активные владения", "Активні володіння", "Active ownerships") @Model.GetSortIndicator("ownerships")</a>
+                            </th>
+                            <th>
+                                <a class="text-decoration-none link-dark" asp-page="/Administration/Members/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-sortBy="balance" asp-route-sortDirection="@Model.GetNextSortDirection("balance")">@AppLocalizer.Get("Баланс", "Баланс", "Balance") @Model.GetSortIndicator("balance")</a>
+                            </th>
+                            <th>
+                                <a class="text-decoration-none link-dark" asp-page="/Administration/Members/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-sortBy="login" asp-route-sortDirection="@Model.GetNextSortDirection("login")">@AppLocalizer.Get("Логин", "Логін", "Login") @Model.GetSortIndicator("login")</a>
+                            </th>
                             <th class="text-end">@AppLocalizer.Get("Действия", "Дії", "Actions")</th>
                         </tr>
                     </thead>
@@ -72,6 +95,7 @@
                             <tr>
                                 <td class="fw-semibold">@member.FullName</td>
                                 <td>@(string.IsNullOrWhiteSpace(member.PhoneNumber) ? "—" : member.PhoneNumber)</td>
+                                <td>@(member.ElectricityMeterType == MemberElectricityMeterType.DayNight ? AppLocalizer.Get("Двухзонный", "Двозонний", "Day/night") : AppLocalizer.Get("Однозонный", "Однозонний", "Single-rate"))</td>
                                 <td>@(member.JoinedAt.HasValue ? member.JoinedAt.Value.ToString("dd.MM.yyyy") : "—")</td>
                                 <td>
                                     @if (member.IsActive)
@@ -86,11 +110,11 @@
                                 <td>
                                     @if (member.IsElectricityDisconnected)
                                     {
-                                        <span>@AppLocalizer.Get("Аннулированный", "Анульований", "Cancelled")</span>
+                                        <span class="text-muted">@AppLocalizer.Get("Да", "Так", "Yes")</span>
                                     }
                                     else
                                     {
-                                        <span>—</span>
+                                        <span class="badge text-bg-danger">@AppLocalizer.Get("Нет", "Ні", "No")</span>
                                     }
                                 </td>
                                 <td>@member.ActiveOwnershipsCount</td>
@@ -125,6 +149,8 @@
                    asp-page="/Administration/Members/Index"
                    asp-route-search="@Model.Search"
                    asp-route-status="@Model.Status"
+                   asp-route-sortBy="@Model.SortBy"
+                   asp-route-sortDirection="@Model.SortDirection"
                    asp-route-pageNumber="@(Model.PageNumber - 1)">@AppLocalizer.Get("Назад", "Назад", "Previous")</a>
             </li>
             @for (var pageIndex = 1; pageIndex <= Model.TotalPages; pageIndex++)
@@ -134,6 +160,8 @@
                        asp-page="/Administration/Members/Index"
                        asp-route-search="@Model.Search"
                        asp-route-status="@Model.Status"
+                       asp-route-sortBy="@Model.SortBy"
+                       asp-route-sortDirection="@Model.SortDirection"
                        asp-route-pageNumber="@pageIndex">@pageIndex</a>
                 </li>
             }
@@ -142,6 +170,8 @@
                    asp-page="/Administration/Members/Index"
                    asp-route-search="@Model.Search"
                    asp-route-status="@Model.Status"
+                   asp-route-sortBy="@Model.SortBy"
+                   asp-route-sortDirection="@Model.SortDirection"
                    asp-route-pageNumber="@(Model.PageNumber + 1)">@AppLocalizer.Get("Вперёд", "Вперед", "Next")</a>
             </li>
         </ul>

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Neftyanik.Portal.Domain.Entities;
+using Neftyanik.Portal.Domain.Enums;
 
 namespace Neftyanik.Portal.Infrastructure.Data.Configurations;
 
@@ -28,6 +29,12 @@ public class MemberConfiguration : IEntityTypeConfiguration<Member>
         builder.Property(x => x.ApplicationUserId)
             .HasMaxLength(450)
             .IsUnicode();
+
+        builder.Property(x => x.ElectricityMeterType)
+            .HasDefaultValue(MemberElectricityMeterType.SingleRate);
+
+        builder.Property(x => x.IsElectricityDisconnected)
+            .HasDefaultValue(false);
 
         builder.Property(x => x.IsActive)
             .HasDefaultValue(true);

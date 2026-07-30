@@ -45,6 +45,20 @@ public class IndexModel : PageModel
 
         CurrentYear = DateTime.Today.Year;
         var currentYearStart = new DateOnly(CurrentYear, 1, 1);
+        var cashInitializationSettingValue = await _dbContext.SystemSettings
+            .AsNoTracking()
+            .Where(setting => setting.Key == CashInitializationSettingSerializer.SettingKey)
+            .Select(setting => setting.Value)
+            .FirstOrDefaultAsync(cancellationToken);
+        var cashInitialization = CashInitializationSettingSerializer.Deserialize(cashInitializationSettingValue);
+        var initializedCashAmount = cashInitialization?.Amount ?? 0m;
+        var initializedAdvancePaymentsAmount = cashInitialization?.AdvancePaymentsAmount ?? 0m;
+        var openingYearInitializedCashAmount = cashInitialization is not null && cashInitialization.AcceptedAt < currentYearStart
+            ? cashInitialization.Amount
+            : 0m;
+        var openingYearInitializedAdvancePaymentsAmount = cashInitialization is not null && cashInitialization.AcceptedAt < currentYearStart
+            ? cashInitialization.AdvancePaymentsAmount
+            : 0m;
 
         var plots = await _dbContext.Plots
             .AsNoTracking()
@@ -169,6 +183,9 @@ public class IndexModel : PageModel
         var totalCashPayments = activePayments
             .Where(payment => payment.PaymentMethod == Domain.Enums.PaymentMethod.Cash)
             .Sum(payment => payment.Amount);
+        var totalNonCashPayments = activePayments
+            .Where(payment => payment.PaymentMethod != Domain.Enums.PaymentMethod.Cash)
+            .Sum(payment => payment.Amount);
         var openingYearCashPayments = activePayments
             .Where(payment => payment.PaymentMethod == Domain.Enums.PaymentMethod.Cash && payment.PaymentDate < currentYearStart)
             .Sum(payment => payment.Amount);
@@ -193,8 +210,10 @@ public class IndexModel : PageModel
         {
             TotalActiveCharges = totalActiveCharges,
             TotalActivePayments = totalActivePayments,
-            CurrentCashAmount = totalCashPayments - totalActiveExpenses,
-            OpeningYearCashAmount = openingYearCashPayments - openingYearExpenses,
+            CurrentCashAmount = initializedCashAmount + totalActivePayments - totalActiveExpenses - initializedAdvancePaymentsAmount,
+            CurrentCashOnlyAmount = initializedCashAmount + totalCashPayments - totalActiveExpenses - initializedAdvancePaymentsAmount,
+            CurrentNonCashAmount = totalNonCashPayments,
+            OpeningYearCashAmount = openingYearInitializedCashAmount + openingYearCashPayments - openingYearExpenses - openingYearInitializedAdvancePaymentsAmount,
             CurrentYearCharges = currentYearCharges,
             OpeningYearDebt = Math.Max(openingYearCharges - openingYearPayments, 0m),
             CurrentYearDebt = Math.Max(currentYearCharges - currentYearPayments, 0m),
@@ -237,6 +256,10 @@ public class IndexModel : PageModel
         public decimal TotalActivePayments { get; set; }
 
         public decimal CurrentCashAmount { get; set; }
+
+        public decimal CurrentCashOnlyAmount { get; set; }
+
+        public decimal CurrentNonCashAmount { get; set; }
 
         public decimal OpeningYearCashAmount { get; set; }
 

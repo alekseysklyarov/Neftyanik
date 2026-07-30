@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Application.Electricity;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
+using Neftyanik.Portal.Domain.Enums;
 using Neftyanik.Portal.Infrastructure.Data;
 using Neftyanik.Portal.Infrastructure.Data.Queries;
 using Neftyanik.Portal.Web.Localization;
@@ -157,6 +158,7 @@ public class FinanceModel : PageModel
         if (!IsElectricityFeatureAvailable)
         {
             ModelState.AddModelError(string.Empty, ElectricityFeatureWarningMessage ?? "Модуль электросчётчиков недоступен.");
+            ReopenInitializationModal = true;
             return Page();
         }
 
@@ -166,6 +168,7 @@ public class FinanceModel : PageModel
                 ReadingInput.MeterId!.Value,
                 ReadingInput.ReadingDate!.Value,
                 ReadingInput.CurrentReading!.Value,
+                ReadingInput.CurrentNightReading,
                 currentUser?.Id),
             cancellationToken);
 
@@ -243,6 +246,7 @@ public class FinanceModel : PageModel
                 [SetupInput.BillingPlotId.Value],
                 SetupInput.ReadingDate!.Value,
                 SetupInput.CurrentReading!.Value,
+                SetupInput.CurrentNightReading,
                 SetupInput.OpeningDebtAmount ?? 0m,
                 currentUser?.Id),
             cancellationToken);
@@ -310,6 +314,7 @@ public class FinanceModel : PageModel
                 InitializationInput.MeterId!.Value,
                 InitializationInput.ReadingDate!.Value,
                 InitializationInput.CurrentReading!.Value,
+                InitializationInput.CurrentNightReading,
                 InitializationInput.OpeningDebtAmount ?? 0m,
                 currentUser?.Id),
             cancellationToken);
@@ -344,6 +349,7 @@ public class FinanceModel : PageModel
                 FullName = item.FullName,
                 Email = item.Email,
                 PhoneNumber = item.PhoneNumber,
+                ElectricityMeterType = item.ElectricityMeterType,
                 IsActive = item.IsActive,
                 ActivePlotsCount = item.PlotOwnerships.Count(ownership => (!ownership.ValidFrom.HasValue || ownership.ValidFrom.Value <= currentDate)
                     && (!ownership.ValidTo.HasValue || ownership.ValidTo.Value >= currentDate))
@@ -532,6 +538,11 @@ public class FinanceModel : PageModel
             return $"{propertyPrefix}.{nameof(MemberElectricityReadingInputModel.CurrentReading)}";
         }
 
+        if (errorMessage.Contains("ночн", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"{propertyPrefix}.{nameof(MemberElectricityReadingInputModel.CurrentNightReading)}";
+        }
+
         if (errorMessage.Contains("Дата", StringComparison.OrdinalIgnoreCase))
         {
             return $"{propertyPrefix}.{nameof(MemberElectricityReadingInputModel.ReadingDate)}";
@@ -558,6 +569,11 @@ public class FinanceModel : PageModel
             return $"{propertyPrefix}.{nameof(MemberElectricityInitializationInputModel.CurrentReading)}";
         }
 
+        if (errorMessage.Contains("ночн", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"{propertyPrefix}.{nameof(MemberElectricityInitializationInputModel.CurrentNightReading)}";
+        }
+
         if (errorMessage.Contains("Дата", StringComparison.OrdinalIgnoreCase))
         {
             return $"{propertyPrefix}.{nameof(MemberElectricityInitializationInputModel.ReadingDate)}";
@@ -582,6 +598,11 @@ public class FinanceModel : PageModel
         if (errorMessage.Contains("Показание", StringComparison.OrdinalIgnoreCase))
         {
             return $"{propertyPrefix}.{nameof(MemberElectricitySetupInputModel.CurrentReading)}";
+        }
+
+        if (errorMessage.Contains("ночн", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"{propertyPrefix}.{nameof(MemberElectricitySetupInputModel.CurrentNightReading)}";
         }
 
         if (errorMessage.Contains("участ", StringComparison.OrdinalIgnoreCase)
@@ -631,7 +652,8 @@ public class FinanceModel : PageModel
                 .Select(item => new MemberElectricityTariffInfoViewModel
                 {
                     EffectiveFrom = item.EffectiveFrom,
-                    Rate = item.Rate
+                    Rate = item.Rate,
+                    NightRate = item.NightRate
                 })
                 .FirstOrDefaultAsync(cancellationToken);
 
@@ -666,6 +688,7 @@ public class FinanceModel : PageModel
                             Id = reading.Id,
                             ReadingDate = reading.ReadingDate,
                             CurrentReading = reading.CurrentReading,
+                            CurrentNightReading = reading.CurrentNightReading,
                             Amount = reading.Amount,
                             IsInitialReading = reading.IsInitialReading
                         }
@@ -757,6 +780,8 @@ public class FinanceModel : PageModel
 
         public string? PhoneNumber { get; init; }
 
+        public MemberElectricityMeterType ElectricityMeterType { get; init; } = MemberElectricityMeterType.SingleRate;
+
         public bool IsActive { get; init; }
 
         public int ActivePlotsCount { get; init; }
@@ -807,6 +832,8 @@ public class FinanceModel : PageModel
         public DateOnly EffectiveFrom { get; init; }
 
         public decimal Rate { get; init; }
+
+        public decimal? NightRate { get; init; }
     }
 
     public sealed class ChargeItemViewModel
@@ -890,6 +917,8 @@ public class FinanceModel : PageModel
         public DateOnly ReadingDate { get; init; }
 
         public decimal CurrentReading { get; init; }
+
+        public decimal? CurrentNightReading { get; init; }
 
         public decimal? Consumption { get; set; }
 

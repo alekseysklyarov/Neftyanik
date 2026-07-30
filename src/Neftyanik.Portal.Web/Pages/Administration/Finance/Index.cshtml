@@ -19,10 +19,25 @@
 
 <div class="row g-4 mb-4">
     <div class="col-sm-6 col-xl-4">
-        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">@AppLocalizer.Get("Касса", "Каса", "Cash")</h2><p class="display-6 mb-0">@Model.Summary.CurrentCashAmount.ToString("0.00")</p></div></div>
+        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">@AppLocalizer.Get("Касса", "Каса", "Cash")</h2><p class="display-6 mb-0">@Model.Summary.CurrentCashAmount.ToString("0.00")</p><p class="text-muted mb-0 mt-2">@AppLocalizer.Get("Общая сумма наличных и безналичных средств", "Загальна сума готівкових і безготівкових коштів", "Total cash and non-cash funds")</p></div></div>
     </div>
     <div class="col-sm-6 col-xl-4">
         <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">@AppLocalizer.Get($"Касса на начало {Model.CurrentYear} года", $"Каса на початок {Model.CurrentYear} року", $"Cash at the beginning of {Model.CurrentYear}")</h2><p class="display-6 mb-0">@Model.Summary.OpeningYearCashAmount.ToString("0.00")</p></div></div>
+    </div>
+    <div class="col-sm-6 col-xl-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h2 class="h6 text-muted">@AppLocalizer.Get("Структура кассы", "Структура каси", "Cash breakdown")</h2>
+                <div class="d-flex justify-content-between gap-3 mb-2">
+                    <span>@AppLocalizer.Get("Наличные", "Готівка", "Cash")</span>
+                    <span class="fw-semibold">@Model.Summary.CurrentCashOnlyAmount.ToString("0.00")</span>
+                </div>
+                <div class="d-flex justify-content-between gap-3">
+                    <span>@AppLocalizer.Get("Безналичные", "Безготівкові", "Non-cash")</span>
+                    <span class="fw-semibold">@Model.Summary.CurrentNonCashAmount.ToString("0.00")</span>
+                </div>
+            </div>
+        </div>
     </div>
     <div class="col-sm-6 col-xl-4">
         <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">@AppLocalizer.Get($"Начисления за {Model.CurrentYear} год", $"Нарахування за {Model.CurrentYear} рік", $"Charges for {Model.CurrentYear}")</h2><p class="display-6 mb-0">@Model.Summary.CurrentYearCharges.ToString("0.00")</p></div></div>

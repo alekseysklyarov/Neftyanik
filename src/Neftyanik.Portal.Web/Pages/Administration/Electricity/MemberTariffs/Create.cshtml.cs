@@ -33,11 +33,16 @@ public class CreateModel : PageModel
 
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
     {
-        NormalizeRateInput();
+        NormalizeRateInputs();
 
         if (Input.Rate.HasValue && Input.Rate.Value < 0m)
         {
             ModelState.AddModelError($"{nameof(Input)}.{nameof(TariffInputModel.Rate)}", AppLocalizer.Get("Тариф не может быть отрицательным.", "Тариф не може бути від'ємним.", "The tariff cannot be negative."));
+        }
+
+        if (Input.NightRate.HasValue && Input.NightRate.Value < 0m)
+        {
+            ModelState.AddModelError($"{nameof(Input)}.{nameof(TariffInputModel.NightRate)}", AppLocalizer.Get("Ночной тариф не может быть отрицательным.", "Нічний тариф не може бути від'ємним.", "The night tariff cannot be negative."));
         }
 
         if (!ModelState.IsValid)
@@ -50,6 +55,7 @@ public class CreateModel : PageModel
             new CreateMemberElectricityTariffRequest(
                 Input.EffectiveFrom!.Value,
                 Input.Rate!.Value,
+                Input.NightRate,
                 currentUser?.Id),
             cancellationToken);
 
@@ -63,10 +69,16 @@ public class CreateModel : PageModel
         return RedirectToPage("/Administration/Electricity/MemberTariffs/Index");
     }
 
-    private void NormalizeRateInput()
+    private void NormalizeRateInputs()
     {
-        var key = $"{nameof(Input)}.{nameof(TariffInputModel.Rate)}";
-        if (Input.Rate.HasValue || !Request.HasFormContentType)
+        NormalizeRateInput(nameof(TariffInputModel.Rate), Input.Rate, value => Input.Rate = value);
+        NormalizeRateInput(nameof(TariffInputModel.NightRate), Input.NightRate, value => Input.NightRate = value);
+    }
+
+    private void NormalizeRateInput(string propertyName, decimal? currentValue, Action<decimal> assignValue)
+    {
+        var key = $"{nameof(Input)}.{propertyName}";
+        if (currentValue.HasValue || !Request.HasFormContentType)
         {
             return;
         }
@@ -83,7 +95,7 @@ public class CreateModel : PageModel
             return;
         }
 
-        Input.Rate = rate;
+        assignValue(rate);
         ModelState.Remove(key);
     }
 

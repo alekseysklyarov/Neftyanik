@@ -145,6 +145,16 @@ public class AdministrationFinanceSummaryTests
                 CreatedAt = DateTimeOffset.UtcNow
             });
 
+        dbContext.SystemSettings.Add(new SystemSetting
+        {
+            Id = 1,
+            Key = "Finance.CashInitialization",
+            Value = "{\"Amount\":25,\"AcceptedAt\":\"" + previousDate.ToString("yyyy-MM-dd") + "\",\"AcceptedFrom\":\"Кассир\",\"AdvancePaymentsAmount\":10}",
+            Description = "Initial cash amount configured from finance settings.",
+            UpdatedAt = DateTimeOffset.UtcNow,
+            UpdatedByUserId = "system"
+        });
+
         await dbContext.SaveChangesAsync();
 
         var model = new FinanceIndexModel(dbContext);
@@ -152,8 +162,10 @@ public class AdministrationFinanceSummaryTests
         await model.OnGetAsync(CancellationToken.None);
 
         Assert.Equal(currentYear, model.CurrentYear);
-        Assert.Equal(45m, model.Summary.CurrentCashAmount);
-        Assert.Equal(30m, model.Summary.OpeningYearCashAmount);
+        Assert.Equal(110m, model.Summary.CurrentCashAmount);
+        Assert.Equal(60m, model.Summary.CurrentCashOnlyAmount);
+        Assert.Equal(50m, model.Summary.CurrentNonCashAmount);
+        Assert.Equal(45m, model.Summary.OpeningYearCashAmount);
         Assert.Equal(100m, model.Summary.CurrentYearCharges);
         Assert.Equal(60m, model.Summary.OpeningYearDebt);
         Assert.Equal(30m, model.Summary.CurrentYearDebt);

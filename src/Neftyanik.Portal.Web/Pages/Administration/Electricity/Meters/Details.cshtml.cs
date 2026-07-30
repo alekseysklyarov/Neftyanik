@@ -54,6 +54,11 @@ public class DetailsModel : PageModel
                     .ThenByDescending(reading => reading.Id)
                     .Select(reading => (decimal?)reading.CurrentReading)
                     .FirstOrDefault(),
+                LatestNightReading = item.Readings
+                    .OrderByDescending(reading => reading.ReadingDate)
+                    .ThenByDescending(reading => reading.Id)
+                    .Select(reading => reading.CurrentNightReading)
+                    .FirstOrDefault(),
                 LatestChargedAmount = item.Readings
                     .OrderByDescending(reading => reading.ReadingDate)
                     .ThenByDescending(reading => reading.Id)
@@ -95,6 +100,7 @@ public class DetailsModel : PageModel
         public IReadOnlyList<LinkedPlotViewModel> LinkedPlots { get; init; } = [];
         public DateOnly? LatestReadingDate { get; init; }
         public decimal? LatestReading { get; init; }
+        public decimal? LatestNightReading { get; init; }
         public int ReadingCount { get; init; }
         public decimal? LatestChargedAmount { get; init; }
         public bool HasInitialReading { get; init; }

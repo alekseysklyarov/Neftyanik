@@ -36,6 +36,8 @@ public class CreateModel : PageModel
             FullName = Input.FullName.Trim(),
             PhoneNumber = Normalize(Input.PhoneNumber),
             Email = Normalize(Input.Email),
+            ElectricityMeterType = Input.ElectricityMeterType,
+            IsElectricityDisconnected = Input.IsElectricityDisconnected,
             JoinedAt = Input.JoinedAt,
             Notes = Normalize(Input.Notes),
             IsActive = Input.IsActive,

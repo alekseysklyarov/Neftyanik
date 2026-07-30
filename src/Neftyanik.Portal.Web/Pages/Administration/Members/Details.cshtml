@@ -1,4 +1,5 @@
 @page "{id:int}"
+@using Neftyanik.Portal.Domain.Enums
 @model Neftyanik.Portal.Web.Pages.Administration.Members.DetailsModel
 @{
     ViewData["Title"] = Model.Member.FullName;
@@ -36,6 +37,21 @@
 
                     <dt class="col-sm-4">@AppLocalizer.Get("Электронная почта", "Електронна пошта", "Email")</dt>
                     <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Member.Email) ? "—" : Model.Member.Email)</dd>
+
+                    <dt class="col-sm-4">@AppLocalizer.Get("Тип счётчика", "Тип лічильника", "Meter type")</dt>
+                    <dd class="col-sm-8">@(Model.Member.ElectricityMeterType == MemberElectricityMeterType.DayNight ? AppLocalizer.Get("Двухзонный", "Двозонний", "Day/night") : AppLocalizer.Get("Однозонный", "Однозонний", "Single-rate"))</dd>
+
+                    <dt class="col-sm-4">@AppLocalizer.Get("Электрика отключена", "Електрику відключено", "Electricity disconnected")</dt>
+                    <dd class="col-sm-8">
+                        @if (Model.Member.IsElectricityDisconnected)
+                        {
+                            <span class="text-muted">@AppLocalizer.Get("Да", "Так", "Yes")</span>
+                        }
+                        else
+                        {
+                            <span class="badge text-bg-danger">@AppLocalizer.Get("Нет", "Ні", "No")</span>
+                        }
+                    </dd>
 
                     <dt class="col-sm-4">@AppLocalizer.Get("Дата вступления", "Дата вступу", "Join date")</dt>
                     <dd class="col-sm-8">@(Model.Member.JoinedAt.HasValue ? Model.Member.JoinedAt.Value.ToString("dd.MM.yyyy") : "—")</dd>

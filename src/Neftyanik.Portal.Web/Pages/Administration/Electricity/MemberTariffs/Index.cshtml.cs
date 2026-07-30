@@ -36,6 +36,7 @@ public class IndexModel : PageModel
             {
                 EffectiveFrom = item.EffectiveFrom,
                 Rate = item.Rate,
+                NightRate = item.NightRate,
                 CreatedAtUtc = item.CreatedAtUtc,
                 CreatedBy = item.CreatedByUser != null ? item.CreatedByUser.DisplayName ?? item.CreatedByUser.Email ?? item.CreatedByUser.UserName ?? "—" : "—",
                 IsCurrent = currentEffectiveFrom.HasValue && item.EffectiveFrom == currentEffectiveFrom.Value
@@ -47,6 +48,7 @@ public class IndexModel : PageModel
     {
         public DateOnly EffectiveFrom { get; init; }
         public decimal Rate { get; init; }
+        public decimal? NightRate { get; init; }
         public DateTimeOffset CreatedAtUtc { get; init; }
         public string CreatedBy { get; init; } = "—";
         public bool IsCurrent { get; init; }

@@ -135,27 +135,51 @@ public class EditModel : PageModel
     private async Task LoadPlotOptionsAsync(int memberId, int meterId, CancellationToken cancellationToken)
     {
         var currentDate = DateOnly.FromDateTime(DateTime.Today);
-        var currentOwnedPlots = _dbContext.PlotOwnerships
+        var currentOwnedPlotIds = await _dbContext.PlotOwnerships
             .AsNoTracking()
             .WhereCurrentForMember(memberId, currentDate)
-            .Select(ownership => new SelectListItem
-            {
-                Value = ownership.PlotId.ToString(),
-                Text = ownership.Plot != null ? $"{ownership.Plot.Number} — {ownership.Plot.Address}" : ownership.PlotId.ToString()
-            });
+            .Select(ownership => ownership.PlotId)
+            .ToListAsync(cancellationToken);
 
-        var currentlyLinkedPlots = _dbContext.Plots
+        var currentlyLinkedPlotIds = await _dbContext.Plots
             .AsNoTracking()
             .Where(plot => plot.MemberElectricityMeterId == meterId)
-            .Select(plot => new SelectListItem
-            {
-                Value = plot.Id.ToString(),
-                Text = $"{plot.Number} — {plot.Address} (сейчас не принадлежит участнику)"
-            });
-
-        PlotOptions = await currentOwnedPlots
-            .Union(currentlyLinkedPlots)
-            .OrderBy(item => item.Text)
+            .Select(plot => plot.Id)
             .ToListAsync(cancellationToken);
+
+        var currentOwnedPlotIdSet = currentOwnedPlotIds.ToHashSet();
+        var plotIds = currentOwnedPlotIds
+            .Concat(currentlyLinkedPlotIds)
+            .Distinct()
+            .ToList();
+
+        if (plotIds.Count == 0)
+        {
+            PlotOptions = [];
+            return;
+        }
+
+        var plotOptions = await _dbContext.Plots
+            .AsNoTracking()
+            .Where(plot => plotIds.Contains(plot.Id))
+            .OrderBy(plot => plot.Number)
+            .ThenBy(plot => plot.Address)
+            .Select(plot => new
+            {
+                plot.Id,
+                plot.Number,
+                plot.Address
+            })
+            .ToListAsync(cancellationToken);
+
+        PlotOptions = plotOptions
+            .Select(item => new SelectListItem
+            {
+                Value = item.Id.ToString(),
+                Text = currentOwnedPlotIdSet.Contains(item.Id)
+                    ? $"{item.Number} — {item.Address}"
+                    : $"{item.Number} — {item.Address} (сейчас не принадлежит участнику)"
+            })
+            .ToList();
     }
 }

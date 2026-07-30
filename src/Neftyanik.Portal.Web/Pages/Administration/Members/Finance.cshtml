@@ -317,6 +317,11 @@ else
                         <div>
                             <span class="text-muted">@AppLocalizer.Get("Текущий тариф для участников:", "Поточний тариф для учасників:", "Current member tariff:")</span>
                             <strong>@Model.CurrentMemberTariff.Rate.ToString("0.0000") грн/кВт·ч</strong>
+                            @if (Model.CurrentMemberTariff.NightRate.HasValue)
+                            {
+                                <span class="ms-2 text-muted">@AppLocalizer.Get("ночной", "нічний", "night")</span>
+                                <strong>@Model.CurrentMemberTariff.NightRate.Value.ToString("0.0000") грн/кВт·ч</strong>
+                            }
                             <span class="text-muted">@AppLocalizer.Get("с", "з", "from") @Model.CurrentMemberTariff.EffectiveFrom.ToString("dd.MM.yyyy")</span>
                         </div>
                         <a class="btn btn-sm btn-outline-primary" asp-page="/Administration/Electricity/MemberTariffs/Index">@AppLocalizer.Get("Изменить тариф", "Змінити тариф", "Change tariff")</a>
@@ -382,7 +387,13 @@ else
                                                         <div class="border rounded px-2 py-1 bg-light-subtle">
                                                             <div class="d-flex flex-wrap justify-content-between gap-2">
                                                                 <span class="fw-semibold">@reading.ReadingDate.ToString("dd.MM.yyyy")</span>
-                                                                <span>@reading.CurrentReading.ToString("0.###") кВт·ч</span>
+                                                                 <span>
+                                                                     Т1 @reading.CurrentReading.ToString("0.###") кВт·ч
+                                                                     @if (reading.CurrentNightReading.HasValue)
+                                                                     {
+                                                                         <span class="ms-2">Т2 @reading.CurrentNightReading.Value.ToString("0.###") кВт·ч</span>
+                                                                     }
+                                                                 </span>
                                                             </div>
                                                             <div class="d-flex flex-wrap gap-3 text-muted mt-1">
                                                                 @if (reading.IsInitialReading)
@@ -446,10 +457,18 @@ else
                         <span asp-validation-for="ReadingInput.ReadingDate" class="text-danger"></span>
                     </div>
                     <div class="mb-3">
-                        <label asp-for="ReadingInput.CurrentReading" class="form-label"></label>
+                        <label for="ReadingInput_CurrentReading" class="form-label">@(Model.Member.ElectricityMeterType == Neftyanik.Portal.Domain.Enums.MemberElectricityMeterType.DayNight ? "Дневное показание" : "Текущее показание")</label>
                         <input asp-for="ReadingInput.CurrentReading" class="form-control" type="number" step="0.001" min="0" />
                         <span asp-validation-for="ReadingInput.CurrentReading" class="text-danger"></span>
                     </div>
+                    @if (Model.Member.ElectricityMeterType == Neftyanik.Portal.Domain.Enums.MemberElectricityMeterType.DayNight)
+                    {
+                        <div class="mb-3">
+                            <label asp-for="ReadingInput.CurrentNightReading" class="form-label"></label>
+                            <input asp-for="ReadingInput.CurrentNightReading" class="form-control" type="number" step="0.001" min="0" />
+                            <span asp-validation-for="ReadingInput.CurrentNightReading" class="text-danger"></span>
+                        </div>
+                    }
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@AppLocalizer.Get("Отмена", "Скасувати", "Cancel")</button>
@@ -495,10 +514,18 @@ else
                         <span asp-validation-for="SetupInput.ReadingDate" class="text-danger"></span>
                     </div>
                     <div class="mb-3">
-                        <label asp-for="SetupInput.CurrentReading" class="form-label"></label>
+                        <label for="SetupInput_CurrentReading" class="form-label">@(Model.Member.ElectricityMeterType == Neftyanik.Portal.Domain.Enums.MemberElectricityMeterType.DayNight ? "Дневное показание" : "Текущее показание")</label>
                         <input asp-for="SetupInput.CurrentReading" class="form-control" type="number" step="0.001" min="0" />
                         <span asp-validation-for="SetupInput.CurrentReading" class="text-danger"></span>
                     </div>
+                    @if (Model.Member.ElectricityMeterType == Neftyanik.Portal.Domain.Enums.MemberElectricityMeterType.DayNight)
+                    {
+                        <div class="mb-3">
+                            <label asp-for="SetupInput.CurrentNightReading" class="form-label"></label>
+                            <input asp-for="SetupInput.CurrentNightReading" class="form-control" type="number" step="0.001" min="0" />
+                            <span asp-validation-for="SetupInput.CurrentNightReading" class="text-danger"></span>
+                        </div>
+                    }
                     <div class="mb-0">
                         <label asp-for="SetupInput.OpeningDebtAmount" class="form-label"></label>
                         <input asp-for="SetupInput.OpeningDebtAmount" class="form-control" type="number" step="0.01" min="0" />
@@ -539,10 +566,18 @@ else
                         <span asp-validation-for="InitializationInput.ReadingDate" class="text-danger"></span>
                     </div>
                     <div class="mb-3">
-                        <label asp-for="InitializationInput.CurrentReading" class="form-label"></label>
+                        <label for="InitializationInput_CurrentReading" class="form-label">@(Model.Member.ElectricityMeterType == Neftyanik.Portal.Domain.Enums.MemberElectricityMeterType.DayNight ? "Дневное показание" : "Текущее показание")</label>
                         <input asp-for="InitializationInput.CurrentReading" class="form-control" type="number" step="0.001" min="0" />
                         <span asp-validation-for="InitializationInput.CurrentReading" class="text-danger"></span>
                     </div>
+                    @if (Model.Member.ElectricityMeterType == Neftyanik.Portal.Domain.Enums.MemberElectricityMeterType.DayNight)
+                    {
+                        <div class="mb-3">
+                            <label asp-for="InitializationInput.CurrentNightReading" class="form-label"></label>
+                            <input asp-for="InitializationInput.CurrentNightReading" class="form-control" type="number" step="0.001" min="0" />
+                            <span asp-validation-for="InitializationInput.CurrentNightReading" class="text-danger"></span>
+                        </div>
+                    }
                     <div class="mb-0">
                         <label asp-for="InitializationInput.OpeningDebtAmount" class="form-label"></label>
                         <input asp-for="InitializationInput.OpeningDebtAmount" class="form-control" type="number" step="0.01" min="0" />

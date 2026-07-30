@@ -10,6 +10,8 @@ public class TariffInputModel : IValidatableObject
 
     public decimal? Rate { get; set; }
 
+    public decimal? NightRate { get; set; }
+
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
         if (!EffectiveFrom.HasValue)
@@ -30,6 +32,13 @@ public class TariffInputModel : IValidatableObject
             yield return new ValidationResult(
                 AppLocalizer.Get("Тариф не может быть отрицательным.", "Тариф не може бути від'ємним.", "The tariff cannot be negative."),
                 [nameof(Rate)]);
+        }
+
+        if (NightRate.HasValue && NightRate.Value < 0m)
+        {
+            yield return new ValidationResult(
+                AppLocalizer.Get("Ночной тариф не может быть отрицательным.", "Нічний тариф не може бути від'ємним.", "The night tariff cannot be negative."),
+                [nameof(NightRate)]);
         }
     }
 }

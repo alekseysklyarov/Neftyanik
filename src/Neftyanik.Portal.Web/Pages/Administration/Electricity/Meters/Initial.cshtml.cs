@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Application.Electricity;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
+using Neftyanik.Portal.Domain.Enums;
 using Neftyanik.Portal.Infrastructure.Data;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Electricity.Meters;
@@ -74,12 +75,16 @@ public class InitialModel : PageModel
                 id,
                 Input.ReadingDate!.Value,
                 Input.CurrentReading!.Value,
+                Input.CurrentNightReading,
                 currentUser?.Id),
             cancellationToken);
 
         if (!result.Succeeded)
         {
-            ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "Не удалось сохранить начальные показания.");
+            var errorKey = result.ErrorMessage?.Contains("ночн", StringComparison.OrdinalIgnoreCase) == true
+                ? $"{nameof(Input)}.{nameof(ReadingInputModel.CurrentNightReading)}"
+                : string.Empty;
+            ModelState.AddModelError(errorKey, result.ErrorMessage ?? "Не удалось сохранить начальные показания.");
             return Page();
         }
 
@@ -101,6 +106,7 @@ public class InitialModel : PageModel
                 LinkedPlotNumbers = item.Plots.OrderBy(plot => plot.Number)
                     .Select(plot => plot.Number)
                     .ToList(),
+                MeterType = item.Member != null ? item.Member.ElectricityMeterType : MemberElectricityMeterType.SingleRate,
                 HasReadings = item.Readings.Any()
             })
             .FirstOrDefaultAsync(cancellationToken);
@@ -113,6 +119,8 @@ public class InitialModel : PageModel
         public string MemberName { get; init; } = "—";
         public string BillingPlotNumber { get; init; } = "—";
         public IReadOnlyList<string> LinkedPlotNumbers { get; init; } = [];
+        public MemberElectricityMeterType MeterType { get; init; } = MemberElectricityMeterType.SingleRate;
         public bool HasReadings { get; init; }
+        public bool RequiresNightReading => MeterType == MemberElectricityMeterType.DayNight;
     }
 }

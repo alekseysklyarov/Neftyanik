@@ -11,6 +11,8 @@ public class ReadingInputModel
 
     public decimal? CurrentReading { get; set; }
 
+    public decimal? CurrentNightReading { get; set; }
+
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
         if (!ReadingDate.HasValue)
@@ -26,6 +28,11 @@ public class ReadingInputModel
         if (CurrentReading.HasValue && CurrentReading.Value < 0m)
         {
             yield return new ValidationResult(AppLocalizer.Get("Показание не может быть отрицательным.", "Показник не може бути від'ємним.", "The reading cannot be negative."), [nameof(CurrentReading)]);
+        }
+
+        if (CurrentNightReading.HasValue && CurrentNightReading.Value < 0m)
+        {
+            yield return new ValidationResult(AppLocalizer.Get("Ночное показание не может быть отрицательным.", "Нічний показник не може бути від'ємним.", "The night reading cannot be negative."), [nameof(CurrentNightReading)]);
         }
     }
 }

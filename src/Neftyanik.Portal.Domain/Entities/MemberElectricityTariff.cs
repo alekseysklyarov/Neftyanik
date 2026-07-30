@@ -8,6 +8,8 @@ public class MemberElectricityTariff
 
     public decimal Rate { get; set; }
 
+    public decimal? NightRate { get; set; }
+
     public DateTimeOffset CreatedAtUtc { get; set; } = DateTimeOffset.UtcNow;
 
     public string? CreatedByUserId { get; set; }

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
+using Neftyanik.Portal.Domain.Enums;
 using Neftyanik.Portal.Infrastructure.Data;
 using Neftyanik.Portal.Web.Localization;
 
@@ -35,6 +36,8 @@ public class DetailsModel : PageModel
                 FullName = item.FullName,
                 PhoneNumber = item.PhoneNumber,
                 Email = item.Email,
+                ElectricityMeterType = item.ElectricityMeterType,
+                IsElectricityDisconnected = item.IsElectricityDisconnected,
                 JoinedAt = item.JoinedAt,
                 Notes = item.Notes,
                 IsActive = item.IsActive,
@@ -129,6 +132,10 @@ public class DetailsModel : PageModel
         public string? PhoneNumber { get; init; }
 
         public string? Email { get; init; }
+
+        public MemberElectricityMeterType ElectricityMeterType { get; init; }
+
+        public bool IsElectricityDisconnected { get; init; }
 
         public DateOnly? JoinedAt { get; init; }
 

@@ -31,15 +31,17 @@
 <div class="card shadow-sm mb-4">
     <div class="card-body">
         <form method="get" class="row g-3 align-items-end">
+            <input asp-for="SortBy" type="hidden" />
+            <input asp-for="SortDirection" type="hidden" />
             <div class="col-md-6">
                 <label asp-for="Search" class="form-label">@AppLocalizer.Get("Поиск", "Пошук", "Search")</label>
-                <input asp-for="Search" class="form-control" placeholder="@AppLocalizer.Get("Номер, адрес или кадастровый номер", "Номер, адреса або кадастровий номер", "Number, address, or cadastral number")" />
+                <input asp-for="Search" class="form-control" placeholder="@AppLocalizer.Get("Номер, адрес, кадастровый номер или владелец", "Номер, адреса, кадастровий номер або власник", "Number, address, cadastral number, or owner")" />
             </div>
             <div class="col-md-3">
                 <label asp-for="Status" class="form-label">@AppLocalizer.Get("Статус", "Статус", "Status")</label>
                 <select asp-for="Status" class="form-select">
-                    <option value="active">@AppLocalizer.Get("Только активные", "Лише активні", "Active only")</option>
                     <option value="all">@AppLocalizer.Get("Все", "Усі", "All")</option>
+                    <option value="active">@AppLocalizer.Get("Только активные", "Лише активні", "Active only")</option>
                     <option value="archived">@AppLocalizer.Get("Только архивные", "Лише архівні", "Archived only")</option>
                 </select>
             </div>
@@ -61,6 +63,9 @@
 
 <div class="card shadow-sm">
     <div class="card-body p-0">
+        <div class="d-flex justify-content-between align-items-center px-3 pt-3 text-muted small">
+            <span>@AppLocalizer.Get("Количество записей", "Кількість записів", "Record count"): @Model.TotalCount</span>
+        </div>
         @if (Model.Plots.Count == 0)
         {
             <div class="p-4 text-center text-muted">
@@ -73,7 +78,10 @@
                 <input asp-for="Search" type="hidden" />
                 <input asp-for="Status" type="hidden" />
                 <input asp-for="Ownership" type="hidden" />
+                <input asp-for="SortBy" type="hidden" />
+                <input asp-for="SortDirection" type="hidden" />
                 <input asp-for="PageNumber" type="hidden" />
+                <div id="bulk-charge-selected-plot-inputs"></div>
 
                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 p-3 border-bottom">
                     <div>
@@ -92,12 +100,24 @@
                                         <input class="form-check-input" type="checkbox" id="select-all-plots" aria-label="@AppLocalizer.Get("Выбрать все участки", "Вибрати всі ділянки", "Select all plots")" />
                                     </div>
                                 </th>
-                                <th>@AppLocalizer.Get("Номер", "Номер", "Number")</th>
-                                <th>@AppLocalizer.Get("Адрес", "Адреса", "Address")</th>
-                                <th>@AppLocalizer.Get("Площадь, соток", "Площа, соток", "Area, соток")</th>
-                                <th>@AppLocalizer.Get("Кадастровый номер", "Кадастровий номер", "Cadastral number")</th>
-                                <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
-                                <th>@AppLocalizer.Get("Владелец", "Власник", "Owner")</th>
+                                <th>
+                                    <a class="text-decoration-none link-dark" asp-page="/Administration/Plots/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-ownership="@Model.Ownership" asp-route-sortBy="number" asp-route-sortDirection="@Model.GetNextSortDirection("number")">@AppLocalizer.Get("Номер", "Номер", "Number") @Model.GetSortIndicator("number")</a>
+                                </th>
+                                <th>
+                                    <a class="text-decoration-none link-dark" asp-page="/Administration/Plots/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-ownership="@Model.Ownership" asp-route-sortBy="address" asp-route-sortDirection="@Model.GetNextSortDirection("address")">@AppLocalizer.Get("Адрес", "Адреса", "Address") @Model.GetSortIndicator("address")</a>
+                                </th>
+                                <th>
+                                    <a class="text-decoration-none link-dark" asp-page="/Administration/Plots/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-ownership="@Model.Ownership" asp-route-sortBy="area" asp-route-sortDirection="@Model.GetNextSortDirection("area")">@AppLocalizer.Get("Площадь, соток", "Площа, соток", "Area, соток") @Model.GetSortIndicator("area")</a>
+                                </th>
+                                <th>
+                                    <a class="text-decoration-none link-dark" asp-page="/Administration/Plots/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-ownership="@Model.Ownership" asp-route-sortBy="cadastral" asp-route-sortDirection="@Model.GetNextSortDirection("cadastral")">@AppLocalizer.Get("Кадастровый номер", "Кадастровий номер", "Cadastral number") @Model.GetSortIndicator("cadastral")</a>
+                                </th>
+                                <th>
+                                    <a class="text-decoration-none link-dark" asp-page="/Administration/Plots/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-ownership="@Model.Ownership" asp-route-sortBy="status" asp-route-sortDirection="@Model.GetNextSortDirection("status")">@AppLocalizer.Get("Статус", "Статус", "Status") @Model.GetSortIndicator("status")</a>
+                                </th>
+                                <th>
+                                    <a class="text-decoration-none link-dark" asp-page="/Administration/Plots/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-ownership="@Model.Ownership" asp-route-sortBy="owner" asp-route-sortDirection="@Model.GetNextSortDirection("owner")">@AppLocalizer.Get("Владелец", "Власник", "Owner") @Model.GetSortIndicator("owner")</a>
+                                </th>
                                 <th class="text-end">@AppLocalizer.Get("Действия", "Дії", "Actions")</th>
                             </tr>
                         </thead>
@@ -250,6 +270,8 @@
                    asp-route-search="@Model.Search"
                    asp-route-status="@Model.Status"
                    asp-route-ownership="@Model.Ownership"
+                   asp-route-sortBy="@Model.SortBy"
+                   asp-route-sortDirection="@Model.SortDirection"
                    asp-route-pageNumber="@(Model.PageNumber - 1)">@AppLocalizer.Get("Назад", "Назад", "Previous")</a>
             </li>
             @for (var pageIndex = 1; pageIndex <= Model.TotalPages; pageIndex++)
@@ -260,6 +282,8 @@
                        asp-route-search="@Model.Search"
                        asp-route-status="@Model.Status"
                        asp-route-ownership="@Model.Ownership"
+                       asp-route-sortBy="@Model.SortBy"
+                       asp-route-sortDirection="@Model.SortDirection"
                        asp-route-pageNumber="@pageIndex">@pageIndex</a>
                 </li>
             }
@@ -269,6 +293,8 @@
                    asp-route-search="@Model.Search"
                    asp-route-status="@Model.Status"
                    asp-route-ownership="@Model.Ownership"
+                   asp-route-sortBy="@Model.SortBy"
+                   asp-route-sortDirection="@Model.SortDirection"
                    asp-route-pageNumber="@(Model.PageNumber + 1)">@AppLocalizer.Get("Вперёд", "Вперед", "Next")</a>
             </li>
         </ul>
@@ -279,10 +305,12 @@
     <partial name="_ValidationScriptsPartial" />
     <script>
         (() => {
+            const maxSelectedPlotsToDisplay = 5;
             const plotsNotSelectedText = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(AppLocalizer.Get("Участки не выбраны.", "Ділянки не вибрано.", "No plots selected.")));
             const selectAtLeastOnePlotText = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(AppLocalizer.Get("Выберите хотя бы один участок в списке.", "Виберіть хоча б одну ділянку у списку.", "Select at least one plot from the list.")));
             const selectedPlotsCountText = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(AppLocalizer.Get("Выбрано участков", "Вибрано ділянок", "Selected plots")));
             const plotText = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(AppLocalizer.Get("Участок", "Ділянка", "Plot")));
+            const moreSelectedPlotsText = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(AppLocalizer.Get("и ещё", "і ще", "and")));
             const selectAllCheckbox = document.getElementById('select-all-plots');
             const modalElement = document.getElementById('bulkChargeModal');
             const selectedPlotsList = document.getElementById('bulk-charge-selected-plots');
@@ -293,33 +321,68 @@
             const chargeTypeSelect = document.getElementById('ChargeInput_ChargeTypeId');
             const chargeAmountDisplay = document.getElementById('charge-amount-display');
             const chargeTypeDefaultAmounts = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ChargeTypeDefaultAmounts));
+            const allSelectablePlots = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.SelectablePlots.Select(plot => new { id = plot.Id, number = plot.Number })));
+            const initiallySelectedPlotIds = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ChargeInput.SelectedPlotIds));
 
             if (!selectAllCheckbox) {
                 return;
             }
 
+            const selectedPlotInputsContainer = document.getElementById('bulk-charge-selected-plot-inputs');
             const plotCheckboxes = Array.from(document.querySelectorAll('input[name="ChargeInput.SelectedPlotIds"]'));
+            const visiblePlotCheckboxesById = new Map(plotCheckboxes.map(checkbox => [Number(checkbox.value), checkbox]));
+            const selectablePlotsById = new Map(allSelectablePlots.map(plot => [Number(plot.id), plot]));
+            const selectedPlotIds = new Set(initiallySelectedPlotIds.map(id => Number(id)).filter(id => selectablePlotsById.has(id)));
 
-            const updateSelectAllState = () => {
-                const checkedCount = plotCheckboxes.filter(checkbox => checkbox.checked).length;
-                selectAllCheckbox.checked = plotCheckboxes.length > 0 && checkedCount === plotCheckboxes.length;
-                selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < plotCheckboxes.length;
+            const syncVisibleCheckboxes = () => {
+                for (const checkbox of plotCheckboxes) {
+                    checkbox.checked = selectedPlotIds.has(Number(checkbox.value));
+                }
             };
 
-            const getSelectedPlotRows = () => plotCheckboxes
-                .filter(checkbox => checkbox.checked)
-                .map(checkbox => checkbox.closest('tr'))
-                .filter(row => row);
+            const syncHiddenSelectedPlotInputs = () => {
+                if (!selectedPlotInputsContainer) {
+                    return;
+                }
+
+                selectedPlotInputsContainer.innerHTML = '';
+
+                const sortedSelectedPlotIds = Array.from(selectedPlotIds).sort((left, right) => left - right);
+                for (const plotId of sortedSelectedPlotIds) {
+                    const visibleCheckbox = visiblePlotCheckboxesById.get(plotId);
+                    if (visibleCheckbox?.checked) {
+                        continue;
+                    }
+
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'ChargeInput.SelectedPlotIds';
+                    input.value = String(plotId);
+                    selectedPlotInputsContainer.appendChild(input);
+                }
+            };
+
+            const updateSelectAllState = () => {
+                const selectedCount = selectedPlotIds.size;
+                const selectableCount = allSelectablePlots.length;
+                selectAllCheckbox.checked = selectableCount > 0 && selectedCount === selectableCount;
+                selectAllCheckbox.indeterminate = selectedCount > 0 && selectedCount < selectableCount;
+            };
+
+            const getSelectedPlots = () => Array.from(selectedPlotIds)
+                .map(plotId => selectablePlotsById.get(plotId))
+                .filter(plot => plot)
+                .sort((left, right) => left.number.localeCompare(right.number, undefined, { numeric: true, sensitivity: 'base' }));
 
             const updateBulkChargeSummary = () => {
                 if (!selectedPlotsList || !selectedPlotsCount || !submitBulkChargeButton) {
                     return;
                 }
 
-                const selectedRows = getSelectedPlotRows();
+                const selectedPlots = getSelectedPlots();
                 selectedPlotsList.innerHTML = '';
 
-                if (selectedRows.length === 0) {
+                if (selectedPlots.length === 0) {
                     selectedPlotsCount.textContent = plotsNotSelectedText;
                     const item = document.createElement('li');
                     item.textContent = selectAtLeastOnePlotText;
@@ -328,12 +391,19 @@
                     return;
                 }
 
-                selectedPlotsCount.textContent = `${selectedPlotsCountText}: ${selectedRows.length}.`;
+                selectedPlotsCount.textContent = `${selectedPlotsCountText}: ${selectedPlots.length}.`;
                 submitBulkChargeButton.disabled = false;
 
-                for (const row of selectedRows) {
+                for (const plot of selectedPlots.slice(0, maxSelectedPlotsToDisplay)) {
                     const item = document.createElement('li');
-                    item.textContent = row.cells[1]?.textContent?.trim() || plotText;
+                    item.textContent = plot.number || plotText;
+                    selectedPlotsList.appendChild(item);
+                }
+
+                if (selectedPlots.length > maxSelectedPlotsToDisplay) {
+                    const item = document.createElement('li');
+                    item.className = 'text-muted';
+                    item.textContent = `${moreSelectedPlotsText} ${selectedPlots.length - maxSelectedPlotsToDisplay}.`;
                     selectedPlotsList.appendChild(item);
                 }
             };
@@ -367,16 +437,31 @@
             };
 
             selectAllCheckbox.addEventListener('change', () => {
-                for (const checkbox of plotCheckboxes) {
-                    checkbox.checked = selectAllCheckbox.checked;
+                selectedPlotIds.clear();
+
+                if (selectAllCheckbox.checked) {
+                    for (const plot of allSelectablePlots) {
+                        selectedPlotIds.add(Number(plot.id));
+                    }
                 }
 
+                syncVisibleCheckboxes();
+                syncHiddenSelectedPlotInputs();
                 updateSelectAllState();
                 updateBulkChargeSummary();
             });
 
             for (const checkbox of plotCheckboxes) {
                 checkbox.addEventListener('change', () => {
+                    const plotId = Number(checkbox.value);
+
+                    if (checkbox.checked) {
+                        selectedPlotIds.add(plotId);
+                    } else {
+                        selectedPlotIds.delete(plotId);
+                    }
+
+                    syncHiddenSelectedPlotInputs();
                     updateSelectAllState();
                     updateBulkChargeSummary();
                 });
@@ -397,6 +482,7 @@
             const bulkChargeForm = document.getElementById('bulk-charge-form');
             if (bulkChargeForm) {
                 bulkChargeForm.addEventListener('submit', (event) => {
+                    syncHiddenSelectedPlotInputs();
                     updateBulkChargeSummary();
 
                     if (submitBulkChargeButton && submitBulkChargeButton.disabled) {
@@ -411,6 +497,8 @@
                 });
             }
 
+            syncVisibleCheckboxes();
+            syncHiddenSelectedPlotInputs();
             updateSelectAllState();
             updateBulkChargeSummary();
             updateChargeAmount();

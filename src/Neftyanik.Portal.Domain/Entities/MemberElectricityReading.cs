@@ -12,6 +12,8 @@ public class MemberElectricityReading
 
     public decimal CurrentReading { get; set; }
 
+    public decimal? CurrentNightReading { get; set; }
+
     public decimal? AppliedMemberRate { get; set; }
 
     public decimal? Amount { get; set; }

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Neftyanik.Portal.Application.Electricity;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
+using Neftyanik.Portal.Domain.Enums;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Electricity.Meters.Readings;
 
@@ -33,6 +34,7 @@ public class CreateModel : PageModel
             id,
             DateOnly.FromDateTime(DateTime.Today),
             null,
+            null,
             cancellationToken);
 
         if (initialContext is null)
@@ -52,7 +54,7 @@ public class CreateModel : PageModel
         }
 
         Input.ReadingDate = GetDefaultReadingDate(initialContext.PreviousReadingDate!.Value);
-        if (!await LoadPageStateAsync(id, Input.ReadingDate.Value, null, cancellationToken))
+        if (!await LoadPageStateAsync(id, Input.ReadingDate.Value, null, null, cancellationToken))
         {
             return NotFound();
         }
@@ -63,7 +65,7 @@ public class CreateModel : PageModel
     public async Task<IActionResult> OnPostAsync(int id, CancellationToken cancellationToken)
     {
         var readingDate = Input.ReadingDate ?? DateOnly.FromDateTime(DateTime.Today);
-        if (!await LoadPageStateAsync(id, readingDate, Input.CurrentReading, cancellationToken))
+        if (!await LoadPageStateAsync(id, readingDate, Input.CurrentReading, Input.CurrentNightReading, cancellationToken))
         {
             return NotFound();
         }
@@ -87,6 +89,7 @@ public class CreateModel : PageModel
                 id,
                 Input.ReadingDate!.Value,
                 Input.CurrentReading!.Value,
+                Input.CurrentNightReading,
                 currentUser?.Id),
             cancellationToken);
 
@@ -100,9 +103,9 @@ public class CreateModel : PageModel
         return RedirectToPage("/Administration/Electricity/Meters/Readings/Index", new { id });
     }
 
-    private async Task<bool> LoadPageStateAsync(int id, DateOnly readingDate, decimal? currentReading, CancellationToken cancellationToken)
+    private async Task<bool> LoadPageStateAsync(int id, DateOnly readingDate, decimal? currentReading, decimal? currentNightReading, CancellationToken cancellationToken)
     {
-        var context = await _memberElectricityService.GetReadingEntryContextAsync(id, readingDate, currentReading, cancellationToken);
+        var context = await _memberElectricityService.GetReadingEntryContextAsync(id, readingDate, currentReading, currentNightReading, cancellationToken);
         if (context is null)
         {
             return false;
@@ -113,12 +116,14 @@ public class CreateModel : PageModel
             Id = context.MeterId,
             MemberName = context.MemberName,
             DisplayName = context.DisplayName,
+            MeterType = context.MeterType,
             BillingPlotId = context.BillingPlotId,
             BillingPlotNumber = context.BillingPlotNumber,
             LinkedPlotNumbers = context.LinkedPlotNumbers,
             LinkedPlotIds = context.LinkedPlotIds,
             PreviousReadingDate = context.PreviousReadingDate,
             PreviousReading = context.PreviousReading,
+            PreviousNightReading = context.PreviousNightReading,
             HasInitialReading = context.HasInitialReading,
             IsActive = context.IsActive,
             BillingPlotIsLinked = context.BillingPlotIsLinked,
@@ -130,7 +135,8 @@ public class CreateModel : PageModel
             Tariff = context.Tariff is null ? null : new TariffViewModel
             {
                 EffectiveFrom = context.Tariff.EffectiveFrom,
-                Rate = context.Tariff.Rate
+                Rate = context.Tariff.Rate,
+                NightRate = context.Tariff.NightRate
             },
             Consumption = context.Consumption,
             Amount = context.Amount
@@ -195,22 +201,26 @@ public class CreateModel : PageModel
         public int Id { get; init; }
         public string MemberName { get; init; } = "—";
         public string DisplayName { get; init; } = "—";
+        public MemberElectricityMeterType MeterType { get; init; } = MemberElectricityMeterType.SingleRate;
         public int BillingPlotId { get; init; }
         public string BillingPlotNumber { get; init; } = "—";
         public IReadOnlyList<string> LinkedPlotNumbers { get; init; } = [];
         public IReadOnlyList<int> LinkedPlotIds { get; init; } = [];
         public DateOnly? PreviousReadingDate { get; init; }
         public decimal? PreviousReading { get; init; }
+        public decimal? PreviousNightReading { get; init; }
         public bool HasInitialReading { get; init; }
         public bool IsActive { get; init; }
         public bool BillingPlotIsLinked { get; init; }
         public bool BillingPlotIsOwnedByMember { get; set; }
+        public bool RequiresNightReading => MeterType == MemberElectricityMeterType.DayNight;
     }
 
     public sealed class TariffViewModel
     {
         public DateOnly EffectiveFrom { get; init; }
         public decimal Rate { get; init; }
+        public decimal? NightRate { get; init; }
     }
 
     public sealed class PreviewViewModel

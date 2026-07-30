@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Neftyanik.Portal.Domain.Enums;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Members;
 
@@ -22,6 +23,12 @@ public class MemberInputModel
     [EmailAddress(ErrorMessage = "Введите корректный адрес электронной почты.")]
     [Display(Name = "Электронная почта")]
     public string? Email { get; set; }
+
+    [Display(Name = "Тип счётчика")]
+    public MemberElectricityMeterType ElectricityMeterType { get; set; } = MemberElectricityMeterType.SingleRate;
+
+    [Display(Name = "Электрика отключена")]
+    public bool IsElectricityDisconnected { get; set; }
 
     [DataType(DataType.Date)]
     [Display(Name = "Дата вступления")]

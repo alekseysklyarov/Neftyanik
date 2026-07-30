@@ -64,7 +64,8 @@ public class AdministrationMemberTariffTests
         httpContext.Request.Form = new FormCollection(new Dictionary<string, StringValues>
         {
             ["Input.EffectiveFrom"] = "2026-07-29",
-            ["Input.Rate"] = "5.01"
+            ["Input.Rate"] = "5.01",
+            ["Input.NightRate"] = "2.75"
         });
 
         var model = new MemberTariffCreateModel(service, userManager)
@@ -72,7 +73,8 @@ public class AdministrationMemberTariffTests
             Input = new Neftyanik.Portal.Web.Pages.Administration.Electricity.MemberTariffs.TariffInputModel
             {
                 EffectiveFrom = new DateOnly(2026, 7, 29),
-                Rate = null
+                Rate = null,
+                NightRate = null
             },
             PageContext = new PageContext
             {
@@ -82,6 +84,7 @@ public class AdministrationMemberTariffTests
         };
 
         model.ModelState.AddModelError("Input.Rate", "The value '5.01' is not valid for Rate.");
+        model.ModelState.AddModelError("Input.NightRate", "The value '2.75' is not valid for NightRate.");
 
         var result = await model.OnPostAsync(CancellationToken.None);
 
@@ -90,6 +93,7 @@ public class AdministrationMemberTariffTests
 
         var tariff = await dbContext.MemberElectricityTariffs.AsNoTracking().SingleAsync();
         Assert.Equal(5.01m, tariff.Rate);
+        Assert.Equal(2.75m, tariff.NightRate);
     }
 
     private static ApplicationUser CreateUser(string id, string email)

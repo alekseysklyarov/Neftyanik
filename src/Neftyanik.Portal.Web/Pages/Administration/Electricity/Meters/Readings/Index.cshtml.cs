@@ -65,6 +65,7 @@ public class IndexModel : PageModel
                 ReadingDate = reading.ReadingDate,
                 IsInitialReading = reading.IsInitialReading,
                 CurrentReading = reading.CurrentReading,
+                CurrentNightReading = reading.CurrentNightReading,
                 AppliedMemberRate = reading.AppliedMemberRate,
                 Amount = reading.Amount,
                 BillingPlotNumber = reading.Charge != null && reading.Charge.Plot != null
@@ -142,6 +143,7 @@ public class IndexModel : PageModel
         public bool IsInitialReading { get; init; }
         public decimal? PreviousReading { get; set; }
         public decimal CurrentReading { get; init; }
+        public decimal? CurrentNightReading { get; init; }
         public decimal? Consumption { get; set; }
         public decimal? AppliedMemberRate { get; init; }
         public decimal? Amount { get; init; }

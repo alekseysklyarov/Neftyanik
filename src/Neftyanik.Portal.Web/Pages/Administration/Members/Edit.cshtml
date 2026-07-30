@@ -1,4 +1,5 @@
 @page "{id:int}"
+@using Neftyanik.Portal.Domain.Enums
 @model Neftyanik.Portal.Web.Pages.Administration.Members.EditModel
 @{
     ViewData["Title"] = AppLocalizer.Get("Редактирование члена товарищества", "Редагування члена товариства", "Edit member");
@@ -58,10 +59,24 @@
                     <input asp-for="Input.Email" class="form-control" />
                     <span asp-validation-for="Input.Email" class="text-danger"></span>
                 </div>
+                <div class="col-md-6">
+                    <label asp-for="Input.ElectricityMeterType" class="form-label">@AppLocalizer.Get("Тип счётчика", "Тип лічильника", "Meter type")</label>
+                    <select asp-for="Input.ElectricityMeterType" class="form-select">
+                        <option value="@MemberElectricityMeterType.SingleRate">@AppLocalizer.Get("Однозонный", "Однозонний", "Single-rate")</option>
+                        <option value="@MemberElectricityMeterType.DayNight">@AppLocalizer.Get("Двухзонный", "Двозонний", "Day/night")</option>
+                    </select>
+                    <span asp-validation-for="Input.ElectricityMeterType" class="text-danger"></span>
+                </div>
                 <div class="col-12">
                     <label asp-for="Input.Notes" class="form-label">@AppLocalizer.Get("Примечание", "Примітка", "Note")</label>
                     <textarea asp-for="Input.Notes" class="form-control" rows="5"></textarea>
                     <span asp-validation-for="Input.Notes" class="text-danger"></span>
+                </div>
+                <div class="col-12">
+                    <div class="form-check">
+                        <input asp-for="Input.IsElectricityDisconnected" class="form-check-input" />
+                        <label asp-for="Input.IsElectricityDisconnected" class="form-check-label">@AppLocalizer.Get("Электрика отключена", "Електрику відключено", "Electricity disconnected")</label>
+                    </div>
                 </div>
                 <div class="col-12">
                     <div class="form-check">

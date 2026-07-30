@@ -124,6 +124,54 @@ public class AdministrationMemberFinanceChargeTests
     }
 
     [Fact]
+    public async Task GetAdministrationMemberFinance_ForDayNightMember_ShowsNightReadingInitializationFields()
+    {
+        using var factory = new PortalWebApplicationFactory();
+        const string adminUserId = "admin-user";
+        const int memberId = 211;
+        const int plotId = 311;
+
+        await factory.ExecuteDbContextAsync(async dbContext =>
+        {
+            dbContext.Users.Add(CreateUser(adminUserId, "admin-daynight@example.com"));
+            dbContext.Members.Add(new Member
+            {
+                Id = memberId,
+                FullName = "Day Night Member",
+                ElectricityMeterType = Neftyanik.Portal.Domain.Enums.MemberElectricityMeterType.DayNight,
+                IsActive = true
+            });
+            dbContext.Plots.Add(new Plot
+            {
+                Id = plotId,
+                Number = "P-311",
+                Address = "Finance Plot 311",
+                IsActive = true
+            });
+            dbContext.PlotOwnerships.Add(new PlotOwnership
+            {
+                Id = 11,
+                PlotId = plotId,
+                MemberId = memberId,
+                ValidFrom = new DateOnly(2020, 1, 1),
+                IsPrimaryContact = true
+            });
+
+            await dbContext.SaveChangesAsync();
+        });
+
+        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(adminUserId, RoleNames.Administrator), cultureName: "ru-RU");
+
+        var response = await client.GetAsync($"/Administration/Members/Finance/{memberId}/Finance");
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("name=\"ReadingInput.CurrentNightReading\"", html, StringComparison.Ordinal);
+        Assert.Contains("name=\"SetupInput.CurrentNightReading\"", html, StringComparison.Ordinal);
+        Assert.Contains("name=\"InitializationInput.CurrentNightReading\"", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task GetAdministrationMemberCreateCharge_ShowsOnlyActiveMemberPlotsAndActiveChargeTypes()
     {
         using var factory = new PortalWebApplicationFactory();
@@ -865,6 +913,7 @@ public class AdministrationMemberFinanceChargeTests
                 meterId,
                 new DateOnly(2026, 2, 1),
                 700m,
+                null,
                 adminUserId),
             CancellationToken.None);
 
@@ -923,6 +972,7 @@ public class AdministrationMemberFinanceChargeTests
                 meterId,
                 new DateOnly(2026, 2, 1),
                 130m,
+                null,
                 adminUserId),
             CancellationToken.None);
 

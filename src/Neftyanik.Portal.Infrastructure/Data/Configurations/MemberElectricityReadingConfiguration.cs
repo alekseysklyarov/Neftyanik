@@ -11,6 +11,7 @@ public class MemberElectricityReadingConfiguration : IEntityTypeConfiguration<Me
         builder.ToTable("MemberElectricityReadings", tableBuilder =>
         {
             tableBuilder.HasCheckConstraint("CK_MemberElectricityReadings_CurrentReading_NonNegative", "[CurrentReading] >= 0");
+            tableBuilder.HasCheckConstraint("CK_MemberElectricityReadings_CurrentNightReading_NonNegative", "[CurrentNightReading] IS NULL OR [CurrentNightReading] >= 0");
             tableBuilder.HasCheckConstraint("CK_MemberElectricityReadings_AppliedMemberRate_NonNegative", "[AppliedMemberRate] IS NULL OR [AppliedMemberRate] >= 0");
             tableBuilder.HasCheckConstraint("CK_MemberElectricityReadings_Amount_NonNegative", "[Amount] IS NULL OR [Amount] >= 0");
         });
@@ -21,6 +22,9 @@ public class MemberElectricityReadingConfiguration : IEntityTypeConfiguration<Me
             .HasColumnType("date");
 
         builder.Property(x => x.CurrentReading)
+            .HasPrecision(18, 3);
+
+        builder.Property(x => x.CurrentNightReading)
             .HasPrecision(18, 3);
 
         builder.Property(x => x.AppliedMemberRate)

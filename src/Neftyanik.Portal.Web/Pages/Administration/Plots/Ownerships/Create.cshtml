@@ -37,6 +37,8 @@ else
 
                 <div class="row g-3">
                     <div class="col-12">
+                        <label for="member-option-search" class="form-label">Поиск члена товарищества</label>
+                        <input type="text" id="member-option-search" class="form-control mb-2" placeholder="Начните вводить ФИО, телефон или email" autocomplete="off" />
                         <label asp-for="Input.MemberId" class="form-label"></label>
                         <select asp-for="Input.MemberId" asp-items="Model.MemberOptions" class="form-select">
                             <option value="">Выберите члена товарищества</option>
@@ -61,4 +63,52 @@ else
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const searchInput = document.getElementById('member-option-search');
+            const memberSelect = document.getElementById('Input_MemberId');
+
+            if (!searchInput || !memberSelect) {
+                return;
+            }
+
+            const noResultsText = 'Ничего не найдено';
+            const originalOptions = Array.from(memberSelect.options).map(option => ({
+                value: option.value,
+                text: option.text,
+                selected: option.selected,
+                disabled: option.disabled
+            }));
+
+            const renderOptions = () => {
+                const searchValue = searchInput.value.trim().toLowerCase();
+                const selectedValue = memberSelect.value;
+                const filteredOptions = originalOptions.filter(option => option.value === ''
+                    || option.value === selectedValue
+                    || option.text.toLowerCase().includes(searchValue));
+
+                memberSelect.innerHTML = '';
+
+                for (const optionData of filteredOptions) {
+                    const option = document.createElement('option');
+                    option.value = optionData.value;
+                    option.text = optionData.text;
+                    option.disabled = optionData.disabled;
+                    option.selected = optionData.value === selectedValue || (!selectedValue && optionData.selected);
+                    memberSelect.appendChild(option);
+                }
+
+                const hasMatchedMembers = filteredOptions.some(option => option.value !== '');
+                if (!hasMatchedMembers) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.text = noResultsText;
+                    option.disabled = true;
+                    memberSelect.appendChild(option);
+                }
+            };
+
+            searchInput.addEventListener('input', renderOptions);
+        })();
+    </script>
 }

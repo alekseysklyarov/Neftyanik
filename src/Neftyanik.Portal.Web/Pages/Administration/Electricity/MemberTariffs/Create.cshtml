@@ -5,21 +5,28 @@
 }
 
 <div class="row justify-content-center">
-    <div class="col-lg-8">
+    <div class="col-lg-10 col-xl-9">
         <div class="card shadow-sm">
             <div class="card-body">
                 <h1 class="h3 mb-3">@AppLocalizer.Get("Новый тариф для участников", "Новий тариф для учасників", "New member tariff")</h1>
                 <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
                 <form method="post" class="row g-3">
-                    <div class="col-md-6">
+                    <div class="col-md-6 col-lg-4">
                         <label asp-for="Input.EffectiveFrom" class="form-label">@AppLocalizer.Get("Действует с", "Діє з", "Effective from")</label>
                         <input asp-for="Input.EffectiveFrom" class="form-control" />
                         <span asp-validation-for="Input.EffectiveFrom" class="text-danger"></span>
                     </div>
-                    <div class="col-md-6">
-                        <label asp-for="Input.Rate" class="form-label">@AppLocalizer.Get("Тариф, грн/кВт·ч", "Тариф, грн/кВт·год", "Tariff, UAH/kWh")</label>
+                    <div class="col-md-6 col-lg-4">
+                        <label asp-for="Input.Rate" class="form-label">@AppLocalizer.Get("Однозонный / дневной тариф, грн/кВт·ч", "Однозонний / денний тариф, грн/кВт·год", "Single-rate / day tariff, UAH/kWh")</label>
                         <input asp-for="Input.Rate" class="form-control" type="number" step="0.0001" min="0" inputmode="decimal" />
+                        <div class="form-text">@AppLocalizer.Get("Используется для однозонных счётчиков и дневной зоны двухзонных счётчиков.", "Використовується для однозонних лічильників і денної зони двозонних лічильників.", "Used for single-rate meters and the day zone of day/night meters.")</div>
                         <span asp-validation-for="Input.Rate" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6 col-lg-4">
+                        <label asp-for="Input.NightRate" class="form-label">@AppLocalizer.Get("Ночной тариф, грн/кВт·ч", "Нічний тариф, грн/кВт·год", "Night tariff, UAH/kWh")</label>
+                        <input asp-for="Input.NightRate" class="form-control" type="number" step="0.0001" min="0" inputmode="decimal" />
+                        <div class="form-text">@AppLocalizer.Get("Заполняйте для двухзонных счётчиков участников.", "Заповнюйте для двозонних лічильників учасників.", "Fill in for member day/night meters.")</div>
+                        <span asp-validation-for="Input.NightRate" class="text-danger"></span>
                     </div>
                     <div class="col-12 d-flex gap-2">
                         <button type="submit" class="btn btn-primary">@AppLocalizer.Get("Сохранить", "Зберегти", "Save")</button>

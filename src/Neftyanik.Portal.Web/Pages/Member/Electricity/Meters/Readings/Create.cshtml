@@ -17,10 +17,18 @@
                         <span asp-validation-for="Input.ReadingDate" class="text-danger"></span>
                     </div>
                     <div class="col-md-6">
-                        <label asp-for="Input.CurrentReading" class="form-label">@AppLocalizer.Get("Текущее показание, кВт·ч", "Поточний показник, кВт·год", "Current reading, kWh")</label>
+                        <label asp-for="Input.CurrentReading" class="form-label">@(Model.Meter.RequiresNightReading ? AppLocalizer.Get("Текущее дневное показание, кВт·ч", "Поточний денний показник, кВт·год", "Current day reading, kWh") : AppLocalizer.Get("Текущее показание, кВт·ч", "Поточний показник, кВт·год", "Current reading, kWh"))</label>
                         <input asp-for="Input.CurrentReading" class="form-control" />
                         <span asp-validation-for="Input.CurrentReading" class="text-danger"></span>
                     </div>
+                    @if (Model.Meter.RequiresNightReading)
+                    {
+                        <div class="col-md-6">
+                            <label asp-for="Input.CurrentNightReading" class="form-label">@AppLocalizer.Get("Текущее ночное показание, кВт·ч", "Поточний нічний показник, кВт·год", "Current night reading, kWh")</label>
+                            <input asp-for="Input.CurrentNightReading" class="form-control" />
+                            <span asp-validation-for="Input.CurrentNightReading" class="text-danger"></span>
+                        </div>
+                    }
                     <div class="col-12 d-flex gap-2">
                         <button type="submit" class="btn btn-primary">@AppLocalizer.Get("Сохранить", "Зберегти", "Save")</button>
                         <a class="btn btn-outline-secondary" asp-page="/Member/Electricity/Index">@AppLocalizer.Get("Назад", "Назад", "Back")</a>
@@ -43,9 +51,35 @@
                     <dt>@AppLocalizer.Get("Предыдущая дата", "Попередня дата", "Previous date")</dt>
                     <dd>@Model.Meter.PreviousReadingDate?.ToString("dd.MM.yyyy")</dd>
                     <dt>@AppLocalizer.Get("Предыдущее показание", "Попередній показник", "Previous reading")</dt>
-                    <dd>@(Model.Meter.PreviousReading.HasValue ? $"{Model.Meter.PreviousReading.Value:0.000} кВт·ч" : "—")</dd>
+                    <dd>
+                        @if (Model.Meter.PreviousReading.HasValue)
+                        {
+                            <div>Т1 @(Model.Meter.PreviousReading.Value.ToString("0.000")) кВт·ч</div>
+                            @if (Model.Meter.PreviousNightReading.HasValue)
+                            {
+                                <div>Т2 @(Model.Meter.PreviousNightReading.Value.ToString("0.000")) кВт·ч</div>
+                            }
+                        }
+                        else
+                        {
+                            @:—
+                        }
+                    </dd>
                     <dt>@AppLocalizer.Get("Тариф", "Тариф", "Tariff")</dt>
-                    <dd>@(Model.Preview.Tariff is null ? "—" : $"{Model.Preview.Tariff.Rate:0.0000} грн/кВт·ч")</dd>
+                    <dd>
+                        @if (Model.Preview.Tariff is null)
+                        {
+                            @:—
+                        }
+                        else
+                        {
+                            <div>Т1 @Model.Preview.Tariff.Rate.ToString("0.0000") грн/кВт·ч</div>
+                            @if (Model.Preview.Tariff.NightRate.HasValue)
+                            {
+                                <div>Т2 @Model.Preview.Tariff.NightRate.Value.ToString("0.0000") грн/кВт·ч</div>
+                            }
+                        }
+                    </dd>
                     <dt>@AppLocalizer.Get("Предварительный расход", "Попереднє споживання", "Estimated consumption")</dt>
                     <dd>@(Model.Preview.Consumption.HasValue ? $"{Model.Preview.Consumption.Value:0.000} кВт·ч" : "—")</dd>
                     <dt>@AppLocalizer.Get("Предварительная сумма", "Попередня сума", "Estimated amount")</dt>
