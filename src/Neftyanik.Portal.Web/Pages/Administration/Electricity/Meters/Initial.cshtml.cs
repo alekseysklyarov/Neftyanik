@@ -98,8 +98,8 @@ public class InitialModel : PageModel
                 DisplayName = !string.IsNullOrWhiteSpace(item.Name) ? item.Name : !string.IsNullOrWhiteSpace(item.MeterNumber) ? item.MeterNumber : $"Счетчик #{item.Id}",
                 MemberName = item.Member != null ? item.Member.FullName : "—",
                 BillingPlotNumber = item.BillingPlot != null ? item.BillingPlot.Number : "—",
-                LinkedPlotNumbers = item.MeterPlots.OrderBy(link => link.Plot != null ? link.Plot.Number : string.Empty)
-                    .Select(link => link.Plot != null ? link.Plot.Number : "—")
+                LinkedPlotNumbers = item.Plots.OrderBy(plot => plot.Number)
+                    .Select(plot => plot.Number)
                     .ToList(),
                 HasReadings = item.Readings.Any()
             })

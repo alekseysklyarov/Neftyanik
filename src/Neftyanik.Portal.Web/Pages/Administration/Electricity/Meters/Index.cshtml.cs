@@ -36,9 +36,10 @@ public class IndexModel : PageModel
                 IsActive = meter.IsActive,
                 BillingPlotId = meter.BillingPlotId,
                 BillingPlotNumber = meter.BillingPlot != null ? meter.BillingPlot.Number : "—",
-                LinkedPlotNumbers = meter.MeterPlots.OrderBy(link => link.Plot != null ? link.Plot.Number : string.Empty)
-                    .Select(link => link.Plot != null ? link.Plot.Number : "—")
+                LinkedPlotNumbers = meter.Plots.OrderBy(plot => plot.Number)
+                    .Select(plot => plot.Number)
                     .ToList(),
+                LinkedPlotIds = meter.Plots.Select(plot => plot.Id).ToList(),
                 LatestReadingDate = meter.Readings.OrderByDescending(reading => reading.ReadingDate).Select(reading => (DateOnly?)reading.ReadingDate).FirstOrDefault(),
                 LatestAmount = meter.Readings.OrderByDescending(reading => reading.ReadingDate).Select(reading => reading.Amount).FirstOrDefault()
             })

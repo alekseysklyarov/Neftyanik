@@ -63,21 +63,64 @@ public class IndexModel : PageModel
                 Name = meter.Name,
                 MeterNumber = meter.MeterNumber,
                 BillingPlotNumber = meter.BillingPlot != null ? meter.BillingPlot.Number : "—",
-                ConnectedPlots = meter.MeterPlots.OrderBy(link => link.Plot != null ? link.Plot.Number : string.Empty)
-                    .Select(link => link.Plot != null ? link.Plot.Number : "—")
+                ConnectedPlots = meter.Plots.OrderBy(plot => plot.Number)
+                    .Select(plot => plot.Number)
                     .ToList(),
                 LatestReading = meter.Readings.OrderByDescending(reading => reading.ReadingDate).ThenByDescending(reading => reading.Id).Select(reading => (decimal?)reading.CurrentReading).FirstOrDefault(),
                 LatestReadingDate = meter.Readings.OrderByDescending(reading => reading.ReadingDate).ThenByDescending(reading => reading.Id).Select(reading => (DateOnly?)reading.ReadingDate).FirstOrDefault(),
-                LatestConsumption = meter.Readings.OrderByDescending(reading => reading.ReadingDate).ThenByDescending(reading => reading.Id).Select(reading => reading.Consumption).FirstOrDefault(),
                 LatestChargeAmount = meter.Readings.OrderByDescending(reading => reading.ReadingDate).ThenByDescending(reading => reading.Id).Select(reading => reading.Amount).FirstOrDefault(),
                 HasInitialReading = meter.Readings.Any()
             })
             .ToListAsync(cancellationToken);
 
+        var meterIds = Meters.Select(meter => meter.Id).ToArray();
+        var latestReadingsByMeterId = meterIds.Length == 0
+            ? new Dictionary<int, List<ReadingSnapshot>>()
+            : (await _dbContext.MemberElectricityReadings
+                .AsNoTracking()
+                .Where(reading => meterIds.Contains(reading.MemberElectricityMeterId))
+                .OrderByDescending(reading => reading.ReadingDate)
+                .ThenByDescending(reading => reading.Id)
+                .Select(reading => new ReadingSnapshot(
+                    reading.MemberElectricityMeterId,
+                    reading.CurrentReading,
+                    reading.IsInitialReading))
+                .ToListAsync(cancellationToken))
+                .GroupBy(reading => reading.MemberElectricityMeterId)
+                .ToDictionary(group => group.Key, group => group.Take(2).ToList());
+
+        Meters = Meters
+            .Select(meter =>
+            {
+                var readings = latestReadingsByMeterId.GetValueOrDefault(meter.Id, []);
+                var latestReading = readings.FirstOrDefault();
+                var previousReading = readings.Skip(1).FirstOrDefault();
+                var latestConsumption = latestReading is not null && !latestReading.IsInitialReading && previousReading is not null
+                    ? latestReading.CurrentReading - previousReading.CurrentReading
+                    : (decimal?)null;
+
+                return new MeterItemViewModel
+                {
+                    Id = meter.Id,
+                    Name = meter.Name,
+                    MeterNumber = meter.MeterNumber,
+                    BillingPlotNumber = meter.BillingPlotNumber,
+                    ConnectedPlots = meter.ConnectedPlots,
+                    LatestReading = meter.LatestReading,
+                    LatestReadingDate = meter.LatestReadingDate,
+                    LatestConsumption = latestConsumption,
+                    LatestChargeAmount = meter.LatestChargeAmount,
+                    HasInitialReading = meter.HasInitialReading
+                };
+            })
+            .ToList();
+
         return Page();
     }
 
-    public sealed class MeterItemViewModel
+    private sealed record ReadingSnapshot(int MemberElectricityMeterId, decimal CurrentReading, bool IsInitialReading);
+
+    public sealed record MeterItemViewModel
     {
         public int Id { get; init; }
         public string? Name { get; init; }

@@ -1,5 +1,6 @@
 using System.Net;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data;
@@ -317,10 +318,6 @@ public class MemberFinanceAuthorizationTests
                 MemberId = memberId,
                 BillingPlotId = plotId,
                 IsActive = true,
-                MeterPlots =
-                [
-                    new MemberElectricityMeterPlot { PlotId = plotId }
-                ],
                 Readings =
                 [
                     new MemberElectricityReading
@@ -331,6 +328,11 @@ public class MemberFinanceAuthorizationTests
                     }
                 ]
             });
+
+            await dbContext.SaveChangesAsync();
+
+            var readyMeterPlot = await dbContext.Plots.SingleAsync(plot => plot.Id == plotId);
+            readyMeterPlot.MemberElectricityMeterId = meterId;
 
             await dbContext.SaveChangesAsync();
         });
@@ -383,10 +385,6 @@ public class MemberFinanceAuthorizationTests
                 MemberId = memberId,
                 BillingPlotId = plotId,
                 IsActive = true,
-                MeterPlots =
-                [
-                    new MemberElectricityMeterPlot { PlotId = plotId }
-                ],
                 Readings =
                 [
                     new MemberElectricityReading
@@ -398,14 +396,17 @@ public class MemberFinanceAuthorizationTests
                     new MemberElectricityReading
                     {
                         ReadingDate = new DateOnly(2026, 2, 1),
-                        PreviousReading = 100m,
                         CurrentReading = 130m,
-                        Consumption = 30m,
                         Amount = 150m,
                         IsInitialReading = false
                     }
                 ]
             });
+
+            await dbContext.SaveChangesAsync();
+
+            var historyPlot = await dbContext.Plots.SingleAsync(plot => plot.Id == plotId);
+            historyPlot.MemberElectricityMeterId = meterId;
 
             await dbContext.SaveChangesAsync();
         });

@@ -124,8 +124,8 @@ public class CreateModel : PageModel
                 DisplayName = !string.IsNullOrWhiteSpace(item.Name) ? item.Name : !string.IsNullOrWhiteSpace(item.MeterNumber) ? item.MeterNumber : AppLocalizer.Get($"Счетчик #{item.Id}", $"Лічильник #{item.Id}", $"Meter #{item.Id}"),
                 BillingPlotId = item.BillingPlotId,
                 BillingPlotNumber = item.BillingPlot != null ? item.BillingPlot.Number : "—",
-                LinkedPlotNumbers = item.MeterPlots.OrderBy(link => link.Plot != null ? link.Plot.Number : string.Empty)
-                    .Select(link => link.Plot != null ? link.Plot.Number : "—")
+                LinkedPlotNumbers = item.Plots.OrderBy(plot => plot.Number)
+                    .Select(plot => plot.Number)
                     .ToList(),
                 PreviousReadingDate = item.Readings.OrderByDescending(reading => reading.ReadingDate).ThenByDescending(reading => reading.Id).Select(reading => (DateOnly?)reading.ReadingDate).FirstOrDefault(),
                 PreviousReading = item.Readings.OrderByDescending(reading => reading.ReadingDate).ThenByDescending(reading => reading.Id).Select(reading => (decimal?)reading.CurrentReading).FirstOrDefault(),
@@ -146,10 +146,10 @@ public class CreateModel : PageModel
             .Distinct()
             .ToListAsync(cancellationToken);
 
-        var linkedPlotIds = await _dbContext.MemberElectricityMeterPlots
+        var linkedPlotIds = await _dbContext.Plots
             .AsNoTracking()
-            .Where(link => link.MemberElectricityMeterId == meterId)
-            .Select(link => link.PlotId)
+            .Where(plot => plot.MemberElectricityMeterId == meterId)
+            .Select(plot => plot.Id)
             .ToListAsync(cancellationToken);
 
         if (!linkedPlotIds.Contains(meter.BillingPlotId) || !activeOwnedPlotIds.Contains(meter.BillingPlotId) || linkedPlotIds.Any(plotId => !activeOwnedPlotIds.Contains(plotId)))

@@ -681,16 +681,16 @@ public class IndexModel : PageModel
                 : (await _dbContext.MemberElectricityReadings
                     .AsNoTracking()
                     .Where(reading => meterIds.Contains(reading.MemberElectricityMeterId))
-                    .OrderByDescending(reading => reading.ReadingDate)
-                    .ThenByDescending(reading => reading.Id)
+                    .OrderBy(reading => reading.ReadingDate)
+                    .ThenBy(reading => reading.Id)
                     .Select(reading => new
                     {
                         reading.MemberElectricityMeterId,
                         Item = new MemberElectricityReadingHistoryItemViewModel
                         {
+                            Id = reading.Id,
                             ReadingDate = reading.ReadingDate,
                             CurrentReading = reading.CurrentReading,
-                            Consumption = reading.Consumption,
                             Amount = reading.Amount,
                             IsInitialReading = reading.IsInitialReading
                         }
@@ -699,7 +699,7 @@ public class IndexModel : PageModel
                     .GroupBy(item => item.MemberElectricityMeterId)
                     .ToDictionary(
                         group => group.Key,
-                        group => group.Select(item => item.Item).ToList());
+                        group => BuildReadingHistory(group.Select(item => item.Item).ToList()));
 
             ElectricityMeters = meters
                 .Select(meter =>
@@ -728,6 +728,22 @@ public class IndexModel : PageModel
     {
         return exception.Number == 208
             || exception.Message.Contains("MemberElectricityMeters", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static List<MemberElectricityReadingHistoryItemViewModel> BuildReadingHistory(List<MemberElectricityReadingHistoryItemViewModel> readings)
+    {
+        decimal? previousReading = null;
+        foreach (var reading in readings)
+        {
+            reading.Consumption = !reading.IsInitialReading && previousReading.HasValue
+                ? reading.CurrentReading - previousReading.Value
+                : null;
+
+            previousReading = reading.CurrentReading;
+        }
+
+        readings.Reverse();
+        return readings;
     }
 
     public sealed class MemberDashboardViewModel
@@ -868,11 +884,12 @@ public class IndexModel : PageModel
 
     public sealed class MemberElectricityReadingHistoryItemViewModel
     {
+        public long Id { get; init; }
         public DateOnly ReadingDate { get; init; }
 
         public decimal CurrentReading { get; init; }
 
-        public decimal? Consumption { get; init; }
+        public decimal? Consumption { get; set; }
 
         public decimal? Amount { get; init; }
 

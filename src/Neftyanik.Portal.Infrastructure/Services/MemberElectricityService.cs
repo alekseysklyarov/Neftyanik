@@ -181,13 +181,20 @@ public sealed class MemberElectricityService : IMemberElectricityService
             IsActive = request.IsActive,
             BillingPlotId = request.BillingPlotId,
             CreatedAtUtc = DateTimeOffset.UtcNow,
-            CreatedByUserId = request.CreatedByUserId,
-            MeterPlots = validationResult.ValidPlotIds
-                .Select(plotId => new MemberElectricityMeterPlot { PlotId = plotId })
-                .ToList()
+            CreatedByUserId = request.CreatedByUserId
         };
 
+        var plots = await _dbContext.Plots
+            .Where(plot => validationResult.ValidPlotIds.Contains(plot.Id))
+            .ToListAsync(cancellationToken);
+
         _dbContext.MemberElectricityMeters.Add(meter);
+
+        foreach (var plot in plots)
+        {
+            plot.MemberElectricityMeter = meter;
+        }
+
         await _dbContext.SaveChangesAsync(cancellationToken);
         return MemberElectricityMeterOperationResult.Success(meter.Id);
     }
@@ -218,11 +225,12 @@ public sealed class MemberElectricityService : IMemberElectricityService
             IsActive = request.IsActive,
             BillingPlotId = request.BillingPlotId,
             CreatedAtUtc = DateTimeOffset.UtcNow,
-            CreatedByUserId = request.CreatedByUserId,
-            MeterPlots = validationResult.ValidPlotIds
-                .Select(plotId => new MemberElectricityMeterPlot { PlotId = plotId })
-                .ToList()
+            CreatedByUserId = request.CreatedByUserId
         };
+
+        var plots = await _dbContext.Plots
+            .Where(plot => validationResult.ValidPlotIds.Contains(plot.Id))
+            .ToListAsync(cancellationToken);
 
         var reading = new MemberElectricityReading
         {
@@ -260,6 +268,12 @@ public sealed class MemberElectricityService : IMemberElectricityService
         try
         {
             _dbContext.MemberElectricityMeters.Add(meter);
+
+            foreach (var plot in plots)
+            {
+                plot.MemberElectricityMeter = meter;
+            }
+
             _dbContext.MemberElectricityReadings.Add(reading);
 
             if (openingDebtCharge is not null)
@@ -297,7 +311,7 @@ public sealed class MemberElectricityService : IMemberElectricityService
     public async Task<MemberElectricityMeterOperationResult> UpdateMeterAsync(UpdateMemberElectricityMeterRequest request, CancellationToken cancellationToken = default)
     {
         var meter = await _dbContext.MemberElectricityMeters
-            .Include(item => item.MeterPlots)
+            .Include(item => item.Plots)
             .Include(item => item.Readings)
             .FirstOrDefaultAsync(item => item.Id == request.MeterId, cancellationToken);
 
@@ -329,14 +343,20 @@ public sealed class MemberElectricityService : IMemberElectricityService
             transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
         }
 
-        _dbContext.MemberElectricityMeterPlots.RemoveRange(meter.MeterPlots);
-        meter.MeterPlots = validationResult.ValidPlotIds
-            .Select(plotId => new MemberElectricityMeterPlot
-            {
-                MemberElectricityMeterId = meter.Id,
-                PlotId = plotId
-            })
-            .ToList();
+        var validPlotIds = validationResult.ValidPlotIds.ToHashSet();
+        var plotsToAssign = await _dbContext.Plots
+            .Where(plot => validPlotIds.Contains(plot.Id))
+            .ToListAsync(cancellationToken);
+
+        foreach (var plot in meter.Plots.Where(plot => !validPlotIds.Contains(plot.Id)).ToList())
+        {
+            plot.MemberElectricityMeterId = null;
+        }
+
+        foreach (var plot in plotsToAssign)
+        {
+            plot.MemberElectricityMeterId = meter.Id;
+        }
 
         try
         {
@@ -376,12 +396,12 @@ public sealed class MemberElectricityService : IMemberElectricityService
                 item.IsActive,
                 item.BillingPlotId,
                 BillingPlotNumber = item.BillingPlot != null ? item.BillingPlot.Number : "—",
-                LinkedPlotIds = item.MeterPlots
-                    .Select(link => link.PlotId)
+                LinkedPlotIds = item.Plots
+                    .Select(plot => plot.Id)
                     .ToList(),
-                LinkedPlotNumbers = item.MeterPlots
-                    .OrderBy(link => link.Plot != null ? link.Plot.Number : string.Empty)
-                    .Select(link => link.Plot != null ? link.Plot.Number : "—")
+                LinkedPlotNumbers = item.Plots
+                    .OrderBy(plot => plot.Number)
+                    .Select(plot => plot.Number)
                     .ToList(),
                 HasInitialReading = item.Readings.Any(reading => reading.IsInitialReading),
                 PreviousReadingDate = item.Readings
@@ -575,9 +595,7 @@ public sealed class MemberElectricityService : IMemberElectricityService
         {
             MemberElectricityMeterId = request.MeterId,
             ReadingDate = request.ReadingDate,
-            PreviousReading = meter.PreviousReading.Value,
             CurrentReading = request.CurrentReading,
-            Consumption = consumption,
             AppliedMemberRate = tariff,
             Amount = amount,
             IsInitialReading = false,
@@ -673,13 +691,12 @@ public sealed class MemberElectricityService : IMemberElectricityService
             return MemberElectricityMeterValidationResult.Failure("Можно привязать только участки, которые сейчас принадлежат выбранному участнику.");
         }
 
-        var conflictingPlotId = await _dbContext.MemberElectricityMeterPlots
+        var conflictingPlotId = await _dbContext.Plots
             .AsNoTracking()
-            .Where(link => distinctPlotIds.Contains(link.PlotId)
-                && link.MemberElectricityMeter != null
-                && link.MemberElectricityMeter.IsActive
-                && (!existingMeterId.HasValue || link.MemberElectricityMeterId != existingMeterId.Value))
-            .Select(link => (int?)link.PlotId)
+            .Where(plot => distinctPlotIds.Contains(plot.Id)
+                && plot.MemberElectricityMeterId.HasValue
+                && (!existingMeterId.HasValue || plot.MemberElectricityMeterId.Value != existingMeterId.Value))
+            .Select(plot => (int?)plot.Id)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (conflictingPlotId.HasValue)

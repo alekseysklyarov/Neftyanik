@@ -24,7 +24,7 @@ public class MemberElectricityMeter
 
     public ApplicationUser? CreatedByUser { get; set; }
 
-    public List<MemberElectricityMeterPlot> MeterPlots { get; set; } = [];
+    public List<Plot> Plots { get; set; } = [];
 
     public List<MemberElectricityReading> Readings { get; set; } = [];
 }

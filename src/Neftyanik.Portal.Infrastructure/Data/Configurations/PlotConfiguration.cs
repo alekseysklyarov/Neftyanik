@@ -42,5 +42,12 @@ public class PlotConfiguration : IEntityTypeConfiguration<Plot>
             .IsUnique();
 
         builder.HasIndex(x => x.CadastralNumber);
+
+        builder.HasIndex(x => x.MemberElectricityMeterId);
+
+        builder.HasOne(x => x.MemberElectricityMeter)
+            .WithMany(x => x.Plots)
+            .HasForeignKey(x => x.MemberElectricityMeterId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

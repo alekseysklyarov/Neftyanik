@@ -61,11 +61,10 @@ public class IndexModel : PageModel
             .ThenByDescending(reading => reading.Id)
             .Select(reading => new ReadingItemViewModel
             {
+                Id = reading.Id,
                 ReadingDate = reading.ReadingDate,
                 IsInitialReading = reading.IsInitialReading,
-                PreviousReading = reading.PreviousReading,
                 CurrentReading = reading.CurrentReading,
-                Consumption = reading.Consumption,
                 AppliedMemberRate = reading.AppliedMemberRate,
                 Amount = reading.Amount,
                 BillingPlotNumber = reading.Charge != null && reading.Charge.Plot != null
@@ -90,6 +89,40 @@ public class IndexModel : PageModel
             .Take(PageSize)
             .ToListAsync(cancellationToken);
 
+        if (Readings.Count > 0)
+        {
+            var pageReadingIds = Readings.Select(reading => reading.Id).ToHashSet();
+            var meterReadings = await _dbContext.MemberElectricityReadings
+                .AsNoTracking()
+                .Where(reading => reading.MemberElectricityMeterId == id)
+                .OrderBy(reading => reading.ReadingDate)
+                .ThenBy(reading => reading.Id)
+                .Select(reading => new ReadingConsumptionSnapshot(reading.Id, reading.CurrentReading, reading.IsInitialReading))
+                .ToListAsync(cancellationToken);
+
+            decimal? previousReading = null;
+            var consumptionByReadingId = new Dictionary<long, decimal?>();
+            var previousReadingById = new Dictionary<long, decimal?>();
+            foreach (var reading in meterReadings)
+            {
+                previousReadingById[reading.Id] = previousReading;
+                consumptionByReadingId[reading.Id] = !reading.IsInitialReading && previousReading.HasValue
+                    ? reading.CurrentReading - previousReading.Value
+                    : null;
+
+                previousReading = reading.CurrentReading;
+            }
+
+            foreach (var reading in Readings)
+            {
+                if (pageReadingIds.Contains(reading.Id))
+                {
+                    reading.PreviousReading = previousReadingById.GetValueOrDefault(reading.Id);
+                    reading.Consumption = consumptionByReadingId.GetValueOrDefault(reading.Id);
+                }
+            }
+        }
+
         return Page();
     }
 
@@ -104,11 +137,12 @@ public class IndexModel : PageModel
 
     public sealed class ReadingItemViewModel
     {
+        public long Id { get; init; }
         public DateOnly ReadingDate { get; init; }
         public bool IsInitialReading { get; init; }
-        public decimal? PreviousReading { get; init; }
+        public decimal? PreviousReading { get; set; }
         public decimal CurrentReading { get; init; }
-        public decimal? Consumption { get; init; }
+        public decimal? Consumption { get; set; }
         public decimal? AppliedMemberRate { get; init; }
         public decimal? Amount { get; init; }
         public string BillingPlotNumber { get; init; } = "—";
@@ -118,4 +152,6 @@ public class IndexModel : PageModel
         public string EntryTypeText => IsInitialReading ? "Начальные показания" : "Начисление";
         public string ChargeStatusText => IsInitialReading ? "Без начисления" : IsChargeCancelled ? "Начисление отменено" : "Начисление создано";
     }
+
+    private sealed record ReadingConsumptionSnapshot(long Id, decimal CurrentReading, bool IsInitialReading);
 }

@@ -40,14 +40,16 @@ public class ApplicationDbContextModelTests
     }
 
     [Fact]
-    public void MemberElectricityMeterPlot_HasCompositePrimaryKey_OnMeterIdAndPlotId()
+    public void Plot_HasOptionalMemberElectricityMeterRelationship()
     {
         using var context = CreateContext();
-        var entityType = context.Model.FindEntityType(typeof(MemberElectricityMeterPlot));
-        var primaryKey = entityType!.FindPrimaryKey();
+        var entityType = context.Model.FindEntityType(typeof(Plot))!;
+        var foreignKey = entityType.GetForeignKeys().Single(x => x.PrincipalEntityType.ClrType == typeof(MemberElectricityMeter));
+        var property = entityType.FindProperty(nameof(Plot.MemberElectricityMeterId));
 
-        Assert.NotNull(primaryKey);
-        Assert.True(primaryKey!.Properties.Select(p => p.Name).SequenceEqual([nameof(MemberElectricityMeterPlot.MemberElectricityMeterId), nameof(MemberElectricityMeterPlot.PlotId)]));
+        Assert.NotNull(property);
+        Assert.True(property!.IsNullable);
+        Assert.Equal(DeleteBehavior.Restrict, foreignKey.DeleteBehavior);
     }
 
     [Fact]
@@ -105,9 +107,7 @@ public class ApplicationDbContextModelTests
         using var context = CreateContext();
         var entityType = context.Model.FindEntityType(typeof(MemberElectricityReading))!;
 
-        AssertPropertyPrecision(entityType, nameof(MemberElectricityReading.PreviousReading), 18, 3);
         AssertPropertyPrecision(entityType, nameof(MemberElectricityReading.CurrentReading), 18, 3);
-        AssertPropertyPrecision(entityType, nameof(MemberElectricityReading.Consumption), 18, 3);
         AssertPropertyPrecision(entityType, nameof(MemberElectricityReading.AppliedMemberRate), 18, 4);
         AssertPropertyPrecision(entityType, nameof(MemberElectricityReading.Amount), 18, 2);
     }

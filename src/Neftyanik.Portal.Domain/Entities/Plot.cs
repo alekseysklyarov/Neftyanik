@@ -27,11 +27,13 @@ public class Plot
 
     public DateTime? UpdatedAtUtc { get; set; }
 
+    public int? MemberElectricityMeterId { get; set; }
+
+    public MemberElectricityMeter? MemberElectricityMeter { get; set; }
+
     public List<PlotOwnership> PlotOwnerships { get; set; } = [];
 
     public List<PlotOwnershipHistory> OwnershipHistory { get; set; } = [];
-
-    public List<MemberElectricityMeterPlot> MemberElectricityMeterPlots { get; set; } = [];
 
     public List<MemberElectricityMeter> BillingMemberElectricityMeters { get; set; } = [];
 

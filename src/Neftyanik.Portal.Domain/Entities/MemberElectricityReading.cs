@@ -10,11 +10,7 @@ public class MemberElectricityReading
 
     public DateOnly ReadingDate { get; set; }
 
-    public decimal? PreviousReading { get; set; }
-
     public decimal CurrentReading { get; set; }
-
-    public decimal? Consumption { get; set; }
 
     public decimal? AppliedMemberRate { get; set; }
 

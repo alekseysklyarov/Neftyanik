@@ -55,9 +55,9 @@ public class IndexModel : PageModel
             .ThenByDescending(reading => reading.Id)
             .Select(reading => new ReadingItemViewModel
             {
+                Id = reading.Id,
                 ReadingDate = reading.ReadingDate,
                 CurrentReading = reading.CurrentReading,
-                Consumption = reading.Consumption,
                 AppliedMemberRate = reading.AppliedMemberRate,
                 Amount = reading.Amount,
                 IsInitialReading = reading.IsInitialReading,
@@ -72,6 +72,34 @@ public class IndexModel : PageModel
         }
 
         Readings = await query.Skip((PageNumber - 1) * PageSize).Take(PageSize).ToListAsync(cancellationToken);
+
+        if (Readings.Count > 0)
+        {
+            var meterReadings = await _dbContext.MemberElectricityReadings
+                .AsNoTracking()
+                .Where(reading => reading.MemberElectricityMeterId == meterId)
+                .OrderBy(reading => reading.ReadingDate)
+                .ThenBy(reading => reading.Id)
+                .Select(reading => new ReadingConsumptionSnapshot(reading.Id, reading.CurrentReading, reading.IsInitialReading))
+                .ToListAsync(cancellationToken);
+
+            decimal? previousReading = null;
+            var consumptionByReadingId = new Dictionary<long, decimal?>();
+            foreach (var reading in meterReadings)
+            {
+                consumptionByReadingId[reading.Id] = !reading.IsInitialReading && previousReading.HasValue
+                    ? reading.CurrentReading - previousReading.Value
+                    : null;
+
+                previousReading = reading.CurrentReading;
+            }
+
+            foreach (var reading in Readings)
+            {
+                reading.Consumption = consumptionByReadingId.GetValueOrDefault(reading.Id);
+            }
+        }
+
         return Page();
     }
 
@@ -117,10 +145,10 @@ public class IndexModel : PageModel
             .Distinct()
             .ToListAsync(cancellationToken);
 
-        var linkedPlotIds = await _dbContext.MemberElectricityMeterPlots
+        var linkedPlotIds = await _dbContext.Plots
             .AsNoTracking()
-            .Where(link => link.MemberElectricityMeterId == meterId)
-            .Select(link => link.PlotId)
+            .Where(plot => plot.MemberElectricityMeterId == meterId)
+            .Select(plot => plot.Id)
             .ToListAsync(cancellationToken);
 
         if (linkedPlotIds.Any(plotId => !activeOwnedPlotIds.Contains(plotId)))
@@ -139,9 +167,10 @@ public class IndexModel : PageModel
 
     public sealed class ReadingItemViewModel
     {
+        public long Id { get; init; }
         public DateOnly ReadingDate { get; init; }
         public decimal CurrentReading { get; init; }
-        public decimal? Consumption { get; init; }
+        public decimal? Consumption { get; set; }
         public decimal? AppliedMemberRate { get; init; }
         public decimal? Amount { get; init; }
         public bool IsInitialReading { get; init; }
@@ -152,4 +181,6 @@ public class IndexModel : PageModel
                 ? AppLocalizer.Get("Начисление отменено", "Нарахування скасовано", "Charge cancelled")
                 : AppLocalizer.Get("Начислено", "Нараховано", "Charged");
     }
+
+    private sealed record ReadingConsumptionSnapshot(long Id, decimal CurrentReading, bool IsInitialReading);
 }

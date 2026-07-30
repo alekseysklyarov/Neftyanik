@@ -51,7 +51,7 @@ public class EditModel : PageModel
                 item.Name,
                 item.IsActive,
                 item.BillingPlotId,
-                PlotIds = item.MeterPlots.Select(link => link.PlotId).ToList(),
+                PlotIds = item.Plots.Select(plot => plot.Id).ToList(),
                 HasReadingHistory = item.Readings.Any()
             })
             .FirstOrDefaultAsync(cancellationToken);
@@ -144,15 +144,13 @@ public class EditModel : PageModel
                 Text = ownership.Plot != null ? $"{ownership.Plot.Number} — {ownership.Plot.Address}" : ownership.PlotId.ToString()
             });
 
-        var currentlyLinkedPlots = _dbContext.MemberElectricityMeterPlots
+        var currentlyLinkedPlots = _dbContext.Plots
             .AsNoTracking()
-            .Where(link => link.MemberElectricityMeterId == meterId)
-            .Select(link => new SelectListItem
+            .Where(plot => plot.MemberElectricityMeterId == meterId)
+            .Select(plot => new SelectListItem
             {
-                Value = link.PlotId.ToString(),
-                Text = link.Plot != null
-                    ? $"{link.Plot.Number} — {link.Plot.Address} (сейчас не принадлежит участнику)"
-                    : $"{link.PlotId} (сейчас не принадлежит участнику)"
+                Value = plot.Id.ToString(),
+                Text = $"{plot.Number} — {plot.Address} (сейчас не принадлежит участнику)"
             });
 
         PlotOptions = await currentOwnedPlots

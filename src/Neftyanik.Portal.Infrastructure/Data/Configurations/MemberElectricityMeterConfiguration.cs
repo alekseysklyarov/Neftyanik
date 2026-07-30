@@ -38,6 +38,11 @@ public class MemberElectricityMeterConfiguration : IEntityTypeConfiguration<Memb
             .HasForeignKey(x => x.BillingPlotId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasMany(x => x.Plots)
+            .WithOne(x => x.MemberElectricityMeter)
+            .HasForeignKey(x => x.MemberElectricityMeterId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasOne(x => x.CreatedByUser)
             .WithMany(x => x.CreatedMemberElectricityMeters)
             .HasForeignKey(x => x.CreatedByUserId)

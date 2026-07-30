@@ -29,7 +29,8 @@ public class AdministrationMemberFinanceChargeTests
         using var factory = new PortalWebApplicationFactory();
         const string adminUserId = "admin-user";
         const int memberId = 201;
-        const int plotId = 301;
+        const int firstPlotId = 301;
+        const int secondPlotId = 302;
 
         await factory.ExecuteDbContextAsync(async dbContext =>
         {
@@ -40,33 +41,49 @@ public class AdministrationMemberFinanceChargeTests
                 FullName = "Admin Finance Member",
                 IsActive = true
             });
-            dbContext.Plots.Add(new Plot
-            {
-                Id = plotId,
-                Number = "P-301",
-                Address = "Finance Plot 301",
-                IsActive = true
-            });
-            dbContext.PlotOwnerships.Add(new PlotOwnership
-            {
-                Id = 1,
-                PlotId = plotId,
-                MemberId = memberId,
-                ValidFrom = new DateOnly(2020, 1, 1),
-                IsPrimaryContact = true
-            });
+            dbContext.Plots.AddRange(
+                new Plot
+                {
+                    Id = firstPlotId,
+                    Number = "P-301",
+                    Address = "Finance Plot 301",
+                    IsActive = true
+                },
+                new Plot
+                {
+                    Id = secondPlotId,
+                    Number = "P-302",
+                    Address = "Finance Plot 302",
+                    IsActive = true
+                });
+            dbContext.PlotOwnerships.AddRange(
+                new PlotOwnership
+                {
+                    Id = 1,
+                    PlotId = firstPlotId,
+                    MemberId = memberId,
+                    ValidFrom = new DateOnly(2020, 1, 1),
+                    IsPrimaryContact = true
+                },
+                new PlotOwnership
+                {
+                    Id = 2,
+                    PlotId = secondPlotId,
+                    MemberId = memberId,
+                    ValidFrom = new DateOnly(2020, 1, 1),
+                    IsPrimaryContact = false
+                });
+
+            await dbContext.SaveChangesAsync();
+
             dbContext.MemberElectricityMeters.AddRange(
                 new MemberElectricityMeter
                 {
                     Id = 1,
                     MemberId = memberId,
                     Name = "Счетчик 1",
-                    BillingPlotId = plotId,
+                    BillingPlotId = firstPlotId,
                     IsActive = true,
-                    MeterPlots =
-                    [
-                        new MemberElectricityMeterPlot { PlotId = plotId }
-                    ],
                     Readings =
                     [
                         new MemberElectricityReading
@@ -82,14 +99,15 @@ public class AdministrationMemberFinanceChargeTests
                     Id = 2,
                     MemberId = memberId,
                     Name = "Счетчик 2",
-                    BillingPlotId = plotId,
-                    IsActive = true,
-                    MeterPlots =
-                    [
-                        new MemberElectricityMeterPlot { PlotId = plotId }
-                    ]
+                    BillingPlotId = secondPlotId,
+                    IsActive = true
                 });
 
+            await dbContext.SaveChangesAsync();
+
+            var plots = await dbContext.Plots.OrderBy(plot => plot.Id).ToListAsync();
+            plots[0].MemberElectricityMeterId = 1;
+            plots[1].MemberElectricityMeterId = 2;
             await dbContext.SaveChangesAsync();
         });
 
@@ -413,8 +431,7 @@ public class AdministrationMemberFinanceChargeTests
             MemberId = memberId,
             Name = "Meter",
             BillingPlotId = firstPlotId,
-            IsActive = true,
-            MeterPlots = [new MemberElectricityMeterPlot { PlotId = firstPlotId }]
+            IsActive = true
         });
 
         await dbContext.SaveChangesAsync();
@@ -579,9 +596,12 @@ public class AdministrationMemberFinanceChargeTests
             MemberId = memberId,
             Name = "Init Meter",
             BillingPlotId = plotId,
-            IsActive = true,
-            MeterPlots = [new MemberElectricityMeterPlot { PlotId = plotId }]
+            IsActive = true
         });
+        await dbContext.SaveChangesAsync();
+
+        var initializationPlot = await dbContext.Plots.SingleAsync(plot => plot.Id == plotId);
+        initializationPlot.MemberElectricityMeterId = meterId;
         await dbContext.SaveChangesAsync();
 
         using var userStore = new UserStore<ApplicationUser>(dbContext);
@@ -687,13 +707,13 @@ public class AdministrationMemberFinanceChargeTests
 
         var meter = await dbContext.MemberElectricityMeters
             .AsNoTracking()
-            .Include(item => item.MeterPlots)
+            .Include(item => item.Plots)
             .SingleAsync();
         Assert.Equal(memberId, meter.MemberId);
         Assert.Equal(plotId, meter.BillingPlotId);
         Assert.Equal("M-1252", meter.MeterNumber);
-        Assert.Single(meter.MeterPlots);
-        Assert.Equal(plotId, meter.MeterPlots[0].PlotId);
+        Assert.Single(meter.Plots);
+        Assert.Equal(plotId, meter.Plots[0].Id);
 
         var reading = await dbContext.MemberElectricityReadings.AsNoTracking().SingleAsync();
         Assert.True(reading.IsInitialReading);
@@ -733,7 +753,6 @@ public class AdministrationMemberFinanceChargeTests
             Name = "Reading Meter",
             BillingPlotId = plotId,
             IsActive = true,
-            MeterPlots = [new MemberElectricityMeterPlot { PlotId = plotId }],
             Readings =
             [
                 new MemberElectricityReading
@@ -745,6 +764,10 @@ public class AdministrationMemberFinanceChargeTests
             ]
         });
         dbContext.MemberElectricityTariffs.Add(new MemberElectricityTariff { EffectiveFrom = new DateOnly(2020, 1, 1), Rate = 5m });
+        await dbContext.SaveChangesAsync();
+
+        var readingPlot = await dbContext.Plots.SingleAsync(plot => plot.Id == plotId);
+        readingPlot.MemberElectricityMeterId = meterId;
         await dbContext.SaveChangesAsync();
 
         using var userStore = new UserStore<ApplicationUser>(dbContext);
@@ -781,7 +804,7 @@ public class AdministrationMemberFinanceChargeTests
 
         var readings = await dbContext.MemberElectricityReadings.AsNoTracking().OrderBy(item => item.ReadingDate).ToListAsync();
         Assert.Equal(2, readings.Count);
-        Assert.Equal(30m, readings[1].Consumption);
+        Assert.Equal(30m, readings[1].CurrentReading - readings[0].CurrentReading);
         Assert.Equal(150m, readings[1].Amount);
 
         var charge = await dbContext.Charges.AsNoTracking().SingleAsync();
@@ -819,7 +842,6 @@ public class AdministrationMemberFinanceChargeTests
             Name = "High Consumption Meter",
             BillingPlotId = plotId,
             IsActive = true,
-            MeterPlots = [new MemberElectricityMeterPlot { PlotId = plotId }],
             Readings =
             [
                 new MemberElectricityReading
@@ -831,6 +853,10 @@ public class AdministrationMemberFinanceChargeTests
             ]
         });
         dbContext.MemberElectricityTariffs.Add(new MemberElectricityTariff { EffectiveFrom = new DateOnly(2020, 1, 1), Rate = 5m });
+        await dbContext.SaveChangesAsync();
+
+        var highConsumptionPlot = await dbContext.Plots.SingleAsync(plot => plot.Id == plotId);
+        highConsumptionPlot.MemberElectricityMeterId = meterId;
         await dbContext.SaveChangesAsync();
 
         var service = new MemberElectricityService(dbContext);
@@ -875,7 +901,6 @@ public class AdministrationMemberFinanceChargeTests
             Name = "Missing Tariff Meter",
             BillingPlotId = plotId,
             IsActive = true,
-            MeterPlots = [new MemberElectricityMeterPlot { PlotId = plotId }],
             Readings =
             [
                 new MemberElectricityReading
@@ -886,6 +911,10 @@ public class AdministrationMemberFinanceChargeTests
                 }
             ]
         });
+        await dbContext.SaveChangesAsync();
+
+        var missingTariffPlot = await dbContext.Plots.SingleAsync(plot => plot.Id == plotId);
+        missingTariffPlot.MemberElectricityMeterId = meterId;
         await dbContext.SaveChangesAsync();
 
         var service = new MemberElectricityService(dbContext);
@@ -928,7 +957,6 @@ public class AdministrationMemberFinanceChargeTests
             Name = "History Meter",
             BillingPlotId = plotId,
             IsActive = true,
-            MeterPlots = [new MemberElectricityMeterPlot { PlotId = plotId }],
             Readings =
             [
                 new MemberElectricityReading
@@ -940,14 +968,16 @@ public class AdministrationMemberFinanceChargeTests
                 new MemberElectricityReading
                 {
                     ReadingDate = new DateOnly(2026, 2, 1),
-                    PreviousReading = 100m,
                     CurrentReading = 130m,
-                    Consumption = 30m,
                     Amount = 150m,
                     IsInitialReading = false
                 }
             ]
         });
+        await dbContext.SaveChangesAsync();
+
+        var historyPlot = await dbContext.Plots.SingleAsync(plot => plot.Id == plotId);
+        historyPlot.MemberElectricityMeterId = meterId;
         await dbContext.SaveChangesAsync();
 
         using var userStore = new UserStore<ApplicationUser>(dbContext);

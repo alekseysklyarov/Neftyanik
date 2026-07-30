@@ -36,12 +36,12 @@ public class DetailsModel : PageModel
                 IsActive = item.IsActive,
                 BillingPlotId = item.BillingPlotId,
                 BillingPlotNumber = item.BillingPlot != null ? item.BillingPlot.Number : "—",
-                LinkedPlots = item.MeterPlots
-                    .OrderBy(link => link.Plot != null ? link.Plot.Number : string.Empty)
-                    .Select(link => new LinkedPlotViewModel
+                LinkedPlots = item.Plots
+                    .OrderBy(plot => plot.Number)
+                    .Select(plot => new LinkedPlotViewModel
                     {
-                        PlotId = link.PlotId,
-                        PlotNumber = link.Plot != null ? link.Plot.Number : "—"
+                        PlotId = plot.Id,
+                        PlotNumber = plot.Number
                     })
                     .ToList(),
                 LatestReadingDate = item.Readings
