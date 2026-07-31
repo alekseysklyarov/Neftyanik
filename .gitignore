@@ -1,4 +1,5 @@
 *.user
+*.user
 *.suo
 .vs/
 bin/
@@ -9,3 +10,20 @@ obj/
 /wwwroot
 /.copilot-app.out.log
 /.copilot-app.err.log
+.env
+.env.*
+!.env.example
+deploy/.env
+deploy/.env.*
+!deploy/.env.example
+deploy/certs/
+deploy/backups/
+*.pfx
+*.key
+*.pem
+*.crt
+*.cer
+*.bak
+*.backup
+*.trn
+deploy/docker-compose.localtest*.yml

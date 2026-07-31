@@ -1,6 +1,13 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.CookiePolicy;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
+using System.Net;
+using System.Net.Sockets;
 using Neftyanik.Portal.Application.Exceptions;
 using Neftyanik.Portal.Application.Identity;
 using Neftyanik.Portal.Application.Interfaces;
@@ -26,11 +33,31 @@ var razorPagesRootDirectory = Directory.Exists(Path.Combine(builder.Environment.
     ? "/src/Neftyanik.Portal.Web/Pages"
     : "/Pages";
 
+var dataProtectionKeysDirectory = builder.Configuration["DataProtection:KeysDirectory"];
+var requireSecureCookies = !builder.Environment.IsDevelopment() && !builder.Environment.IsEnvironment("Testing");
+
 builder.Services.AddRazorPages(options =>
 {
     options.RootDirectory = razorPagesRootDirectory;
 });
 builder.Services.AddControllersWithViews();
+
+if (builder.Environment.IsProduction())
+{
+    builder.Services.AddHttpsRedirection(options =>
+    {
+        options.HttpsPort = 443;
+    });
+}
+
+var dataProtectionBuilder = builder.Services
+    .AddDataProtection()
+    .SetApplicationName("Neftyanik.Portal");
+
+if (!string.IsNullOrWhiteSpace(dataProtectionKeysDirectory))
+{
+    dataProtectionBuilder.PersistKeysToFileSystem(Directory.CreateDirectory(dataProtectionKeysDirectory));
+}
 
 builder.Services.AddInfrastructure(builder.Configuration);
 
@@ -52,7 +79,27 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.LoginPath = "/Account/Login";
     options.LogoutPath = "/Account/Logout";
     options.AccessDeniedPath = "/Account/AccessDenied";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = requireSecureCookies ? CookieSecurePolicy.Always : CookieSecurePolicy.SameAsRequest;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.SlidingExpiration = true;
 });
+
+builder.Services.Configure<CookiePolicyOptions>(options =>
+{
+    options.HttpOnly = HttpOnlyPolicy.Always;
+    options.MinimumSameSitePolicy = SameSiteMode.Lax;
+    options.Secure = requireSecureCookies ? CookieSecurePolicy.Always : CookieSecurePolicy.SameAsRequest;
+});
+
+builder.Services.AddAntiforgery(options =>
+{
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = requireSecureCookies ? CookieSecurePolicy.Always : CookieSecurePolicy.SameAsRequest;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+});
+
+builder.Services.Configure<ForwardedHeadersOptions>(options => ConfigureForwardedHeaders(options, builder.Configuration));
 
 builder.Services.AddAuthorization(options =>
 {
@@ -73,6 +120,11 @@ if (IsCreateAdminCommand(args))
     return await ExecuteCreateAdminCommandAsync(app, args[1..]);
 }
 
+if (IsMigrateDatabaseCommand(args))
+{
+    return await ExecuteMigrateDatabaseCommandAsync(app, args[1..]);
+}
+
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -89,13 +141,18 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+app.UseForwardedHeaders();
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+app.UseWhen(
+    context => !IsLocalHealthCheckRequest(context),
+    branch => branch.UseHttpsRedirection());
+app.UseCookiePolicy();
 app.UseRequestLocalization(LocalizationConfiguration.CreateOptions());
 app.UseStaticFiles();
 
@@ -107,6 +164,7 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+app.MapGet("/health", () => Results.Text("OK", "text/plain")).AllowAnonymous();
 app.MapRazorPages();
 
 await app.RunAsync();
@@ -116,6 +174,12 @@ static bool IsCreateAdminCommand(string[] arguments)
 {
     return arguments.Length > 0
         && string.Equals(arguments[0], "create-admin", StringComparison.OrdinalIgnoreCase);
+}
+
+static bool IsMigrateDatabaseCommand(string[] arguments)
+{
+    return arguments.Length > 0
+        && string.Equals(arguments[0], "migrate-database", StringComparison.OrdinalIgnoreCase);
 }
 
 static bool IsLegacyElectricityImportCommand(string[] arguments)
@@ -153,6 +217,27 @@ static async Task<int> ExecuteLegacyElectricityImportCommandAsync(WebApplication
     {
         app.Logger.LogError(exception, "Legacy electricity import command failed.");
         Console.Error.WriteLine(exception.Message);
+        return 1;
+    }
+}
+
+static async Task<int> ExecuteMigrateDatabaseCommandAsync(WebApplication app, string[] commandArguments)
+{
+    try
+    {
+        ValidateMigrateDatabaseCommandArguments(commandArguments);
+
+        using var scope = app.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        await dbContext.Database.MigrateAsync();
+
+        Console.WriteLine("Database migrations applied successfully.");
+        return 0;
+    }
+    catch (Exception exception)
+    {
+        app.Logger.LogError(exception, "Database migration command failed.");
+        Console.Error.WriteLine("Database migration failed.");
         return 1;
     }
 }
@@ -282,6 +367,82 @@ static void ValidateCreateAdminCommandArguments(string[] commandArguments)
     {
         throw new AdminBootstrapException($"Unknown option(s): {string.Join(", ", unknownOptions)}.");
     }
+}
+
+static void ValidateMigrateDatabaseCommandArguments(string[] commandArguments)
+{
+    if (commandArguments.Length > 0)
+    {
+        throw new InvalidOperationException($"Unknown option(s): {string.Join(", ", commandArguments)}.");
+    }
+}
+
+static void ConfigureForwardedHeaders(ForwardedHeadersOptions options, IConfiguration configuration)
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.ForwardLimit = 1;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+
+    foreach (var proxyAddress in GetConfiguredProxyAddresses(configuration))
+    {
+        options.KnownProxies.Add(proxyAddress);
+    }
+
+    foreach (var network in GetConfiguredProxyNetworks(configuration))
+    {
+        options.KnownNetworks.Add(network);
+    }
+}
+
+static IReadOnlyList<IPAddress> GetConfiguredProxyAddresses(IConfiguration configuration)
+{
+    var configuredValues = configuration.GetSection("ReverseProxy:KnownProxies").Get<string[]>() ?? Array.Empty<string>();
+    var addresses = new List<IPAddress>(configuredValues.Length);
+
+    foreach (var configuredValue in configuredValues)
+    {
+        if (!IPAddress.TryParse(configuredValue, out var parsedAddress))
+        {
+            throw new InvalidOperationException($"Reverse proxy IP address '{configuredValue}' is invalid.");
+        }
+
+        addresses.Add(parsedAddress);
+    }
+
+    return addresses;
+}
+
+static IReadOnlyList<Microsoft.AspNetCore.HttpOverrides.IPNetwork> GetConfiguredProxyNetworks(IConfiguration configuration)
+{
+    var configuredValues = configuration.GetSection("ReverseProxy:KnownNetworks").Get<string[]>() ?? Array.Empty<string>();
+    var networks = new List<Microsoft.AspNetCore.HttpOverrides.IPNetwork>(configuredValues.Length);
+
+    foreach (var configuredValue in configuredValues)
+    {
+        var segments = configuredValue.Split('/', 2, StringSplitOptions.TrimEntries);
+        if (segments.Length != 2 || !IPAddress.TryParse(segments[0], out var prefixAddress) || !int.TryParse(segments[1], out var prefixLength))
+        {
+            throw new InvalidOperationException($"Reverse proxy network '{configuredValue}' must use CIDR notation.");
+        }
+
+        var maxPrefixLength = prefixAddress.AddressFamily == AddressFamily.InterNetwork ? 32 : 128;
+        if (prefixLength < 0 || prefixLength > maxPrefixLength)
+        {
+            throw new InvalidOperationException($"Reverse proxy network '{configuredValue}' has an invalid prefix length.");
+        }
+
+        networks.Add(new Microsoft.AspNetCore.HttpOverrides.IPNetwork(prefixAddress, prefixLength));
+    }
+
+    return networks;
+}
+
+static bool IsLocalHealthCheckRequest(HttpContext context)
+{
+    return context.Request.Path.Equals("/health", StringComparison.OrdinalIgnoreCase)
+        && context.Connection.RemoteIpAddress is { } remoteIpAddress
+        && IPAddress.IsLoopback(remoteIpAddress);
 }
 
 public partial class Program
