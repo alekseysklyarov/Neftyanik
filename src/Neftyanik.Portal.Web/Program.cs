@@ -150,7 +150,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseWhen(
-    context => !IsLocalHealthCheckRequest(context),
+    context => !context.Request.Path.StartsWithSegments("/health"),
     branch => branch.UseHttpsRedirection());
 app.UseCookiePolicy();
 app.UseRequestLocalization(LocalizationConfiguration.CreateOptions());
@@ -436,13 +436,6 @@ static IReadOnlyList<Microsoft.AspNetCore.HttpOverrides.IPNetwork> GetConfigured
     }
 
     return networks;
-}
-
-static bool IsLocalHealthCheckRequest(HttpContext context)
-{
-    return context.Request.Path.Equals("/health", StringComparison.OrdinalIgnoreCase)
-        && context.Connection.RemoteIpAddress is { } remoteIpAddress
-        && IPAddress.IsLoopback(remoteIpAddress);
 }
 
 public partial class Program

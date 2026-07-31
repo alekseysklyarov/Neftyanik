@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Data.SqlClient;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -16,31 +17,60 @@ namespace Neftyanik.Portal.Web.Tests;
 public sealed class PortalWebApplicationFactory : WebApplicationFactory<Program>
 {
     private const string TestConnectionString = "Server=(localdb)\\mssqllocaldb;Database=NeftyanikPortalTests;Trusted_Connection=True;TrustServerCertificate=True";
+    private readonly IReadOnlyDictionary<string, string?> _additionalConfiguration;
+    private readonly string _connectionString;
+    private readonly string _environmentName;
+    private readonly bool _useSqlite;
+    private readonly string? _sqlServerDatabaseName;
     private SqliteConnection? _connection;
+
+    public PortalWebApplicationFactory(
+        string environmentName = "Testing",
+        IReadOnlyDictionary<string, string?>? additionalConfiguration = null,
+        bool useSqlite = true)
+    {
+        _environmentName = environmentName;
+        _additionalConfiguration = additionalConfiguration ?? new Dictionary<string, string?>();
+        _useSqlite = useSqlite;
+
+        if (useSqlite)
+        {
+            _connectionString = TestConnectionString;
+            return;
+        }
+
+        _sqlServerDatabaseName = $"NeftyanikPortalTests_{Guid.NewGuid():N}";
+        _connectionString = $"Server=(localdb)\\mssqllocaldb;Database={_sqlServerDatabaseName};Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true";
+    }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        Environment.SetEnvironmentVariable("ConnectionStrings__DefaultConnection", TestConnectionString);
-        builder.UseEnvironment("Testing");
+        Environment.SetEnvironmentVariable("ConnectionStrings__DefaultConnection", _connectionString);
+        builder.UseEnvironment(_environmentName);
 
         builder.ConfigureAppConfiguration((_, configurationBuilder) =>
         {
-            configurationBuilder.AddInMemoryCollection(new Dictionary<string, string?>
+            var configuration = new Dictionary<string, string?>(_additionalConfiguration)
             {
-                ["ConnectionStrings:DefaultConnection"] = TestConnectionString
-            });
+                ["ConnectionStrings:DefaultConnection"] = _connectionString
+            };
+
+            configurationBuilder.AddInMemoryCollection(configuration);
         });
 
         builder.ConfigureServices(services =>
         {
-            services.RemoveAll<DbContextOptions<ApplicationDbContext>>();
-            services.RemoveAll<ApplicationDbContext>();
+            if (_useSqlite)
+            {
+                services.RemoveAll<DbContextOptions<ApplicationDbContext>>();
+                services.RemoveAll<ApplicationDbContext>();
 
-            _connection = new SqliteConnection("Data Source=:memory:");
-            _connection.Open();
+                _connection = new SqliteConnection("Data Source=:memory:");
+                _connection.Open();
 
-            services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlite(_connection));
+                services.AddDbContext<ApplicationDbContext>(options =>
+                    options.UseSqlite(_connection));
+            }
 
             services.AddAuthentication(options =>
                 {
@@ -52,9 +82,12 @@ public sealed class PortalWebApplicationFactory : WebApplicationFactory<Program>
                     TestAuthenticationHandler.SchemeName,
                     _ => { });
 
-            using var scope = services.BuildServiceProvider().CreateScope();
-            var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            dbContext.Database.EnsureCreated();
+            if (_useSqlite)
+            {
+                using var scope = services.BuildServiceProvider().CreateScope();
+                var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                dbContext.Database.EnsureCreated();
+            }
         });
     }
 
@@ -112,6 +145,30 @@ public sealed class PortalWebApplicationFactory : WebApplicationFactory<Program>
             Environment.SetEnvironmentVariable("ConnectionStrings__DefaultConnection", null);
             _connection?.Dispose();
             _connection = null;
+
+            if (!_useSqlite && !string.IsNullOrWhiteSpace(_sqlServerDatabaseName))
+            {
+                DropSqlServerDatabase(_sqlServerDatabaseName);
+            }
         }
+    }
+
+    private static void DropSqlServerDatabase(string databaseName)
+    {
+        SqlConnection.ClearAllPools();
+
+        using var connection = new SqlConnection("Server=(localdb)\\mssqllocaldb;Database=master;Trusted_Connection=True;TrustServerCertificate=True");
+        connection.Open();
+
+        using var command = connection.CreateCommand();
+        command.CommandText = $"""
+            IF DB_ID(@databaseName) IS NOT NULL
+            BEGIN
+                ALTER DATABASE [{databaseName}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+                DROP DATABASE [{databaseName}];
+            END
+            """;
+        command.Parameters.AddWithValue("@databaseName", databaseName);
+        command.ExecuteNonQuery();
     }
 }
