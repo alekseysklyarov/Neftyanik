@@ -1,0 +1,15 @@
+@model Neftyanik.Portal.Web.ViewComponents.PaymentNotificationBellViewComponent.PaymentNotificationBellViewModel
+@{
+    var label = AppLocalizer.Get("Платежи, ожидающие подтверждения", "Платежі, що очікують підтвердження", "Payments awaiting confirmation");
+}
+
+<a id="payment-notification-bell" class="nav-link text-dark position-relative" asp-page="/Administration/Finance/PaymentNotifications/Index" title="@label" aria-label="@label">
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true" class="me-1">
+        <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2m0-14a5 5 0 0 0-5 5c0 1.098-.5 2.562-1.19 3.694-.226.371-.31.844-.057 1.23.252.387.698.576 1.147.576h10.2c.45 0 .895-.19 1.148-.576.252-.386.168-.859-.058-1.23C13.5 9.562 13 8.098 13 7a5 5 0 0 0-5-5" />
+    </svg>
+    <span class="visually-hidden">@label</span>
+    @if (Model.HasPendingNotifications)
+    {
+        <span id="payment-notification-bell-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">@Model.PendingCount</span>
+    }
+</a>

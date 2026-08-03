@@ -33,6 +33,8 @@ public class Payment : IValidatableObject
 
     public List<PaymentAllocation> PaymentAllocations { get; set; } = [];
 
+    public PaymentNotification? PaymentNotification { get; set; }
+
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
         if (Amount <= 0m)

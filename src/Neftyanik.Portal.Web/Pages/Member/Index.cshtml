@@ -1,7 +1,9 @@
 @page "/Member"
+@using Neftyanik.Portal.Web.Pages.Finance
 @model Neftyanik.Portal.Web.Pages.Member.IndexModel
 @{
     ViewData["Title"] = AppLocalizer.Get($"Финансы: {Model.Dashboard.FullName}", $"Фінанси: {Model.Dashboard.FullName}", $"Finance: {Model.Dashboard.FullName}");
+    var currentCultureName = System.Globalization.CultureInfo.CurrentCulture.Name;
 }
 
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
@@ -10,9 +12,14 @@
         <p class="h1 text-muted mb-0">@Model.Dashboard.FullName</p>
     </div>
 
+    <div class="d-flex gap-2 flex-wrap">
+    @if (Model.Dashboard.IsLinked && User.IsInRole(RoleNames.Member))
+    {
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#paymentNotificationModal">@AppLocalizer.Get("Уведомить о платеже", "Повідомити про платіж", "Notify about payment")</button>
+    }
+
     @if (Model.CanSubmitElectricityReading)
     {
-        <div>
             @if (Model.SingleReadyElectricityMeterId.HasValue)
             {
                 <a class="btn btn-outline-success" asp-page="/Member/Electricity/Meters/Readings/Create" asp-route-meterId="@Model.SingleReadyElectricityMeterId.Value">@AppLocalizer.Get("Внести показания электросчётчика", "Внести показники електролічильника", "Enter meter readings")</a>
@@ -21,8 +28,8 @@
             {
                 <a class="btn btn-outline-success" asp-page="/Member/Electricity/Index">@AppLocalizer.Get("Внести показания электросчётчика", "Внести показники електролічильника", "Enter meter readings")</a>
             }
-        </div>
     }
+    </div>
 </div>
 
 @if (TempData["SuccessMessage"] is string successMessage)
@@ -178,6 +185,119 @@ else
                     </div>
                 </form>
             </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="paymentNotificationModal" tabindex="-1" aria-labelledby="paymentNotificationModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="paymentNotificationModalLabel">@AppLocalizer.Get("Уведомление о платеже", "Повідомлення про платіж", "Payment notification")</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@AppLocalizer.Get("Закрыть", "Закрити", "Close")"></button>
+                </div>
+                <form method="post" asp-page-handler="CreatePaymentNotification" id="paymentNotificationForm">
+                    <div class="modal-body">
+                        <input type="hidden" asp-for="ChargeTypeId" />
+                        <input type="hidden" asp-for="ChargePage" />
+                        <input type="hidden" asp-for="PaymentPage" />
+
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="PaymentNotification.Amount" class="form-label">@AppLocalizer.Get("Сумма", "Сума", "Amount")</label>
+                            <input asp-for="PaymentNotification.Amount" class="form-control" type="number" step="0.01" min="0.01" inputmode="decimal" autocomplete="off" />
+                            <span asp-validation-for="PaymentNotification.Amount" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="PaymentNotification.PaymentMethod" class="form-label">@AppLocalizer.Get("Способ оплаты", "Спосіб оплати", "Payment method")</label>
+                            <select asp-for="PaymentNotification.PaymentMethod" asp-items="Model.PaymentMethodOptions" class="form-select">
+                                <option value="">@AppLocalizer.Get("Выберите способ оплаты", "Оберіть спосіб оплати", "Select a payment method")</option>
+                            </select>
+                            <span asp-validation-for="PaymentNotification.PaymentMethod" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="PaymentNotification.Description" class="form-label">@AppLocalizer.Get("Описание", "Опис", "Description")</label>
+                            <textarea asp-for="PaymentNotification.Description" class="form-control" rows="3"></textarea>
+                            <span asp-validation-for="PaymentNotification.Description" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@AppLocalizer.Get("Отмена", "Скасувати", "Cancel")</button>
+                        <button type="button" class="btn btn-primary" id="openPaymentNotificationConfirmation">@AppLocalizer.Get("Отправить уведомление", "Надіслати повідомлення", "Send notification")</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="paymentNotificationConfirmationModal" tabindex="-1" aria-labelledby="paymentNotificationConfirmationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="paymentNotificationConfirmationModalLabel">@AppLocalizer.Get("Подтверждение уведомления", "Підтвердження повідомлення", "Confirm notification")</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@AppLocalizer.Get("Закрыть", "Закрити", "Close")"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0" id="paymentNotificationConfirmationMessage"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@AppLocalizer.Get("Отмена", "Скасувати", "Cancel")</button>
+                    <button type="button" class="btn btn-primary" id="confirmPaymentNotification">@AppLocalizer.Get("Подтвердить", "Підтвердити", "Confirm")</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white">
+            <h2 class="h5 mb-0">@AppLocalizer.Get("Последние уведомления о платежах", "Останні повідомлення про платежі", "Recent payment notifications")</h2>
+        </div>
+        <div class="card-body p-0">
+            @if (Model.RecentPaymentNotifications.Count == 0)
+            {
+                <div class="p-4 text-center text-muted">@AppLocalizer.Get("Уведомления о платежах еще не отправлялись.", "Повідомлення про платежі ще не надсилалися.", "No payment notifications have been sent yet.")</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>@AppLocalizer.Get("Дата", "Дата", "Date")</th>
+                                <th>@AppLocalizer.Get("Сумма", "Сума", "Amount")</th>
+                                <th>@AppLocalizer.Get("Способ оплаты", "Спосіб оплати", "Payment method")</th>
+                                <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
+                                <th>@AppLocalizer.Get("Описание", "Опис", "Description")</th>
+                                <th>@AppLocalizer.Get("Комментарий администратора", "Коментар адміністратора", "Administrator comment")</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var notification in Model.RecentPaymentNotifications)
+                            {
+                                <tr>
+                                    <td>@notification.CreatedAtUtc.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+                                    <td>@notification.Amount.ToString("0.00")</td>
+                                    <td>@FinanceDisplayHelper.GetPaymentMethodText(notification.PaymentMethod)</td>
+                                    <td><span class="badge @FinanceDisplayHelper.GetPaymentNotificationStatusBadgeClass(notification.Status)">@FinanceDisplayHelper.GetPaymentNotificationStatusText(notification.Status)</span></td>
+                                    <td>@(string.IsNullOrWhiteSpace(notification.Description) ? "—" : notification.Description)</td>
+                                    <td>
+                                        @if (notification.Status == Neftyanik.Portal.Domain.Enums.PaymentNotificationStatus.Rejected && !string.IsNullOrWhiteSpace(notification.AdministratorComment))
+                                        {
+                                            @notification.AdministratorComment
+                                        }
+                                        else
+                                        {
+                                            @:—
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
         </div>
     </div>
 
@@ -504,6 +624,106 @@ else
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 
+    <script>
+        (() => {
+            const form = document.getElementById('paymentNotificationForm');
+            const openButton = document.getElementById('openPaymentNotificationConfirmation');
+            const confirmButton = document.getElementById('confirmPaymentNotification');
+            const confirmationModalElement = document.getElementById('paymentNotificationConfirmationModal');
+            const notificationModalElement = document.getElementById('paymentNotificationModal');
+            const amountInput = document.getElementById('PaymentNotification_Amount');
+            const paymentMethodSelect = document.getElementById('PaymentNotification_PaymentMethod');
+            const messageElement = document.getElementById('paymentNotificationConfirmationMessage');
+            const cultureName = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(currentCultureName));
+            const confirmButtonText = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(AppLocalizer.Get("Подтвердить", "Підтвердити", "Confirm")));
+            const submittingButtonText = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(AppLocalizer.Get("Отправка...", "Надсилання...", "Submitting...")));
+            const invalidAmountMessage = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(AppLocalizer.Get("Сумма платежа должна быть больше нуля.", "Сума платежу має бути більшою за нуль.", "The payment amount must be greater than zero.")));
+            const invalidPaymentMethodMessage = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(AppLocalizer.Get("Выберите способ оплаты: наличные или перевод на карту.", "Оберіть спосіб оплати: готівка або переказ на картку.", "Select a payment method: cash or card transfer.")));
+            const confirmationPrefix = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(AppLocalizer.Get("Вы подтверждаете, что оплатили", "Ви підтверджуєте, що оплатили", "Do you confirm that you paid")));
+            const confirmationSuffix = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(AppLocalizer.Get("После отправки платеж будет ожидать подтверждения бухгалтером.", "Після надсилання платіж очікуватиме підтвердження бухгалтером.", "After submission, the payment will await accountant confirmation.")));
+
+            if (!form || !openButton || !confirmButton || !confirmationModalElement || !notificationModalElement || !amountInput || !paymentMethodSelect || !messageElement || !window.bootstrap) {
+                return;
+            }
+
+            const confirmationModal = window.bootstrap.Modal.getOrCreateInstance(confirmationModalElement);
+            const notificationModal = window.bootstrap.Modal.getOrCreateInstance(notificationModalElement);
+
+            const numberParts = new Intl.NumberFormat(cultureName).formatToParts(12345.6);
+            const decimalSeparator = numberParts.find(part => part.type === 'decimal')?.value ?? ',';
+            const groupSeparator = numberParts.find(part => part.type === 'group')?.value ?? ' ';
+            const formattedCurrency = amount => `${new Intl.NumberFormat(cultureName, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount)} грн`;
+
+            const parseAmount = value => {
+                if (!value) {
+                    return Number.NaN;
+                }
+
+                const normalized = value
+                    .replaceAll(groupSeparator, '')
+                    .replace(/\s/g, '')
+                    .replace(decimalSeparator, '.');
+
+                return Number.parseFloat(normalized);
+            };
+
+            const validateAmount = () => {
+                const parsedAmount = parseAmount(amountInput.value);
+                if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+                    amountInput.setCustomValidity(invalidAmountMessage);
+                    return Number.NaN;
+                }
+
+                amountInput.setCustomValidity('');
+                return parsedAmount;
+            };
+
+            const validatePaymentMethod = () => {
+                if (!paymentMethodSelect.value) {
+                    paymentMethodSelect.setCustomValidity(invalidPaymentMethodMessage);
+                    return false;
+                }
+
+                paymentMethodSelect.setCustomValidity('');
+                return true;
+            };
+
+            amountInput.addEventListener('input', () => validateAmount());
+            paymentMethodSelect.addEventListener('change', () => validatePaymentMethod());
+
+            openButton.addEventListener('click', () => {
+                const parsedAmount = validateAmount();
+                const hasValidPaymentMethod = validatePaymentMethod();
+                if (!Number.isFinite(parsedAmount) || !hasValidPaymentMethod || !form.reportValidity()) {
+                    return;
+                }
+
+                messageElement.textContent = confirmationPrefix + ' ' + formattedCurrency(parsedAmount) + '? ' + confirmationSuffix;
+                confirmationModal.show();
+            });
+
+            confirmationModalElement.addEventListener('hidden.bs.modal', () => {
+                confirmButton.disabled = false;
+                confirmButton.textContent = confirmButtonText;
+            });
+
+            confirmButton.addEventListener('click', () => {
+                const parsedAmount = validateAmount();
+                const hasValidPaymentMethod = validatePaymentMethod();
+                if (!Number.isFinite(parsedAmount) || !hasValidPaymentMethod || !form.reportValidity()) {
+                    confirmationModal.hide();
+                    notificationModal.show();
+                    return;
+                }
+
+                confirmButton.disabled = true;
+                confirmButton.textContent = submittingButtonText;
+                confirmationModal.hide();
+                form.requestSubmit();
+            });
+        })();
+    </script>
+
     @if (Model.ReopenEditProfileModal)
     {
         <script>
@@ -521,6 +741,18 @@ else
         <script>
             document.addEventListener('DOMContentLoaded', function () {
                 var modalElement = document.getElementById('changePasswordModal');
+                if (modalElement) {
+                    bootstrap.Modal.getOrCreateInstance(modalElement).show();
+                }
+            });
+        </script>
+    }
+
+    @if (Model.ReopenPaymentNotificationModal)
+    {
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                var modalElement = document.getElementById('paymentNotificationModal');
                 if (modalElement) {
                     bootstrap.Modal.getOrCreateInstance(modalElement).show();
                 }

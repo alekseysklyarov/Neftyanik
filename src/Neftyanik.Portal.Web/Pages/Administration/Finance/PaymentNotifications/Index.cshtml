@@ -1,0 +1,163 @@
+@page "/Administration/Finance/PaymentNotifications"
+@using Neftyanik.Portal.Domain.Enums
+@using Neftyanik.Portal.Web.Pages.Finance
+@model Neftyanik.Portal.Web.Pages.Administration.Finance.PaymentNotifications.IndexModel
+@{
+    ViewData["Title"] = AppLocalizer.Get("Уведомления о платежах", "Повідомлення про платежі", "Payment notifications");
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h2 mb-1">@AppLocalizer.Get("Уведомления о платежах", "Повідомлення про платежі", "Payment notifications")</h1>
+        <p class="text-muted mb-0">@AppLocalizer.Get("Проверка и подтверждение платежей, о которых сообщили члены товарищества.", "Перевірка та підтвердження платежів, про які повідомили члени товариства.", "Review and confirm payments reported by association members.")</p>
+    </div>
+    <div>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/Index">@AppLocalizer.Get("К обзору финансов", "До огляду фінансів", "Back to finance overview")</a>
+    </div>
+</div>
+
+<ul class="nav nav-tabs mb-4">
+    @foreach (var statusFilter in Model.StatusFilters)
+    {
+        var isActive = string.Equals(Model.SelectedStatusQuery, statusFilter.Value, StringComparison.OrdinalIgnoreCase);
+        <li class="nav-item">
+            <a class="nav-link @(isActive ? "active" : string.Empty)" asp-page="/Administration/Finance/PaymentNotifications/Index" asp-route-status="@statusFilter.Value">@statusFilter.Text</a>
+        </li>
+    }
+</ul>
+
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+}
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        @if (Model.Notifications.Count == 0)
+        {
+            <div class="p-4 text-center text-muted">@AppLocalizer.Get("Для выбранного статуса уведомления отсутствуют.", "Для вибраного статусу повідомлення відсутні.", "There are no notifications for the selected status.")</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>@AppLocalizer.Get("Дата отправки", "Дата надсилання", "Submitted at")</th>
+                            <th>@AppLocalizer.Get("Член товарищества", "Член товариства", "Member")</th>
+                            <th>@AppLocalizer.Get("Участки", "Ділянки", "Plots")</th>
+                            <th>@AppLocalizer.Get("Сумма", "Сума", "Amount")</th>
+                            <th>@AppLocalizer.Get("Способ оплаты", "Спосіб оплати", "Payment method")</th>
+                            <th>@AppLocalizer.Get("Описание", "Опис", "Description")</th>
+                            <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
+                            <th>@AppLocalizer.Get("Проверено", "Перевірено", "Reviewed")</th>
+                            <th>@AppLocalizer.Get("Комментарий администратора", "Коментар адміністратора", "Administrator comment")</th>
+                            <th>@AppLocalizer.Get("Платеж", "Платіж", "Payment")</th>
+                            <th class="text-end">@AppLocalizer.Get("Действия", "Дії", "Actions")</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var notification in Model.Notifications)
+                        {
+                            var confirmModalId = $"confirm-notification-{notification.Id}";
+                            var rejectModalId = $"reject-notification-{notification.Id}";
+                            <tr>
+                                <td>@notification.CreatedAtUtc.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+                                <td class="fw-semibold">@notification.MemberFullName</td>
+                                <td>@(notification.MemberPlotNumbers.Count == 0 ? "—" : string.Join(", ", notification.MemberPlotNumbers))</td>
+                                <td>@notification.Amount.ToString("0.00")</td>
+                                <td>@FinanceDisplayHelper.GetPaymentMethodText(notification.PaymentMethod)</td>
+                                <td>@(string.IsNullOrWhiteSpace(notification.Description) ? "—" : notification.Description)</td>
+                                <td>
+                                    <span class="badge @FinanceDisplayHelper.GetPaymentNotificationStatusBadgeClass(notification.Status)">@FinanceDisplayHelper.GetPaymentNotificationStatusText(notification.Status)</span>
+                                </td>
+                                <td>
+                                    @if (notification.ReviewedAtUtc.HasValue)
+                                    {
+                                        <div>@notification.ReviewedAtUtc.Value.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</div>
+                                        <div class="small text-muted">@(string.IsNullOrWhiteSpace(notification.ReviewedByUserDisplayName) ? notification.ReviewedByUserId : notification.ReviewedByUserDisplayName)</div>
+                                    }
+                                    else
+                                    {
+                                        @:—
+                                    }
+                                </td>
+                                <td>@(string.IsNullOrWhiteSpace(notification.AdministratorComment) ? "—" : notification.AdministratorComment)</td>
+                                <td>@(notification.PaymentId.HasValue ? $"#{notification.PaymentId.Value}" : "—")</td>
+                                <td class="text-end">
+                                    @if (notification.Status == PaymentNotificationStatus.Pending)
+                                    {
+                                        <div class="d-flex gap-2 justify-content-end flex-wrap">
+                                            <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#@confirmModalId">@AppLocalizer.Get("Подтвердить", "Підтвердити", "Confirm")</button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#@rejectModalId">@AppLocalizer.Get("Отклонить", "Відхилити", "Reject")</button>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@foreach (var notification in Model.Notifications.Where(item => item.Status == PaymentNotificationStatus.Pending))
+{
+    var confirmModalId = $"confirm-notification-{notification.Id}";
+    var rejectModalId = $"reject-notification-{notification.Id}";
+
+    <div class="modal fade" id="@confirmModalId" tabindex="-1" aria-labelledby="@(confirmModalId)-label" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="@(confirmModalId)-label">@AppLocalizer.Get("Подтверждение платежа", "Підтвердження платежу", "Confirm payment")</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@AppLocalizer.Get("Закрыть", "Закрити", "Close")"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-2"><strong>@AppLocalizer.Get("Член товарищества:", "Член товариства:", "Member:")</strong> @notification.MemberFullName</p>
+                    <p class="mb-2"><strong>@AppLocalizer.Get("Сумма:", "Сума:", "Amount:")</strong> @notification.Amount.ToString("0.00") грн</p>
+                    <p class="mb-2"><strong>@AppLocalizer.Get("Способ оплаты:", "Спосіб оплати:", "Payment method:")</strong> @FinanceDisplayHelper.GetPaymentMethodText(notification.PaymentMethod)</p>
+                    <p class="mb-2"><strong>@AppLocalizer.Get("Описание:", "Опис:", "Description:")</strong> @(string.IsNullOrWhiteSpace(notification.Description) ? "—" : notification.Description)</p>
+                    <p class="mb-0 text-danger">@AppLocalizer.Get("После подтверждения будет зарегистрирован реальный платеж.", "Після підтвердження буде зареєстровано реальний платіж.", "After confirmation, a real payment will be registered.")</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@AppLocalizer.Get("Отмена", "Скасувати", "Cancel")</button>
+                    <form method="post" asp-page-handler="Confirm" asp-route-status="@Model.SelectedStatusQuery" class="d-inline">
+                        <input type="hidden" name="notificationId" value="@notification.Id" />
+                        <button type="submit" class="btn btn-success">@AppLocalizer.Get("Подтвердить", "Підтвердити", "Confirm")</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="@rejectModalId" tabindex="-1" aria-labelledby="@(rejectModalId)-label" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="@(rejectModalId)-label">@AppLocalizer.Get("Отклонение уведомления", "Відхилення повідомлення", "Reject notification")</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@AppLocalizer.Get("Закрыть", "Закрити", "Close")"></button>
+                </div>
+                <form method="post" asp-page-handler="Reject" asp-route-status="@Model.SelectedStatusQuery">
+                    <div class="modal-body">
+                        <input type="hidden" name="notificationId" value="@notification.Id" />
+                        <p class="mb-3">@AppLocalizer.Get("Укажите причину отклонения при необходимости. Реальный платеж создан не будет.", "За потреби вкажіть причину відхилення. Реальний платіж створено не буде.", "Enter a rejection reason if needed. No real payment will be created.")</p>
+                        <div>
+                            <label class="form-label" for="administratorComment-@notification.Id">@AppLocalizer.Get("Причина отклонения", "Причина відхилення", "Rejection reason")</label>
+                            <textarea class="form-control" id="administratorComment-@notification.Id" name="administratorComment" rows="3" maxlength="@Neftyanik.Portal.Domain.Entities.PaymentNotification.AdministratorCommentMaxLength"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@AppLocalizer.Get("Отмена", "Скасувати", "Cancel")</button>
+                        <button type="submit" class="btn btn-danger">@AppLocalizer.Get("Отклонить", "Відхилити", "Reject")</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}

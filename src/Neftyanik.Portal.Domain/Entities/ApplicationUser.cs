@@ -46,5 +46,7 @@ public class ApplicationUser : IdentityUser
 
     public List<Payment> CreatedPayments { get; set; } = [];
 
+    public List<PaymentNotification> ReviewedPaymentNotifications { get; set; } = [];
+
     public List<SystemSetting> UpdatedSystemSettings { get; set; } = [];
 }

@@ -4,11 +4,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Neftyanik.Portal.Application.Payments;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Domain.Enums;
 using Neftyanik.Portal.Infrastructure.Data;
 using Neftyanik.Portal.Infrastructure.Data.Queries;
+using Neftyanik.Portal.Web.Localization;
 using Neftyanik.Portal.Web.Pages.Finance;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Members.Finance;
@@ -16,13 +18,14 @@ namespace Neftyanik.Portal.Web.Pages.Administration.Members.Finance;
 [Authorize(Roles = RoleNames.AdministratorOrAccountant)]
 public class RegisterPaymentModel : PageModel
 {
-    private static readonly PaymentMethod[] AllowedPaymentMethods = [PaymentMethod.Cash, PaymentMethod.Card];
     private readonly ApplicationDbContext _dbContext;
+    private readonly IPaymentService _paymentService;
     private readonly UserManager<ApplicationUser> _userManager;
 
-    public RegisterPaymentModel(ApplicationDbContext dbContext, UserManager<ApplicationUser> userManager)
+    public RegisterPaymentModel(ApplicationDbContext dbContext, IPaymentService paymentService, UserManager<ApplicationUser> userManager)
     {
         _dbContext = dbContext;
+        _paymentService = paymentService;
         _userManager = userManager;
     }
 
@@ -58,7 +61,6 @@ public class RegisterPaymentModel : PageModel
             ? plotId.Value
             : HasSinglePlot ? int.Parse(PlotOptions[0].Value) : null;
         Input.PaymentDate = DateOnly.FromDateTime(DateTime.Today);
-        Input.PaymentMethod = PaymentMethod.Cash;
 
         return Page();
     }
@@ -80,11 +82,6 @@ public class RegisterPaymentModel : PageModel
             Input.PlotId = int.Parse(PlotOptions[0].Value);
         }
 
-        if (!Input.PaymentMethod.HasValue)
-        {
-            Input.PaymentMethod = PaymentMethod.Cash;
-        }
-
         if (!ModelState.IsValid)
         {
             return Page();
@@ -97,140 +94,67 @@ public class RegisterPaymentModel : PageModel
             return Page();
         }
 
-        if (!Input.PaymentMethod.HasValue || !AllowedPaymentMethods.Contains(Input.PaymentMethod.Value))
+        if (!Input.PaymentMethod.HasValue || !PaymentMethodRules.IsAllowed(Input.PaymentMethod.Value))
         {
-            ModelState.AddModelError(nameof(Input.PaymentMethod), "Выберите допустимый способ оплаты: наличные или банковская карта.");
-            return Page();
-        }
-
-        var paymentDate = Input.PaymentDate!.Value;
-        var memberPlotIds = await _dbContext.PlotOwnerships
-            .AsNoTracking()
-            .Where(ownership => ownership.MemberId == id
-                && (!ownership.ValidFrom.HasValue || ownership.ValidFrom.Value <= paymentDate)
-                && (!ownership.ValidTo.HasValue || ownership.ValidTo.Value >= paymentDate))
-            .Select(ownership => ownership.PlotId)
-            .Distinct()
-            .ToArrayAsync(cancellationToken);
-
-        if (!memberPlotIds.Contains(Input.PlotId.Value))
-        {
-            ModelState.AddModelError(nameof(Input.PlotId), "На дату платежа выбранный участок не принадлежит этому члену товарищества.");
+            ModelState.AddModelError(nameof(Input.PaymentMethod), "Выберите допустимый способ оплаты: наличные или перевод на карту.");
             return Page();
         }
 
         var currentUser = await _userManager.GetUserAsync(User);
 
-        var payment = new Payment
+        var paymentResult = await _paymentService.CreateMemberPaymentAsync(
+            new CreateMemberPaymentRequest(
+                id,
+                Input.PlotId.Value,
+                Input.PaymentDate!.Value,
+                Input.Amount!.Value,
+                Input.PaymentMethod!.Value,
+                Normalize(Input.ReferenceNumber),
+                Normalize(Input.Description),
+                currentUser?.Id),
+            cancellationToken);
+
+        if (!paymentResult.Succeeded)
         {
-            PlotId = Input.PlotId.Value,
-            PaymentDate = paymentDate,
-            Amount = Input.Amount!.Value,
-            PaymentMethod = Input.PaymentMethod!.Value,
-            ReferenceNumber = Normalize(Input.ReferenceNumber),
-            Description = Normalize(Input.Description),
-            CreatedByUserId = currentUser?.Id,
-            CreatedAtUtc = DateTime.UtcNow
-        };
+            ModelState.AddModelError(
+                paymentResult.Code == CreateMemberPaymentResultCode.PaymentPlotNotOwnedByMember ? nameof(Input.PlotId) : string.Empty,
+                paymentResult.Code switch
+                {
+                    CreateMemberPaymentResultCode.PaymentPlotNotOwnedByMember => AppLocalizer.Get(
+                        "На дату платежа выбранный участок не принадлежит этому члену товарищества.",
+                        "На дату платежу вибрана ділянка не належить цьому члену товариства.",
+                        "On the payment date, the selected plot does not belong to this member."),
+                    CreateMemberPaymentResultCode.NoEligiblePlots => AppLocalizer.Get(
+                        "У участника нет активных участков для регистрации платежа.",
+                        "У члена товариства немає активних ділянок для реєстрації платежу.",
+                        "The member has no active plots available for payment registration."),
+                    CreateMemberPaymentResultCode.InvalidPaymentMethod => AppLocalizer.Get(
+                        "Выберите допустимый способ оплаты: наличные или перевод на карту.",
+                        "Оберіть допустимий спосіб оплати: готівка або переказ на картку.",
+                        "Select a valid payment method: cash or card transfer."),
+                    _ => AppLocalizer.Get(
+                        "Не удалось зарегистрировать платеж. Проверьте введенные данные и повторите попытку.",
+                        "Не вдалося зареєструвати платіж. Перевірте введені дані та повторіть спробу.",
+                        "The payment could not be registered. Check the entered data and try again.")
+                });
 
-        await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
-
-        _dbContext.Payments.Add(payment);
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        var outstandingCharges = await LoadOutstandingChargesAsync(memberPlotIds, cancellationToken);
-        var remainingPaymentAmount = payment.Amount;
-        var allocations = new List<PaymentAllocation>();
-
-        foreach (var charge in outstandingCharges)
-        {
-            if (remainingPaymentAmount <= 0m)
-            {
-                break;
-            }
-
-            var remainingChargeAmount = charge.Amount - charge.AllocatedAmount;
-            if (remainingChargeAmount <= 0m)
-            {
-                continue;
-            }
-
-            var allocationAmount = Math.Min(remainingPaymentAmount, remainingChargeAmount);
-            allocations.Add(new PaymentAllocation
-            {
-                PaymentId = payment.Id,
-                ChargeId = charge.Id,
-                Amount = allocationAmount
-            });
-
-            remainingPaymentAmount -= allocationAmount;
+            return Page();
         }
-
-        if (allocations.Count > 0)
-        {
-            _dbContext.PaymentAllocations.AddRange(allocations);
-            await _dbContext.SaveChangesAsync(cancellationToken);
-        }
-
-        await transaction.CommitAsync(cancellationToken);
 
         if (TempData is not null)
         {
-            TempData["SuccessMessage"] = remainingPaymentAmount > 0m
-                ? $"Платеж сохранён. Автоматически распределено: {(payment.Amount - remainingPaymentAmount):0.00} грн, аванс: {remainingPaymentAmount:0.00} грн."
-                : "Платеж сохранён и автоматически распределён по задолженности участника.";
+            TempData["SuccessMessage"] = paymentResult.AdvanceAmount > 0m
+                ? AppLocalizer.Get(
+                    $"Платеж сохранён. Автоматически распределено: {paymentResult.AllocatedAmount:0.00} грн, аванс: {paymentResult.AdvanceAmount:0.00} грн.",
+                    $"Платіж збережено. Автоматично розподілено: {paymentResult.AllocatedAmount:0.00} грн, аванс: {paymentResult.AdvanceAmount:0.00} грн.",
+                    $"The payment has been saved. Automatically allocated: {paymentResult.AllocatedAmount:0.00} UAH, advance: {paymentResult.AdvanceAmount:0.00} UAH.")
+                : AppLocalizer.Get(
+                    "Платеж сохранён и автоматически распределён по задолженности участника.",
+                    "Платіж збережено та автоматично розподілено за заборгованістю члена товариства.",
+                    "The payment has been saved and automatically allocated to the member's debt.");
         }
 
         return RedirectToPage("/Administration/Members/Finance", new { id });
-    }
-
-    private async Task<IReadOnlyList<OutstandingChargeViewModel>> LoadOutstandingChargesAsync(int[] plotIds, CancellationToken cancellationToken)
-    {
-        if (plotIds.Length == 0)
-        {
-            return [];
-        }
-
-        var charges = await _dbContext.Charges
-            .AsNoTracking()
-            .Where(charge => charge.CancelledAtUtc == null
-                && charge.PlotId.HasValue
-                && plotIds.Contains(charge.PlotId.Value))
-            .OrderBy(charge => charge.ChargeDate)
-            .ThenBy(charge => charge.Id)
-            .Select(charge => new OutstandingChargeViewModel
-            {
-                Id = charge.Id,
-                Amount = charge.Amount
-            })
-            .ToListAsync(cancellationToken);
-
-        if (charges.Count == 0)
-        {
-            return charges;
-        }
-
-        var chargeIds = charges.Select(charge => charge.Id).ToArray();
-        var allocatedAmountsByCharge = (await _dbContext.PaymentAllocations
-            .AsNoTracking()
-            .Where(allocation => chargeIds.Contains(allocation.ChargeId)
-                && allocation.Payment != null
-                && allocation.Payment.CancelledAtUtc == null)
-            .Select(allocation => new
-            {
-                allocation.ChargeId,
-                allocation.Amount
-            })
-            .ToListAsync(cancellationToken))
-            .GroupBy(allocation => allocation.ChargeId)
-            .ToDictionary(group => group.Key, group => group.Sum(allocation => allocation.Amount));
-
-        return charges
-            .Select(charge => charge with
-            {
-                AllocatedAmount = allocatedAmountsByCharge.GetValueOrDefault(charge.Id)
-            })
-            .ToList();
     }
 
     private async Task<bool> LoadPageStateAsync(int memberId, CancellationToken cancellationToken)
@@ -272,7 +196,7 @@ public class RegisterPaymentModel : PageModel
             .Distinct()
             .ToListAsync(cancellationToken);
 
-        PaymentMethodOptions = AllowedPaymentMethods
+        PaymentMethodOptions = PaymentMethodRules.AllowedMethods
             .Select(method => new SelectListItem
             {
                 Value = method.ToString(),
@@ -315,14 +239,5 @@ public class RegisterPaymentModel : PageModel
         public string? Email { get; init; }
 
         public int ActivePlotsCount { get; init; }
-    }
-
-    private sealed record OutstandingChargeViewModel
-    {
-        public long Id { get; init; }
-
-        public decimal Amount { get; init; }
-
-        public decimal AllocatedAmount { get; init; }
     }
 }

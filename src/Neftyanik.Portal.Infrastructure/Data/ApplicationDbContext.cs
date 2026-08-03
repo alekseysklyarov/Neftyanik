@@ -39,6 +39,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<Payment> Payments => Set<Payment>();
 
+    public DbSet<PaymentNotification> PaymentNotifications => Set<PaymentNotification>();
+
     public DbSet<PaymentAllocation> PaymentAllocations => Set<PaymentAllocation>();
 
     public DbSet<ExpenseCategory> ExpenseCategories => Set<ExpenseCategory>();

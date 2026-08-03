@@ -42,4 +42,6 @@ public class Member
     public List<PlotOwnership> PlotOwnerships { get; set; } = [];
 
     public List<MemberElectricityMeter> MemberElectricityMeters { get; set; } = [];
+
+    public List<PaymentNotification> PaymentNotifications { get; set; } = [];
 }

@@ -6,8 +6,10 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Neftyanik.Portal.Application.Payments;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
+using Neftyanik.Portal.Domain.Enums;
 using Neftyanik.Portal.Infrastructure.Data;
 using Neftyanik.Portal.Infrastructure.Data.Queries;
 using Neftyanik.Portal.Web.Pages.Finance;
@@ -20,11 +22,13 @@ namespace Neftyanik.Portal.Web.Pages.Member;
 public class IndexModel : PageModel
 {
     private readonly ApplicationDbContext _dbContext;
+    private readonly IPaymentNotificationService _paymentNotificationService;
     private readonly UserManager<ApplicationUser> _userManager;
 
-    public IndexModel(ApplicationDbContext dbContext, UserManager<ApplicationUser> userManager)
+    public IndexModel(ApplicationDbContext dbContext, IPaymentNotificationService paymentNotificationService, UserManager<ApplicationUser> userManager)
     {
         _dbContext = dbContext;
+        _paymentNotificationService = paymentNotificationService;
         _userManager = userManager;
     }
 
@@ -35,6 +39,9 @@ public class IndexModel : PageModel
 
     [BindProperty]
     public ChangePasswordInputModel ChangePassword { get; set; } = new();
+
+    [BindProperty]
+    public PaymentNotificationInputModel PaymentNotification { get; set; } = new();
 
     [BindProperty(SupportsGet = true)]
     public int ChargePage { get; set; } = 1;
@@ -53,7 +60,11 @@ public class IndexModel : PageModel
 
     public IReadOnlyList<MemberElectricityMeterItemViewModel> ElectricityMeters { get; private set; } = [];
 
+    public IReadOnlyList<PaymentNotificationListItem> RecentPaymentNotifications { get; private set; } = [];
+
     public IReadOnlyList<SelectListItem> ChargeTypeOptions { get; private set; } = [];
+
+    public IReadOnlyList<SelectListItem> PaymentMethodOptions { get; private set; } = [];
 
     public int ChargeTotalPages { get; private set; } = 1;
 
@@ -82,6 +93,8 @@ public class IndexModel : PageModel
     public bool ReopenEditProfileModal { get; private set; }
 
     public bool ReopenChangePasswordModal { get; private set; }
+
+    public bool ReopenPaymentNotificationModal { get; private set; }
 
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
@@ -241,14 +254,97 @@ public class IndexModel : PageModel
         return RedirectToPage(new { chargePage = ChargePage, paymentPage = PaymentPage, chargeTypeId = ChargeTypeId });
     }
 
+    public async Task<IActionResult> OnPostCreatePaymentNotificationAsync(CancellationToken cancellationToken)
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user is null)
+        {
+            return Challenge();
+        }
+
+        if (!User.IsInRole(RoleNames.Member))
+        {
+            return Forbid();
+        }
+
+        if (user.MustChangePassword)
+        {
+            return RedirectToPage("/Account/ChangeInitialPassword");
+        }
+
+        var member = await _dbContext.Members
+            .AsNoTracking()
+            .FirstOrDefaultAsync(item => item.ApplicationUserId == user.Id, cancellationToken);
+
+        if (member is null)
+        {
+            TempData["ErrorMessage"] = AppLocalizer.Get(
+                "Учетная запись не связана с карточкой члена товарищества. Обратитесь к администратору.",
+                "Обліковий запис не пов'язаний із карткою члена товариства. Зверніться до адміністратора.",
+                "The account is not linked to a member record. Contact the administrator.");
+            return RedirectToPage(new { chargePage = ChargePage, paymentPage = PaymentPage, chargeTypeId = ChargeTypeId });
+        }
+
+        PaymentNotification.Description = Normalize(PaymentNotification.Description);
+
+        ModelState.Clear();
+        TryValidateModel(PaymentNotification, nameof(PaymentNotification));
+
+        if (!ModelState.IsValid)
+        {
+            ReopenPaymentNotificationModal = true;
+            await LoadPageStateAsync(user, cancellationToken, preservePaymentNotificationInput: true);
+            return Page();
+        }
+
+        var result = await _paymentNotificationService.CreateAsync(
+            member.Id,
+            new CreatePaymentNotificationRequest(
+                PaymentNotification.Amount!.Value,
+                PaymentNotification.PaymentMethod!.Value,
+                PaymentNotification.Description),
+            cancellationToken);
+
+        if (!result.Succeeded)
+        {
+            ReopenPaymentNotificationModal = true;
+            ModelState.AddModelError(string.Empty, result.Code switch
+            {
+                PaymentNotificationOperationResultCode.NotFound => AppLocalizer.Get(
+                    "Не удалось найти карточку члена товарищества для отправки уведомления о платеже.",
+                    "Не вдалося знайти картку члена товариства для надсилання повідомлення про платіж.",
+                    "The member record required to submit the payment notification could not be found."),
+                PaymentNotificationOperationResultCode.InvalidRequest => AppLocalizer.Get(
+                    "Проверьте сумму, способ оплаты и описание платежа.",
+                    "Перевірте суму, спосіб оплати та опис платежу.",
+                    "Check the payment amount, payment method, and description."),
+                _ => AppLocalizer.Get(
+                    "Не удалось отправить уведомление о платеже. Повторите попытку позже.",
+                    "Не вдалося надіслати повідомлення про платіж. Повторіть спробу пізніше.",
+                    "The payment notification could not be submitted. Please try again later.")
+            });
+            await LoadPageStateAsync(user, cancellationToken, preservePaymentNotificationInput: true);
+            return Page();
+        }
+
+        TempData["SuccessMessage"] = AppLocalizer.Get(
+            "Уведомление о платеже отправлено. Платеж ожидает подтверждения бухгалтером.",
+            "Повідомлення про платіж надіслано. Платіж очікує підтвердження бухгалтером.",
+            "The payment notification has been sent. The payment is now awaiting accountant confirmation.");
+
+        return RedirectToPage(new { chargePage = ChargePage, paymentPage = PaymentPage, chargeTypeId = ChargeTypeId });
+    }
+
     private async Task LoadPageStateAsync(
         ApplicationUser user,
         CancellationToken cancellationToken,
-        bool preserveProfileInput = false)
+        bool preserveProfileInput = false,
+        bool preservePaymentNotificationInput = false)
     {
         var currentDate = DateOnly.FromDateTime(DateTime.Now);
         ChargePage = ChargePage < 1 ? 1 : ChargePage;
         PaymentPage = PaymentPage < 1 ? 1 : PaymentPage;
+        PaymentMethodOptions = BuildPaymentMethodOptions();
 
         var member = await _dbContext.Members
             .AsNoTracking()
@@ -277,10 +373,17 @@ public class IndexModel : PageModel
             Charges = [];
             Payments = [];
             ElectricityMeters = [];
+            RecentPaymentNotifications = [];
             ChargeTotalPages = 1;
             PaymentTotalPages = 1;
             IsElectricityFeatureAvailable = true;
             ElectricityFeatureWarningMessage = null;
+
+            if (!preservePaymentNotificationInput)
+            {
+                PaymentNotification = new PaymentNotificationInputModel();
+            }
+
             return;
         }
 
@@ -291,6 +394,14 @@ public class IndexModel : PageModel
                 FullName = member.FullName,
                 PhoneNumber = member.PhoneNumber,
                 Email = member.Email
+            };
+        }
+
+        if (!preservePaymentNotificationInput)
+        {
+            PaymentNotification = new PaymentNotificationInputModel
+            {
+                PaymentMethod = PaymentMethod.BankTransfer
             };
         }
 
@@ -432,6 +543,8 @@ public class IndexModel : PageModel
             })
             .ToListAsync(cancellationToken);
 
+        RecentPaymentNotifications = await _paymentNotificationService.GetRecentForMemberAsync(member.MemberId, 5, cancellationToken);
+
         await LoadElectricityStateAsync(member.MemberId, cancellationToken);
 
         Dashboard = new MemberDashboardViewModel
@@ -452,6 +565,17 @@ public class IndexModel : PageModel
     private static string? Normalize(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private static IReadOnlyList<SelectListItem> BuildPaymentMethodOptions()
+    {
+        return PaymentMethodRules.AllowedMethods
+            .Select(method => new SelectListItem
+            {
+                Value = method.ToString(),
+                Text = FinanceDisplayHelper.GetPaymentMethodText(method)
+            })
+            .ToList();
     }
 
     private static (string FirstName, string LastName, string DisplayName) ParseFullName(string fullName)
@@ -562,6 +686,48 @@ public class IndexModel : PageModel
                         AppLocalizer.Get("Введите корректный адрес электронной почты.", "Введіть коректну адресу електронної пошти.", "Enter a valid email address."),
                         [nameof(Email)]);
                 }
+            }
+        }
+    }
+
+    public sealed class PaymentNotificationInputModel : IValidatableObject
+    {
+        public decimal? Amount { get; set; }
+
+        public PaymentMethod? PaymentMethod { get; set; }
+
+        public string? Description { get; set; }
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (!Amount.HasValue)
+            {
+                yield return new ValidationResult(
+                    AppLocalizer.Get("Укажите сумму платежа.", "Вкажіть суму платежу.", "Enter the payment amount."),
+                    [nameof(Amount)]);
+            }
+            else if (Amount.Value <= 0m)
+            {
+                yield return new ValidationResult(
+                    AppLocalizer.Get("Сумма платежа должна быть больше нуля.", "Сума платежу має бути більшою за нуль.", "The payment amount must be greater than zero."),
+                    [nameof(Amount)]);
+            }
+
+            if (!PaymentMethod.HasValue || !Enum.IsDefined(PaymentMethod.Value) || !PaymentMethodRules.IsAllowed(PaymentMethod.Value))
+            {
+                yield return new ValidationResult(
+                    AppLocalizer.Get("Выберите способ оплаты: наличные или перевод на карту.", "Оберіть спосіб оплати: готівка або переказ на картку.", "Select a payment method: cash or card transfer."),
+                    [nameof(PaymentMethod)]);
+            }
+
+            if (!string.IsNullOrWhiteSpace(Description) && Description.Trim().Length > Neftyanik.Portal.Domain.Entities.PaymentNotification.DescriptionMaxLength)
+            {
+                yield return new ValidationResult(
+                    AppLocalizer.Get(
+                        $"Описание платежа не должно превышать {Neftyanik.Portal.Domain.Entities.PaymentNotification.DescriptionMaxLength} символов.",
+                        $"Опис платежу не повинен перевищувати {Neftyanik.Portal.Domain.Entities.PaymentNotification.DescriptionMaxLength} символів.",
+                        $"The payment description must not exceed {Neftyanik.Portal.Domain.Entities.PaymentNotification.DescriptionMaxLength} characters."),
+                    [nameof(Description)]);
             }
         }
     }

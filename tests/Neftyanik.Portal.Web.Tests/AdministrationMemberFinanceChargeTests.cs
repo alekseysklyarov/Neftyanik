@@ -331,7 +331,7 @@ public class AdministrationMemberFinanceChargeTests
             null,
             NullLogger<UserManager<ApplicationUser>>.Instance);
 
-        var model = new RegisterPaymentModel(dbContext, userManager)
+        var model = new RegisterPaymentModel(dbContext, new PaymentService(dbContext), userManager)
         {
             Input = new MemberPaymentInputModel
             {
@@ -422,7 +422,7 @@ public class AdministrationMemberFinanceChargeTests
             null,
             NullLogger<UserManager<ApplicationUser>>.Instance);
 
-        var model = new RegisterPaymentModel(dbContext, userManager);
+        var model = new RegisterPaymentModel(dbContext, new PaymentService(dbContext), userManager);
 
         var result = await model.OnGetAsync(memberId, null, CancellationToken.None);
 
@@ -1127,7 +1127,7 @@ public class AdministrationMemberFinanceChargeTests
             null,
             NullLogger<UserManager<ApplicationUser>>.Instance);
 
-        var model = new RegisterPaymentModel(dbContext, userManager)
+        var model = new RegisterPaymentModel(dbContext, new PaymentService(dbContext), userManager)
         {
             Input = new MemberPaymentInputModel
             {
@@ -1143,7 +1143,7 @@ public class AdministrationMemberFinanceChargeTests
         Assert.IsType<PageResult>(result);
         Assert.False(model.ModelState.IsValid);
         var error = Assert.Single(model.ModelState[nameof(model.Input.PaymentMethod)]!.Errors);
-        Assert.Equal("Выберите допустимый способ оплаты: наличные или банковская карта.", error.ErrorMessage);
+        Assert.Equal("Выберите допустимый способ оплаты: наличные или перевод на карту.", error.ErrorMessage);
     }
 
     private static PageContext CreatePageContext(string userId)

@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Neftyanik.Portal.Application.Electricity;
 using Neftyanik.Portal.Application.Interfaces;
 using Neftyanik.Portal.Application.LegacyImport;
+using Neftyanik.Portal.Application.Payments;
 using Neftyanik.Portal.Infrastructure.Data;
 using Neftyanik.Portal.Infrastructure.Identity;
 using Neftyanik.Portal.Infrastructure.LegacyImport;
@@ -29,6 +30,8 @@ namespace Neftyanik.Portal.Infrastructure
             services.AddScoped<IAdminBootstrapService, AdminBootstrapService>();
             services.AddScoped<IAssociationElectricityService, AssociationElectricityService>();
             services.AddScoped<IMemberElectricityService, MemberElectricityService>();
+            services.AddScoped<IPaymentService, PaymentService>();
+            services.AddScoped<IPaymentNotificationService, PaymentNotificationService>();
             services.AddScoped<LegacyElectricityWorkbookReader>();
             services.AddScoped<LegacyElectricityImportValidator>();
             services.AddScoped<ILegacyElectricityImportExecutionHook, NoOpLegacyElectricityImportExecutionHook>();
