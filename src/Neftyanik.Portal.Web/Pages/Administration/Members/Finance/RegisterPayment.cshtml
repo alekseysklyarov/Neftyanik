@@ -138,15 +138,12 @@
 
                 const currentCash = Number.parseFloat(currentCashElement.dataset.currentCash ?? '0');
                 const paymentAmount = Number.parseFloat(amountInput.value.replace(',', '.'));
-                const isCashPayment = paymentMethodSelect.value === 'Cash';
-                const nextCash = isCashPayment && Number.isFinite(paymentAmount)
+                const nextCash = Number.isFinite(paymentAmount)
                     ? currentCash + paymentAmount
                     : currentCash;
 
                 confirmationMessage.textContent = `Подтвердите регистрацию платежа на сумму ${Number.isFinite(paymentAmount) ? formatAmount(paymentAmount) : '0.00 грн'}.`;
-                cashChangeMessage.textContent = isCashPayment
-                    ? `Сейчас в кассе должно быть ${formatAmount(currentCash)}. После сохранения будет ${formatAmount(nextCash)}.`
-                    : `Сейчас в кассе должно быть ${formatAmount(currentCash)}. При безналичной оплате сумма в кассе не изменится.`;
+                cashChangeMessage.textContent = `Сейчас в кассе должно быть ${formatAmount(currentCash)}. После сохранения будет ${formatAmount(nextCash)}.`;
 
                 modal.show();
             });

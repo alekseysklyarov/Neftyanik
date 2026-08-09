@@ -11,7 +11,7 @@ namespace Neftyanik.Portal.Web.Tests;
 public class AdministrationFinanceSummaryTests
 {
     [Fact]
-    public async Task OnGetAsync_CalculatesCashAndYearSummaries()
+    public async Task OnGetAsync_UsesInitializationCutoffForCurrentFundsAndOpeningBalance()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
@@ -25,8 +25,9 @@ public class AdministrationFinanceSummaryTests
 
         var currentYear = DateTime.Today.Year;
         var yearStart = new DateOnly(currentYear, 1, 1);
-        var previousDate = yearStart.AddDays(-1);
-        var currentDate = yearStart.AddDays(10);
+        var acceptedAt = new DateOnly(currentYear, 7, 1);
+        var beforeInitialization = acceptedAt.AddDays(-1);
+        var afterInitialization = acceptedAt.AddDays(10);
 
         dbContext.Users.Add(new ApplicationUser
         {
@@ -81,7 +82,7 @@ public class AdministrationFinanceSummaryTests
                 PlotId = 1,
                 ChargeTypeId = 1,
                 Amount = 100m,
-                ChargeDate = previousDate,
+                ChargeDate = beforeInitialization,
                 CreatedAtUtc = DateTime.UtcNow
             },
             new Charge
@@ -90,7 +91,7 @@ public class AdministrationFinanceSummaryTests
                 PlotId = 1,
                 ChargeTypeId = 1,
                 Amount = 100m,
-                ChargeDate = currentDate,
+                ChargeDate = afterInitialization,
                 CreatedAtUtc = DateTime.UtcNow
             });
 
@@ -100,7 +101,7 @@ public class AdministrationFinanceSummaryTests
                 Id = 1,
                 PlotId = 1,
                 Amount = 40m,
-                PaymentDate = previousDate,
+                PaymentDate = beforeInitialization,
                 PaymentMethod = PaymentMethod.Cash,
                 CreatedAtUtc = DateTime.UtcNow
             },
@@ -109,7 +110,7 @@ public class AdministrationFinanceSummaryTests
                 Id = 2,
                 PlotId = 1,
                 Amount = 20m,
-                PaymentDate = currentDate,
+                PaymentDate = afterInitialization,
                 PaymentMethod = PaymentMethod.Cash,
                 CreatedAtUtc = DateTime.UtcNow
             },
@@ -118,7 +119,16 @@ public class AdministrationFinanceSummaryTests
                 Id = 3,
                 PlotId = 1,
                 Amount = 50m,
-                PaymentDate = currentDate,
+                PaymentDate = afterInitialization,
+                PaymentMethod = PaymentMethod.Card,
+                CreatedAtUtc = DateTime.UtcNow
+            },
+            new Payment
+            {
+                Id = 4,
+                PlotId = 1,
+                Amount = 15m,
+                PaymentDate = beforeInitialization,
                 PaymentMethod = PaymentMethod.Card,
                 CreatedAtUtc = DateTime.UtcNow
             });
@@ -128,9 +138,9 @@ public class AdministrationFinanceSummaryTests
             {
                 Id = 1,
                 ExpenseCategoryId = 1,
-                ExpenseDate = previousDate,
+                ExpenseDate = beforeInitialization,
                 Amount = 10m,
-                Description = "Expense before year start",
+                Description = "Expense before initialization",
                 CreatedByUserId = "system",
                 CreatedAt = DateTimeOffset.UtcNow
             },
@@ -138,9 +148,9 @@ public class AdministrationFinanceSummaryTests
             {
                 Id = 2,
                 ExpenseCategoryId = 1,
-                ExpenseDate = currentDate,
+                ExpenseDate = afterInitialization,
                 Amount = 5m,
-                Description = "Expense in current year",
+                Description = "Expense after initialization",
                 CreatedByUserId = "system",
                 CreatedAt = DateTimeOffset.UtcNow
             });
@@ -149,7 +159,7 @@ public class AdministrationFinanceSummaryTests
         {
             Id = 1,
             Key = "Finance.CashInitialization",
-            Value = "{\"Amount\":25,\"AcceptedAt\":\"" + previousDate.ToString("yyyy-MM-dd") + "\",\"AcceptedFrom\":\"Кассир\",\"AdvancePaymentsAmount\":10}",
+            Value = "{\"Amount\":25,\"AcceptedAt\":\"" + acceptedAt.ToString("yyyy-MM-dd") + "\",\"AcceptedFrom\":\"Кассир\",\"AdvancePaymentsAmount\":10}",
             Description = "Initial cash amount configured from finance settings.",
             UpdatedAt = DateTimeOffset.UtcNow,
             UpdatedByUserId = "system"
@@ -162,13 +172,13 @@ public class AdministrationFinanceSummaryTests
         await model.OnGetAsync(CancellationToken.None);
 
         Assert.Equal(currentYear, model.CurrentYear);
-        Assert.Equal(110m, model.Summary.CurrentCashAmount);
-        Assert.Equal(60m, model.Summary.CurrentCashOnlyAmount);
+        Assert.Equal(90m, model.Summary.CurrentCashAmount);
+        Assert.Equal(40m, model.Summary.CurrentCashOnlyAmount);
         Assert.Equal(50m, model.Summary.CurrentNonCashAmount);
-        Assert.Equal(45m, model.Summary.OpeningYearCashAmount);
-        Assert.Equal(100m, model.Summary.CurrentYearCharges);
-        Assert.Equal(60m, model.Summary.OpeningYearDebt);
-        Assert.Equal(30m, model.Summary.CurrentYearDebt);
+        Assert.Equal(0m, model.Summary.OpeningYearCashAmount);
+        Assert.Equal(200m, model.Summary.CurrentYearCharges);
+        Assert.Equal(0m, model.Summary.OpeningYearDebt);
+        Assert.Equal(75m, model.Summary.CurrentYearDebt);
         Assert.Equal(0m, model.Summary.TotalOverpayments);
     }
 }

@@ -17,6 +17,7 @@ using Neftyanik.Portal.Infrastructure.Data;
 using Neftyanik.Portal.Infrastructure.Services;
 using Neftyanik.Portal.Web.Pages.Administration.Members;
 using Neftyanik.Portal.Web.Pages.Administration.Members.Finance;
+using FinanceIndexModel = Neftyanik.Portal.Web.Pages.Administration.Finance.IndexModel;
 using Xunit;
 
 namespace Neftyanik.Portal.Web.Tests;
@@ -374,7 +375,7 @@ public class AdministrationMemberFinanceChargeTests
     }
 
     [Fact]
-    public async Task OnGetAdministrationMemberRegisterPayment_LoadsCurrentCashAmount()
+    public async Task OnGetAdministrationMemberRegisterPayment_UsesSameCurrentFundsAsFinanceOverview()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
@@ -386,6 +387,10 @@ public class AdministrationMemberFinanceChargeTests
         await using var dbContext = new ApplicationDbContext(options);
         await dbContext.Database.EnsureCreatedAsync();
 
+        var currentYear = DateTime.Today.Year;
+        var acceptedAt = new DateOnly(currentYear, 7, 1);
+        var beforeInitialization = acceptedAt.AddDays(-1);
+        var afterInitialization = acceptedAt.AddDays(2);
         const string adminUserId = "admin-user";
         const int memberId = 865;
         const int plotId = 866;
@@ -395,18 +400,41 @@ public class AdministrationMemberFinanceChargeTests
         dbContext.Plots.Add(new Plot { Id = plotId, Number = "P-866", IsActive = true });
         dbContext.PlotOwnerships.Add(new PlotOwnership { Id = 1, PlotId = plotId, MemberId = memberId, ValidFrom = new DateOnly(2020, 1, 1), IsPrimaryContact = true });
         dbContext.Payments.AddRange(
-            new Payment { Id = 1, PlotId = plotId, PaymentDate = new DateOnly(2026, 1, 1), Amount = 200m, PaymentMethod = Domain.Enums.PaymentMethod.Cash, CreatedAtUtc = DateTime.UtcNow },
-            new Payment { Id = 2, PlotId = plotId, PaymentDate = new DateOnly(2026, 1, 2), Amount = 50m, PaymentMethod = Domain.Enums.PaymentMethod.Card, CreatedAtUtc = DateTime.UtcNow });
-        dbContext.Expenses.Add(new Expense
+            new Payment { Id = 1, PlotId = plotId, PaymentDate = beforeInitialization, Amount = 200m, PaymentMethod = Domain.Enums.PaymentMethod.Cash, CreatedAtUtc = DateTime.UtcNow },
+            new Payment { Id = 2, PlotId = plotId, PaymentDate = afterInitialization, Amount = 60m, PaymentMethod = Domain.Enums.PaymentMethod.Cash, CreatedAtUtc = DateTime.UtcNow },
+            new Payment { Id = 3, PlotId = plotId, PaymentDate = beforeInitialization, Amount = 50m, PaymentMethod = Domain.Enums.PaymentMethod.Card, CreatedAtUtc = DateTime.UtcNow },
+            new Payment { Id = 4, PlotId = plotId, PaymentDate = afterInitialization, Amount = 40m, PaymentMethod = Domain.Enums.PaymentMethod.Card, CreatedAtUtc = DateTime.UtcNow });
+        dbContext.Expenses.AddRange(
+            new Expense
+            {
+                Id = 1,
+                ExpenseCategoryId = 1,
+                ExpenseDate = beforeInitialization,
+                Amount = 80m,
+                Description = "Expense before initialization",
+                CreatedByUserId = adminUserId,
+                CreatedAt = DateTimeOffset.UtcNow,
+                IsCancelled = false
+            },
+            new Expense
+            {
+                Id = 2,
+                ExpenseCategoryId = 1,
+                ExpenseDate = afterInitialization,
+                Amount = 30m,
+                Description = "Expense after initialization",
+                CreatedByUserId = adminUserId,
+                CreatedAt = DateTimeOffset.UtcNow,
+                IsCancelled = false
+            });
+        dbContext.SystemSettings.Add(new SystemSetting
         {
             Id = 1,
-            ExpenseCategoryId = 1,
-            ExpenseDate = new DateOnly(2026, 1, 3),
-            Amount = 80m,
-            Description = "Test expense",
-            CreatedByUserId = adminUserId,
-            CreatedAt = DateTimeOffset.UtcNow,
-            IsCancelled = false
+            Key = "Finance.CashInitialization",
+            Value = "{\"Amount\":500,\"AcceptedAt\":\"" + acceptedAt.ToString("yyyy-MM-dd") + "\",\"AcceptedFrom\":\"Кассир\",\"AdvancePaymentsAmount\":25}",
+            Description = "Initial cash amount configured from finance settings.",
+            UpdatedAt = DateTimeOffset.UtcNow,
+            UpdatedByUserId = adminUserId
         });
         await dbContext.SaveChangesAsync();
 
@@ -423,11 +451,14 @@ public class AdministrationMemberFinanceChargeTests
             NullLogger<UserManager<ApplicationUser>>.Instance);
 
         var model = new RegisterPaymentModel(dbContext, new PaymentService(dbContext), userManager);
+        var financeModel = new FinanceIndexModel(dbContext);
 
         var result = await model.OnGetAsync(memberId, null, CancellationToken.None);
+        await financeModel.OnGetAsync(CancellationToken.None);
 
         Assert.IsType<PageResult>(result);
-        Assert.Equal(120m, model.CurrentCashAmount);
+        Assert.Equal(570m, model.CurrentCashAmount);
+        Assert.Equal(model.CurrentCashAmount, financeModel.Summary.CurrentCashAmount);
     }
 
     [Fact]

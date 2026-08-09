@@ -204,21 +204,8 @@ public class RegisterPaymentModel : PageModel
             })
             .ToList();
 
-        var cashPayments = (await _dbContext.Payments
-            .AsNoTracking()
-            .Where(payment => payment.CancelledAtUtc == null && payment.PaymentMethod == PaymentMethod.Cash)
-            .Select(payment => payment.Amount)
-            .ToListAsync(cancellationToken))
-            .Sum();
-
-        var activeExpenses = (await _dbContext.Expenses
-            .AsNoTracking()
-            .Where(expense => !expense.IsCancelled)
-            .Select(expense => expense.Amount)
-            .ToListAsync(cancellationToken))
-            .Sum();
-
-        CurrentCashAmount = cashPayments - activeExpenses;
+        var cashSnapshot = await FinanceCashCalculator.CalculateAsync(_dbContext, DateTime.Today.Year, cancellationToken);
+        CurrentCashAmount = cashSnapshot.CurrentCashAmount;
 
         return true;
     }

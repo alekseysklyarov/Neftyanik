@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Infrastructure.Data;
+using Neftyanik.Portal.Web.Pages.Finance;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Finance;
 
@@ -45,20 +46,7 @@ public class IndexModel : PageModel
 
         CurrentYear = DateTime.Today.Year;
         var currentYearStart = new DateOnly(CurrentYear, 1, 1);
-        var cashInitializationSettingValue = await _dbContext.SystemSettings
-            .AsNoTracking()
-            .Where(setting => setting.Key == CashInitializationSettingSerializer.SettingKey)
-            .Select(setting => setting.Value)
-            .FirstOrDefaultAsync(cancellationToken);
-        var cashInitialization = CashInitializationSettingSerializer.Deserialize(cashInitializationSettingValue);
-        var initializedCashAmount = cashInitialization?.Amount ?? 0m;
-        var initializedAdvancePaymentsAmount = cashInitialization?.AdvancePaymentsAmount ?? 0m;
-        var openingYearInitializedCashAmount = cashInitialization is not null && cashInitialization.AcceptedAt < currentYearStart
-            ? cashInitialization.Amount
-            : 0m;
-        var openingYearInitializedAdvancePaymentsAmount = cashInitialization is not null && cashInitialization.AcceptedAt < currentYearStart
-            ? cashInitialization.AdvancePaymentsAmount
-            : 0m;
+        var cashSnapshot = await FinanceCashCalculator.CalculateAsync(_dbContext, CurrentYear, cancellationToken);
 
         var plots = await _dbContext.Plots
             .AsNoTracking()
@@ -180,19 +168,6 @@ public class IndexModel : PageModel
 
         var totalActiveCharges = activeCharges.Sum(charge => charge.Amount);
         var totalActivePayments = activePayments.Sum(payment => payment.Amount);
-        var totalCashPayments = activePayments
-            .Where(payment => payment.PaymentMethod == Domain.Enums.PaymentMethod.Cash)
-            .Sum(payment => payment.Amount);
-        var totalNonCashPayments = activePayments
-            .Where(payment => payment.PaymentMethod != Domain.Enums.PaymentMethod.Cash)
-            .Sum(payment => payment.Amount);
-        var openingYearCashPayments = activePayments
-            .Where(payment => payment.PaymentMethod == Domain.Enums.PaymentMethod.Cash && payment.PaymentDate < currentYearStart)
-            .Sum(payment => payment.Amount);
-        var totalActiveExpenses = activeExpenses.Sum(expense => expense.Amount);
-        var openingYearExpenses = activeExpenses
-            .Where(expense => expense.ExpenseDate < currentYearStart)
-            .Sum(expense => expense.Amount);
         var openingYearCharges = activeCharges
             .Where(charge => charge.ChargeDate < currentYearStart)
             .Sum(charge => charge.Amount);
@@ -210,10 +185,10 @@ public class IndexModel : PageModel
         {
             TotalActiveCharges = totalActiveCharges,
             TotalActivePayments = totalActivePayments,
-            CurrentCashAmount = initializedCashAmount + totalActivePayments - totalActiveExpenses - initializedAdvancePaymentsAmount,
-            CurrentCashOnlyAmount = initializedCashAmount + totalCashPayments - totalActiveExpenses - initializedAdvancePaymentsAmount,
-            CurrentNonCashAmount = totalNonCashPayments,
-            OpeningYearCashAmount = openingYearInitializedCashAmount + openingYearCashPayments - openingYearExpenses - openingYearInitializedAdvancePaymentsAmount,
+            CurrentCashAmount = cashSnapshot.CurrentCashAmount,
+            CurrentCashOnlyAmount = cashSnapshot.CurrentCashOnlyAmount,
+            CurrentNonCashAmount = cashSnapshot.CurrentNonCashAmount,
+            OpeningYearCashAmount = cashSnapshot.OpeningYearCashAmount,
             CurrentYearCharges = currentYearCharges,
             OpeningYearDebt = Math.Max(openingYearCharges - openingYearPayments, 0m),
             CurrentYearDebt = Math.Max(currentYearCharges - currentYearPayments, 0m),
