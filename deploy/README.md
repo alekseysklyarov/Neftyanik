@@ -11,7 +11,7 @@ The stack contains:
 - `sqlserver` - SQL Server 2022 Linux container with persistent storage;
 - `caddy` - reverse proxy with public ports `80` and `443`.
 
-Only `caddy` publishes host ports. `web` and `sqlserver` stay on the private Compose network.
+`caddy` publishes the public HTTP and HTTPS ports. `web` stays on the private Compose network, and `sqlserver` is exposed only on `127.0.0.1:1433` for the existing SSH tunnel workflow.
 
 Local Development execution remains unchanged. Visual Studio and `dotnet run` continue using the existing Development configuration and the local Development database.
 
@@ -21,9 +21,14 @@ Prepare an Ubuntu host with:
 
 - Docker Engine;
 - Docker Compose plugin (`docker compose`);
-- a public DNS record pointing the production domain to the host;
-- inbound TCP ports `80` and `443` open to the host;
+- inbound TCP port `80` open to the host;
+- inbound TCP port `443` open to the host when HTTPS is enabled for a domain deployment;
 - enough disk space for SQL Server and Caddy named volumes.
+
+Deployment modes:
+
+- temporary IP-only deployment over plain HTTP without a domain;
+- future domain deployment with Caddy-managed HTTPS.
 
 ## Required environment variables
 
@@ -36,11 +41,30 @@ nano deploy/.env
 
 Required variables:
 
-- `DOMAIN` - public DNS name used by Caddy automatic HTTPS;
+- `SITE_ADDRESS` - Caddy site address. Use `:80` for the current IP-only HTTP deployment, or a domain such as `example.com` for normal Caddy-managed HTTPS;
+- `REQUIRE_HTTPS` - ASP.NET Core HTTPS enforcement toggle. Use `false` for the current IP-only HTTP deployment, and `true` when a domain is configured for HTTPS;
 - `MSSQL_SA_PASSWORD` - strong SQL Server SA password;
 - `DB_NAME` - application database name.
 
 Optional variables are included only for explicit bootstrap commands such as `create-admin`.
+
+Example values:
+
+Current IP-only deployment:
+
+```env
+SITE_ADDRESS=:80
+REQUIRE_HTTPS=false
+```
+
+Future domain deployment:
+
+```env
+SITE_ADDRESS=example.com
+REQUIRE_HTTPS=true
+```
+
+Re-enable HTTPS enforcement and secure cookies when a domain is configured.
 
 ## Validate the Compose configuration
 
@@ -51,6 +75,8 @@ docker compose --env-file deploy/.env -f deploy/docker-compose.production.yml co
 ```
 
 If the trusted reverse-proxy IP or subnet is changed later, update the matching `ReverseProxy__Known*` environment values in `deploy/docker-compose.production.yml` before deployment.
+
+The Compose file keeps SQL Server off the public network. Host access for the existing SSH tunnel is limited to `127.0.0.1:1433:1433`.
 
 ## Build the containers
 

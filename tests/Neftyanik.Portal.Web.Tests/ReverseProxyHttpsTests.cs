@@ -65,6 +65,44 @@ public class ReverseProxyHttpsTests
     }
 
     [Fact]
+    public async Task GetLogin_InProductionWithHttpsDisabled_WorksOverHttpWithoutRedirect()
+    {
+        using var factory = CreateProductionFactory(new Dictionary<string, string?>
+        {
+            ["Security:RequireHttps"] = "false"
+        });
+        using var client = factory.CreateAnonymousClient();
+
+        using var response = await client.GetAsync("/Account/Login");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Null(response.Headers.Location);
+    }
+
+    [Fact]
+    public async Task GetLogin_InProductionWithHttpsDisabled_GeneratesAntiforgeryCookieWithoutSecureFlag()
+    {
+        using var factory = CreateProductionFactory(new Dictionary<string, string?>
+        {
+            ["Security:RequireHttps"] = "false"
+        });
+        using var client = factory.CreateAnonymousClient();
+
+        using var response = await client.GetAsync("/Account/Login");
+        var content = await response.Content.ReadAsStringAsync();
+        var setCookieHeaders = response.Headers.TryGetValues("Set-Cookie", out var values)
+            ? values.ToArray()
+            : Array.Empty<string>();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("__RequestVerificationToken", content);
+        Assert.Contains(setCookieHeaders, value => value.Contains(".AspNetCore.Antiforgery.", StringComparison.Ordinal));
+        Assert.DoesNotContain(setCookieHeaders, value =>
+            value.Contains(".AspNetCore.Antiforgery.", StringComparison.Ordinal)
+            && value.Contains("secure", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public async Task GetLogin_InTesting_WorksOverHttp()
     {
         using var factory = new PortalWebApplicationFactory();
@@ -86,10 +124,20 @@ public class ReverseProxyHttpsTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    private static PortalWebApplicationFactory CreateProductionFactory()
+    private static PortalWebApplicationFactory CreateProductionFactory(IReadOnlyDictionary<string, string?>? additionalConfiguration = null)
     {
+        var configuration = new Dictionary<string, string?>(ProductionReverseProxyConfiguration);
+
+        if (additionalConfiguration is not null)
+        {
+            foreach (var entry in additionalConfiguration)
+            {
+                configuration[entry.Key] = entry.Value;
+            }
+        }
+
         return new PortalWebApplicationFactory(
             environmentName: "Production",
-            additionalConfiguration: ProductionReverseProxyConfiguration);
+            additionalConfiguration: configuration);
     }
 }

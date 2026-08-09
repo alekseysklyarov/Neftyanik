@@ -1,5 +1,5 @@
 {$DOMAIN} {
-{$DOMAIN} {
+{$SITE_ADDRESS} {
     encode zstd gzip
 
     header {

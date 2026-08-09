@@ -34,21 +34,16 @@ var razorPagesRootDirectory = Directory.Exists(Path.Combine(builder.Environment.
     : "/Pages";
 
 var dataProtectionKeysDirectory = builder.Configuration["DataProtection:KeysDirectory"];
-var requireSecureCookies = !builder.Environment.IsDevelopment() && !builder.Environment.IsEnvironment("Testing");
 
 builder.Services.AddRazorPages(options =>
 {
     options.RootDirectory = razorPagesRootDirectory;
 });
 builder.Services.AddControllersWithViews();
-
-if (builder.Environment.IsProduction())
+builder.Services.AddHttpsRedirection(options =>
 {
-    builder.Services.AddHttpsRedirection(options =>
-    {
-        options.HttpsPort = 443;
-    });
-}
+    options.HttpsPort = 443;
+});
 
 var dataProtectionBuilder = builder.Services
     .AddDataProtection()
@@ -76,6 +71,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
+    var requireSecureCookies = IsHttpsRequired(builder.Configuration, builder.Environment);
     options.LoginPath = "/Account/Login";
     options.LogoutPath = "/Account/Logout";
     options.AccessDeniedPath = "/Account/AccessDenied";
@@ -87,6 +83,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 builder.Services.Configure<CookiePolicyOptions>(options =>
 {
+    var requireSecureCookies = IsHttpsRequired(builder.Configuration, builder.Environment);
     options.HttpOnly = HttpOnlyPolicy.Always;
     options.MinimumSameSitePolicy = SameSiteMode.Lax;
     options.Secure = requireSecureCookies ? CookieSecurePolicy.Always : CookieSecurePolicy.SameAsRequest;
@@ -94,6 +91,7 @@ builder.Services.Configure<CookiePolicyOptions>(options =>
 
 builder.Services.AddAntiforgery(options =>
 {
+    var requireSecureCookies = IsHttpsRequired(builder.Configuration, builder.Environment);
     options.Cookie.HttpOnly = true;
     options.Cookie.SecurePolicy = requireSecureCookies ? CookieSecurePolicy.Always : CookieSecurePolicy.SameAsRequest;
     options.Cookie.SameSite = SameSiteMode.Lax;
@@ -109,6 +107,7 @@ builder.Services.AddAuthorization(options =>
 });
 
 var app = builder.Build();
+var requireHttps = IsHttpsRequired(app.Configuration, app.Environment);
 
 if (IsLegacyElectricityImportCommand(args))
 {
@@ -146,12 +145,20 @@ app.UseForwardedHeaders();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
-    app.UseHsts();
+
+    if (requireHttps)
+    {
+        app.UseHsts();
+    }
 }
 
-app.UseWhen(
-    context => !context.Request.Path.StartsWithSegments("/health"),
-    branch => branch.UseHttpsRedirection());
+if (requireHttps)
+{
+    app.UseWhen(
+        context => !context.Request.Path.StartsWithSegments("/health"),
+        branch => branch.UseHttpsRedirection());
+}
+
 app.UseCookiePolicy();
 app.UseRequestLocalization(LocalizationConfiguration.CreateOptions());
 app.UseStaticFiles();
@@ -185,6 +192,12 @@ static bool IsMigrateDatabaseCommand(string[] arguments)
 static bool IsLegacyElectricityImportCommand(string[] arguments)
 {
     return arguments.Any(argument => string.Equals(argument, "--import-legacy-electricity", StringComparison.OrdinalIgnoreCase));
+}
+
+static bool IsHttpsRequired(IConfiguration configuration, IWebHostEnvironment environment)
+{
+    return configuration.GetValue<bool?>("Security:RequireHttps")
+        ?? environment.IsProduction();
 }
 
 static async Task<int> ExecuteLegacyElectricityImportCommandAsync(WebApplication app, string[] arguments)
