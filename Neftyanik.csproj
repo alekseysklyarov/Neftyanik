@@ -65,6 +65,7 @@
   <ItemGroup>
     <Compile Include="tests\Neftyanik.Portal.Infrastructure.Tests\LegacyElectricityImportTests.cs" />
     <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationAccountantAuthorizationTests.cs" />
+    <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationAssociationTariffTests.cs" />
     <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationExpenseTests.cs" />
     <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationFinanceCashInitializationTests.cs" />
     <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationFinanceSummaryTests.cs" />
