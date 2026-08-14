@@ -9,39 +9,11 @@ The stack contains:
 
 - `web` - ASP.NET Core 8 application on internal port `8080`;
 - `sqlserver` - SQL Server 2022 Linux container with persistent storage;
-- `caddy` - reverse proxy with public port `80` in the current IP-only deployment.
+- `caddy` - reverse proxy with public ports `80` and `443`.
 
-`caddy` currently publishes only the public HTTP port. `web` stays on the private Compose network, and `sqlserver` is exposed only on `127.0.0.1:1433` for the existing SSH tunnel workflow.
+`caddy` publishes public HTTP and HTTPS ports. `web` stays on the private Compose network, and `sqlserver` is exposed only on `127.0.0.1:1433` for the existing SSH tunnel workflow.
 
 Local Development execution remains unchanged. Visual Studio and `dotnet run` continue using the existing Development configuration and the local Development database.
-
-## Current production mode
-
-The confirmed working production setup is currently IP-only HTTP mode:
-
-- `SITE_ADDRESS=:80`
-- `REQUIRE_HTTPS=false`
-- `caddy` publishes only host port `80`
-- host port `443` is intentionally reserved for SSH
-- SQL Server is not publicly exposed
-
-This setup is intentional because the current client network/ISP blocks outbound TCP port `22`, while outbound TCP port `443` is available.
-
-The Debian host currently needs `sshd` to listen on both:
-
-```text
-Port 22
-Port 443
-```
-
-For example, this can be configured on the host in `/etc/ssh/sshd_config.d/10-ports.conf`:
-
-```text
-Port 22
-Port 443
-```
-
-Do not manage `/etc/ssh/sshd_config.d` from Docker Compose or this repository. That is host-level server configuration.
 
 ## Prerequisites
 
@@ -50,13 +22,11 @@ Prepare a Debian or Ubuntu host with:
 - Docker Engine;
 - Docker Compose plugin (`docker compose`);
 - inbound TCP port `80` open to the host;
-- inbound TCP port `443` reachable for SSH in the current deployment, and later available for Caddy when HTTPS is enabled for a domain deployment;
+- inbound TCP port `443` open to the host;
+- inbound UDP port `443` open to the host for HTTP/3;
 - enough disk space for SQL Server and Caddy named volumes.
 
-Deployment modes:
-
-- temporary IP-only deployment over plain HTTP without a domain;
-- future domain deployment with Caddy-managed HTTPS.
+Ports `80` and `443` must be reachable from the Internet so Caddy can obtain and renew HTTPS certificates automatically.
 
 ## Required environment variables
 
@@ -69,8 +39,8 @@ nano deploy/.env
 
 Required variables:
 
-- `SITE_ADDRESS` - Caddy site address. Use `:80` for the current IP-only HTTP deployment, or a domain such as `example.com` for normal Caddy-managed HTTPS;
-- `REQUIRE_HTTPS` - ASP.NET Core HTTPS enforcement toggle. Use `false` for the current IP-only HTTP deployment, and `true` when a domain is configured for HTTPS;
+- `SITE_ADDRESS` - Caddy site address. For production, set `SITE_ADDRESS=dachahub.com.ua` in the untracked `deploy/.env` file;
+- `REQUIRE_HTTPS` - ASP.NET Core HTTPS enforcement toggle. Keep this enabled for the domain-based production deployment;
 - `MSSQL_SA_PASSWORD` - strong SQL Server SA password;
 - `DB_NAME` - application database name.
 
@@ -78,36 +48,34 @@ Optional variables are included only for explicit bootstrap commands such as `cr
 
 Example values:
 
-Current IP-only deployment:
-
-```env
-SITE_ADDRESS=:80
-REQUIRE_HTTPS=false
-```
-
-In this mode, Caddy serves plain HTTP on port `80` only, and host port `443` remains reserved for SSH access.
-
-Future domain deployment:
+Tracked template in `deploy/.env.example`:
 
 ```env
 SITE_ADDRESS=example.com
 REQUIRE_HTTPS=true
 ```
 
-Re-enable HTTPS enforcement and secure cookies when a domain is configured.
+Real production values in the untracked `deploy/.env`:
+
+```env
+SITE_ADDRESS=dachahub.com.ua
+REQUIRE_HTTPS=true
+```
+
+Do not commit the real production domain value in `deploy/.env`.
 
 ## SSH access and SQL Server tunnel
 
-Connect to the Debian host over SSH on port `443`:
+Connect to the Debian host over its configured SSH port:
 
 ```sh
-ssh -p 443 root@SERVER_IP
+ssh -p SSH_PORT root@SERVER_IP
 ```
 
 To access SQL Server securely from a workstation, create an SSH tunnel:
 
 ```sh
-ssh -p 443 -L 14330:127.0.0.1:1433 root@SERVER_IP
+ssh -p SSH_PORT -L 14330:127.0.0.1:1433 root@SERVER_IP
 ```
 
 Then connect from SSMS to:
@@ -123,31 +91,20 @@ localhost,14330
 Validate the resolved configuration before deployment:
 
 ```sh
-docker compose --env-file deploy/.env -f deploy/docker-compose.production.yml config
+docker compose --env-file deploy/.env.example -f deploy/docker-compose.production.yml config
 ```
 
 If the trusted reverse-proxy IP or subnet is changed later, update the matching `ReverseProxy__Known*` environment values in `deploy/docker-compose.production.yml` before deployment.
 
 The Compose file keeps SQL Server off the public network. Host access for the existing SSH tunnel is limited to `127.0.0.1:1433:1433`.
 
-The current public port mapping is only:
+The public Caddy port mappings are:
 
 ```text
 80:80
+443:443
+443:443/udp
 ```
-
-Do not add `443:443` back while SSH is using host port `443`.
-
-## Future domain and HTTPS mode
-
-When a real domain is configured later:
-
-- set `SITE_ADDRESS` to the domain name;
-- set `REQUIRE_HTTPS=true`;
-- restore host port `443` for `caddy` so it can terminate HTTPS;
-- move SSH away from host port `443` to another reachable port first.
-
-Do not configure both Caddy HTTPS and SSH on host port `443` simultaneously.
 
 ## Build the containers
 
