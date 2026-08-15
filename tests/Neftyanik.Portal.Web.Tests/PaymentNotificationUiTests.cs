@@ -200,23 +200,25 @@ public sealed class PaymentNotificationUiTests
         });
     }
 
-    [Fact]
-    public async Task GetAdministrationLayout_ForAdministrator_ShowsBellAndPendingCount()
+    [Theory]
+    [InlineData(RoleNames.Administrator)]
+    [InlineData(RoleNames.Accountant)]
+    public async Task GetAdministrationLayout_ForAdministratorOrAccountant_ShowsBellAndPendingCount(string role)
     {
         using var factory = new PortalWebApplicationFactory();
-        const string adminUserId = "admin-user";
-        await SeedUserAsync(factory, adminUserId, "admin@example.com");
+        const string financeUserId = "finance-user";
+        await SeedUserAsync(factory, financeUserId, "finance@example.com");
         await SeedMemberAsync(factory, 1, "member-user", "Member One");
         await factory.ExecuteDbContextAsync(async dbContext =>
         {
             dbContext.PaymentNotifications.AddRange(
                 new PaymentNotification { MemberId = 1, Amount = 10m, PaymentMethod = PaymentMethod.Cash, Status = PaymentNotificationStatus.Pending },
                 new PaymentNotification { MemberId = 1, Amount = 20m, PaymentMethod = PaymentMethod.Cash, Status = PaymentNotificationStatus.Pending },
-                new PaymentNotification { MemberId = 1, Amount = 30m, PaymentMethod = PaymentMethod.Cash, Status = PaymentNotificationStatus.Confirmed, ReviewedAtUtc = DateTimeOffset.UtcNow, ReviewedByUserId = adminUserId });
+                new PaymentNotification { MemberId = 1, Amount = 30m, PaymentMethod = PaymentMethod.Cash, Status = PaymentNotificationStatus.Confirmed, ReviewedAtUtc = DateTimeOffset.UtcNow, ReviewedByUserId = financeUserId });
             await dbContext.SaveChangesAsync();
         });
 
-        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(adminUserId, RoleNames.Administrator), cultureName: "ru-RU");
+        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(financeUserId, role), cultureName: "ru-RU");
         var response = await client.GetAsync("/Administration");
         var html = await response.ReadDecodedHtmlAsync();
 
@@ -226,49 +228,53 @@ public sealed class PaymentNotificationUiTests
         Assert.Contains(">2<", html, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public async Task GetAdministrationLayout_WhenNoPendingNotifications_HidesBellBadge_AndMemberDoesNotSeeBell()
+    [Theory]
+    [InlineData(RoleNames.Administrator)]
+    [InlineData(RoleNames.Accountant)]
+    public async Task GetAdministrationLayout_WhenNoPendingNotifications_HidesBellBadge_AndMemberDoesNotSeeBell(string role)
     {
         using var factory = new PortalWebApplicationFactory();
-        const string adminUserId = "admin-user";
+        const string financeUserId = "finance-user";
         const string memberUserId = "member-user";
-        await SeedUserAsync(factory, adminUserId, "admin@example.com");
+        await SeedUserAsync(factory, financeUserId, "finance@example.com");
         await SeedMemberAsync(factory, 1, memberUserId, "Member One");
 
-        using var adminClient = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(adminUserId, RoleNames.Administrator), cultureName: "ru-RU");
-        var adminHtml = await (await adminClient.GetAsync("/Administration")).ReadDecodedHtmlAsync();
-        Assert.Contains("id=\"payment-notification-bell\"", adminHtml, StringComparison.Ordinal);
-        Assert.DoesNotContain("id=\"payment-notification-bell-count\"", adminHtml, StringComparison.Ordinal);
+        using var financeClient = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(financeUserId, role), cultureName: "ru-RU");
+        var financeHtml = await (await financeClient.GetAsync("/Administration")).ReadDecodedHtmlAsync();
+        Assert.Contains("id=\"payment-notification-bell\"", financeHtml, StringComparison.Ordinal);
+        Assert.DoesNotContain("id=\"payment-notification-bell-count\"", financeHtml, StringComparison.Ordinal);
 
         using var memberClient = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(memberUserId, RoleNames.Member), cultureName: "ru-RU");
         var memberHtml = await (await memberClient.GetAsync("/Member")).ReadDecodedHtmlAsync();
         Assert.DoesNotContain("id=\"payment-notification-bell\"", memberHtml, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public async Task GetAdministrationPaymentNotifications_DefaultsToPending_AndMemberCannotAccess()
+    [Theory]
+    [InlineData(RoleNames.Administrator)]
+    [InlineData(RoleNames.Accountant)]
+    public async Task GetAdministrationPaymentNotifications_DefaultsToPending_AndMemberCannotAccess(string role)
     {
         using var factory = new PortalWebApplicationFactory();
-        const string adminUserId = "admin-user";
+        const string financeUserId = "finance-user";
         const string memberUserId = "member-user";
-        await SeedUserAsync(factory, adminUserId, "admin@example.com");
+        await SeedUserAsync(factory, financeUserId, "finance@example.com");
         await SeedMemberAsync(factory, 1, memberUserId, "Member One");
         await factory.ExecuteDbContextAsync(async dbContext =>
         {
             dbContext.PaymentNotifications.AddRange(
                 new PaymentNotification { MemberId = 1, Amount = 10m, PaymentMethod = PaymentMethod.Cash, Status = PaymentNotificationStatus.Pending, Description = "Pending item", CreatedAtUtc = DateTimeOffset.UtcNow.AddHours(-2) },
-                new PaymentNotification { MemberId = 1, Amount = 20m, PaymentMethod = PaymentMethod.Cash, Status = PaymentNotificationStatus.Confirmed, Description = "Confirmed item", CreatedAtUtc = DateTimeOffset.UtcNow.AddHours(-1), ReviewedAtUtc = DateTimeOffset.UtcNow, ReviewedByUserId = adminUserId });
+                new PaymentNotification { MemberId = 1, Amount = 20m, PaymentMethod = PaymentMethod.Cash, Status = PaymentNotificationStatus.Confirmed, Description = "Confirmed item", CreatedAtUtc = DateTimeOffset.UtcNow.AddHours(-1), ReviewedAtUtc = DateTimeOffset.UtcNow, ReviewedByUserId = financeUserId });
             await dbContext.SaveChangesAsync();
         });
 
-        using var adminClient = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(adminUserId, RoleNames.Administrator), allowAutoRedirect: false, cultureName: "ru-RU");
-        var defaultResponse = await adminClient.GetAsync("/Administration/Finance/PaymentNotifications");
+        using var financeClient = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(financeUserId, role), allowAutoRedirect: false, cultureName: "ru-RU");
+        var defaultResponse = await financeClient.GetAsync("/Administration/Finance/PaymentNotifications");
         var defaultHtml = await defaultResponse.ReadDecodedHtmlAsync();
         Assert.Equal(HttpStatusCode.OK, defaultResponse.StatusCode);
         Assert.Contains("Pending item", defaultHtml, StringComparison.Ordinal);
         Assert.DoesNotContain("Confirmed item", defaultHtml, StringComparison.Ordinal);
 
-        var filteredResponse = await adminClient.GetAsync("/Administration/Finance/PaymentNotifications?status=Confirmed");
+        var filteredResponse = await financeClient.GetAsync("/Administration/Finance/PaymentNotifications?status=Confirmed");
         var filteredHtml = await filteredResponse.ReadDecodedHtmlAsync();
         Assert.Contains("Confirmed item", filteredHtml, StringComparison.Ordinal);
         Assert.DoesNotContain("Pending item", filteredHtml, StringComparison.Ordinal);
@@ -279,16 +285,18 @@ public sealed class PaymentNotificationUiTests
         Assert.StartsWith("http://localhost/Account/AccessDenied", memberResponse.Headers.Location?.OriginalString, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public async Task GetAdministrationPaymentNotifications_ReturnsOk_ForEmptyAndOptionalNotificationShapes()
+    [Theory]
+    [InlineData(RoleNames.Administrator)]
+    [InlineData(RoleNames.Accountant)]
+    public async Task GetAdministrationPaymentNotifications_ReturnsOk_ForEmptyAndOptionalNotificationShapes(string role)
     {
         using var factory = new PortalWebApplicationFactory();
-        const string adminUserId = "admin-user";
-        await SeedUserAsync(factory, adminUserId, "admin@example.com");
+        const string financeUserId = "finance-user";
+        await SeedUserAsync(factory, financeUserId, "finance@example.com");
         await SeedMemberWithFinanceAsync(factory, 1, "member-with-plot", 101, 200m);
         await SeedMemberAsync(factory, 2, "member-without-plot", "Member Without Plot");
 
-        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(adminUserId, RoleNames.Administrator), allowAutoRedirect: false, cultureName: "ru-RU");
+        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(financeUserId, role), allowAutoRedirect: false, cultureName: "ru-RU");
 
         var emptyResponse = await client.GetAsync("/Administration/Finance/PaymentNotifications");
         var emptyHtml = await emptyResponse.ReadDecodedHtmlAsync();
@@ -305,7 +313,7 @@ public sealed class PaymentNotificationUiTests
                 PaymentDate = new DateOnly(2026, 8, 1),
                 Amount = 50m,
                 PaymentMethod = PaymentMethod.BankTransfer,
-                CreatedByUserId = adminUserId,
+                CreatedByUserId = financeUserId,
                 CreatedAtUtc = DateTime.UtcNow
             });
 
@@ -333,7 +341,7 @@ public sealed class PaymentNotificationUiTests
                     Description = "Confirmed item",
                     PaymentId = 5001,
                     ReviewedAtUtc = DateTimeOffset.UtcNow.AddMinutes(-20),
-                    ReviewedByUserId = adminUserId,
+                    ReviewedByUserId = financeUserId,
                     CreatedAtUtc = DateTimeOffset.UtcNow.AddHours(-1)
                 },
                 new PaymentNotification
@@ -346,7 +354,7 @@ public sealed class PaymentNotificationUiTests
                     Description = "Rejected item",
                     AdministratorComment = "Причина отклонения",
                     ReviewedAtUtc = DateTimeOffset.UtcNow.AddMinutes(-10),
-                    ReviewedByUserId = adminUserId,
+                    ReviewedByUserId = financeUserId,
                     CreatedAtUtc = DateTimeOffset.UtcNow.AddMinutes(-30)
                 });
             await dbContext.SaveChangesAsync();
@@ -378,12 +386,14 @@ public sealed class PaymentNotificationUiTests
         Assert.DoesNotContain("Confirmed item", invalidStatusHtml, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public async Task PostAdministrationPaymentNotificationConfirm_CreatesPaymentAndProcessedNotificationsHideActions()
+    [Theory]
+    [InlineData(RoleNames.Administrator)]
+    [InlineData(RoleNames.Accountant)]
+    public async Task PostAdministrationPaymentNotificationConfirm_CreatesPaymentAndProcessedNotificationsHideActions(string role)
     {
         using var factory = new PortalWebApplicationFactory();
-        const string adminUserId = "admin-user";
-        await SeedUserAsync(factory, adminUserId, "admin@example.com");
+        const string financeUserId = "finance-user";
+        await SeedUserAsync(factory, financeUserId, "finance@example.com");
         await SeedMemberWithFinanceAsync(factory, 1, "member-user", 101, 200m);
 
         await factory.ExecuteDbContextAsync(async dbContext =>
@@ -401,7 +411,7 @@ public sealed class PaymentNotificationUiTests
             await dbContext.SaveChangesAsync();
         });
 
-        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(adminUserId, RoleNames.Administrator), allowAutoRedirect: false, cultureName: "ru-RU");
+        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(financeUserId, role), allowAutoRedirect: false, cultureName: "ru-RU");
         var token = await GetAntiforgeryTokenAsync(client, "/Administration/Finance/PaymentNotifications");
 
         var response = await client.PostAsync(
@@ -428,12 +438,14 @@ public sealed class PaymentNotificationUiTests
         Assert.DoesNotContain("data-bs-target=\"#reject-notification-1001\"", processedHtml, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public async Task PostAdministrationPaymentNotificationReject_StoresReason_AndRequiresAntiforgery()
+    [Theory]
+    [InlineData(RoleNames.Administrator)]
+    [InlineData(RoleNames.Accountant)]
+    public async Task PostAdministrationPaymentNotificationReject_StoresReason_AndRequiresAntiforgery(string role)
     {
         using var factory = new PortalWebApplicationFactory();
-        const string adminUserId = "admin-user";
-        await SeedUserAsync(factory, adminUserId, "admin@example.com");
+        const string financeUserId = "finance-user";
+        await SeedUserAsync(factory, financeUserId, "finance@example.com");
         await SeedMemberWithFinanceAsync(factory, 1, "member-user", 101, 200m);
 
         await factory.ExecuteDbContextAsync(async dbContext =>
@@ -450,7 +462,7 @@ public sealed class PaymentNotificationUiTests
             await dbContext.SaveChangesAsync();
         });
 
-        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(adminUserId, RoleNames.Administrator), allowAutoRedirect: false, cultureName: "ru-RU");
+        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(financeUserId, role), allowAutoRedirect: false, cultureName: "ru-RU");
 
         var badResponse = await client.PostAsync(
             "/Administration/Finance/PaymentNotifications?handler=Reject&status=Pending",

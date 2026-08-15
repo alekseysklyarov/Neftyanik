@@ -75,7 +75,7 @@
                         </li>
                         @if (User.Identity?.IsAuthenticated == true)
                         {
-                            @if (isAdministrator)
+                            @if (canAccessAdministration)
                             {
                                 <li class="nav-item me-lg-2">
                                     @await Component.InvokeAsync("PaymentNotificationBell")

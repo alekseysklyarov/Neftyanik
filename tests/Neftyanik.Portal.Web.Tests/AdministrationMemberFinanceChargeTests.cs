@@ -457,7 +457,7 @@ public class AdministrationMemberFinanceChargeTests
         await financeModel.OnGetAsync(CancellationToken.None);
 
         Assert.IsType<PageResult>(result);
-        Assert.Equal(570m, model.CurrentCashAmount);
+        Assert.Equal(545m, model.CurrentCashAmount);
         Assert.Equal(model.CurrentCashAmount, financeModel.Summary.CurrentCashAmount);
     }
 

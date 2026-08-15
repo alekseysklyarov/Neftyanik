@@ -172,8 +172,8 @@ public class AdministrationFinanceSummaryTests
         await model.OnGetAsync(CancellationToken.None);
 
         Assert.Equal(currentYear, model.CurrentYear);
-        Assert.Equal(90m, model.Summary.CurrentCashAmount);
-        Assert.Equal(40m, model.Summary.CurrentCashOnlyAmount);
+        Assert.Equal(80m, model.Summary.CurrentCashAmount);
+        Assert.Equal(30m, model.Summary.CurrentCashOnlyAmount);
         Assert.Equal(50m, model.Summary.CurrentNonCashAmount);
         Assert.Equal(0m, model.Summary.OpeningYearCashAmount);
         Assert.Equal(200m, model.Summary.CurrentYearCharges);

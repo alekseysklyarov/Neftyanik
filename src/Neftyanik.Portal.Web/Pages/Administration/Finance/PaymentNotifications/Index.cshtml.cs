@@ -12,7 +12,7 @@ using Neftyanik.Portal.Web.Localization;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Finance.PaymentNotifications;
 
-[Authorize(Roles = RoleNames.Administrator)]
+[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
 public class IndexModel : PageModel
 {
     private readonly IPaymentNotificationService _paymentNotificationService;

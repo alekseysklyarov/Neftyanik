@@ -17,6 +17,7 @@ internal static class FinanceCashCalculator
             .FirstOrDefaultAsync(cancellationToken);
         var cashInitialization = CashInitializationSettingSerializer.Deserialize(cashInitializationSettingValue);
         var initializationAmount = cashInitialization?.Amount ?? 0m;
+        var advancePaymentsAmount = cashInitialization?.AdvancePaymentsAmount ?? 0m;
         var initializationAcceptedAt = cashInitialization?.AcceptedAt;
 
         var activePayments = await dbContext.Payments
@@ -53,7 +54,7 @@ internal static class FinanceCashCalculator
         var totalExpensesFromInitialization = expensesFromInitialization.Sum(expense => expense.Amount);
 
         var openingYearInitializationAmount = cashInitialization is not null && cashInitialization.AcceptedAt < currentYearStart
-            ? cashInitialization.Amount
+            ? cashInitialization.Amount - cashInitialization.AdvancePaymentsAmount
             : 0m;
         var openingYearPayments = activePayments
             .Where(payment => payment.PaymentDate < currentYearStart
@@ -65,11 +66,11 @@ internal static class FinanceCashCalculator
             .Sum(expense => expense.Amount);
 
         return new FinanceCashSnapshot(
-            initializationAmount + totalPaymentsFromInitialization - totalExpensesFromInitialization,
-            initializationAmount + totalCashPaymentsFromInitialization - totalExpensesFromInitialization,
+            initializationAmount - advancePaymentsAmount + totalPaymentsFromInitialization - totalExpensesFromInitialization,
+            initializationAmount - advancePaymentsAmount + totalCashPaymentsFromInitialization - totalExpensesFromInitialization,
             totalNonCashPaymentsFromInitialization,
             openingYearInitializationAmount + openingYearPayments - openingYearExpenses,
-            cashInitialization?.AdvancePaymentsAmount ?? 0m,
+            advancePaymentsAmount,
             initializationAcceptedAt);
     }
 
