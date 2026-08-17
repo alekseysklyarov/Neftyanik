@@ -50,6 +50,62 @@
     </div>
 </div>
 
+@if (Model.CanViewUserActivity && Model.UserActivitySummary is not null)
+{
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
+                <div>
+                    <h2 class="h5 mb-1">@AppLocalizer.Get("Активность пользователей", "Активність користувачів", "User activity")</h2>
+                    <p class="text-muted mb-0">@AppLocalizer.Get("Сводка по успешным входам зарегистрированных пользователей.", "Зведення щодо успішних входів зареєстрованих користувачів.", "Summary of successful sign-ins for registered users.")</p>
+                </div>
+                <div>
+                    <a class="btn btn-outline-primary" asp-page="/Administration/UserActivity">@AppLocalizer.Get("Активность пользователей", "Активність користувачів", "User activity")</a>
+                </div>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-sm-6 col-xl-2">
+                    <div class="border rounded p-3 h-100">
+                        <div class="text-muted small">@AppLocalizer.Get("Всего пользователей", "Усього користувачів", "Total users")</div>
+                        <div class="fs-4 fw-semibold">@Model.UserActivitySummary.TotalRegisteredUsers</div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-2">
+                    <div class="border rounded p-3 h-100">
+                        <div class="text-muted small">@AppLocalizer.Get("Хотя бы один вход", "Хоча б один вхід", "Ever logged in")</div>
+                        <div class="fs-4 fw-semibold">@Model.UserActivitySummary.EverLoggedInUsers</div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-2">
+                    <div class="border rounded p-3 h-100">
+                        <div class="text-muted small">@AppLocalizer.Get("Активны сегодня", "Активні сьогодні", "Active today")</div>
+                        <div class="fs-4 fw-semibold">@Model.UserActivitySummary.ActiveTodayUsers</div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-2">
+                    <div class="border rounded p-3 h-100">
+                        <div class="text-muted small">@AppLocalizer.Get("Активны за 7 дней", "Активні за 7 днів", "Active in last 7 days")</div>
+                        <div class="fs-4 fw-semibold">@Model.UserActivitySummary.ActiveLast7DaysUsers</div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-2">
+                    <div class="border rounded p-3 h-100">
+                        <div class="text-muted small">@AppLocalizer.Get("Активны за 30 дней", "Активні за 30 днів", "Active in last 30 days")</div>
+                        <div class="fs-4 fw-semibold">@Model.UserActivitySummary.ActiveLast30DaysUsers</div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-2">
+                    <div class="border rounded p-3 h-100">
+                        <div class="text-muted small">@AppLocalizer.Get("Никогда не входили", "Ніколи не входили", "Never logged in")</div>
+                        <div class="fs-4 fw-semibold">@Model.UserActivitySummary.NeverLoggedInUsers</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 <div class="card shadow-sm">
     <div class="card-body">
         <h2 class="h5">@AppLocalizer.Get("Окружение", "Середовище", "Environment")</h2>

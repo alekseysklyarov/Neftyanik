@@ -32,6 +32,8 @@ public class ApplicationUser : IdentityUser
 
     public List<AuditLog> AuditLogs { get; set; } = [];
 
+public List<UserLoginHistory> UserLoginHistories { get; set; } = [];
+
     public List<Charge> CreatedCharges { get; set; } = [];
 
     public List<AssociationElectricityReading> CreatedAssociationElectricityReadings { get; set; } = [];

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Neftyanik.Portal.Application.Electricity;
+using Neftyanik.Portal.Application.Identity;
 using Neftyanik.Portal.Application.Interfaces;
 using Neftyanik.Portal.Application.LegacyImport;
 using Neftyanik.Portal.Application.Payments;
@@ -23,6 +24,8 @@ namespace Neftyanik.Portal.Infrastructure
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(connectionString));
 
+            services.AddSingleton(TimeProvider.System);
+
             services.Configure<LegacyElectricityImportOptions>(configuration.GetSection(LegacyElectricityImportOptions.SectionName));
 
             // Repositories
@@ -32,6 +35,7 @@ namespace Neftyanik.Portal.Infrastructure
             services.AddScoped<IMemberElectricityService, MemberElectricityService>();
             services.AddScoped<IPaymentService, PaymentService>();
             services.AddScoped<IPaymentNotificationService, PaymentNotificationService>();
+            services.AddScoped<IUserActivityService, UserActivityService>();
             services.AddScoped<LegacyElectricityWorkbookReader>();
             services.AddScoped<LegacyElectricityImportValidator>();
             services.AddScoped<ILegacyElectricityImportExecutionHook, NoOpLegacyElectricityImportExecutionHook>();

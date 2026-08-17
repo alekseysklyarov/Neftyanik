@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Neftyanik.Portal.Application.Identity;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Web.Localization;
 
@@ -12,10 +13,17 @@ namespace Neftyanik.Portal.Web.Pages.Account;
 public class LoginModel : PageModel
 {
     private readonly SignInManager<ApplicationUser> _signInManager;
+    private readonly IUserActivityService _userActivityService;
+    private readonly ILogger<LoginModel> _logger;
 
-    public LoginModel(SignInManager<ApplicationUser> signInManager)
+    public LoginModel(
+        SignInManager<ApplicationUser> signInManager,
+        IUserActivityService userActivityService,
+        ILogger<LoginModel> logger)
     {
         _signInManager = signInManager;
+        _userActivityService = userActivityService;
+        _logger = logger;
     }
 
     [BindProperty]
@@ -54,7 +62,25 @@ public class LoginModel : PageModel
         var signInResult = await _signInManager.PasswordSignInAsync(userName, Input.Password, Input.RememberMe, lockoutOnFailure: false);
         if (signInResult.Succeeded)
         {
-            if (user?.MustChangePassword == true)
+            var signedInUser = user ?? await _signInManager.UserManager.FindByNameAsync(userName);
+            if (signedInUser is not null)
+            {
+                try
+                {
+                    await _userActivityService.RecordSuccessfulLoginAsync(
+                        new RecordSuccessfulLoginRequest(
+                            signedInUser.Id,
+                            HttpContext.Connection.RemoteIpAddress?.ToString(),
+                            Request.Headers.UserAgent.ToString()),
+                        HttpContext.RequestAborted);
+                }
+                catch (Exception exception)
+                {
+                    _logger.LogWarning(exception, "Failed to record successful login activity for user {UserId}.", signedInUser.Id);
+                }
+            }
+
+            if (signedInUser?.MustChangePassword == true)
             {
                 return RedirectToPage("/Account/ChangeInitialPassword");
             }

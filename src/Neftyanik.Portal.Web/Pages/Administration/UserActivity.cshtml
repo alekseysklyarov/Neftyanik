@@ -1,0 +1,121 @@
+@page
+@model Neftyanik.Portal.Web.Pages.Administration.UserActivityModel
+@{
+    ViewData["Title"] = AppLocalizer.Get("Активность пользователей", "Активність користувачів", "User activity");
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h2 mb-1">@AppLocalizer.Get("Активность пользователей", "Активність користувачів", "User activity")</h1>
+        <p class="text-muted mb-0">@AppLocalizer.Get("Статистика успешных входов зарегистрированных пользователей.", "Статистика успішних входів зареєстрованих користувачів.", "Successful sign-in statistics for registered users.")</p>
+    </div>
+    <div>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Index">@AppLocalizer.Get("К панели администрирования", "До панелі адміністрування", "Back to administration")</a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-2">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h2 class="h6 text-muted">@AppLocalizer.Get("Всего пользователей", "Усього користувачів", "Total users")</h2>
+                <p class="display-6 mb-0">@Model.Summary.TotalRegisteredUsers</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-2">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h2 class="h6 text-muted">@AppLocalizer.Get("Хотя бы один вход", "Хоча б один вхід", "Ever logged in")</h2>
+                <p class="display-6 mb-0">@Model.Summary.EverLoggedInUsers</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-2">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h2 class="h6 text-muted">@AppLocalizer.Get("Активны сегодня", "Активні сьогодні", "Active today")</h2>
+                <p class="display-6 mb-0">@Model.Summary.ActiveTodayUsers</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-2">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h2 class="h6 text-muted">@AppLocalizer.Get("Активны за 7 дней", "Активні за 7 днів", "Active in last 7 days")</h2>
+                <p class="display-6 mb-0">@Model.Summary.ActiveLast7DaysUsers</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-2">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h2 class="h6 text-muted">@AppLocalizer.Get("Активны за 30 дней", "Активні за 30 днів", "Active in last 30 days")</h2>
+                <p class="display-6 mb-0">@Model.Summary.ActiveLast30DaysUsers</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-2">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h2 class="h6 text-muted">@AppLocalizer.Get("Никогда не входили", "Ніколи не входили", "Never logged in")</h2>
+                <p class="display-6 mb-0">@Model.Summary.NeverLoggedInUsers</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>@AppLocalizer.Get("Пользователь / член товарищества", "Користувач / член товариства", "User / member")</th>
+                        <th>@AppLocalizer.Get("Логин / email", "Логін / email", "Login / email")</th>
+                        <th>@AppLocalizer.Get("Участки", "Ділянки", "Plots")</th>
+                        <th>@AppLocalizer.Get("Успешных входов", "Успішних входів", "Successful logins")</th>
+                        <th>@AppLocalizer.Get("Последний вход", "Останній вхід", "Last login")</th>
+                        <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Users.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">@AppLocalizer.Get("Зарегистрированные пользователи отсутствуют.", "Зареєстровані користувачі відсутні.", "There are no registered users.")</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var user in Model.Users)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">@user.DisplayName</div>
+                                    @if (!string.IsNullOrWhiteSpace(user.MemberNames) && !string.Equals(user.MemberNames, user.DisplayName, StringComparison.CurrentCulture))
+                                    {
+                                        <div class="text-muted small">@user.MemberNames</div>
+                                    }
+                                </td>
+                                <td>
+                                    <div>@(string.IsNullOrWhiteSpace(user.Login) ? "—" : user.Login)</div>
+                                    @if (!string.IsNullOrWhiteSpace(user.Email) && !string.Equals(user.Email, user.Login, StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <div class="text-muted small">@user.Email</div>
+                                    }
+                                </td>
+                                <td>@(string.IsNullOrWhiteSpace(user.PlotNumbers) ? "—" : user.PlotNumbers)</td>
+                                <td>@user.TotalSuccessfulLogins</td>
+                                <td>@(user.LastLoginAtLocal.HasValue ? user.LastLoginAtLocal.Value.ToString("dd.MM.yyyy HH:mm") : "—")</td>
+                                <td>
+                                    <span class="badge @Model.GetActivityStatusBadgeClass(user.ActivityStatus)">@Model.GetActivityStatusText(user.ActivityStatus)</span>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
