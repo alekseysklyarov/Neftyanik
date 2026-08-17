@@ -51,7 +51,7 @@ host_backup_path="${BACKUP_HOST_DIR}/${backup_filename}"
 run_sql() {
     local sql="$1"
 
-    "${compose[@]}" exec -T "$SQLSERVER_SERVICE_NAME" sh -lc '
+    "${compose[@]}" exec -T "$SQLSERVER_SERVICE_NAME" bash -lc '
         set -euo pipefail
         if [ -x /opt/mssql-tools18/bin/sqlcmd ]; then
             SQLCMD=/opt/mssql-tools18/bin/sqlcmd
@@ -66,11 +66,11 @@ run_sql() {
             -C \
             -b \
             -Q "$1"
-    ' sh "$sql"
+    ' bash "$sql"
 }
 
 log "Ensuring SQL Server backup directory is writable."
-"${compose[@]}" exec -T "$SQLSERVER_SERVICE_NAME" sh -lc '
+"${compose[@]}" exec -T "$SQLSERVER_SERVICE_NAME" bash -lc '
     set -euo pipefail
     mkdir -p /var/opt/mssql/backup
     test -w /var/opt/mssql/backup
