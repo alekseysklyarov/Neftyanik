@@ -51,6 +51,7 @@ services:
       MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD}
     volumes:
       - sqlserver_data:/var/opt/mssql
+      - ./backups/sqlserver:/var/opt/mssql/backup
     healthcheck:
       test:
         [
