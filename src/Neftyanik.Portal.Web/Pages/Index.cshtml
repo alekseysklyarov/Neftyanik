@@ -4,60 +4,98 @@
 @{
     ViewData["Title"] = AppLocalizer.Get("Главная", "Головна", "Home");
     var canAccessAdministration = User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.Accountant);
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+    var heroColumnClass = isAuthenticated ? "col-lg-12 portal-hero-copy" : "col-lg-7 portal-hero-copy";
 }
 
-<div class="p-4 p-md-5 mb-4 bg-light border rounded-3">
-    <div class="container-fluid py-2 px-0">
-        <h1 class="display-6 fw-semibold mb-3">Neftyanik Portal</h1>
-        <p class="lead mb-3">@AppLocalizer.Get("Портал садового товарищества для участников, бухгалтерии и администрации.", "Портал садового товариства для учасників, бухгалтерії та адміністрації.", "Garden association portal for members, accounting staff, and administrators.")</p>
+<section class="portal-card portal-hero mb-4">
+    <div class="row g-4 align-items-center">
+        <div class="@heroColumnClass">
+            <span class="portal-kicker">@AppLocalizer.Get("Садовое товарищество", "Садове товариство", "Garden association")</span>
+            <h1 class="portal-hero-title mt-3 mb-3">Нефтяник</h1>
+            <p class="portal-lead mb-3">@AppLocalizer.Get("Единый портал для учета электроэнергии, платежей, членских взносов и информации по участкам.", "Єдиний портал для обліку електроенергії, платежів, членських внесків та інформації про ділянки.", "A single portal for electricity accounting, payments, membership fees, and plot information.")</p>
 
-        @if (User.Identity?.IsAuthenticated == true)
+            @if (isAuthenticated)
+            {
+                <p class="text-secondary mb-4">@AppLocalizer.Get("Вы вошли в систему и можете перейти к доступным разделам портала.", "Ви увійшли до системи й можете перейти до доступних розділів порталу.", "You are signed in and can open the available portal sections.")</p>
+
+                <div class="portal-actions">
+                    @if (User.IsInRole(RoleNames.Member))
+                    {
+                        <a asp-page="/Member/Index" class="btn btn-primary">@AppLocalizer.Get("Личный кабинет", "Особистий кабінет", "Member dashboard")</a>
+                    }
+
+                    @if (canAccessAdministration)
+                    {
+                        <a asp-page="/Administration/Index" class="btn btn-outline-primary">@AppLocalizer.Get("Панель администратора", "Панель адміністратора", "Administration panel")</a>
+                    }
+                </div>
+            }
+            else
+            {
+                <p class="text-secondary mb-4">@AppLocalizer.Get("Для доступа к защищенным разделам войдите под своей учетной записью.", "Щоб отримати доступ до захищених розділів, увійдіть під своїм обліковим записом.", "Sign in with your account to access protected sections.")</p>
+            }
+        </div>
+        @if (!isAuthenticated)
         {
-            <p class="mb-4">@AppLocalizer.Get("Вы вошли в систему и можете перейти к доступным разделам портала.", "Ви увійшли до системи й можете перейти до доступних розділів порталу.", "You are signed in and can open the available portal sections.")</p>
-
-            <div class="d-flex flex-wrap gap-2">
-                @if (User.IsInRole(RoleNames.Member))
-                {
-                    <a asp-page="/Member/Index" class="btn btn-primary">@AppLocalizer.Get("Личный кабинет", "Особистий кабінет", "Member dashboard")</a>
-                }
-
-                @if (canAccessAdministration)
-                {
-                    <a asp-page="/Administration/Index" class="btn btn-outline-primary">@AppLocalizer.Get("Панель администратора", "Панель адміністратора", "Administration panel")</a>
-                }
+            <div class="col-lg-5">
+                <div class="portal-welcome-panel portal-login-card h-100">
+                    <h2 class="h4 portal-login-title mb-4">@AppLocalizer.Get("Вход в личный кабинет", "Вхід до особистого кабінету", "Sign in to your account")</h2>
+                    <partial name="_LoginForm" model="Model" />
+                </div>
             </div>
         }
-        else
-        {
-            <p class="mb-4">@AppLocalizer.Get("Для доступа к защищенным разделам войдите под своей учетной записью.", "Щоб отримати доступ до захищених розділів, увійдіть під своїм обліковим записом.", "Sign in with your account to access protected sections.")</p>
-            <a asp-page="/Account/Login" class="btn btn-primary">@AppLocalizer.Get("Войти", "Увійти", "Log in")</a>
-        }
     </div>
-</div>
+</section>
 
-<div class="row g-4">
-    <div class="col-md-4">
-        <div class="card h-100 shadow-sm">
-            <div class="card-body">
-                <h2 class="h5">@AppLocalizer.Get("Участникам", "Учасникам", "For members")</h2>
-                <p class="mb-0">@AppLocalizer.Get("Просмотр начислений, платежей и информации по участкам.", "Перегляд нарахувань, платежів та інформації про ділянки.", "View charges, payments, and plot information.")</p>
+<section>
+    <div class="portal-section-heading mb-3">
+        <h2 class="h4 mb-2">@AppLocalizer.Get("Основные возможности", "Основні можливості", "Core features")</h2>
+        <p class="portal-section-subtitle mb-0">@AppLocalizer.Get("Ключевые разделы для ежедневной работы членов товарищества, бухгалтерии и администрации.", "Ключові розділи для щоденної роботи членів товариства, бухгалтерії та адміністрації.", "Key sections for the daily work of members, accounting staff, and administrators.")</p>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="portal-card portal-feature-card">
+                <div class="portal-feature-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M13 2L6 13h5l-1 9 8-12h-5l0-8z" />
+                    </svg>
+                </div>
+                <h3 class="portal-feature-title">@AppLocalizer.Get("Электроэнергия", "Електроенергія", "Electricity")</h3>
+                <p class="portal-feature-text">@AppLocalizer.Get("Учет показаний счетчиков, начислений и истории потребления по участкам.", "Облік показань лічильників, нарахувань та історії споживання по ділянках.", "Meter readings, charges, and consumption history for plots.")</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="portal-card portal-feature-card">
+                <div class="portal-feature-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="6" width="18" height="12" rx="3" />
+                        <path d="M7 10h10" />
+                        <path d="M7 14h6" />
+                    </svg>
+                </div>
+                <h3 class="portal-feature-title">@AppLocalizer.Get("Платежи", "Платежі", "Payments")</h3>
+                <p class="portal-feature-text">@AppLocalizer.Get("Просмотр оплат, задолженности и членских взносов в одном месте.", "Перегляд оплат, заборгованості та членських внесків в одному місці.", "View payments, balances, and membership fees in one place.")</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="portal-card portal-feature-card">
+                <div class="portal-feature-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="4" y="4" width="7" height="7" rx="1.5" />
+                        <rect x="13" y="4" width="7" height="7" rx="1.5" />
+                        <rect x="4" y="13" width="7" height="7" rx="1.5" />
+                        <rect x="13" y="13" width="7" height="7" rx="1.5" />
+                    </svg>
+                </div>
+                <h3 class="portal-feature-title">@AppLocalizer.Get("Участки", "Ділянки", "Plots")</h3>
+                <p class="portal-feature-text">@AppLocalizer.Get("Доступ к данным по участкам, владельцам и связанным начислениям.", "Доступ до даних про ділянки, власників та пов'язані нарахування.", "Access plot, owner, and related charge information.")</p>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card h-100 shadow-sm">
-            <div class="card-body">
-                <h2 class="h5">@AppLocalizer.Get("Бухгалтерии", "Бухгалтерії", "For accounting")</h2>
-                <p class="mb-0">@AppLocalizer.Get("Подготовка к учету платежей, начислений и финансовой отчетности.", "Підготовка до обліку платежів, нарахувань та фінансової звітності.", "Prepare payment accounting, charges, and financial reporting.")</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card h-100 shadow-sm">
-            <div class="card-body">
-                <h2 class="h5">@AppLocalizer.Get("Администрации", "Адміністрації", "For administrators")</h2>
-                <p class="mb-0">@AppLocalizer.Get("Контроль состояния системы и доступ к базовой административной панели.", "Контроль стану системи та доступ до базової адміністративної панелі.", "Monitor the system and access the administration panel.")</p>
-            </div>
-        </div>
-    </div>
-</div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

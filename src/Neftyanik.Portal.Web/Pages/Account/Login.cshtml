@@ -12,30 +12,7 @@
                 <h1 class="h4 mb-0">@AppLocalizer.Get("Вход в систему", "Вхід до системи", "Sign in")</h1>
             </div>
             <div class="card-body">
-                <div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert"></div>
-
-                <form method="post">
-                    <input type="hidden" asp-for="ReturnUrl" />
-
-                    <div class="mb-3">
-                        <label asp-for="Input.Login" class="form-label">@AppLocalizer.Get("Логин", "Логін", "Login")</label>
-                        <input asp-for="Input.Login" class="form-control" autocomplete="username" />
-                        <span asp-validation-for="Input.Login" class="text-danger"></span>
-                    </div>
-
-                    <div class="mb-3">
-                        <label asp-for="Input.Password" class="form-label">@AppLocalizer.Get("Пароль", "Пароль", "Password")</label>
-                        <input asp-for="Input.Password" class="form-control" autocomplete="current-password" />
-                        <span asp-validation-for="Input.Password" class="text-danger"></span>
-                    </div>
-
-                    <div class="form-check mb-3">
-                        <input asp-for="Input.RememberMe" class="form-check-input" />
-                        <label asp-for="Input.RememberMe" class="form-check-label">@AppLocalizer.Get("Запомнить меня", "Запам'ятати мене", "Remember me")</label>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary w-100">@AppLocalizer.Get("Войти", "Увійти", "Log in")</button>
-                </form>
+                <partial name="_LoginForm" model="Model" />
             </div>
         </div>
     </div>

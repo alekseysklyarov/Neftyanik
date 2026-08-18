@@ -25,44 +25,49 @@
     <title>@ViewData["Title"] - @AppLocalizer.Get("Портал Нефтяник", "Портал Нафтовик", "Neftyanik Portal")</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/Neftyanik.Portal.Web.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/Neftyanik.styles.css" asp-append-version="true" />
 </head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom box-shadow mb-4">
+<body class="portal-body">
+    <header class="portal-header border-bottom">
+        <nav class="navbar navbar-expand-lg portal-navbar">
             <div class="container">
-                <a class="navbar-brand fw-semibold" asp-area="" asp-page="/Index">@AppLocalizer.Get("Портал Нефтяник", "Портал Нафтовик", "Neftyanik Portal")</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                <a class="navbar-brand portal-brand" asp-area="" asp-page="/Index">
+                    <span class="portal-brand-line">
+                        <span class="portal-brand-title">Нефтяник</span>
+                        <span class="portal-brand-subtitle">@AppLocalizer.Get("портал товарищества", "портал товариства", "association portal")</span>
+                    </span>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#portalNavbar" aria-controls="portalNavbar"
                         aria-expanded="false" aria-label="@AppLocalizer.Get("Переключить навигацию", "Перемкнути навігацію", "Toggle navigation")">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
+                <div class="navbar-collapse collapse justify-content-between" id="portalNavbar">
+                    <ul class="navbar-nav me-auto mb-3 mb-lg-0 align-items-lg-center">
                         @if (User.IsInRole(RoleNames.Member))
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-page="/Member/Index">@AppLocalizer.Get("Личный кабинет", "Особистий кабінет", "Member dashboard")</a>
+                                <a class="nav-link portal-nav-link" asp-page="/Member/Index">@AppLocalizer.Get("Личный кабинет", "Особистий кабінет", "Member dashboard")</a>
                             </li>
                         }
                         @if (canAccessAdministration)
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-page="/Administration/Index">@AppLocalizer.Get("Администрирование", "Адміністрування", "Administration")</a>
+                                <a class="nav-link portal-nav-link" asp-page="/Administration/Index">@AppLocalizer.Get("Администрирование", "Адміністрування", "Administration")</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-page="/Administration/Plots/Index">@AppLocalizer.Get("Участки", "Ділянки", "Plots")</a>
+                                <a class="nav-link portal-nav-link" asp-page="/Administration/Plots/Index">@AppLocalizer.Get("Участки", "Ділянки", "Plots")</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-page="/Administration/Members/Index">@AppLocalizer.Get("Члены товарищества", "Члени товариства", "Members")</a>
+                                <a class="nav-link portal-nav-link" asp-page="/Administration/Members/Index">@AppLocalizer.Get("Члены товарищества", "Члени товариства", "Members")</a>
                             </li>
-                             <li class="nav-item">
-                                  <a class="nav-link text-dark" asp-page="/Administration/Finance/Index">@AppLocalizer.Get("Финансы", "Фінанси", "Finance")</a>
-                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link portal-nav-link" asp-page="/Administration/Finance/Index">@AppLocalizer.Get("Финансы", "Фінанси", "Finance")</a>
+                            </li>
                         }
                     </ul>
-                    <ul class="navbar-nav align-items-lg-center">
-                        <li class="nav-item me-lg-3">
-                            <form asp-page="/Localization/SetLanguage" method="post" asp-antiforgery="true" class="d-flex align-items-center gap-2">
+                    <ul class="navbar-nav align-items-lg-center gap-2 gap-lg-3">
+                        <li class="nav-item">
+                            <form asp-page="/Localization/SetLanguage" method="post" asp-antiforgery="true" class="d-flex align-items-center gap-2 portal-language-form">
                                 <input type="hidden" name="returnUrl" value="@currentUrl" />
                                 <label class="visually-hidden" for="page-culture-selector">@AppLocalizer.Get("Язык", "Мова", "Language")</label>
                                 <select id="page-culture-selector" name="culture" class="form-select form-select-sm">
@@ -77,23 +82,17 @@
                         {
                             @if (canAccessAdministration)
                             {
-                                <li class="nav-item me-lg-2">
+                                <li class="nav-item">
                                     @await Component.InvokeAsync("PaymentNotificationBell")
                                 </li>
                             }
-                            <li class="nav-item me-lg-2">
-                                <span class="navbar-text text-dark">@userDisplayName</span>
+                            <li class="nav-item">
+                                <span class="navbar-text portal-user-pill">@userDisplayName</span>
                             </li>
                             <li class="nav-item">
                                 <form asp-page="/Account/Logout" method="post" asp-antiforgery="true" class="d-inline">
-                                    <button type="submit" class="btn btn-link nav-link text-dark">@AppLocalizer.Get("Выход", "Вийти", "Log out")</button>
+                                    <button type="submit" class="btn btn-link nav-link portal-nav-link px-0">@AppLocalizer.Get("Выход", "Вийти", "Log out")</button>
                                 </form>
-                            </li>
-                        }
-                        else
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-page="/Account/Login">@AppLocalizer.Get("Вход", "Вхід", "Log in")</a>
                             </li>
                         }
                     </ul>
@@ -101,7 +100,7 @@
             </div>
         </nav>
     </header>
-    <div class="container">
+    <div class="container portal-main-shell">
         @if (!string.IsNullOrWhiteSpace(successMessage))
         {
             <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -118,12 +117,12 @@
             </div>
         }
 
-        <main role="main" class="pb-3">
+        <main role="main" class="portal-main pb-3">
             @RenderBody()
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
+    <footer class="footer portal-footer text-muted">
         <div class="container">
             &copy; 2026 - Neftyanik Portal
         </div>

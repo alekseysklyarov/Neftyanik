@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -73,6 +73,7 @@
     <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationMemberAccountTests.cs" />
     <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationMemberResetPasswordTests.cs" />
     <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationMemberTariffTests.cs" />
+    <Compile Include="tests\Neftyanik.Portal.Web.Tests\HomePageLoginTests.cs" />
     <Compile Include="tests\Neftyanik.Portal.Web.Tests\Infrastructure\ResponseHtmlTestHelper.cs" />
     <Compile Include="tests\Neftyanik.Portal.Web.Tests\PaymentNotificationServiceTests.cs" />
     <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationPlotChargeTests.cs" />
