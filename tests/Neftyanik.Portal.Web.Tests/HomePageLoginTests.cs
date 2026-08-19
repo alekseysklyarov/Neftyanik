@@ -1,7 +1,10 @@
 using System.Net;
+using System.Net;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
 using Xunit;
 
@@ -62,6 +65,34 @@ public class HomePageLoginTests
     }
 
     [Fact]
+    public async Task PostHome_WithAdministratorCredentials_WithoutReturnUrl_RedirectsToAdministration()
+    {
+        using var factory = new PortalWebApplicationFactory();
+        await CreateUserAsync(factory, "admin@example.com", "Pass123!", RoleNames.Administrator);
+        using var client = factory.CreateAnonymousClient();
+        var token = await GetAntiforgeryTokenAsync(client, "/");
+
+        using var response = await client.PostAsync("/", CreateLoginContent(token, "admin@example.com", "Pass123!"));
+
+        Assert.Equal(HttpStatusCode.Found, response.StatusCode);
+        Assert.Equal("/Administration", response.Headers.Location?.OriginalString);
+    }
+
+    [Fact]
+    public async Task PostHome_WithMemberCredentials_WithoutReturnUrl_RedirectsToMember()
+    {
+        using var factory = new PortalWebApplicationFactory();
+        await CreateUserAsync(factory, "member-default@example.com", "Pass123!");
+        using var client = factory.CreateAnonymousClient();
+        var token = await GetAntiforgeryTokenAsync(client, "/");
+
+        using var response = await client.PostAsync("/", CreateLoginContent(token, "member-default@example.com", "Pass123!"));
+
+        Assert.Equal(HttpStatusCode.Found, response.StatusCode);
+        Assert.Equal("/Member", response.Headers.Location?.OriginalString);
+    }
+
+    [Fact]
     public async Task GetAccountLogin_StillDisplaysSharedLoginForm()
     {
         using var factory = new PortalWebApplicationFactory();
@@ -92,13 +123,39 @@ public class HomePageLoginTests
         Assert.Equal(returnUrl, response.Headers.Location?.OriginalString);
     }
 
-    private static async Task CreateUserAsync(PortalWebApplicationFactory factory, string email, string password)
+    [Fact]
+    public async Task GetHome_WhenAdministratorIsAuthenticated_RedirectsToAdministration()
+    {
+        using var factory = new PortalWebApplicationFactory();
+        await CreateUserAsync(factory, "admin-get@example.com", "Pass123!", RoleNames.Administrator, "admin-user");
+        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser("admin-user", RoleNames.Administrator));
+
+        using var response = await client.GetAsync("/");
+
+        Assert.Equal(HttpStatusCode.Found, response.StatusCode);
+        Assert.Equal("/Administration", response.Headers.Location?.OriginalString);
+    }
+
+    [Fact]
+    public async Task GetHome_WhenMemberIsAuthenticated_RedirectsToMember()
+    {
+        using var factory = new PortalWebApplicationFactory();
+        await CreateUserAsync(factory, "member-get@example.com", "Pass123!", RoleNames.Member, "member-user");
+        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser("member-user", RoleNames.Member));
+
+        using var response = await client.GetAsync("/");
+
+        Assert.Equal(HttpStatusCode.Found, response.StatusCode);
+        Assert.Equal("/Member", response.Headers.Location?.OriginalString);
+    }
+
+    private static async Task CreateUserAsync(PortalWebApplicationFactory factory, string email, string password, string? role = null, string? userId = null)
     {
         await factory.ExecuteDbContextAsync(async dbContext =>
         {
             var user = new ApplicationUser
             {
-                Id = Guid.NewGuid().ToString("N"),
+                Id = userId ?? Guid.NewGuid().ToString("N"),
                 UserName = email,
                 NormalizedUserName = email.ToUpperInvariant(),
                 Email = email,
@@ -113,6 +170,29 @@ public class HomePageLoginTests
 
             user.PasswordHash = new PasswordHasher<ApplicationUser>().HashPassword(user, password);
             dbContext.Users.Add(user);
+
+            if (!string.IsNullOrWhiteSpace(role))
+            {
+                var normalizedRoleName = role.ToUpperInvariant();
+                var existingRole = await dbContext.Roles.FirstOrDefaultAsync(r => r.NormalizedName == normalizedRoleName);
+
+                if (existingRole is null)
+                {
+                    existingRole = new IdentityRole(role)
+                    {
+                        NormalizedName = normalizedRoleName
+                    };
+
+                    dbContext.Roles.Add(existingRole);
+                }
+
+                dbContext.UserRoles.Add(new IdentityUserRole<string>
+                {
+                    UserId = user.Id,
+                    RoleId = existingRole.Id
+                });
+            }
+
             await dbContext.SaveChangesAsync();
         });
     }

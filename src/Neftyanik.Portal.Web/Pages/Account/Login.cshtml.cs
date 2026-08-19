@@ -17,11 +17,11 @@ public class LoginModel : LoginPageModelBase
     {
     }
 
-    public IActionResult OnGet(string? returnUrl = null)
+    public async Task<IActionResult> OnGetAsync(string? returnUrl = null)
     {
         if (User.Identity?.IsAuthenticated == true)
         {
-            return LocalRedirect(returnUrl ?? Url.Content("~/"));
+            return await RedirectAuthenticatedUserAsync(returnUrl);
         }
 
         InitializeReturnUrl(returnUrl);

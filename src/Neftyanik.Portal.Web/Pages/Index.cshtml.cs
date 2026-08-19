@@ -19,9 +19,15 @@ public class IndexModel : LoginPageModelBase
     {
     }
 
-    public void OnGet(string? returnUrl = null)
+    public async Task<IActionResult> OnGetAsync(string? returnUrl = null)
     {
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            return await RedirectAuthenticatedUserAsync();
+        }
+
         InitializeReturnUrl(returnUrl);
+        return Page();
     }
 
     public Task<IActionResult> OnPostAsync(string? returnUrl = null) => SignInAsync(returnUrl);

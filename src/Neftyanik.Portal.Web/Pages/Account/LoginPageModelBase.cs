@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Neftyanik.Portal.Application.Identity;
+using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Web.Localization;
 
@@ -77,7 +78,7 @@ public abstract class LoginPageModelBase : PageModel
                 return RedirectToPage("/Account/ChangeInitialPassword");
             }
 
-            return LocalRedirect(ReturnUrl ?? Url.Content("~/"));
+            return await RedirectAuthenticatedUserAsync(signedInUser, ReturnUrl);
         }
 
         if (signInResult.IsLockedOut)
@@ -94,6 +95,27 @@ public abstract class LoginPageModelBase : PageModel
             "Неправильний логін або пароль.",
             "Invalid login or password."));
         return Page();
+    }
+
+    protected async Task<IActionResult> RedirectAuthenticatedUserAsync(string? returnUrl = null)
+    {
+        var user = await _signInManager.UserManager.GetUserAsync(User);
+        return await RedirectAuthenticatedUserAsync(user, returnUrl);
+    }
+
+    protected async Task<IActionResult> RedirectAuthenticatedUserAsync(ApplicationUser? user, string? returnUrl = null)
+    {
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+        {
+            return LocalRedirect(returnUrl);
+        }
+
+        if (user is not null && await _signInManager.UserManager.IsInRoleAsync(user, RoleNames.Administrator))
+        {
+            return RedirectToPage("/Administration/Index");
+        }
+
+        return RedirectToPage("/Member/Index");
     }
 
     private void ValidateInput()

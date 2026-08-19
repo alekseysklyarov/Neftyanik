@@ -6,103 +6,525 @@
     var currentCultureName = System.Globalization.CultureInfo.CurrentCulture.Name;
 }
 
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
-    <div>
-        <h1 class="h4 mb-1">@AppLocalizer.Get("Финансы члена товарищества", "Фінанси члена товариства", "Member finance")</h1>
-        <p class="h1 text-muted mb-0">@Model.Dashboard.FullName</p>
-    </div>
+<div class="member-dashboard">
+    <section class="member-dashboard-header mb-4">
+        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-start gap-4">
+            <div class="member-dashboard-hero-copy">
+                <span class="portal-kicker">@AppLocalizer.Get("Личный кабинет", "Особистий кабінет", "Member dashboard")</span>
+                <h1 class="member-dashboard-title mt-3 mb-2">@Model.Dashboard.FullName</h1>
+                <p class="member-dashboard-subtitle mb-0">@AppLocalizer.Get("Сводка по профилю, участкам, платежам и начислениям в одном месте.", "Зведення за профілем, ділянками, платежами та нарахуваннями в одному місці.", "A single view of your profile, plots, payments, and charges.")</p>
+            </div>
 
-    <div class="d-flex gap-2 flex-wrap">
-    @if (Model.Dashboard.IsLinked && User.IsInRole(RoleNames.Member))
+            <div class="member-dashboard-actions d-flex gap-2 flex-wrap">
+                @if (Model.Dashboard.IsLinked && User.IsInRole(RoleNames.Member))
+                {
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#paymentNotificationModal">@AppLocalizer.Get("Уведомить о платеже", "Повідомити про платіж", "Notify about payment")</button>
+                }
+
+                @if (Model.CanSubmitElectricityReading)
+                {
+                    @if (Model.SingleReadyElectricityMeterId.HasValue)
+                    {
+                        <a class="btn btn-outline-primary" asp-page="/Member/Electricity/Meters/Readings/Create" asp-route-meterId="@Model.SingleReadyElectricityMeterId.Value">@AppLocalizer.Get("Внести показания электросчётчика", "Внести показники електролічильника", "Enter meter readings")</a>
+                    }
+                    else
+                    {
+                        <a class="btn btn-outline-primary" asp-page="/Member/Electricity/Index">@AppLocalizer.Get("Внести показания электросчётчика", "Внести показники електролічильника", "Enter meter readings")</a>
+                    }
+                }
+            </div>
+        </div>
+    </section>
+
+    @if (TempData["SuccessMessage"] is string successMessage)
     {
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#paymentNotificationModal">@AppLocalizer.Get("Уведомить о платеже", "Повідомити про платіж", "Notify about payment")</button>
+        <div class="alert alert-success" role="alert">@successMessage</div>
     }
 
-    @if (Model.CanSubmitElectricityReading)
+    @if (TempData["ErrorMessage"] is string errorMessage)
     {
-            @if (Model.SingleReadyElectricityMeterId.HasValue)
-            {
-                <a class="btn btn-outline-success" asp-page="/Member/Electricity/Meters/Readings/Create" asp-route-meterId="@Model.SingleReadyElectricityMeterId.Value">@AppLocalizer.Get("Внести показания электросчётчика", "Внести показники електролічильника", "Enter meter readings")</a>
-            }
-            else
-            {
-                <a class="btn btn-outline-success" asp-page="/Member/Electricity/Index">@AppLocalizer.Get("Внести показания электросчётчика", "Внести показники електролічильника", "Enter meter readings")</a>
-            }
+        <div class="alert alert-danger" role="alert">@errorMessage</div>
     }
-    </div>
-</div>
 
-@if (TempData["SuccessMessage"] is string successMessage)
-{
-    <div class="alert alert-success" role="alert">@successMessage</div>
-}
-
-@if (TempData["ErrorMessage"] is string errorMessage)
-{
-    <div class="alert alert-danger" role="alert">@errorMessage</div>
-}
-
-@if (!Model.Dashboard.IsLinked)
-{
-    <div class="alert alert-warning" role="alert">
-        @AppLocalizer.Get("Учетная запись не связана с карточкой члена товарищества. Обратитесь к администратору.", "Обліковий запис не пов'язаний із карткою члена товариства. Зверніться до адміністратора.", "The account is not linked to a member record. Contact the administrator.")
-    </div>
-}
-else
-{
-    <div class="row g-4 mb-4">
-        <div class="col-sm-6 col-xl-3">
-            <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">@AppLocalizer.Get("Активные участки", "Активні ділянки", "Active plots")</h2><p class="display-6 mb-0">@Model.Dashboard.ActivePlotsCount</p></div></div>
+    @if (!Model.Dashboard.IsLinked)
+    {
+        <div class="alert alert-warning" role="alert">
+            @AppLocalizer.Get("Учетная запись не связана с карточкой члена товарищества. Обратитесь к администратору.", "Обліковий запис не пов'язаний із карткою члена товариства. Зверніться до адміністратора.", "The account is not linked to a member record. Contact the administrator.")
         </div>
-        <div class="col-sm-6 col-xl-3">
-            <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">@AppLocalizer.Get("Начислено", "Нараховано", "Charged")</h2><p class="display-6 mb-0">@Model.Dashboard.TotalCharges.ToString("0.00")</p></div></div>
-        </div>
-        <div class="col-sm-6 col-xl-3">
-            <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">@AppLocalizer.Get("Оплачено", "Сплачено", "Paid")</h2><p class="display-6 mb-0">@Model.Dashboard.TotalPayments.ToString("0.00")</p></div></div>
-        </div>
-        <div class="col-sm-6 col-xl-3">
-            <div class="card h-100 shadow-sm @Model.Dashboard.BalanceCardClass"><div class="card-body"><h2 class="h6 text-muted">@AppLocalizer.Get("Баланс", "Баланс", "Balance")</h2><p class="display-6 mb-0 @Model.Dashboard.BalanceStatusClass">@Model.Dashboard.BalanceDisplayAmount.ToString("0.00")</p><div class="text-muted">@Model.Dashboard.BalanceStatusText</div></div></div>
-        </div>
-    </div>
-
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-white">
-            <h2 class="h5 mb-0">@AppLocalizer.Get("Основные сведения", "Основні відомості", "Basic information")</h2>
-        </div>
-        <div class="card-body">
-            <div class="row g-4">
-                <div class="col-lg-7">
-                    <dl class="row mb-0">
-                        <dt class="col-sm-4">@AppLocalizer.Get("ФИО", "ПІБ", "Full name")</dt>
-                        <dd class="col-sm-8">@Model.Dashboard.FullName</dd>
-
-                        <dt class="col-sm-4">@AppLocalizer.Get("Телефон", "Телефон", "Phone")</dt>
-                        <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Dashboard.PhoneNumber) ? "—" : Model.Dashboard.PhoneNumber)</dd>
-
-                        <dt class="col-sm-4">@AppLocalizer.Get("Электронная почта", "Електронна пошта", "Email")</dt>
-                        <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Dashboard.Email) ? "—" : Model.Dashboard.Email)</dd>
-                    </dl>
-
-                    <div class="form-text mt-3">@AppLocalizer.Get("Логин для входа изменяется администратором.", "Логін для входу змінюється адміністратором.", "The sign-in login can be changed by an administrator.")</div>
-
-                    <div class="mt-4 d-flex gap-2 flex-wrap">
-                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editProfileModal">@AppLocalizer.Get("Редактировать", "Редагувати", "Edit")</button>
-                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#changePasswordModal">@AppLocalizer.Get("Изменить пароль", "Змінити пароль", "Change password")</button>
+    }
+    else
+    {
+        <div class="row g-4 mb-4">
+            <div class="col-sm-6 col-xl-3">
+                <div class="card h-100 member-dashboard-summary-card">
+                    <div class="card-body">
+                        <h2 class="member-dashboard-summary-label">@AppLocalizer.Get("Активные участки", "Активні ділянки", "Active plots")</h2>
+                        <p class="member-dashboard-summary-value mb-0">@Model.Dashboard.ActivePlotsCount</p>
                     </div>
                 </div>
-                <div class="col-lg-5">
-                    <div class="d-flex flex-column gap-3 h-100">
-                        <div class="border rounded p-3 bg-light">
-                            <p class="mb-2"><strong>@AppLocalizer.Get("Текущий телефон:", "Поточний телефон:", "Current phone:")</strong> @(string.IsNullOrWhiteSpace(Model.Dashboard.PhoneNumber) ? "—" : Model.Dashboard.PhoneNumber)</p>
-                            <p class="mb-2"><strong>@AppLocalizer.Get("Текущий email:", "Поточний email:", "Current email:")</strong> @(string.IsNullOrWhiteSpace(Model.Dashboard.Email) ? "—" : Model.Dashboard.Email)</p>
-                            <p class="mb-2"><strong>@AppLocalizer.Get("Статус:", "Статус:", "Status:")</strong> @(Model.Dashboard.IsActive ? AppLocalizer.Get("Активен", "Активний", "Active") : AppLocalizer.Get("В архиве", "В архіві", "Archived"))</p>
-                            <p class="mb-0"><strong>@AppLocalizer.Get("Финансовый статус:", "Фінансовий статус:", "Financial status:")</strong> <span class="@Model.Dashboard.BalanceStatusClass">@Model.Dashboard.BalanceStatusText</span></p>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card h-100 member-dashboard-summary-card">
+                    <div class="card-body">
+                        <h2 class="member-dashboard-summary-label">@AppLocalizer.Get("Начислено", "Нараховано", "Charged")</h2>
+                        <p class="member-dashboard-summary-value mb-0">@Model.Dashboard.TotalCharges.ToString("0.00") <span class="member-dashboard-currency">₴</span></p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card h-100 member-dashboard-summary-card">
+                    <div class="card-body">
+                        <h2 class="member-dashboard-summary-label">@AppLocalizer.Get("Оплачено", "Сплачено", "Paid")</h2>
+                        <p class="member-dashboard-summary-value mb-0">@Model.Dashboard.TotalPayments.ToString("0.00") <span class="member-dashboard-currency">₴</span></p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card h-100 member-dashboard-summary-card">
+                    <div class="card-body">
+                        <h2 class="member-dashboard-summary-label">@AppLocalizer.Get("Баланс", "Баланс", "Balance")</h2>
+                        <p class="member-dashboard-summary-value mb-1 @Model.Dashboard.BalanceStatusClass">@Model.Dashboard.BalanceDisplayAmount.ToString("0.00") <span class="member-dashboard-currency">₴</span></p>
+                        <div class="member-dashboard-balance-note @Model.Dashboard.BalanceStatusClass">@Model.Dashboard.BalanceStatusText</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="member-dashboard-tabs mb-4">
+            <div class="nav member-dashboard-tab-list" id="memberDashboardTabs" role="tablist" aria-label="@AppLocalizer.Get("Разделы личного кабинета", "Розділи особистого кабінету", "Member dashboard sections")">
+                <button class="nav-link member-dashboard-tab-button active" id="member-dashboard-overview-tab" data-bs-toggle="tab" data-bs-target="#member-dashboard-overview-pane" type="button" role="tab" aria-controls="member-dashboard-overview-pane" aria-selected="true" data-member-dashboard-tab="true">@AppLocalizer.Get("Обзор", "Огляд", "Overview")</button>
+                <button class="nav-link member-dashboard-tab-button" id="member-dashboard-finance-tab" data-bs-toggle="tab" data-bs-target="#member-dashboard-finance-pane" type="button" role="tab" aria-controls="member-dashboard-finance-pane" aria-selected="false" data-member-dashboard-tab="true">@AppLocalizer.Get("Финансы", "Фінанси", "Finance")</button>
+                <button class="nav-link member-dashboard-tab-button" id="member-dashboard-electricity-tab" data-bs-toggle="tab" data-bs-target="#member-dashboard-electricity-pane" type="button" role="tab" aria-controls="member-dashboard-electricity-pane" aria-selected="false" data-member-dashboard-tab="true">@AppLocalizer.Get("Электроэнергия", "Електроенергія", "Electricity")</button>
+                <button class="nav-link member-dashboard-tab-button" id="member-dashboard-profile-tab" data-bs-toggle="tab" data-bs-target="#member-dashboard-profile-pane" type="button" role="tab" aria-controls="member-dashboard-profile-pane" aria-selected="false" data-member-dashboard-tab="true">@AppLocalizer.Get("Профиль", "Профіль", "Profile")</button>
+            </div>
+        </div>
+
+        <div class="tab-content member-dashboard-tab-content" id="memberDashboardTabContent">
+            <div class="tab-pane fade show active member-dashboard-tab-pane" id="member-dashboard-overview-pane" role="tabpanel" aria-labelledby="member-dashboard-overview-tab" tabindex="0">
+                <div class="card member-dashboard-section-card mb-4">
+                    <div class="card-header bg-white member-dashboard-section-header">
+                        <h2 class="h5 mb-0">@AppLocalizer.Get("Участки", "Ділянки", "Plots")</h2>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (Model.Plots.Count == 0)
+                        {
+                            <div class="p-4 text-center text-muted member-dashboard-empty-state">@AppLocalizer.Get("У вас нет активных участков с финансовыми данными.", "У вас немає активних ділянок з фінансовими даними.", "You have no active plots with financial data.")</div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive member-dashboard-table-wrap">
+                                <table class="table member-dashboard-table align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>@AppLocalizer.Get("Участок", "Ділянка", "Plot")</th>
+                                            <th>@AppLocalizer.Get("Адрес", "Адреса", "Address")</th>
+                                            <th>@AppLocalizer.Get("Начислено", "Нараховано", "Charged")</th>
+                                            <th>@AppLocalizer.Get("Оплачено", "Сплачено", "Paid")</th>
+                                            <th>@AppLocalizer.Get("Баланс", "Баланс", "Balance")</th>
+                                            <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
+                                            <th class="text-end">@AppLocalizer.Get("Действия", "Дії", "Actions")</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var plot in Model.Plots)
+                                        {
+                                            <tr>
+                                                <td class="fw-semibold">@plot.PlotNumber</td>
+                                                <td>@(string.IsNullOrWhiteSpace(plot.Address) ? "—" : plot.Address)</td>
+                                                <td>@plot.ActiveChargesTotal.ToString("0.00") <span class="member-dashboard-currency">₴</span></td>
+                                                <td>@plot.ActivePaymentsTotal.ToString("0.00") <span class="member-dashboard-currency">₴</span></td>
+                                                <td class="@plot.BalanceStatusClass">@plot.BalanceDisplayAmount.ToString("0.00") <span class="member-dashboard-currency">₴</span></td>
+                                                <td>@plot.Status</td>
+                                                <td class="text-end">
+                                                    <a class="btn btn-sm btn-outline-primary" asp-page="/Member/Plots/Finance/Index" asp-route-plotId="@plot.PlotId">@AppLocalizer.Get("Финансы", "Фінанси", "Finance")</a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="card member-dashboard-section-card mb-4">
+                    <div class="card-header bg-white member-dashboard-section-header">
+                        <div>
+                            <h2 class="h5 mb-1">@AppLocalizer.Get("Последние уведомления о платежах", "Останні повідомлення про платежі", "Recent payment notifications")</h2>
+                            <p class="member-dashboard-section-subtitle mb-0">@AppLocalizer.Get("История отправленных уведомлений и их текущий статус.", "Історія надісланих повідомлень та їхній поточний статус.", "A history of submitted notifications and their current status.")</p>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (Model.RecentPaymentNotifications.Count == 0)
+                        {
+                            <div class="p-4 text-center text-muted member-dashboard-empty-state">@AppLocalizer.Get("Уведомления о платежах еще не отправлялись.", "Повідомлення про платежі ще не надсилалися.", "No payment notifications have been sent yet.")</div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive member-dashboard-table-wrap">
+                                <table class="table member-dashboard-table align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>@AppLocalizer.Get("Дата", "Дата", "Date")</th>
+                                            <th>@AppLocalizer.Get("Сумма", "Сума", "Amount")</th>
+                                            <th>@AppLocalizer.Get("Способ оплаты", "Спосіб оплати", "Payment method")</th>
+                                            <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
+                                            <th>@AppLocalizer.Get("Описание", "Опис", "Description")</th>
+                                            <th>@AppLocalizer.Get("Комментарий администратора", "Коментар адміністратора", "Administrator comment")</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var notification in Model.RecentPaymentNotifications)
+                                        {
+                                            <tr>
+                                                <td>@notification.CreatedAtUtc.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+                                                <td>@notification.Amount.ToString("0.00") <span class="member-dashboard-currency">₴</span></td>
+                                                <td>@FinanceDisplayHelper.GetPaymentMethodText(notification.PaymentMethod)</td>
+                                                <td><span class="badge member-dashboard-status-badge @FinanceDisplayHelper.GetPaymentNotificationStatusBadgeClass(notification.Status)">@FinanceDisplayHelper.GetPaymentNotificationStatusText(notification.Status)</span></td>
+                                                <td>@(string.IsNullOrWhiteSpace(notification.Description) ? "—" : notification.Description)</td>
+                                                <td>
+                                                    @if (notification.Status == Neftyanik.Portal.Domain.Enums.PaymentNotificationStatus.Rejected && !string.IsNullOrWhiteSpace(notification.AdministratorComment))
+                                                    {
+                                                        @notification.AdministratorComment
+                                                    }
+                                                    else
+                                                    {
+                                                        @:—
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade member-dashboard-tab-pane" id="member-dashboard-finance-pane" role="tabpanel" aria-labelledby="member-dashboard-finance-tab" tabindex="0">
+                <div class="row g-4">
+                    <div class="col-xl-6">
+                        <div class="card member-dashboard-section-card h-100">
+                            <div class="card-header bg-white member-dashboard-section-header">
+                                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                                    <h2 class="h5 mb-0">@AppLocalizer.Get("Начисления", "Нарахування", "Charges")</h2>
+                                    <form method="get" class="d-flex flex-column flex-sm-row gap-2 align-items-sm-center">
+                                        <input type="hidden" asp-for="PaymentPage" />
+                                        <select asp-for="ChargeTypeId" asp-items="Model.ChargeTypeOptions" class="form-select form-select-sm">
+                                            <option value="">@AppLocalizer.Get("Все типы", "Усі типи", "All types")</option>
+                                        </select>
+                                        <div class="d-flex gap-2">
+                                            <button type="submit" class="btn btn-sm btn-outline-primary">@AppLocalizer.Get("Фильтр", "Фільтр", "Filter")</button>
+                                            <a class="btn btn-sm btn-outline-secondary" asp-page="/Member/Index" asp-route-paymentPage="@Model.PaymentPage">@AppLocalizer.Get("Сбросить", "Скинути", "Reset")</a>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                            <div class="card-body p-0">
+                                @if (Model.Charges.Count == 0)
+                                {
+                                    <div class="p-4 text-center text-muted member-dashboard-empty-state">@AppLocalizer.Get("Начисления отсутствуют.", "Нарахування відсутні.", "No charges.")</div>
+                                }
+                                else
+                                {
+                                    <div class="table-responsive member-dashboard-table-wrap">
+                                        <table class="table member-dashboard-table align-middle mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th>@AppLocalizer.Get("Дата", "Дата", "Date")</th>
+                                                    <th>@AppLocalizer.Get("Участок", "Ділянка", "Plot")</th>
+                                                    <th>@AppLocalizer.Get("Тип", "Тип", "Type")</th>
+                                                    <th>@AppLocalizer.Get("Сумма", "Сума", "Amount")</th>
+                                                    <th>@AppLocalizer.Get("Срок", "Строк", "Due")</th>
+                                                    <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var charge in Model.Charges)
+                                                {
+                                                    <tr>
+                                                        <td>@charge.ChargeDate.ToString("dd.MM.yyyy")</td>
+                                                        <td>@charge.PlotNumber</td>
+                                                        <td>@charge.ChargeTypeName</td>
+                                                        <td>@charge.Amount.ToString("0.00") <span class="member-dashboard-currency">₴</span></td>
+                                                        <td>@(charge.DueDate.HasValue ? charge.DueDate.Value.ToString("dd.MM.yyyy") : "—")</td>
+                                                        <td>@charge.StatusText</td>
+                                                    </tr>
+                                                    @if (!string.IsNullOrWhiteSpace(charge.Description) || !string.IsNullOrWhiteSpace(charge.CancellationReason))
+                                                    {
+                                                        <tr class="member-dashboard-table-note-row">
+                                                            <td colspan="6" class="small text-muted">
+                                                                @if (!string.IsNullOrWhiteSpace(charge.Description))
+                                                                {
+                                                                    <div><strong>@AppLocalizer.Get("Описание:", "Опис:", "Description:")</strong> @charge.Description</div>
+                                                                }
+                                                                @if (!string.IsNullOrWhiteSpace(charge.CancellationReason))
+                                                                {
+                                                                    <div><strong>@AppLocalizer.Get("Причина отмены:", "Причина скасування:", "Cancellation reason:")</strong> @charge.CancellationReason</div>
+                                                                }
+                                                            </td>
+                                                        </tr>
+                                                    }
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                }
+                            </div>
+                            @if (Model.ChargeTotalPages > 1)
+                            {
+                                <div class="card-footer bg-white member-dashboard-section-footer">
+                                    <nav aria-label="@AppLocalizer.Get("Навигация по начислениям", "Навігація нарахуваннями", "Charge pagination")">
+                                        <ul class="pagination justify-content-center mb-0 flex-wrap">
+                                            <li class="page-item @(Model.HasChargePreviousPage ? string.Empty : "disabled")">
+                                                <a class="page-link" asp-page="/Member/Index" asp-route-chargePage="@(Model.ChargePage - 1)" asp-route-paymentPage="@Model.PaymentPage" asp-route-chargeTypeId="@Model.ChargeTypeId">@AppLocalizer.Get("Назад", "Назад", "Previous")</a>
+                                            </li>
+                                            @for (var pageIndex = 1; pageIndex <= Model.ChargeTotalPages; pageIndex++)
+                                            {
+                                                <li class="page-item @(pageIndex == Model.ChargePage ? "active" : string.Empty)">
+                                                    <a class="page-link" asp-page="/Member/Index" asp-route-chargePage="@pageIndex" asp-route-paymentPage="@Model.PaymentPage" asp-route-chargeTypeId="@Model.ChargeTypeId">@pageIndex</a>
+                                                </li>
+                                            }
+                                            <li class="page-item @(Model.HasChargeNextPage ? string.Empty : "disabled")">
+                                                <a class="page-link" asp-page="/Member/Index" asp-route-chargePage="@(Model.ChargePage + 1)" asp-route-paymentPage="@Model.PaymentPage" asp-route-chargeTypeId="@Model.ChargeTypeId">@AppLocalizer.Get("Вперёд", "Вперед", "Next")</a>
+                                            </li>
+                                        </ul>
+                                    </nav>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <div class="col-xl-6">
+                        <div class="card member-dashboard-section-card h-100">
+                            <div class="card-header bg-white member-dashboard-section-header">
+                                <h2 class="h5 mb-0">@AppLocalizer.Get("Платежи", "Платежі", "Payments")</h2>
+                            </div>
+                            <div class="card-body p-0">
+                                @if (Model.Payments.Count == 0)
+                                {
+                                    <div class="p-4 text-center text-muted member-dashboard-empty-state">@AppLocalizer.Get("Платежи отсутствуют.", "Платежі відсутні.", "No payments.")</div>
+                                }
+                                else
+                                {
+                                    <div class="table-responsive member-dashboard-table-wrap">
+                                        <table class="table member-dashboard-table align-middle mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th>@AppLocalizer.Get("Дата", "Дата", "Date")</th>
+                                                    <th>@AppLocalizer.Get("Участок", "Ділянка", "Plot")</th>
+                                                    <th>@AppLocalizer.Get("Сумма", "Сума", "Amount")</th>
+                                                    <th>@AppLocalizer.Get("Способ", "Спосіб", "Method")</th>
+                                                    <th>@AppLocalizer.Get("Документ", "Документ", "Document")</th>
+                                                    <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var payment in Model.Payments)
+                                                {
+                                                    <tr>
+                                                        <td>@payment.PaymentDate.ToString("dd.MM.yyyy")</td>
+                                                        <td>@payment.PlotNumber</td>
+                                                        <td>@payment.Amount.ToString("0.00") <span class="member-dashboard-currency">₴</span></td>
+                                                        <td>@payment.PaymentMethodText</td>
+                                                        <td>@(string.IsNullOrWhiteSpace(payment.ReferenceNumber) ? "—" : payment.ReferenceNumber)</td>
+                                                        <td>@payment.StatusText</td>
+                                                    </tr>
+                                                    @if (!string.IsNullOrWhiteSpace(payment.Description) || !string.IsNullOrWhiteSpace(payment.CancellationReason))
+                                                    {
+                                                        <tr class="member-dashboard-table-note-row">
+                                                            <td colspan="6" class="small text-muted">
+                                                                @if (!string.IsNullOrWhiteSpace(payment.Description))
+                                                                {
+                                                                    <div><strong>@AppLocalizer.Get("Описание:", "Опис:", "Description:")</strong> @payment.Description</div>
+                                                                }
+                                                                @if (!string.IsNullOrWhiteSpace(payment.CancellationReason))
+                                                                {
+                                                                    <div><strong>@AppLocalizer.Get("Причина отмены:", "Причина скасування:", "Cancellation reason:")</strong> @payment.CancellationReason</div>
+                                                                }
+                                                            </td>
+                                                        </tr>
+                                                    }
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                }
+                            </div>
+                            @if (Model.PaymentTotalPages > 1)
+                            {
+                                <div class="card-footer bg-white member-dashboard-section-footer">
+                                    <nav aria-label="@AppLocalizer.Get("Навигация по платежам", "Навігація платежами", "Payment pagination")">
+                                        <ul class="pagination justify-content-center mb-0 flex-wrap">
+                                            <li class="page-item @(Model.HasPaymentPreviousPage ? string.Empty : "disabled")">
+                                                <a class="page-link" asp-page="/Member/Index" asp-route-chargePage="@Model.ChargePage" asp-route-paymentPage="@(Model.PaymentPage - 1)" asp-route-chargeTypeId="@Model.ChargeTypeId">@AppLocalizer.Get("Назад", "Назад", "Previous")</a>
+                                            </li>
+                                            @for (var pageIndex = 1; pageIndex <= Model.PaymentTotalPages; pageIndex++)
+                                            {
+                                                <li class="page-item @(pageIndex == Model.PaymentPage ? "active" : string.Empty)">
+                                                    <a class="page-link" asp-page="/Member/Index" asp-route-chargePage="@Model.ChargePage" asp-route-paymentPage="@pageIndex" asp-route-chargeTypeId="@Model.ChargeTypeId">@pageIndex</a>
+                                                </li>
+                                            }
+                                            <li class="page-item @(Model.HasPaymentNextPage ? string.Empty : "disabled")">
+                                                <a class="page-link" asp-page="/Member/Index" asp-route-chargePage="@Model.ChargePage" asp-route-paymentPage="@(Model.PaymentPage + 1)" asp-route-chargeTypeId="@Model.ChargeTypeId">@AppLocalizer.Get("Вперёд", "Вперед", "Next")</a>
+                                            </li>
+                                        </ul>
+                                    </nav>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade member-dashboard-tab-pane" id="member-dashboard-electricity-pane" role="tabpanel" aria-labelledby="member-dashboard-electricity-tab" tabindex="0">
+                @if (!Model.IsElectricityFeatureAvailable)
+                {
+                    <div class="alert alert-warning" role="alert">
+                        @Model.ElectricityFeatureWarningMessage
+                    </div>
+                }
+                else
+                {
+                    <div class="card member-dashboard-section-card">
+                        <div class="card-header bg-white member-dashboard-section-header">
+                            <h2 class="h5 mb-0">@AppLocalizer.Get("Электросчётчики", "Електролічильники", "Electricity meters")</h2>
+                        </div>
+                        <div class="card-body p-0">
+                            @if (!Model.HasElectricityMeters)
+                            {
+                                <div class="p-4 text-center text-muted member-dashboard-empty-state">@AppLocalizer.Get("У участника пока нет привязанных электросчётчиков.", "У учасника поки немає прив'язаних електролічильників.", "The member has no linked electricity meters yet.")</div>
+                            }
+                            else
+                            {
+                                <div class="table-responsive member-dashboard-table-wrap">
+                                    <table class="table member-dashboard-table align-middle mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>@AppLocalizer.Get("Счётчик", "Лічильник", "Meter")</th>
+                                                <th>@AppLocalizer.Get("Расчётный участок", "Розрахункова ділянка", "Billing plot")</th>
+                                                <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var meter in Model.ElectricityMeters)
+                                            {
+                                                <tr>
+                                                    <td class="fw-semibold">@meter.DisplayName</td>
+                                                    <td>@meter.BillingPlotNumber</td>
+                                                    <td>
+                                                        @if (!meter.IsActive)
+                                                        {
+                                                            <span class="badge text-bg-secondary">@AppLocalizer.Get("Неактивен", "Неактивний", "Inactive")</span>
+                                                        }
+                                                        else if (!meter.HasReadings)
+                                                        {
+                                                            <span class="badge text-bg-warning">@AppLocalizer.Get("Требуется инициализация", "Потрібна ініціалізація", "Initialization required")</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="badge text-bg-success">@AppLocalizer.Get("Готов к работе", "Готовий до роботи", "Ready")</span>
+                                                        }
+                                                    </td>
+                                                </tr>
+
+                                                <tr class="member-dashboard-table-note-row">
+                                                    <td colspan="3">
+                                                        <div class="small">
+                                                            <div class="fw-semibold mb-2">@AppLocalizer.Get("История показаний", "Історія показань", "Reading history")</div>
+
+                                                            @if (meter.Readings.Count == 0)
+                                                            {
+                                                                <span class="text-muted">@AppLocalizer.Get("История отсутствует", "Історія відсутня", "No history")</span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <div class="d-flex flex-column gap-2 py-1">
+                                                                    @foreach (var reading in meter.Readings)
+                                                                    {
+                                                                        <div class="border rounded px-2 py-1 bg-light-subtle">
+                                                                            <div class="d-flex flex-wrap justify-content-between gap-2">
+                                                                                <span class="fw-semibold">@reading.ReadingDate.ToString("dd.MM.yyyy")</span>
+                                                                                <span>@reading.CurrentReading.ToString("0.000") кВт·ч</span>
+                                                                            </div>
+                                                                            <div class="d-flex flex-wrap gap-3 text-muted mt-1">
+                                                                                @if (reading.IsInitialReading)
+                                                                                {
+                                                                                    <span>@AppLocalizer.Get("Начальные показания", "Початкові показання", "Initial reading")</span>
+                                                                                }
+                                                                                else if (reading.Consumption.HasValue)
+                                                                                {
+                                                                                    <span>@AppLocalizer.Get("Расход:", "Споживання:", "Consumption:") @reading.Consumption.Value.ToString("0.000")</span>
+                                                                                }
+
+                                                                                @if (reading.Amount.HasValue)
+                                                                                {
+                                                                                    <span>@AppLocalizer.Get("Начисление:", "Нарахування:", "Charge:") @reading.Amount.Value.ToString("0.00") <span class="member-dashboard-currency">₴</span></span>
+                                                                                }
+                                                                            </div>
+                                                                        </div>
+                                                                    }
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="tab-pane fade member-dashboard-tab-pane" id="member-dashboard-profile-pane" role="tabpanel" aria-labelledby="member-dashboard-profile-tab" tabindex="0">
+                <div class="card member-dashboard-section-card member-dashboard-profile-card">
+                    <div class="card-header bg-white member-dashboard-section-header member-dashboard-profile-header">
+                        <div>
+                            <h2 class="h5 mb-0">@AppLocalizer.Get("Основные сведения", "Основні відомості", "Basic information")</h2>
+                        </div>
+                    </div>
+                    <div class="card-body member-dashboard-profile-body">
+                        <div class="member-dashboard-profile-layout">
+                            <dl class="member-dashboard-info-list mb-0">
+                                <div class="member-dashboard-info-item">
+                                    <dt>@AppLocalizer.Get("ФИО", "ПІБ", "Full name")</dt>
+                                    <dd>@Model.Dashboard.FullName</dd>
+                                </div>
+                                <div class="member-dashboard-info-item">
+                                    <dt>@AppLocalizer.Get("Телефон", "Телефон", "Phone")</dt>
+                                    <dd>@(string.IsNullOrWhiteSpace(Model.Dashboard.PhoneNumber) ? AppLocalizer.Get("Не указан", "Не вказано", "Not provided") : Model.Dashboard.PhoneNumber)</dd>
+                                </div>
+                                <div class="member-dashboard-info-item">
+                                    <dt>@AppLocalizer.Get("Электронная почта", "Електронна пошта", "Email")</dt>
+                                    <dd>@(string.IsNullOrWhiteSpace(Model.Dashboard.Email) ? AppLocalizer.Get("Не указана", "Не вказана", "Not provided") : Model.Dashboard.Email)</dd>
+                                </div>
+                            </dl>
+
+                            <dl class="member-dashboard-status-list mb-0">
+                                <div class="member-dashboard-status-item">
+                                    <dt>@AppLocalizer.Get("Статус", "Статус", "Status")</dt>
+                                    <dd class="member-dashboard-status-value @(Model.Dashboard.IsActive ? "member-dashboard-status-positive" : string.Empty)">@(Model.Dashboard.IsActive ? AppLocalizer.Get("Активен", "Активний", "Active") : AppLocalizer.Get("В архиве", "В архіві", "Archived"))</dd>
+                                </div>
+                                <div class="member-dashboard-status-item">
+                                    <dt>@AppLocalizer.Get("Финансовый статус", "Фінансовий статус", "Financial status")</dt>
+                                    <dd class="member-dashboard-status-value @Model.Dashboard.BalanceStatusClass">@Model.Dashboard.BalanceStatusText</dd>
+                                </div>
+                            </dl>
+                        </div>
+
+                        <div class="form-text mt-2">@AppLocalizer.Get("Логин для входа изменяется администратором.", "Логін для входу змінюється адміністратором.", "The sign-in login can be changed by an administrator.")</div>
+
+                        <div class="mt-3 d-flex gap-2 flex-wrap">
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editProfileModal">@AppLocalizer.Get("Редактировать", "Редагувати", "Edit")</button>
+                            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#changePasswordModal">@AppLocalizer.Get("Изменить пароль", "Змінити пароль", "Change password")</button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
     <div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
@@ -250,376 +672,8 @@ else
         </div>
     </div>
 
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-white">
-            <h2 class="h5 mb-0">@AppLocalizer.Get("Последние уведомления о платежах", "Останні повідомлення про платежі", "Recent payment notifications")</h2>
-        </div>
-        <div class="card-body p-0">
-            @if (Model.RecentPaymentNotifications.Count == 0)
-            {
-                <div class="p-4 text-center text-muted">@AppLocalizer.Get("Уведомления о платежах еще не отправлялись.", "Повідомлення про платежі ще не надсилалися.", "No payment notifications have been sent yet.")</div>
-            }
-            else
-            {
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>@AppLocalizer.Get("Дата", "Дата", "Date")</th>
-                                <th>@AppLocalizer.Get("Сумма", "Сума", "Amount")</th>
-                                <th>@AppLocalizer.Get("Способ оплаты", "Спосіб оплати", "Payment method")</th>
-                                <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
-                                <th>@AppLocalizer.Get("Описание", "Опис", "Description")</th>
-                                <th>@AppLocalizer.Get("Комментарий администратора", "Коментар адміністратора", "Administrator comment")</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var notification in Model.RecentPaymentNotifications)
-                            {
-                                <tr>
-                                    <td>@notification.CreatedAtUtc.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
-                                    <td>@notification.Amount.ToString("0.00")</td>
-                                    <td>@FinanceDisplayHelper.GetPaymentMethodText(notification.PaymentMethod)</td>
-                                    <td><span class="badge @FinanceDisplayHelper.GetPaymentNotificationStatusBadgeClass(notification.Status)">@FinanceDisplayHelper.GetPaymentNotificationStatusText(notification.Status)</span></td>
-                                    <td>@(string.IsNullOrWhiteSpace(notification.Description) ? "—" : notification.Description)</td>
-                                    <td>
-                                        @if (notification.Status == Neftyanik.Portal.Domain.Enums.PaymentNotificationStatus.Rejected && !string.IsNullOrWhiteSpace(notification.AdministratorComment))
-                                        {
-                                            @notification.AdministratorComment
-                                        }
-                                        else
-                                        {
-                                            @:—
-                                        }
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            }
-        </div>
-    </div>
-
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-white">
-            <h2 class="h5 mb-0">@AppLocalizer.Get("Участки", "Ділянки", "Plots")</h2>
-        </div>
-        <div class="card-body p-0">
-            @if (Model.Plots.Count == 0)
-            {
-                <div class="p-4 text-center text-muted">@AppLocalizer.Get("У вас нет активных участков с финансовыми данными.", "У вас немає активних ділянок з фінансовими даними.", "You have no active plots with financial data.")</div>
-            }
-            else
-            {
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>@AppLocalizer.Get("Участок", "Ділянка", "Plot")</th>
-                                <th>@AppLocalizer.Get("Адрес", "Адреса", "Address")</th>
-                                <th>@AppLocalizer.Get("Начислено", "Нараховано", "Charged")</th>
-                                <th>@AppLocalizer.Get("Оплачено", "Сплачено", "Paid")</th>
-                                <th>@AppLocalizer.Get("Баланс", "Баланс", "Balance")</th>
-                                <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
-                                <th class="text-end">@AppLocalizer.Get("Действия", "Дії", "Actions")</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var plot in Model.Plots)
-                            {
-                                <tr>
-                                    <td class="fw-semibold">@plot.PlotNumber</td>
-                                    <td>@(string.IsNullOrWhiteSpace(plot.Address) ? "—" : plot.Address)</td>
-                                    <td>@plot.ActiveChargesTotal.ToString("0.00")</td>
-                                    <td>@plot.ActivePaymentsTotal.ToString("0.00")</td>
-                                    <td class="@plot.BalanceStatusClass">@plot.BalanceDisplayAmount.ToString("0.00")</td>
-                                    <td>@plot.Status</td>
-                                    <td class="text-end">
-                                    <a class="btn btn-sm btn-outline-primary" asp-page="/Member/Plots/Finance/Index" asp-route-plotId="@plot.PlotId">@AppLocalizer.Get("Финансы", "Фінанси", "Finance")</a>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            }
-        </div>
-    </div>
-
-    <div class="row g-4">
-        <div class="col-xl-6">
-            <div class="card shadow-sm h-100">
-                <div class="card-header bg-white">
-                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-                        <h2 class="h5 mb-0">@AppLocalizer.Get("Начисления", "Нарахування", "Charges")</h2>
-                        <form method="get" class="d-flex flex-column flex-sm-row gap-2 align-items-sm-center">
-                            <input type="hidden" asp-for="PaymentPage" />
-                            <select asp-for="ChargeTypeId" asp-items="Model.ChargeTypeOptions" class="form-select form-select-sm">
-                                <option value="">@AppLocalizer.Get("Все типы", "Усі типи", "All types")</option>
-                            </select>
-                            <div class="d-flex gap-2">
-                                <button type="submit" class="btn btn-sm btn-outline-primary">@AppLocalizer.Get("Фильтр", "Фільтр", "Filter")</button>
-                                <a class="btn btn-sm btn-outline-secondary" asp-page="/Member/Index" asp-route-paymentPage="@Model.PaymentPage">@AppLocalizer.Get("Сбросить", "Скинути", "Reset")</a>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-                <div class="card-body p-0">
-                    @if (Model.Charges.Count == 0)
-                    {
-                        <div class="p-4 text-center text-muted">@AppLocalizer.Get("Начисления отсутствуют.", "Нарахування відсутні.", "No charges.")</div>
-                    }
-                    else
-                    {
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>@AppLocalizer.Get("Дата", "Дата", "Date")</th>
-                                        <th>@AppLocalizer.Get("Участок", "Ділянка", "Plot")</th>
-                                        <th>@AppLocalizer.Get("Тип", "Тип", "Type")</th>
-                                        <th>@AppLocalizer.Get("Сумма", "Сума", "Amount")</th>
-                                        <th>@AppLocalizer.Get("Срок", "Строк", "Due")</th>
-                                        <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var charge in Model.Charges)
-                                    {
-                                        <tr>
-                                            <td>@charge.ChargeDate.ToString("dd.MM.yyyy")</td>
-                                            <td>@charge.PlotNumber</td>
-                                            <td>@charge.ChargeTypeName</td>
-                                            <td>@charge.Amount.ToString("0.00")</td>
-                                            <td>@(charge.DueDate.HasValue ? charge.DueDate.Value.ToString("dd.MM.yyyy") : "—")</td>
-                                            <td>@charge.StatusText</td>
-                                        </tr>
-                                        @if (!string.IsNullOrWhiteSpace(charge.Description) || !string.IsNullOrWhiteSpace(charge.CancellationReason))
-                                        {
-                                            <tr class="table-light">
-                                                <td colspan="6" class="small text-muted">
-                                                    @if (!string.IsNullOrWhiteSpace(charge.Description))
-                                                    {
-                                                        <div><strong>@AppLocalizer.Get("Описание:", "Опис:", "Description:")</strong> @charge.Description</div>
-                                                    }
-                                                    @if (!string.IsNullOrWhiteSpace(charge.CancellationReason))
-                                                    {
-                                                        <div><strong>@AppLocalizer.Get("Причина отмены:", "Причина скасування:", "Cancellation reason:")</strong> @charge.CancellationReason</div>
-                                                    }
-                                                </td>
-                                            </tr>
-                                        }
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    }
-                </div>
-                @if (Model.ChargeTotalPages > 1)
-                {
-                    <div class="card-footer bg-white">
-                        <nav aria-label="@AppLocalizer.Get("Навигация по начислениям", "Навігація нарахуваннями", "Charge pagination")">
-                            <ul class="pagination justify-content-center mb-0 flex-wrap">
-                                <li class="page-item @(Model.HasChargePreviousPage ? string.Empty : "disabled")">
-                                    <a class="page-link" asp-page="/Member/Index" asp-route-chargePage="@(Model.ChargePage - 1)" asp-route-paymentPage="@Model.PaymentPage" asp-route-chargeTypeId="@Model.ChargeTypeId">@AppLocalizer.Get("Назад", "Назад", "Previous")</a>
-                                </li>
-                                @for (var pageIndex = 1; pageIndex <= Model.ChargeTotalPages; pageIndex++)
-                                {
-                                    <li class="page-item @(pageIndex == Model.ChargePage ? "active" : string.Empty)">
-                                        <a class="page-link" asp-page="/Member/Index" asp-route-chargePage="@pageIndex" asp-route-paymentPage="@Model.PaymentPage" asp-route-chargeTypeId="@Model.ChargeTypeId">@pageIndex</a>
-                                    </li>
-                                }
-                                <li class="page-item @(Model.HasChargeNextPage ? string.Empty : "disabled")">
-                                    <a class="page-link" asp-page="/Member/Index" asp-route-chargePage="@(Model.ChargePage + 1)" asp-route-paymentPage="@Model.PaymentPage" asp-route-chargeTypeId="@Model.ChargeTypeId">@AppLocalizer.Get("Вперёд", "Вперед", "Next")</a>
-                                </li>
-                            </ul>
-                        </nav>
-                    </div>
-                }
-            </div>
-        </div>
-        <div class="col-xl-6">
-            <div class="card shadow-sm h-100">
-                <div class="card-header bg-white">
-                    <h2 class="h5 mb-0">@AppLocalizer.Get("Платежи", "Платежі", "Payments")</h2>
-                </div>
-                <div class="card-body p-0">
-                    @if (Model.Payments.Count == 0)
-                    {
-                        <div class="p-4 text-center text-muted">@AppLocalizer.Get("Платежи отсутствуют.", "Платежі відсутні.", "No payments.")</div>
-                    }
-                    else
-                    {
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>@AppLocalizer.Get("Дата", "Дата", "Date")</th>
-                                        <th>@AppLocalizer.Get("Участок", "Ділянка", "Plot")</th>
-                                        <th>@AppLocalizer.Get("Сумма", "Сума", "Amount")</th>
-                                        <th>@AppLocalizer.Get("Способ", "Спосіб", "Method")</th>
-                                        <th>@AppLocalizer.Get("Документ", "Документ", "Document")</th>
-                                        <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var payment in Model.Payments)
-                                    {
-                                        <tr>
-                                            <td>@payment.PaymentDate.ToString("dd.MM.yyyy")</td>
-                                            <td>@payment.PlotNumber</td>
-                                            <td>@payment.Amount.ToString("0.00")</td>
-                                            <td>@payment.PaymentMethodText</td>
-                                            <td>@(string.IsNullOrWhiteSpace(payment.ReferenceNumber) ? "—" : payment.ReferenceNumber)</td>
-                                            <td>@payment.StatusText</td>
-                                        </tr>
-                                        @if (!string.IsNullOrWhiteSpace(payment.Description) || !string.IsNullOrWhiteSpace(payment.CancellationReason))
-                                        {
-                                            <tr class="table-light">
-                                                <td colspan="6" class="small text-muted">
-                                                    @if (!string.IsNullOrWhiteSpace(payment.Description))
-                                                    {
-                                                        <div><strong>@AppLocalizer.Get("Описание:", "Опис:", "Description:")</strong> @payment.Description</div>
-                                                    }
-                                                    @if (!string.IsNullOrWhiteSpace(payment.CancellationReason))
-                                                    {
-                                                        <div><strong>@AppLocalizer.Get("Причина отмены:", "Причина скасування:", "Cancellation reason:")</strong> @payment.CancellationReason</div>
-                                                    }
-                                                </td>
-                                            </tr>
-                                        }
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    }
-                </div>
-                @if (Model.PaymentTotalPages > 1)
-                {
-                    <div class="card-footer bg-white">
-                        <nav aria-label="@AppLocalizer.Get("Навигация по платежам", "Навігація платежами", "Payment pagination")">
-                            <ul class="pagination justify-content-center mb-0 flex-wrap">
-                                <li class="page-item @(Model.HasPaymentPreviousPage ? string.Empty : "disabled")">
-                                    <a class="page-link" asp-page="/Member/Index" asp-route-chargePage="@Model.ChargePage" asp-route-paymentPage="@(Model.PaymentPage - 1)" asp-route-chargeTypeId="@Model.ChargeTypeId">@AppLocalizer.Get("Назад", "Назад", "Previous")</a>
-                                </li>
-                                @for (var pageIndex = 1; pageIndex <= Model.PaymentTotalPages; pageIndex++)
-                                {
-                                    <li class="page-item @(pageIndex == Model.PaymentPage ? "active" : string.Empty)">
-                                        <a class="page-link" asp-page="/Member/Index" asp-route-chargePage="@Model.ChargePage" asp-route-paymentPage="@pageIndex" asp-route-chargeTypeId="@Model.ChargeTypeId">@pageIndex</a>
-                                    </li>
-                                }
-                                <li class="page-item @(Model.HasPaymentNextPage ? string.Empty : "disabled")">
-                                    <a class="page-link" asp-page="/Member/Index" asp-route-chargePage="@Model.ChargePage" asp-route-paymentPage="@(Model.PaymentPage + 1)" asp-route-chargeTypeId="@Model.ChargeTypeId">@AppLocalizer.Get("Вперёд", "Вперед", "Next")</a>
-                                </li>
-                            </ul>
-                        </nav>
-                    </div>
-                }
-            </div>
-        </div>
-    </div>
-
-    @if (!Model.IsElectricityFeatureAvailable)
-    {
-        <div class="alert alert-warning mt-4" role="alert">
-            @Model.ElectricityFeatureWarningMessage
-        </div>
-    }
-    else
-    {
-        <div class="card shadow-sm mt-4">
-            <div class="card-header bg-white">
-                <h2 class="h5 mb-0">@AppLocalizer.Get("Электросчётчики", "Електролічильники", "Electricity meters")</h2>
-            </div>
-            <div class="card-body p-0">
-                @if (!Model.HasElectricityMeters)
-                {
-                    <div class="p-4 text-center text-muted">@AppLocalizer.Get("У участника пока нет привязанных электросчётчиков.", "У учасника поки немає прив'язаних електролічильників.", "The member has no linked electricity meters yet.")</div>
-                }
-                else
-                {
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>@AppLocalizer.Get("Счётчик", "Лічильник", "Meter")</th>
-                                    <th>@AppLocalizer.Get("Расчётный участок", "Розрахункова ділянка", "Billing plot")</th>
-                                    <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var meter in Model.ElectricityMeters)
-                                {
-                                    <tr>
-                                        <td class="fw-semibold">@meter.DisplayName</td>
-                                        <td>@meter.BillingPlotNumber</td>
-                                        <td>
-                                            @if (!meter.IsActive)
-                                            {
-                                                <span class="badge text-bg-secondary">@AppLocalizer.Get("Неактивен", "Неактивний", "Inactive")</span>
-                                            }
-                                            else if (!meter.HasReadings)
-                                            {
-                                                <span class="badge text-bg-warning">@AppLocalizer.Get("Требуется инициализация", "Потрібна ініціалізація", "Initialization required")</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="badge text-bg-success">@AppLocalizer.Get("Готов к работе", "Готовий до роботи", "Ready")</span>
-                                            }
-                                        </td>
-                                    </tr>
-
-                                    <tr class="table-light">
-                                        <td colspan="3">
-                                            <div class="small">
-                                                <div class="fw-semibold mb-2">@AppLocalizer.Get("История показаний", "Історія показань", "Reading history")</div>
-
-                                                @if (meter.Readings.Count == 0)
-                                                {
-                                                    <span class="text-muted">@AppLocalizer.Get("История отсутствует", "Історія відсутня", "No history")</span>
-                                                }
-                                                else
-                                                {
-                                                    <div class="d-flex flex-column gap-2 py-1">
-                                                        @foreach (var reading in meter.Readings)
-                                                        {
-                                                            <div class="border rounded px-2 py-1 bg-light-subtle">
-                                                                <div class="d-flex flex-wrap justify-content-between gap-2">
-                                                                    <span class="fw-semibold">@reading.ReadingDate.ToString("dd.MM.yyyy")</span>
-                                                                    <span>@reading.CurrentReading.ToString("0.000") кВт·ч</span>
-                                                                </div>
-                                                                <div class="d-flex flex-wrap gap-3 text-muted mt-1">
-                                                                    @if (reading.IsInitialReading)
-                                                                    {
-                                                                        <span>@AppLocalizer.Get("Начальные показания", "Початкові показання", "Initial reading")</span>
-                                                                    }
-                                                                    else if (reading.Consumption.HasValue)
-                                                                    {
-                                                                        <span>@AppLocalizer.Get("Расход:", "Споживання:", "Consumption:") @reading.Consumption.Value.ToString("0.000")</span>
-                                                                    }
-
-                                                                    @if (reading.Amount.HasValue)
-                                                                    {
-                                                                        <span>@AppLocalizer.Get("Начисление:", "Нарахування:", "Charge:") @reading.Amount.Value.ToString("0.00") грн</span>
-                                                                    }
-                                                                </div>
-                                                            </div>
-                                                        }
-                                                    </div>
-                                                }
-                                            </div>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                }
-            </div>
-        </div>
-    }
 }
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
@@ -720,6 +774,35 @@ else
                 confirmButton.textContent = submittingButtonText;
                 confirmationModal.hide();
                 form.requestSubmit();
+            });
+        })();
+    </script>
+
+    <script>
+        (() => {
+            const storageKey = 'member-dashboard-active-tab';
+            const tabTriggers = Array.from(document.querySelectorAll('[data-member-dashboard-tab="true"]'));
+
+            if (tabTriggers.length === 0 || !window.bootstrap?.Tab || !window.sessionStorage) {
+                return;
+            }
+
+            const defaultTabId = 'member-dashboard-overview-tab';
+            const storedTabId = window.sessionStorage.getItem(storageKey);
+            const initialTrigger = tabTriggers.find(trigger => trigger.id === storedTabId)
+                ?? tabTriggers.find(trigger => trigger.id === defaultTabId)
+                ?? tabTriggers[0];
+
+            if (initialTrigger && !initialTrigger.classList.contains('active')) {
+                window.bootstrap.Tab.getOrCreateInstance(initialTrigger).show();
+            }
+
+            tabTriggers.forEach(trigger => {
+                trigger.addEventListener('shown.bs.tab', event => {
+                    if (event.target instanceof HTMLElement && event.target.id) {
+                        window.sessionStorage.setItem(storageKey, event.target.id);
+                    }
+                });
             });
         })();
     </script>
