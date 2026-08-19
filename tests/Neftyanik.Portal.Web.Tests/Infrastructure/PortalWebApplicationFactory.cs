@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data;
 
@@ -17,6 +18,7 @@ namespace Neftyanik.Portal.Web.Tests;
 public sealed class PortalWebApplicationFactory : WebApplicationFactory<Program>
 {
     private const string TestConnectionString = "Server=(localdb)\\mssqllocaldb;Database=NeftyanikPortalTests;Trusted_Connection=True;TrustServerCertificate=True";
+    private static readonly object CurrentDirectoryLock = new();
     private readonly IReadOnlyDictionary<string, string?> _additionalConfiguration;
     private readonly string _connectionString;
     private readonly string _environmentName;
@@ -89,6 +91,24 @@ public sealed class PortalWebApplicationFactory : WebApplicationFactory<Program>
                 dbContext.Database.EnsureCreated();
             }
         });
+    }
+
+    protected override IHost CreateHost(IHostBuilder builder)
+    {
+        lock (CurrentDirectoryLock)
+        {
+            var originalCurrentDirectory = Directory.GetCurrentDirectory();
+
+            try
+            {
+                Directory.SetCurrentDirectory(ResolveRepositoryRootPath());
+                return base.CreateHost(builder);
+            }
+            finally
+            {
+                Directory.SetCurrentDirectory(originalCurrentDirectory);
+            }
+        }
     }
 
     public HttpClient CreateAnonymousClient(bool allowAutoRedirect = false, string? cultureName = null)
@@ -170,5 +190,23 @@ public sealed class PortalWebApplicationFactory : WebApplicationFactory<Program>
             """;
         command.Parameters.AddWithValue("@databaseName", databaseName);
         command.ExecuteNonQuery();
+    }
+
+    private static string ResolveRepositoryRootPath()
+    {
+        var directory = new DirectoryInfo(Path.GetFullPath(AppContext.BaseDirectory));
+
+        while (directory is not null)
+        {
+            var webProjectPath = Path.Combine(directory.FullName, "src", "Neftyanik.Portal.Web");
+            if (Directory.Exists(webProjectPath))
+            {
+                return directory.FullName;
+            }
+
+            directory = directory.Parent;
+        }
+
+        throw new InvalidOperationException("Unable to locate the repository root containing 'src/Neftyanik.Portal.Web'.");
     }
 }

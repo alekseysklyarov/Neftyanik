@@ -19,7 +19,17 @@ using Neftyanik.Portal.Infrastructure.Data;
 using Neftyanik.Portal.Web.Localization;
 using Neftyanik.Portal.Web.Security;
 
-var builder = WebApplication.CreateBuilder(args);
+var currentDirectory = Directory.GetCurrentDirectory();
+var repositoryWebRootPath = Path.Combine(currentDirectory, "src", "Neftyanik.Portal.Web", "wwwroot");
+var webRootPath = Directory.Exists(repositoryWebRootPath)
+    ? repositoryWebRootPath
+    : Path.Combine(currentDirectory, "wwwroot");
+
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args,
+    WebRootPath = webRootPath
+});
 
 var webProjectPath = Path.Combine(builder.Environment.ContentRootPath, "src", "Neftyanik.Portal.Web");
 if (Directory.Exists(webProjectPath))
