@@ -30,6 +30,7 @@ public class HealthEndpointTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Contains(".portal-hero", content);
         Assert.Contains(".portal-feature-icon svg", content);
-        Assert.Contains("display: block;", content);
+        Assert.Contains("--portal-bg: #f6f8fb;", content);
+        Assert.Contains(".member-dashboard-tab-list", content);
     }
 }
