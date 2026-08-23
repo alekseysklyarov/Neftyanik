@@ -47,7 +47,20 @@
                                 <div>@item.CurrentReading.ToString("0.000") кВт·ч</div>
                             </td>
                             <td>@(item.Consumption.HasValue ? $"{item.Consumption.Value:0.000} кВт·ч" : "—")</td>
-                            <td>@(item.AppliedMemberRate.HasValue ? $"{item.AppliedMemberRate.Value:0.0000} грн/кВт·ч" : "—")</td>
+                            <td>
+                                @if (item.AppliedMemberRate.HasValue)
+                                {
+                                    <div>Т1 @item.AppliedMemberRate.Value.ToString("0.0000") грн/кВт·ч</div>
+                                    @if (item.CurrentNightReading.HasValue)
+                                    {
+                                        <div class="small text-muted">Т2 @(item.AppliedMemberNightRate.HasValue ? item.AppliedMemberNightRate.Value.ToString("0.0000") : "—") грн/кВт·ч</div>
+                                    }
+                                }
+                                else
+                                {
+                                    <span>—</span>
+                                }
+                            </td>
                             <td>@(item.Amount.HasValue ? $"{item.Amount.Value:0.00} грн" : "—")</td>
                             <td>@item.ChargeStatusText</td>
                         </tr>

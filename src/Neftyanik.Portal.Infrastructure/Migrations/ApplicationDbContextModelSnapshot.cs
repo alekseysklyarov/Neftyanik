@@ -824,6 +824,62 @@ namespace Neftyanik.Portal.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.FinancialAuditLog", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .IsUnicode(true)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("EntityId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("NewValuesJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OldValuesJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("UserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAtUtc");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("EntityType", "EntityId");
+
+                    b.ToTable("FinancialAuditLogs", (string)null);
+                });
+
             modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.Member", b =>
                 {
                     b.Property<int>("Id")
@@ -948,6 +1004,10 @@ namespace Neftyanik.Portal.Infrastructure.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<decimal?>("AppliedMemberNightRate")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
                     b.Property<decimal?>("AppliedMemberRate")
                         .HasPrecision(18, 4)
                         .HasColumnType("decimal(18,4)");
@@ -1000,6 +1060,8 @@ namespace Neftyanik.Portal.Infrastructure.Migrations
                     b.ToTable("MemberElectricityReadings", null, t =>
                         {
                             t.HasCheckConstraint("CK_MemberElectricityReadings_Amount_NonNegative", "[Amount] IS NULL OR [Amount] >= 0");
+
+                            t.HasCheckConstraint("CK_MemberElectricityReadings_AppliedMemberNightRate_NonNegative", "[AppliedMemberNightRate] IS NULL OR [AppliedMemberNightRate] >= 0");
 
                             t.HasCheckConstraint("CK_MemberElectricityReadings_AppliedMemberRate_NonNegative", "[AppliedMemberRate] IS NULL OR [AppliedMemberRate] >= 0");
 

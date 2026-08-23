@@ -304,7 +304,8 @@ public class AdministrationPlotChargeTests
             {
                 User = new ClaimsPrincipal(new ClaimsIdentity(
                 [
-                    new Claim(ClaimTypes.NameIdentifier, adminUserId)
+                    new Claim(ClaimTypes.NameIdentifier, adminUserId),
+                    new Claim(ClaimTypes.Name, "charges-admin@example.com")
                 ],
                 "Test"))
             }
@@ -338,6 +339,20 @@ public class AdministrationPlotChargeTests
                 Assert.Equal(DateOnly.FromDateTime(DateTime.Today), charge.ChargeDate);
                 Assert.Equal(adminUserId, charge.CreatedByUserId);
             });
+
+        var auditEntries = await dbContext.FinancialAuditLogs
+            .AsNoTracking()
+            .OrderBy(item => item.EntityId)
+            .ToListAsync();
+
+        Assert.Equal(2, auditEntries.Count);
+        Assert.All(auditEntries, item =>
+        {
+            Assert.Equal(FinancialAuditLogActions.Created, item.Action);
+            Assert.Equal(nameof(Charge), item.EntityType);
+            Assert.Equal(adminUserId, item.UserId);
+            Assert.Equal("charges-admin@example.com", item.UserName);
+        });
     }
 
     [Fact]
@@ -436,7 +451,8 @@ public class AdministrationPlotChargeTests
             {
                 User = new ClaimsPrincipal(new ClaimsIdentity(
                 [
-                    new Claim(ClaimTypes.NameIdentifier, adminUserId)
+                    new Claim(ClaimTypes.NameIdentifier, adminUserId),
+                    new Claim(ClaimTypes.Name, "duplicate-admin@example.com")
                 ],
                 "Test"))
             }
@@ -466,6 +482,11 @@ public class AdministrationPlotChargeTests
                 Assert.Equal(chargeTypeId, charge.ChargeTypeId);
                 Assert.Equal(DateOnly.FromDateTime(DateTime.Today), charge.ChargeDate);
             });
+
+        var auditEntries = await dbContext.FinancialAuditLogs.AsNoTracking().ToListAsync();
+        var auditEntry = Assert.Single(auditEntries);
+        Assert.Equal(FinancialAuditLogActions.Created, auditEntry.Action);
+        Assert.Equal(nameof(Charge), auditEntry.EntityType);
     }
 
     [Fact]

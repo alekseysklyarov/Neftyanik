@@ -1,0 +1,163 @@
+@page "/Administration/AuditLog"
+@model Neftyanik.Portal.Web.Pages.Administration.FinancialAuditLog.IndexModel
+@{
+    ViewData["Title"] = AppLocalizer.Get("Финансовый аудит", "Фінансовий аудит", "Financial audit");
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h2 mb-1">@AppLocalizer.Get("Журнал финансового аудита", "Журнал фінансового аудиту", "Financial audit log")</h1>
+        <p class="text-muted mb-0">@AppLocalizer.Get("Просмотр изменений финансовых операций и связанных сущностей. Записи доступны только для чтения.", "Перегляд змін фінансових операцій і пов'язаних сутностей. Записи доступні лише для читання.", "View changes to financial operations and related entities. Entries are read-only.")</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a class="btn btn-outline-primary" asp-page="/Administration/Finance/Index">@AppLocalizer.Get("К финансам", "До фінансів", "Back to finance")</a>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Index">@AppLocalizer.Get("К администрированию", "До адміністрування", "Back to administration")</a>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h2 class="h6 text-muted">@AppLocalizer.Get("Найдено записьей", "Знайдено записів", "Entries found")</h2>
+                <p class="display-6 mb-0">@Model.TotalCount</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h2 class="h6 text-muted">@AppLocalizer.Get("Страница", "Сторінка", "Page")</h2>
+                <p class="display-6 mb-0">@Model.PageNumber / @Model.TotalPages</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-2">
+                <label asp-for="DateFrom" class="form-label">@AppLocalizer.Get("Дата с", "Дата з", "Date from")</label>
+                <input asp-for="DateFrom" type="date" class="form-control" />
+            </div>
+            <div class="col-md-2">
+                <label asp-for="DateTo" class="form-label">@AppLocalizer.Get("Дата по", "Дата до", "Date to")</label>
+                <input asp-for="DateTo" type="date" class="form-control" />
+            </div>
+            <div class="col-md-2">
+                <label asp-for="User" class="form-label">@AppLocalizer.Get("Пользователь", "Користувач", "User")</label>
+                <input asp-for="User" class="form-control" placeholder="@AppLocalizer.Get("Логин или ID", "Логін або ID", "Login or ID")" />
+            </div>
+            <div class="col-md-2">
+                <label asp-for="EntityType" class="form-label">@AppLocalizer.Get("Тип сущности", "Тип сутності", "Entity type")</label>
+                <input asp-for="EntityType" class="form-control" placeholder="Charge, Payment..." />
+            </div>
+            <div class="col-md-2">
+                <label asp-for="Action" class="form-label">@AppLocalizer.Get("Действие", "Дія", "Action")</label>
+                <input asp-for="Action" class="form-control" placeholder="Create, Update..." />
+            </div>
+            <div class="col-md-2">
+                <label asp-for="Search" class="form-label">@AppLocalizer.Get("Поиск", "Пошук", "Search")</label>
+                <input asp-for="Search" class="form-control" placeholder="@AppLocalizer.Get("ID сущности или текст", "ID сутності або текст", "Entity ID or text")" />
+            </div>
+            <div class="col-12 d-flex gap-2 flex-wrap">
+                <button type="submit" class="btn btn-outline-primary">@AppLocalizer.Get("Применить", "Застосувати", "Apply")</button>
+                <a class="btn btn-outline-secondary" asp-page="/Administration/AuditLog/Index">@AppLocalizer.Get("Сбросить", "Скинути", "Reset")</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        @if (Model.Entries.Count == 0)
+        {
+            <div class="p-4 text-center text-muted">@Model.EmptyStateMessage</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>@AppLocalizer.Get("Дата и время (UTC)", "Дата й час (UTC)", "Date and time (UTC)")</th>
+                            <th>@AppLocalizer.Get("Пользователь", "Користувач", "User")</th>
+                            <th>@AppLocalizer.Get("Действие", "Дія", "Action")</th>
+                            <th>@AppLocalizer.Get("Тип сущности", "Тип сутності", "Entity type")</th>
+                            <th>@AppLocalizer.Get("ID сущности", "ID сутності", "Entity ID")</th>
+                            <th>@AppLocalizer.Get("Описание", "Опис", "Description")</th>
+                            <th class="text-end">@AppLocalizer.Get("Действия", "Дії", "Actions")</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Entries)
+                        {
+                            <tr>
+                                <td>@item.CreatedAtUtc.ToString("dd.MM.yyyy HH:mm") UTC</td>
+                                <td>
+                                    <div class="fw-semibold">@item.UserDisplayName</div>
+                                    @if (!string.IsNullOrWhiteSpace(item.UserId) && !string.Equals(item.UserId, item.UserName, StringComparison.Ordinal))
+                                    {
+                                        <div class="small text-muted">@item.UserId</div>
+                                    }
+                                </td>
+                                <td><span class="badge text-bg-primary">@item.Action</span></td>
+                                <td>@item.EntityType</td>
+                                <td>@item.EntityId</td>
+                                <td>@(string.IsNullOrWhiteSpace(item.Description) ? "—" : item.Description)</td>
+                                <td class="text-end">
+                                    <a class="btn btn-sm btn-outline-secondary" asp-page="/Administration/AuditLog/Details" asp-route-id="@item.Id">@AppLocalizer.Get("Подробнее", "Детальніше", "Details")</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@if (Model.TotalPages > 1)
+{
+    <nav aria-label="@AppLocalizer.Get("Навигация по страницам", "Навігація сторінками", "Pagination")" class="mt-4">
+        <ul class="pagination justify-content-center flex-wrap">
+            <li class="page-item @(Model.HasPreviousPage ? string.Empty : "disabled")">
+                <a class="page-link"
+                   asp-page="/Administration/AuditLog/Index"
+                   asp-route-dateFrom="@Model.DateFrom"
+                   asp-route-dateTo="@Model.DateTo"
+                   asp-route-user="@Model.User"
+                   asp-route-entityType="@Model.EntityType"
+                   asp-route-action="@Model.Action"
+                   asp-route-search="@Model.Search"
+                   asp-route-pageNumber="@(Model.PageNumber - 1)">@AppLocalizer.Get("Назад", "Назад", "Previous")</a>
+            </li>
+            @for (var pageIndex = 1; pageIndex <= Model.TotalPages; pageIndex++)
+            {
+                <li class="page-item @(pageIndex == Model.PageNumber ? "active" : string.Empty)">
+                    <a class="page-link"
+                       asp-page="/Administration/AuditLog/Index"
+                       asp-route-dateFrom="@Model.DateFrom"
+                       asp-route-dateTo="@Model.DateTo"
+                       asp-route-user="@Model.User"
+                       asp-route-entityType="@Model.EntityType"
+                       asp-route-action="@Model.Action"
+                       asp-route-search="@Model.Search"
+                       asp-route-pageNumber="@pageIndex">@pageIndex</a>
+                </li>
+            }
+            <li class="page-item @(Model.HasNextPage ? string.Empty : "disabled")">
+                <a class="page-link"
+                   asp-page="/Administration/AuditLog/Index"
+                   asp-route-dateFrom="@Model.DateFrom"
+                   asp-route-dateTo="@Model.DateTo"
+                   asp-route-user="@Model.User"
+                   asp-route-entityType="@Model.EntityType"
+                   asp-route-action="@Model.Action"
+                   asp-route-search="@Model.Search"
+                   asp-route-pageNumber="@(Model.PageNumber + 1)">@AppLocalizer.Get("Вперёд", "Вперед", "Next")</a>
+            </li>
+        </ul>
+    </nav>
+}

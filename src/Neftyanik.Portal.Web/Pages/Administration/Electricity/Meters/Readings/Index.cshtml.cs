@@ -67,6 +67,7 @@ public class IndexModel : PageModel
                 CurrentReading = reading.CurrentReading,
                 CurrentNightReading = reading.CurrentNightReading,
                 AppliedMemberRate = reading.AppliedMemberRate,
+                AppliedMemberNightRate = reading.AppliedMemberNightRate,
                 Amount = reading.Amount,
                 BillingPlotNumber = reading.Charge != null && reading.Charge.Plot != null
                     ? reading.Charge.Plot.Number
@@ -146,6 +147,7 @@ public class IndexModel : PageModel
         public decimal? CurrentNightReading { get; init; }
         public decimal? Consumption { get; set; }
         public decimal? AppliedMemberRate { get; init; }
+        public decimal? AppliedMemberNightRate { get; init; }
         public decimal? Amount { get; init; }
         public string BillingPlotNumber { get; init; } = "—";
         public long? ChargeId { get; init; }

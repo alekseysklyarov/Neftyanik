@@ -55,6 +55,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
+    public DbSet<FinancialAuditLog> FinancialAuditLogs => Set<FinancialAuditLog>();
+
 public DbSet<UserLoginHistory> UserLoginHistories => Set<UserLoginHistory>();
 
     protected override void OnModelCreating(ModelBuilder builder)

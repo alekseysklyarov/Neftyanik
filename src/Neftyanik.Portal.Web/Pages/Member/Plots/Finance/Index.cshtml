@@ -79,6 +79,10 @@
                                     @if (charge.IsCancelled)
                                     {
                                         <div><span class="badge text-bg-secondary">@charge.StatusText</span></div>
+                                        @if (charge.CancelledAtUtc.HasValue)
+                                        {
+                                            <small class="d-block text-muted">@charge.CancelledAtUtc.Value.ToString("dd.MM.yyyy HH:mm") UTC</small>
+                                        }
                                         <small class="text-muted">@(string.IsNullOrWhiteSpace(charge.CancellationReason) ? AppLocalizer.Get("Причина не указана", "Причину не вказано", "Reason not specified") : charge.CancellationReason)</small>
                                     }
                                     else
@@ -165,7 +169,11 @@
                                     @if (payment.IsCancelled)
                                     {
                                         <div><span class="badge text-bg-secondary">@payment.StatusText</span></div>
-                                        <small class="text-muted">@(string.IsNullOrWhiteSpace(payment.CancellationReason) ? AppLocalizer.Get("Причина не указана", "Причину не вказано", "Reason not specified") : payment.CancellationReason)</small>
+                                         @if (payment.CancelledAtUtc.HasValue)
+                                         {
+                                             <small class="d-block text-muted">@payment.CancelledAtUtc.Value.ToString("dd.MM.yyyy HH:mm") UTC</small>
+                                         }
+                                         <small class="text-muted">@(string.IsNullOrWhiteSpace(payment.CancellationReason) ? AppLocalizer.Get("Причина не указана", "Причину не вказано", "Reason not specified") : payment.CancellationReason)</small>
                                     }
                                     else
                                     {

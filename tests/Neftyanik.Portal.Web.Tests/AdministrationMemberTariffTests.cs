@@ -11,6 +11,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
+using Neftyanik.Portal.Application.Electricity;
+using Neftyanik.Portal.Application.Finance;
+using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data;
 using Neftyanik.Portal.Infrastructure.Services;
@@ -50,15 +53,18 @@ public class AdministrationMemberTariffTests
             new ServiceCollection().BuildServiceProvider(),
             NullLogger<UserManager<ApplicationUser>>.Instance);
 
-        var service = new MemberElectricityService(dbContext);
+        var httpContextAccessor = new HttpContextAccessor();
+        var service = new MemberElectricityService(dbContext, new FinancialAuditService(dbContext, httpContextAccessor));
         var httpContext = new DefaultHttpContext
         {
             User = new ClaimsPrincipal(new ClaimsIdentity(
             [
-                new Claim(ClaimTypes.NameIdentifier, adminUserId)
+                new Claim(ClaimTypes.NameIdentifier, adminUserId),
+                new Claim(ClaimTypes.Name, "admin-tariff@example.com")
             ],
             "Test"))
         };
+        httpContextAccessor.HttpContext = httpContext;
 
         httpContext.Request.ContentType = "application/x-www-form-urlencoded";
         httpContext.Request.Form = new FormCollection(new Dictionary<string, StringValues>
@@ -94,6 +100,103 @@ public class AdministrationMemberTariffTests
         var tariff = await dbContext.MemberElectricityTariffs.AsNoTracking().SingleAsync();
         Assert.Equal(5.01m, tariff.Rate);
         Assert.Equal(2.75m, tariff.NightRate);
+
+        var auditEntry = await dbContext.FinancialAuditLogs.AsNoTracking().SingleAsync();
+        Assert.Equal(FinancialAuditLogActions.Created, auditEntry.Action);
+        Assert.Equal(nameof(MemberElectricityTariff), auditEntry.EntityType);
+        Assert.Equal(tariff.Id.ToString(), auditEntry.EntityId);
+        Assert.Equal(adminUserId, auditEntry.UserId);
+        Assert.Equal("admin-tariff@example.com", auditEntry.UserName);
+        Assert.Contains("\"MemberRate\":5.01", auditEntry.NewValuesJson, StringComparison.Ordinal);
+        Assert.Contains("\"NightRate\":2.75", auditEntry.NewValuesJson, StringComparison.Ordinal);
+        Assert.Single(await dbContext.FinancialAuditLogs.AsNoTracking().ToListAsync());
+    }
+
+    [Fact]
+    public async Task OnPostCreateMemberTariff_WhenValidationFails_DoesNotCreateAuditEntry()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseSqlite(connection)
+            .Options;
+
+        await using var dbContext = new ApplicationDbContext(options);
+        await dbContext.Database.EnsureCreatedAsync();
+
+        const string adminUserId = "admin-user";
+        dbContext.Users.Add(CreateUser(adminUserId, "admin-tariff@example.com"));
+        await dbContext.SaveChangesAsync();
+
+        using var userStore = new UserStore<ApplicationUser>(dbContext);
+        using var userManager = new UserManager<ApplicationUser>(
+            userStore,
+            Options.Create(new IdentityOptions()),
+            new PasswordHasher<ApplicationUser>(),
+            Array.Empty<IUserValidator<ApplicationUser>>(),
+            Array.Empty<IPasswordValidator<ApplicationUser>>(),
+            new UpperInvariantLookupNormalizer(),
+            new IdentityErrorDescriber(),
+            new ServiceCollection().BuildServiceProvider(),
+            NullLogger<UserManager<ApplicationUser>>.Instance);
+
+        var httpContextAccessor = new HttpContextAccessor();
+        var service = new MemberElectricityService(dbContext, new FinancialAuditService(dbContext, httpContextAccessor));
+        var httpContext = new DefaultHttpContext
+        {
+            User = new ClaimsPrincipal(new ClaimsIdentity(
+            [
+                new Claim(ClaimTypes.NameIdentifier, adminUserId),
+                new Claim(ClaimTypes.Name, "admin-tariff@example.com")
+            ],
+            "Test"))
+        };
+        httpContextAccessor.HttpContext = httpContext;
+
+        var model = new MemberTariffCreateModel(service, userManager)
+        {
+            Input = new Neftyanik.Portal.Web.Pages.Administration.Electricity.MemberTariffs.TariffInputModel
+            {
+                EffectiveFrom = new DateOnly(2026, 7, 29),
+                Rate = -1m,
+                NightRate = 2.75m
+            },
+            PageContext = new PageContext
+            {
+                HttpContext = httpContext
+            },
+            TempData = new TempDataDictionary(httpContext, new TestTempDataProvider())
+        };
+
+        var result = await model.OnPostAsync(CancellationToken.None);
+
+        Assert.IsType<PageResult>(result);
+        Assert.Empty(await dbContext.MemberElectricityTariffs.AsNoTracking().ToListAsync());
+        Assert.Empty(await dbContext.FinancialAuditLogs.AsNoTracking().ToListAsync());
+    }
+
+    [Fact]
+    public async Task CreateMemberTariffAsync_WhenAuditFails_RollsBackTariff()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseSqlite(connection)
+            .Options;
+
+        await using var dbContext = new ApplicationDbContext(options);
+        await dbContext.Database.EnsureCreatedAsync();
+
+        var service = new MemberElectricityService(dbContext, new ThrowingFinancialAuditService());
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.CreateTariffAsync(
+            new CreateMemberElectricityTariffRequest(new DateOnly(2026, 7, 29), 5.01m, 2.75m, null),
+            CancellationToken.None));
+
+        Assert.Empty(await dbContext.MemberElectricityTariffs.AsNoTracking().ToListAsync());
+        Assert.Empty(await dbContext.FinancialAuditLogs.AsNoTracking().ToListAsync());
     }
 
     private static ApplicationUser CreateUser(string id, string email)
@@ -123,6 +226,14 @@ public class AdministrationMemberTariffTests
 
         public void SaveTempData(HttpContext context, IDictionary<string, object> values)
         {
+        }
+    }
+
+    private sealed class ThrowingFinancialAuditService : IFinancialAuditService
+    {
+        public void Add(string action, string entityType, string entityId, string? description = null, object? oldValues = null, object? newValues = null)
+        {
+            throw new InvalidOperationException("Simulated audit failure.");
         }
     }
 }

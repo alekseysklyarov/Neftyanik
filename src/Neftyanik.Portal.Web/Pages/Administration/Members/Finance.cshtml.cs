@@ -404,22 +404,7 @@ public class FinanceModel : PageModel
                 .GroupBy(item => item.PlotId)
                 .ToDictionary(group => group.Key, group => group.Sum(item => item.Amount));
 
-            var paymentTotalsByPlot = (await _dbContext.PaymentAllocations
-                .AsNoTracking()
-                .Where(allocation => allocation.Payment != null
-                    && allocation.Payment.CancelledAtUtc == null
-                    && allocation.Charge != null
-                    && allocation.Charge.CancelledAtUtc == null
-                    && allocation.Charge.PlotId != null
-                    && plotIds.Contains(allocation.Charge.PlotId.Value))
-                .Select(allocation => new
-                {
-                    PlotId = allocation.Charge!.PlotId!.Value,
-                    allocation.Amount
-                })
-                .ToListAsync(cancellationToken))
-                .GroupBy(item => item.PlotId)
-                .ToDictionary(group => group.Key, group => group.Sum(item => item.Amount));
+            var paymentTotalsByPlot = await _dbContext.LoadActivePaymentTotalsByPlotAsync(plotIds, cancellationToken);
 
             var totalPayments = (await _dbContext.Payments
                 .AsNoTracking()
@@ -463,6 +448,7 @@ public class FinanceModel : PageModel
                 .Take(PageSize)
                 .Select(charge => new ChargeItemViewModel
                 {
+                    ChargeId = charge.Id,
                     PlotId = charge.PlotId!.Value,
                     PlotNumber = charge.Plot != null ? charge.Plot.Number : "—",
                     ChargeDate = charge.ChargeDate,
@@ -471,6 +457,7 @@ public class FinanceModel : PageModel
                     DueDate = charge.DueDate,
                     Description = charge.Description,
                     IsCancelled = charge.CancelledAtUtc != null,
+                    CancelledAtUtc = charge.CancelledAtUtc,
                     CancellationReason = charge.CancellationReason
                 })
                 .ToListAsync(cancellationToken);
@@ -493,6 +480,7 @@ public class FinanceModel : PageModel
                 .Take(PageSize)
                 .Select(payment => new PaymentItemViewModel
                 {
+                    PaymentId = payment.Id,
                     PlotId = payment.PlotId!.Value,
                     PlotNumber = payment.Plot != null ? payment.Plot.Number : "—",
                     PaymentDate = payment.PaymentDate,
@@ -501,6 +489,7 @@ public class FinanceModel : PageModel
                     ReferenceNumber = payment.ReferenceNumber,
                     Description = payment.Description,
                     IsCancelled = payment.CancelledAtUtc != null,
+                    CancelledAtUtc = payment.CancelledAtUtc,
                     CancellationReason = payment.CancellationReason
                 })
                 .ToListAsync(cancellationToken);
@@ -838,6 +827,8 @@ public class FinanceModel : PageModel
 
     public sealed class ChargeItemViewModel
     {
+        public long ChargeId { get; init; }
+
         public int PlotId { get; init; }
 
         public string PlotNumber { get; init; } = string.Empty;
@@ -854,6 +845,8 @@ public class FinanceModel : PageModel
 
         public bool IsCancelled { get; init; }
 
+        public DateTime? CancelledAtUtc { get; init; }
+
         public string? CancellationReason { get; init; }
 
         public string StatusText => IsCancelled
@@ -863,6 +856,8 @@ public class FinanceModel : PageModel
 
     public sealed class PaymentItemViewModel
     {
+        public long PaymentId { get; init; }
+
         public int PlotId { get; init; }
 
         public string PlotNumber { get; init; } = string.Empty;
@@ -878,6 +873,8 @@ public class FinanceModel : PageModel
         public string? Description { get; init; }
 
         public bool IsCancelled { get; init; }
+
+        public DateTime? CancelledAtUtc { get; init; }
 
         public string? CancellationReason { get; init; }
 

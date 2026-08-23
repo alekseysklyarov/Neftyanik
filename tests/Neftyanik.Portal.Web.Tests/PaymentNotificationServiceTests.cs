@@ -1,7 +1,11 @@
 #if WEB_TESTS
+using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Neftyanik.Portal.Application.Finance;
 using Neftyanik.Portal.Application.Payments;
+using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Domain.Enums;
 using Neftyanik.Portal.Infrastructure.Data;
@@ -19,6 +23,7 @@ public sealed class PaymentNotificationServiceTests
         await testContext.SeedMemberAsync(1, "member-user");
 
         var service = testContext.CreatePaymentNotificationService();
+        testContext.SetCurrentUser("member-user", "member@example.com");
         var result = await service.CreateAsync(1, new CreatePaymentNotificationRequest(150m, PaymentMethod.Card, "  квитанция  "));
 
         Assert.True(result.Succeeded);
@@ -29,6 +34,13 @@ public sealed class PaymentNotificationServiceTests
         Assert.Equal("квитанция", notification.Description);
         Assert.Null(notification.PaymentId);
         Assert.Empty(await testContext.DbContext.Payments.ToListAsync());
+
+        var auditEntry = await testContext.DbContext.FinancialAuditLogs.SingleAsync();
+        Assert.Equal(FinancialAuditLogActions.Submitted, auditEntry.Action);
+        Assert.Equal(nameof(PaymentNotification), auditEntry.EntityType);
+        Assert.Equal("member-user", auditEntry.UserId);
+        Assert.Equal("member@example.com", auditEntry.UserName);
+        Assert.Contains("Создано уведомление о платеже", auditEntry.Description, StringComparison.Ordinal);
     }
 
     [Theory]
@@ -274,6 +286,7 @@ public sealed class PaymentNotificationServiceTests
         await testContext.DbContext.SaveChangesAsync();
 
         var service = testContext.CreatePaymentNotificationService();
+        testContext.SetCurrentUser("admin-user", "admin@example.com");
         var result = await service.ConfirmAsync(new ConfirmPaymentNotificationRequest(notification.Id, new DateOnly(2026, 8, 1), 101, "admin-user"));
 
         Assert.True(result.Succeeded);
@@ -289,6 +302,22 @@ public sealed class PaymentNotificationServiceTests
         Assert.Single(payments);
         Assert.Equal(101, payments[0].PlotId);
         Assert.Equal(150m, payments[0].Amount);
+
+        var auditEntries = await testContext.DbContext.FinancialAuditLogs
+            .OrderBy(item => item.Id)
+            .ToListAsync();
+        Assert.Equal(2, auditEntries.Count);
+
+        var approvedAudit = Assert.Single(auditEntries.Where(item => item.EntityType == nameof(PaymentNotification)));
+        Assert.Equal(FinancialAuditLogActions.Approved, approvedAudit.Action);
+        Assert.Equal("admin-user", approvedAudit.UserId);
+        Assert.Contains($"Создан платеж #{result.PaymentId}", approvedAudit.Description, StringComparison.Ordinal);
+
+        var paymentAudit = Assert.Single(auditEntries.Where(item => item.EntityType == nameof(Payment)));
+        Assert.Equal(FinancialAuditLogActions.Created, paymentAudit.Action);
+        Assert.Equal(result.PaymentId!.Value.ToString(), paymentAudit.EntityId);
+        Assert.Contains($"уведомления о платеже #{notification.Id}", paymentAudit.Description, StringComparison.Ordinal);
+        Assert.Contains($"\"SourcePaymentNotificationId\":{notification.Id}", paymentAudit.NewValuesJson, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -310,12 +339,14 @@ public sealed class PaymentNotificationServiceTests
         await testContext.DbContext.SaveChangesAsync();
 
         var service = testContext.CreatePaymentNotificationService();
+        testContext.SetCurrentUser("admin-user", "admin@example.com");
         var firstResult = await service.ConfirmAsync(new ConfirmPaymentNotificationRequest(notification.Id, new DateOnly(2026, 8, 1), 101, "admin-user"));
         var secondResult = await service.ConfirmAsync(new ConfirmPaymentNotificationRequest(notification.Id, new DateOnly(2026, 8, 1), 101, "admin-user"));
 
         Assert.True(firstResult.Succeeded);
         Assert.Equal(PaymentNotificationOperationResultCode.AlreadyProcessed, secondResult.Code);
         Assert.Single(await testContext.DbContext.Payments.ToListAsync());
+        Assert.Single(await testContext.DbContext.FinancialAuditLogs.Where(item => item.EntityType == nameof(Payment)).ToListAsync());
     }
 
     [Fact]
@@ -337,6 +368,7 @@ public sealed class PaymentNotificationServiceTests
         await testContext.DbContext.SaveChangesAsync();
 
         var service = testContext.CreatePaymentNotificationService();
+        testContext.SetCurrentUser("admin-user", "admin@example.com");
         var rejectResult = await service.RejectAsync(new RejectPaymentNotificationRequest(notification.Id, "admin-user", "wrong receipt"));
         var confirmResult = await service.ConfirmAsync(new ConfirmPaymentNotificationRequest(notification.Id, new DateOnly(2026, 8, 1), 101, "admin-user"));
 
@@ -347,6 +379,12 @@ public sealed class PaymentNotificationServiceTests
         Assert.Equal(PaymentNotificationStatus.Rejected, storedNotification.Status);
         Assert.Equal("wrong receipt", storedNotification.AdministratorComment);
         Assert.Empty(await testContext.DbContext.Payments.ToListAsync());
+
+        var auditEntry = await testContext.DbContext.FinancialAuditLogs.SingleAsync();
+        Assert.Equal(FinancialAuditLogActions.Rejected, auditEntry.Action);
+        Assert.Equal(nameof(PaymentNotification), auditEntry.EntityType);
+        Assert.Equal("admin-user", auditEntry.UserId);
+        Assert.Contains("wrong receipt", auditEntry.NewValuesJson, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -366,6 +404,7 @@ public sealed class PaymentNotificationServiceTests
         testContext.DbContext.PaymentNotifications.Add(notification);
         await testContext.DbContext.SaveChangesAsync();
 
+        testContext.SetCurrentUser("admin-user", "admin@example.com");
         var service = testContext.CreatePaymentNotificationService(new FailingPaymentService(CreateMemberPaymentResult.Failure(CreateMemberPaymentResultCode.NoEligiblePlots)));
         var result = await service.ConfirmAsync(new ConfirmPaymentNotificationRequest(notification.Id, new DateOnly(2026, 8, 1), null, "admin-user"));
 
@@ -376,6 +415,7 @@ public sealed class PaymentNotificationServiceTests
         Assert.Null(storedNotification.PaymentId);
         Assert.Null(storedNotification.ReviewedAtUtc);
         Assert.Empty(await testContext.DbContext.Payments.ToListAsync());
+        Assert.Empty(await testContext.DbContext.FinancialAuditLogs.ToListAsync());
     }
 
     private sealed class FailingPaymentService : IPaymentService
@@ -391,16 +431,23 @@ public sealed class PaymentNotificationServiceTests
         {
             return Task.FromResult(_result);
         }
+
+        public Task<CancelPaymentResult> CancelPaymentAsync(CancelPaymentRequest request, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(CancelPaymentResult.Failure(CancelPaymentResultCode.NotFound));
+        }
     }
 
     private sealed class PaymentNotificationTestContext : IAsyncDisposable
     {
         private readonly SqliteConnection _connection;
+        private readonly HttpContextAccessor _httpContextAccessor;
 
-        private PaymentNotificationTestContext(SqliteConnection connection, ApplicationDbContext dbContext)
+        private PaymentNotificationTestContext(SqliteConnection connection, ApplicationDbContext dbContext, HttpContextAccessor httpContextAccessor)
         {
             _connection = connection;
             DbContext = dbContext;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public ApplicationDbContext DbContext { get; }
@@ -417,13 +464,28 @@ public sealed class PaymentNotificationServiceTests
             var dbContext = new ApplicationDbContext(options);
             await dbContext.Database.EnsureCreatedAsync();
 
-            return new PaymentNotificationTestContext(connection, dbContext);
+            var httpContextAccessor = new HttpContextAccessor();
+
+            return new PaymentNotificationTestContext(connection, dbContext, httpContextAccessor);
         }
 
         public PaymentNotificationService CreatePaymentNotificationService(IPaymentService? paymentService = null)
         {
-            paymentService ??= new PaymentService(DbContext);
-            return new PaymentNotificationService(DbContext, paymentService);
+            paymentService ??= new PaymentService(DbContext, CreateFinancialAuditService());
+            return new PaymentNotificationService(DbContext, paymentService, CreateFinancialAuditService());
+        }
+
+        public void SetCurrentUser(string userId, string userName)
+        {
+            _httpContextAccessor.HttpContext = new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(new ClaimsIdentity(
+                [
+                    new Claim(ClaimTypes.NameIdentifier, userId),
+                    new Claim(ClaimTypes.Name, userName)
+                ],
+                authenticationType: "TestAuthentication"))
+            };
         }
 
         public async Task SeedMemberAsync(int memberId, string userId, string fullName = "Member")
@@ -520,6 +582,11 @@ public sealed class PaymentNotificationServiceTests
         {
             await DbContext.DisposeAsync();
             await _connection.DisposeAsync();
+        }
+
+        private IFinancialAuditService CreateFinancialAuditService()
+        {
+            return new FinancialAuditService(DbContext, _httpContextAccessor);
         }
     }
 }

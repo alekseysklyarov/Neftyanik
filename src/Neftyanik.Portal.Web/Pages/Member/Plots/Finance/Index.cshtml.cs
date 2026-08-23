@@ -111,21 +111,7 @@ public class IndexModel : PageModel
             .Select(charge => charge.Amount)
             .ToListAsync(cancellationToken);
 
-        var chargeIds = await _dbContext.Charges
-            .AsNoTracking()
-            .Where(charge => charge.PlotId == plotId && charge.CancelledAtUtc == null)
-            .Select(charge => charge.Id)
-            .ToArrayAsync(cancellationToken);
-
-        var activePaymentAmounts = chargeIds.Length == 0
-            ? []
-            : await _dbContext.PaymentAllocations
-                .AsNoTracking()
-                .Where(allocation => chargeIds.Contains(allocation.ChargeId)
-                    && allocation.Payment != null
-                    && allocation.Payment.CancelledAtUtc == null)
-                .Select(allocation => allocation.Amount)
-                .ToListAsync(cancellationToken);
+        var paymentTotalsByPlot = await _dbContext.LoadActivePaymentTotalsByPlotAsync([plotId], cancellationToken);
 
         Plot = new PlotFinanceViewModel
         {
@@ -134,7 +120,7 @@ public class IndexModel : PageModel
             PlotAddress = plotInfo.PlotAddress,
             OwnershipShare = ownership.OwnershipShare,
             ActiveChargesTotal = activeChargeAmounts.Sum(),
-            ActivePaymentsTotal = activePaymentAmounts.Sum()
+            ActivePaymentsTotal = paymentTotalsByPlot.GetValueOrDefault(plotId)
         };
 
             var chargesQuery = _dbContext.Charges
@@ -155,23 +141,27 @@ public class IndexModel : PageModel
                 .Take(PageSize)
                 .Select(charge => new
                 {
+                    charge.Id,
                     charge.ChargeDate,
                     ChargeTypeName = charge.ChargeType != null ? charge.ChargeType.Name : "—",
                     charge.Amount,
                     charge.DueDate,
                     charge.Description,
                     IsCancelled = charge.CancelledAtUtc != null,
+                    charge.CancelledAtUtc,
                     charge.CancellationReason
                 })
                 .ToListAsync(cancellationToken))
                 .Select(charge => new ChargeItemViewModel
                 {
+                    ChargeId = charge.Id,
                     ChargeDate = charge.ChargeDate,
                     ChargeTypeName = charge.ChargeTypeName,
                     Amount = charge.Amount,
                     DueDate = charge.DueDate,
                     Description = charge.Description,
                     IsCancelled = charge.IsCancelled,
+                    CancelledAtUtc = charge.CancelledAtUtc,
                     CancellationReason = charge.CancellationReason
                 })
                 .ToList();
@@ -200,6 +190,7 @@ public class IndexModel : PageModel
                     payment.ReferenceNumber,
                     payment.Description,
                     IsCancelled = payment.CancelledAtUtc != null,
+                    payment.CancelledAtUtc,
                     payment.CancellationReason
                 })
                 .ToListAsync(cancellationToken))
@@ -211,6 +202,7 @@ public class IndexModel : PageModel
                     ReferenceNumber = payment.ReferenceNumber,
                     Description = payment.Description,
                     IsCancelled = payment.IsCancelled,
+                    CancelledAtUtc = payment.CancelledAtUtc,
                     CancellationReason = payment.CancellationReason
                 })
                 .ToList();
@@ -267,6 +259,8 @@ public class IndexModel : PageModel
 
     public sealed class ChargeItemViewModel
     {
+        public long ChargeId { get; init; }
+
         public DateOnly ChargeDate { get; init; }
 
         public string ChargeTypeName { get; init; } = string.Empty;
@@ -278,6 +272,8 @@ public class IndexModel : PageModel
         public string? Description { get; init; }
 
         public bool IsCancelled { get; init; }
+
+        public DateTime? CancelledAtUtc { get; init; }
 
         public string? CancellationReason { get; init; }
 
@@ -299,6 +295,8 @@ public class IndexModel : PageModel
         public string? Description { get; init; }
 
         public bool IsCancelled { get; init; }
+
+        public DateTime? CancelledAtUtc { get; init; }
 
         public string? CancellationReason { get; init; }
 

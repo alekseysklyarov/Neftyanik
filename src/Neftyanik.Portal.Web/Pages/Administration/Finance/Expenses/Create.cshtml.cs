@@ -5,7 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
+using Microsoft.EntityFrameworkCore.Storage;
+using Neftyanik.Portal.Application.Finance;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data;
@@ -16,11 +17,13 @@ namespace Neftyanik.Portal.Web.Pages.Administration.Finance.Expenses;
 public class CreateModel : PageModel
 {
     private readonly ApplicationDbContext _dbContext;
+    private readonly IFinancialAuditService _financialAuditService;
     private readonly UserManager<ApplicationUser> _userManager;
 
-    public CreateModel(ApplicationDbContext dbContext, UserManager<ApplicationUser> userManager)
+    public CreateModel(ApplicationDbContext dbContext, IFinancialAuditService financialAuditService, UserManager<ApplicationUser> userManager)
     {
         _dbContext = dbContext;
+        _financialAuditService = financialAuditService;
         _userManager = userManager;
     }
 
@@ -76,27 +79,57 @@ public class CreateModel : PageModel
             CreatedAt = DateTimeOffset.UtcNow
         };
 
-        _dbContext.Expenses.Add(expense);
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        _dbContext.AuditLogs.Add(new AuditLog
+        IDbContextTransaction? transaction = null;
+        if (_dbContext.Database.IsRelational() && _dbContext.Database.CurrentTransaction is null)
         {
-            UserId = currentUser.Id,
-            Action = "Create",
-            EntityType = nameof(Expense),
-            EntityId = expense.Id.ToString(),
-            NewValues = JsonSerializer.Serialize(new
+            transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+        }
+
+        try
+        {
+            _dbContext.Expenses.Add(expense);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            _financialAuditService.Add(
+                FinancialAuditLogActions.Created,
+                nameof(Expense),
+                expense.Id.ToString(),
+                $"Создан расход #{expense.Id}.",
+                newValues: new
+                {
+                    ExpenseId = expense.Id,
+                    expense.ExpenseDate,
+                    expense.Amount,
+                    expense.ExpenseCategoryId,
+                    expense.Description,
+                    expense.Payee,
+                    expense.DocumentNumber,
+                    expense.AssociationElectricityReadingId
+                });
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            if (transaction is not null)
             {
-                expense.ExpenseCategoryId,
-                expense.ExpenseDate,
-                expense.Amount,
-                expense.Description,
-                expense.Payee,
-                expense.DocumentNumber
-            }),
-            CreatedAt = DateTimeOffset.UtcNow
-        });
-        await _dbContext.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+            }
+        }
+        catch
+        {
+            if (transaction is not null)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+            }
+
+            throw;
+        }
+        finally
+        {
+            if (transaction is not null)
+            {
+                await transaction.DisposeAsync();
+            }
+        }
 
         TempData["SuccessMessage"] = "Расход сохранён.";
         return RedirectToPage("/Administration/Finance/Expenses/Index");

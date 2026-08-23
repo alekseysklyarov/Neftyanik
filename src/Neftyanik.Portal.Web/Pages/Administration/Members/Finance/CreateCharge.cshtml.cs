@@ -1,13 +1,16 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Domain.Constants;
+using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data;
 using Neftyanik.Portal.Infrastructure.Data.Queries;
+using Neftyanik.Portal.Infrastructure.Services;
 using Neftyanik.Portal.Web.Localization;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Members.Finance;
@@ -191,8 +194,55 @@ public class CreateChargeModel : PageModel
             CreatedByUserId = currentUser?.Id
         };
 
-        _dbContext.Charges.Add(charge);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        var transaction = _dbContext.Database.IsRelational() && _dbContext.Database.CurrentTransaction is null
+            ? await _dbContext.Database.BeginTransactionAsync(cancellationToken)
+            : null;
+
+        try
+        {
+            _dbContext.Charges.Add(charge);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            CreateFinancialAuditService().Add(
+                FinancialAuditLogActions.Created,
+                nameof(Charge),
+                charge.Id.ToString(),
+                $"Создано начисление #{charge.Id}.",
+                newValues: new
+                {
+                    ChargeId = charge.Id,
+                    MemberId = id,
+                    charge.PlotId,
+                    charge.ChargeTypeId,
+                    charge.Amount,
+                    charge.ChargeDate,
+                    charge.DueDate,
+                    charge.Description
+                });
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            if (transaction is not null)
+            {
+                await transaction.CommitAsync(cancellationToken);
+            }
+        }
+        catch
+        {
+            if (transaction is not null)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+            }
+
+            throw;
+        }
+        finally
+        {
+            if (transaction is not null)
+            {
+                await transaction.DisposeAsync();
+            }
+        }
 
         TempData["SuccessMessage"] = AppLocalizer.Get("Начисление сохранено.", "Нарахування збережено.", "The charge has been saved.");
         return RedirectToPage("/Administration/Members/Finance", new { id });
@@ -346,6 +396,14 @@ public class CreateChargeModel : PageModel
     private static string? Normalize(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private FinancialAuditService CreateFinancialAuditService()
+    {
+        return new FinancialAuditService(_dbContext, new HttpContextAccessor
+        {
+            HttpContext = HttpContext
+        });
     }
 
     public sealed class MemberSummaryViewModel

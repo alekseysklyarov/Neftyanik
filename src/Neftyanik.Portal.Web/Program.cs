@@ -50,6 +50,7 @@ builder.Services.AddRazorPages(options =>
     options.RootDirectory = razorPagesRootDirectory;
 });
 builder.Services.AddControllersWithViews();
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpsRedirection(options =>
 {
     options.HttpsPort = 443;

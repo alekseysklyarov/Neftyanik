@@ -281,7 +281,13 @@ public class AdministrationMemberAccountTests
             null,
             NullLogger<UserManager<ApplicationUser>>.Instance);
 
-        var model = new MemberIndexModel(dbContext, new Neftyanik.Portal.Infrastructure.Services.PaymentNotificationService(dbContext, new Neftyanik.Portal.Infrastructure.Services.PaymentService(dbContext)), userManager)
+        var model = new MemberIndexModel(
+            dbContext,
+            new Neftyanik.Portal.Infrastructure.Services.PaymentNotificationService(
+                dbContext,
+                new Neftyanik.Portal.Infrastructure.Services.PaymentService(dbContext, new Neftyanik.Portal.Infrastructure.Services.FinancialAuditService(dbContext, new Microsoft.AspNetCore.Http.HttpContextAccessor())),
+                new Neftyanik.Portal.Infrastructure.Services.FinancialAuditService(dbContext, new Microsoft.AspNetCore.Http.HttpContextAccessor())),
+            userManager)
         {
             Profile = new MemberIndexModel.ProfileInputModel
             {
@@ -380,7 +386,13 @@ public class AdministrationMemberAccountTests
         });
         await dbContext.SaveChangesAsync();
 
-        var model = new MemberIndexModel(dbContext, new Neftyanik.Portal.Infrastructure.Services.PaymentNotificationService(dbContext, new Neftyanik.Portal.Infrastructure.Services.PaymentService(dbContext)), userManager)
+        var model = new MemberIndexModel(
+            dbContext,
+            new Neftyanik.Portal.Infrastructure.Services.PaymentNotificationService(
+                dbContext,
+                new Neftyanik.Portal.Infrastructure.Services.PaymentService(dbContext, new Neftyanik.Portal.Infrastructure.Services.FinancialAuditService(dbContext, new Microsoft.AspNetCore.Http.HttpContextAccessor())),
+                new Neftyanik.Portal.Infrastructure.Services.FinancialAuditService(dbContext, new Microsoft.AspNetCore.Http.HttpContextAccessor())),
+            userManager)
         {
             ChangePassword = new MemberIndexModel.ChangePasswordInputModel
             {

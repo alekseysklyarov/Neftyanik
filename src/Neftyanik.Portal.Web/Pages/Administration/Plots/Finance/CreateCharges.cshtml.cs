@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -7,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data;
+using Neftyanik.Portal.Infrastructure.Services;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Plots.Finance;
 
@@ -203,8 +205,58 @@ public class CreateChargesModel : PageModel
             })
             .ToList();
 
-        _dbContext.Charges.AddRange(charges);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        var transaction = _dbContext.Database.IsRelational() && _dbContext.Database.CurrentTransaction is null
+            ? await _dbContext.Database.BeginTransactionAsync(cancellationToken)
+            : null;
+
+        try
+        {
+            _dbContext.Charges.AddRange(charges);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            var auditService = CreateFinancialAuditService();
+            foreach (var charge in charges)
+            {
+                auditService.Add(
+                    FinancialAuditLogActions.Created,
+                    nameof(Charge),
+                    charge.Id.ToString(),
+                    $"Создано начисление #{charge.Id}.",
+                    newValues: new
+                    {
+                        ChargeId = charge.Id,
+                        charge.PlotId,
+                        charge.ChargeTypeId,
+                        charge.Amount,
+                        charge.ChargeDate,
+                        charge.DueDate,
+                        charge.Description
+                    });
+            }
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            if (transaction is not null)
+            {
+                await transaction.CommitAsync(cancellationToken);
+            }
+        }
+        catch
+        {
+            if (transaction is not null)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+            }
+
+            throw;
+        }
+        finally
+        {
+            if (transaction is not null)
+            {
+                await transaction.DisposeAsync();
+            }
+        }
 
         if (TempData is not null)
         {
@@ -335,6 +387,14 @@ public class CreateChargesModel : PageModel
     private static string? Normalize(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private FinancialAuditService CreateFinancialAuditService()
+    {
+        return new FinancialAuditService(_dbContext, new HttpContextAccessor
+        {
+            HttpContext = HttpContext
+        });
     }
 
     private static string NormalizeStatus(string? status)

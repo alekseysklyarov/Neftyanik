@@ -13,6 +13,7 @@ public class MemberElectricityReadingConfiguration : IEntityTypeConfiguration<Me
             tableBuilder.HasCheckConstraint("CK_MemberElectricityReadings_CurrentReading_NonNegative", "[CurrentReading] >= 0");
             tableBuilder.HasCheckConstraint("CK_MemberElectricityReadings_CurrentNightReading_NonNegative", "[CurrentNightReading] IS NULL OR [CurrentNightReading] >= 0");
             tableBuilder.HasCheckConstraint("CK_MemberElectricityReadings_AppliedMemberRate_NonNegative", "[AppliedMemberRate] IS NULL OR [AppliedMemberRate] >= 0");
+            tableBuilder.HasCheckConstraint("CK_MemberElectricityReadings_AppliedMemberNightRate_NonNegative", "[AppliedMemberNightRate] IS NULL OR [AppliedMemberNightRate] >= 0");
             tableBuilder.HasCheckConstraint("CK_MemberElectricityReadings_Amount_NonNegative", "[Amount] IS NULL OR [Amount] >= 0");
         });
 
@@ -28,6 +29,9 @@ public class MemberElectricityReadingConfiguration : IEntityTypeConfiguration<Me
             .HasPrecision(18, 3);
 
         builder.Property(x => x.AppliedMemberRate)
+            .HasPrecision(18, 4);
+
+        builder.Property(x => x.AppliedMemberNightRate)
             .HasPrecision(18, 4);
 
         builder.Property(x => x.Amount)

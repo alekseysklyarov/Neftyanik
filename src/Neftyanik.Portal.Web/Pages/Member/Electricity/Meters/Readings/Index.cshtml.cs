@@ -57,8 +57,10 @@ public class IndexModel : PageModel
             {
                 Id = reading.Id,
                 ReadingDate = reading.ReadingDate,
+                CurrentNightReading = reading.CurrentNightReading,
                 CurrentReading = reading.CurrentReading,
                 AppliedMemberRate = reading.AppliedMemberRate,
+                AppliedMemberNightRate = reading.AppliedMemberNightRate,
                 Amount = reading.Amount,
                 IsInitialReading = reading.IsInitialReading,
                 IsChargeCancelled = reading.Charge != null && reading.Charge.CancelledAtUtc != null
@@ -170,8 +172,10 @@ public class IndexModel : PageModel
         public long Id { get; init; }
         public DateOnly ReadingDate { get; init; }
         public decimal CurrentReading { get; init; }
+        public decimal? CurrentNightReading { get; init; }
         public decimal? Consumption { get; set; }
         public decimal? AppliedMemberRate { get; init; }
+        public decimal? AppliedMemberNightRate { get; init; }
         public decimal? Amount { get; init; }
         public bool IsInitialReading { get; init; }
         public bool IsChargeCancelled { get; init; }

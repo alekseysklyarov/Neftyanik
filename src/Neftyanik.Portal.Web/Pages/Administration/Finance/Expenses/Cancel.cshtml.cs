@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
-using System.Text.Json;
+using Neftyanik.Portal.Application.Finance;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data;
@@ -15,11 +15,13 @@ namespace Neftyanik.Portal.Web.Pages.Administration.Finance.Expenses;
 public class CancelModel : PageModel
 {
     private readonly ApplicationDbContext _dbContext;
+    private readonly IFinancialAuditService _financialAuditService;
     private readonly UserManager<ApplicationUser> _userManager;
 
-    public CancelModel(ApplicationDbContext dbContext, UserManager<ApplicationUser> userManager)
+    public CancelModel(ApplicationDbContext dbContext, IFinancialAuditService financialAuditService, UserManager<ApplicationUser> userManager)
     {
         _dbContext = dbContext;
+        _financialAuditService = financialAuditService;
         _userManager = userManager;
     }
 
@@ -63,39 +65,61 @@ public class CancelModel : PageModel
             return Page();
         }
 
-        var currentUser = await _userManager.GetUserAsync(User);
         var isCancelling = !expense.IsCancelled;
+        var oldValues = CreateAuditValues(expense);
 
         expense.IsCancelled = isCancelling;
         expense.CancellationReason = isCancelling ? Input.CancellationReason?.Trim() : null;
         expense.CancelledAt = isCancelling ? DateTimeOffset.UtcNow : null;
         expense.UpdatedAt = DateTimeOffset.UtcNow;
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        var newValues = CreateAuditValues(expense);
 
-        if (currentUser is not null)
+        if (isCancelling)
         {
-            _dbContext.AuditLogs.Add(new AuditLog
-            {
-                UserId = currentUser.Id,
-                Action = isCancelling ? "Cancel" : "Restore",
-                EntityType = nameof(Expense),
-                EntityId = expense.Id.ToString(),
-                NewValues = JsonSerializer.Serialize(new
-                {
-                    expense.IsCancelled,
-                    expense.CancellationReason,
-                    expense.CancelledAt
-                }),
-                CreatedAt = DateTimeOffset.UtcNow
-            });
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            _financialAuditService.Add(
+                FinancialAuditLogActions.Cancelled,
+                nameof(Expense),
+                expense.Id.ToString(),
+                $"Отменен расход #{expense.Id}.",
+                oldValues,
+                newValues);
         }
+        else
+        {
+            _financialAuditService.Add(
+                FinancialAuditLogActions.Restored,
+                nameof(Expense),
+                expense.Id.ToString(),
+                $"Восстановлен расход #{expense.Id}.",
+                oldValues,
+                newValues);
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
 
         TempData["SuccessMessage"] = expense.IsCancelled
             ? "Расход отменён."
             : "Расход восстановлен.";
 
         return RedirectToPage("/Administration/Finance/Expenses/Details", new { id });
+    }
+
+    private static object CreateAuditValues(Expense expense)
+    {
+        return new
+        {
+            ExpenseId = expense.Id,
+            expense.ExpenseCategoryId,
+            expense.ExpenseDate,
+            expense.Amount,
+            expense.Description,
+            expense.Payee,
+            expense.DocumentNumber,
+            expense.IsCancelled,
+            expense.CancellationReason,
+            expense.CancelledAt,
+            expense.AssociationElectricityReadingId
+        };
     }
 
     private async Task<ExpenseCancelViewModel?> LoadViewModelAsync(long id, CancellationToken cancellationToken)

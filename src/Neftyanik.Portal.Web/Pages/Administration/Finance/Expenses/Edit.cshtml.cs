@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
+using Neftyanik.Portal.Application.Finance;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data;
@@ -15,11 +15,13 @@ namespace Neftyanik.Portal.Web.Pages.Administration.Finance.Expenses;
 public class EditModel : PageModel
 {
     private readonly ApplicationDbContext _dbContext;
+    private readonly IFinancialAuditService _financialAuditService;
     private readonly UserManager<ApplicationUser> _userManager;
 
-    public EditModel(ApplicationDbContext dbContext, UserManager<ApplicationUser> userManager)
+    public EditModel(ApplicationDbContext dbContext, IFinancialAuditService financialAuditService, UserManager<ApplicationUser> userManager)
     {
         _dbContext = dbContext;
+        _financialAuditService = financialAuditService;
         _userManager = userManager;
     }
 
@@ -114,6 +116,8 @@ public class EditModel : PageModel
             return RedirectToPage("/Administration/Finance/Expenses/Details", new { id });
         }
 
+        var oldValues = CreateAuditValues(expense);
+
         expense.ExpenseCategoryId = Input.ExpenseCategoryId.Value;
         expense.ExpenseDate = Input.ExpenseDate.Value;
         expense.Amount = Input.Amount.Value;
@@ -122,30 +126,19 @@ public class EditModel : PageModel
         expense.DocumentNumber = Normalize(Input.DocumentNumber);
         expense.UpdatedAt = DateTimeOffset.UtcNow;
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        var currentUser = await _userManager.GetUserAsync(User);
-        if (currentUser is not null)
+        var newValues = CreateAuditValues(expense);
+        if (!AreEquivalent(oldValues, newValues))
         {
-            _dbContext.AuditLogs.Add(new AuditLog
-            {
-                UserId = currentUser.Id,
-                Action = "Edit",
-                EntityType = nameof(Expense),
-                EntityId = expense.Id.ToString(),
-                NewValues = JsonSerializer.Serialize(new
-                {
-                    expense.ExpenseCategoryId,
-                    expense.ExpenseDate,
-                    expense.Amount,
-                    expense.Description,
-                    expense.Payee,
-                    expense.DocumentNumber
-                }),
-                CreatedAt = DateTimeOffset.UtcNow
-            });
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            _financialAuditService.Add(
+                FinancialAuditLogActions.Updated,
+                nameof(Expense),
+                expense.Id.ToString(),
+                $"Обновлен расход #{expense.Id}.",
+                oldValues,
+                newValues);
         }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
 
         TempData["SuccessMessage"] = "Изменения по расходу сохранены.";
         return RedirectToPage("/Administration/Finance/Expenses/Details", new { id });
@@ -169,4 +162,38 @@ public class EditModel : PageModel
     {
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
+
+    private static ExpenseAuditValues CreateAuditValues(Expense expense)
+    {
+        return new ExpenseAuditValues(
+            expense.Id,
+            expense.ExpenseDate,
+            expense.Amount,
+            expense.ExpenseCategoryId,
+            expense.Description,
+            expense.Payee,
+            expense.DocumentNumber,
+            expense.AssociationElectricityReadingId,
+            expense.IsCancelled,
+            expense.CancellationReason,
+            expense.CancelledAt);
+    }
+
+    private static bool AreEquivalent(ExpenseAuditValues oldValues, ExpenseAuditValues newValues)
+    {
+        return oldValues == newValues;
+    }
+
+    private sealed record ExpenseAuditValues(
+        long ExpenseId,
+        DateOnly ExpenseDate,
+        decimal Amount,
+        int ExpenseCategoryId,
+        string Description,
+        string? Payee,
+        string? DocumentNumber,
+        long? AssociationElectricityReadingId,
+        bool IsCancelled,
+        string? CancellationReason,
+        DateTimeOffset? CancelledAt);
 }

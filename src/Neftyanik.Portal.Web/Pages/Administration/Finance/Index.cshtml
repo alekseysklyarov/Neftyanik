@@ -13,6 +13,10 @@
         <a class="btn btn-outline-primary" asp-page="/Administration/Finance/Expenses/Index">@AppLocalizer.Get("Расходы", "Витрати", "Expenses")</a>
         <a class="btn btn-outline-primary" asp-page="/Administration/Finance/Expenses/Electricity/Index">@AppLocalizer.Get("Расходы электроэнергии", "Витрати на електроенергію", "Electricity expenses")</a>
         <a class="btn btn-outline-primary" asp-page="/Administration/Finance/Settings/Index">@AppLocalizer.Get("Настройки финансов", "Налаштування фінансів", "Finance settings")</a>
+        @if (User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.Accountant))
+        {
+            <a class="btn btn-outline-primary" asp-page="/Administration/AuditLog/Index">@AppLocalizer.Get("Журнал финансовых операций", "Журнал фінансових операцій", "Financial operations log")</a>
+        }
         <a class="btn btn-outline-secondary" asp-page="/Administration/Index">@AppLocalizer.Get("К администрированию", "До адміністрування", "Back to administration")</a>
     </div>
 </div>

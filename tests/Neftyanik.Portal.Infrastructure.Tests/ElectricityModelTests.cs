@@ -72,6 +72,7 @@ public class ElectricityModelTests
         AssertPropertyPrecision(entityType, nameof(MemberElectricityReading.CurrentReading), 18, 3);
         AssertPropertyPrecision(entityType, nameof(MemberElectricityReading.CurrentNightReading), 18, 3);
         AssertPropertyPrecision(entityType, nameof(MemberElectricityReading.AppliedMemberRate), 18, 4);
+        AssertPropertyPrecision(entityType, nameof(MemberElectricityReading.AppliedMemberNightRate), 18, 4);
         AssertPropertyPrecision(entityType, nameof(MemberElectricityReading.Amount), 18, 2);
     }
 

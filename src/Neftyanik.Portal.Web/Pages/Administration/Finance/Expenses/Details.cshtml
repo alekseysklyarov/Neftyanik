@@ -118,7 +118,8 @@
                             <th>Дата и время</th>
                             <th>Действие</th>
                             <th>Пользователь</th>
-                            <th>Данные</th>
+                             <th>Описание</th>
+                             <th>Изменения</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -128,7 +129,32 @@
                                 <td>@item.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
                                 <td>@item.Action</td>
                                 <td>@item.UserName</td>
-                                <td><span class="small text-muted">@(string.IsNullOrWhiteSpace(item.NewValues) ? "—" : item.NewValues)</span></td>
+                                 <td>@item.Description</td>
+                                 <td>
+                                     @if (item.Changes.Count == 0)
+                                     {
+                                         <span class="text-muted small">—</span>
+                                     }
+                                     else
+                                     {
+                                         <ul class="list-unstyled small mb-0">
+                                             @foreach (var change in item.Changes)
+                                             {
+                                                 <li>
+                                                     <span class="text-muted">@change.Label:</span>
+                                                     @if (string.IsNullOrWhiteSpace(change.OldValue))
+                                                     {
+                                                         <span>@(string.IsNullOrWhiteSpace(change.NewValue) ? "—" : change.NewValue)</span>
+                                                     }
+                                                     else
+                                                     {
+                                                         <span>@change.OldValue → @(string.IsNullOrWhiteSpace(change.NewValue) ? "—" : change.NewValue)</span>
+                                                     }
+                                                 </li>
+                                             }
+                                         </ul>
+                                     }
+                                 </td>
                             </tr>
                         }
                     </tbody>

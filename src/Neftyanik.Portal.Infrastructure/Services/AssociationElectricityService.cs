@@ -1,9 +1,11 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Neftyanik.Portal.Application.Electricity;
+using Neftyanik.Portal.Application.Finance;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data;
-using System.Text.Json;
 
 namespace Neftyanik.Portal.Infrastructure.Services;
 
@@ -11,10 +13,17 @@ public sealed class AssociationElectricityService : IAssociationElectricityServi
 {
     private const string ElectricitySupplierPayee = "Поставщик электроэнергии";
     private readonly ApplicationDbContext _dbContext;
+    private readonly IFinancialAuditService _financialAuditService;
 
     public AssociationElectricityService(ApplicationDbContext dbContext)
+        : this(dbContext, new FinancialAuditService(dbContext, new HttpContextAccessor()))
+    {
+    }
+
+    public AssociationElectricityService(ApplicationDbContext dbContext, IFinancialAuditService financialAuditService)
     {
         _dbContext = dbContext;
+        _financialAuditService = financialAuditService;
     }
 
     public async Task<ElectricityOperationResult> CreateTariffAsync(CreateAssociationElectricityTariffRequest request, CancellationToken cancellationToken = default)
@@ -38,24 +47,74 @@ public sealed class AssociationElectricityService : IAssociationElectricityServi
             return ElectricityOperationResult.Failure("Тариф поставщика с такой датой уже существует.");
         }
 
-        _dbContext.AssociationElectricityTariffs.Add(new AssociationElectricityTariff
+        var tariff = new AssociationElectricityTariff
         {
             EffectiveFrom = request.EffectiveFrom,
             DayRate = request.DayRate,
             NightRate = request.NightRate,
             CreatedAtUtc = DateTimeOffset.UtcNow,
             CreatedByUserId = request.CreatedByUserId
-        });
+        };
+
+        IDbContextTransaction? transaction = null;
+        if (_dbContext.Database.IsRelational() && _dbContext.Database.CurrentTransaction is null)
+        {
+            transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+        }
 
         try
         {
+            _dbContext.AssociationElectricityTariffs.Add(tariff);
+
             await _dbContext.SaveChangesAsync(cancellationToken);
+
+            _financialAuditService.Add(
+                FinancialAuditLogActions.Created,
+                nameof(AssociationElectricityTariff),
+                tariff.Id.ToString(),
+                "Изменены тарифы поставщика: день/ночь.",
+                newValues: new
+                {
+                    TariffId = tariff.Id,
+                    tariff.EffectiveFrom,
+                    tariff.DayRate,
+                    tariff.NightRate
+                });
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            if (transaction is not null)
+            {
+                await transaction.CommitAsync(cancellationToken);
+            }
+
             return ElectricityOperationResult.Success();
         }
         catch (DbUpdateException exception) when (exception.Message.Contains("AssociationElectricityTariffs", StringComparison.OrdinalIgnoreCase)
             || exception.InnerException?.Message.Contains("AssociationElectricityTariffs", StringComparison.OrdinalIgnoreCase) == true)
         {
+            if (transaction is not null)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+            }
+
             return ElectricityOperationResult.Failure("Тариф поставщика с такой датой уже существует.");
+        }
+        catch
+        {
+            if (transaction is not null)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+            }
+
+            throw;
+        }
+        finally
+        {
+            if (transaction is not null)
+            {
+                await transaction.DisposeAsync();
+            }
         }
     }
 
@@ -272,37 +331,68 @@ public sealed class AssociationElectricityService : IAssociationElectricityServi
             AssociationElectricityReadingId = reading.Id
         };
 
-        _dbContext.Expenses.Add(expense);
+        IDbContextTransaction? transaction = null;
+        if (_dbContext.Database.IsRelational() && _dbContext.Database.CurrentTransaction is null)
+        {
+            transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+        }
 
         try
         {
+            _dbContext.Expenses.Add(expense);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            _dbContext.AuditLogs.Add(new AuditLog
-            {
-                UserId = request.CreatedByUserId,
-                Action = "Create",
-                EntityType = nameof(Expense),
-                EntityId = expense.Id.ToString(),
-                NewValues = JsonSerializer.Serialize(new
+            _financialAuditService.Add(
+                FinancialAuditLogActions.Created,
+                nameof(Expense),
+                expense.Id.ToString(),
+                $"Создан расход #{expense.Id}.",
+                newValues: new
                 {
-                    expense.ExpenseCategoryId,
+                    ExpenseId = expense.Id,
                     expense.ExpenseDate,
                     expense.Amount,
+                    expense.ExpenseCategoryId,
                     expense.Description,
                     expense.Payee,
+                    expense.DocumentNumber,
                     expense.AssociationElectricityReadingId
-                }),
-                CreatedAt = DateTimeOffset.UtcNow
-            });
+                });
+
             await _dbContext.SaveChangesAsync(cancellationToken);
+
+            if (transaction is not null)
+            {
+                await transaction.CommitAsync(cancellationToken);
+            }
 
             return AssociationElectricityExpenseOperationResult.Success(expense.Id, expense.Amount);
         }
         catch (DbUpdateException exception) when (exception.Message.Contains("AssociationElectricityReadingId", StringComparison.OrdinalIgnoreCase)
             || exception.InnerException?.Message.Contains("AssociationElectricityReadingId", StringComparison.OrdinalIgnoreCase) == true)
         {
+            if (transaction is not null)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+            }
+
             return AssociationElectricityExpenseOperationResult.Failure("Расход по этим показаниям уже создан.");
+        }
+        catch
+        {
+            if (transaction is not null)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+            }
+
+            throw;
+        }
+        finally
+        {
+            if (transaction is not null)
+            {
+                await transaction.DisposeAsync();
+            }
         }
     }
 

@@ -259,6 +259,10 @@
                                                                 {
                                                                     <div><strong>@AppLocalizer.Get("Описание:", "Опис:", "Description:")</strong> @charge.Description</div>
                                                                 }
+                                                                @if (charge.CancelledAtUtc.HasValue)
+                                                                {
+                                                                    <div><strong>@AppLocalizer.Get("Дата отмены:", "Дата скасування:", "Cancellation date:")</strong> @charge.CancelledAtUtc.Value.ToString("dd.MM.yyyy HH:mm") UTC</div>
+                                                                }
                                                                 @if (!string.IsNullOrWhiteSpace(charge.CancellationReason))
                                                                 {
                                                                     <div><strong>@AppLocalizer.Get("Причина отмены:", "Причина скасування:", "Cancellation reason:")</strong> @charge.CancellationReason</div>
@@ -337,6 +341,10 @@
                                                                 @if (!string.IsNullOrWhiteSpace(payment.Description))
                                                                 {
                                                                     <div><strong>@AppLocalizer.Get("Описание:", "Опис:", "Description:")</strong> @payment.Description</div>
+                                                                }
+                                                                @if (payment.CancelledAtUtc.HasValue)
+                                                                {
+                                                                    <div><strong>@AppLocalizer.Get("Дата отмены:", "Дата скасування:", "Cancellation date:")</strong> @payment.CancelledAtUtc.Value.ToString("dd.MM.yyyy HH:mm") UTC</div>
                                                                 }
                                                                 @if (!string.IsNullOrWhiteSpace(payment.CancellationReason))
                                                                 {

@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Neftyanik.Portal.Application.Electricity;
+using Neftyanik.Portal.Application.Finance;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data;
@@ -24,6 +25,76 @@ namespace Neftyanik.Portal.Web.Tests;
 
 public class AdministrationMemberFinanceChargeTests
 {
+    [Fact]
+    public async Task OnPostCreateChargeAsync_CreatesExactlyOneChargeAuditEntry()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseSqlite(connection)
+            .Options;
+
+        await using var dbContext = new ApplicationDbContext(options);
+        await dbContext.Database.EnsureCreatedAsync();
+
+        const string adminUserId = "admin-user";
+        const string adminUserName = "admin-charge@example.com";
+        const int memberId = 2601;
+        const int plotId = 2602;
+        const int chargeTypeId = 2603;
+
+        dbContext.Users.Add(CreateUser(adminUserId, adminUserName));
+        dbContext.Members.Add(new Member { Id = memberId, FullName = "Charge Member", IsActive = true });
+        dbContext.Plots.Add(new Plot { Id = plotId, Number = "P-2602", IsActive = true });
+        dbContext.PlotOwnerships.Add(new PlotOwnership { Id = 1, PlotId = plotId, MemberId = memberId, ValidFrom = new DateOnly(2020, 1, 1), IsPrimaryContact = true });
+        dbContext.ChargeTypes.Add(new ChargeType { Id = chargeTypeId, Name = "Членский взнос", IsActive = true, DefaultAmount = 450m });
+        await dbContext.SaveChangesAsync();
+
+        using var userStore = new UserStore<ApplicationUser>(dbContext);
+        using var userManager = new UserManager<ApplicationUser>(
+            userStore,
+            Options.Create(new IdentityOptions()),
+            new PasswordHasher<ApplicationUser>(),
+            Array.Empty<IUserValidator<ApplicationUser>>(),
+            Array.Empty<IPasswordValidator<ApplicationUser>>(),
+            new UpperInvariantLookupNormalizer(),
+            new IdentityErrorDescriber(),
+            null,
+            NullLogger<UserManager<ApplicationUser>>.Instance);
+
+        var model = new CreateChargeModel(dbContext, userManager)
+        {
+            Input = new MemberChargeInputModel
+            {
+                PlotId = plotId,
+                ChargeTypeId = chargeTypeId,
+                Amount = 450m,
+                ChargeDate = new DateOnly(2026, 3, 1),
+                DueDate = new DateOnly(2026, 3, 15),
+                Description = "Ручное начисление"
+            },
+            PageContext = CreatePageContext(adminUserId, adminUserName)
+        };
+        model.TempData = TestPageModelContext.CreateTempData(model.PageContext.HttpContext);
+
+        var result = await model.OnPostAsync(memberId, CancellationToken.None);
+
+        var redirect = Assert.IsType<RedirectToPageResult>(result);
+        Assert.Equal("/Administration/Members/Finance", redirect.PageName);
+
+        var charge = await dbContext.Charges.AsNoTracking().SingleAsync();
+        var auditEntry = await dbContext.FinancialAuditLogs.AsNoTracking().SingleAsync();
+
+        Assert.Equal(FinancialAuditLogActions.Created, auditEntry.Action);
+        Assert.Equal(nameof(Charge), auditEntry.EntityType);
+        Assert.Equal(charge.Id.ToString(), auditEntry.EntityId);
+        Assert.Equal(adminUserId, auditEntry.UserId);
+        Assert.Equal(adminUserName, auditEntry.UserName);
+        Assert.Contains("\"MemberId\":2601", auditEntry.NewValuesJson, StringComparison.Ordinal);
+        Assert.Contains("\"PlotId\":2602", auditEntry.NewValuesJson, StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task GetAdministrationMemberFinance_ForMemberWithActivePlots_ShowsChargeCreationActions()
     {
@@ -332,7 +403,10 @@ public class AdministrationMemberFinanceChargeTests
             null,
             NullLogger<UserManager<ApplicationUser>>.Instance);
 
-        var model = new RegisterPaymentModel(dbContext, new PaymentService(dbContext), userManager)
+        var model = new RegisterPaymentModel(
+            dbContext,
+            new PaymentService(dbContext, new FinancialAuditService(dbContext, new Microsoft.AspNetCore.Http.HttpContextAccessor())),
+            userManager)
         {
             Input = new MemberPaymentInputModel
             {
@@ -450,7 +524,10 @@ public class AdministrationMemberFinanceChargeTests
             null,
             NullLogger<UserManager<ApplicationUser>>.Instance);
 
-        var model = new RegisterPaymentModel(dbContext, new PaymentService(dbContext), userManager);
+        var model = new RegisterPaymentModel(
+            dbContext,
+            new PaymentService(dbContext, new FinancialAuditService(dbContext, new Microsoft.AspNetCore.Http.HttpContextAccessor())),
+            userManager);
         var financeModel = new FinanceIndexModel(dbContext);
 
         var result = await model.OnGetAsync(memberId, null, CancellationToken.None);
@@ -527,7 +604,8 @@ public class AdministrationMemberFinanceChargeTests
             null,
             NullLogger<UserManager<ApplicationUser>>.Instance);
 
-        var service = new MemberElectricityService(dbContext);
+        var httpContextAccessor = new HttpContextAccessor();
+        var service = new MemberElectricityService(dbContext, new FinancialAuditService(dbContext, httpContextAccessor));
         var model = new FinanceModel(dbContext, service, userManager)
         {
             ChargePage = 1,
@@ -648,6 +726,91 @@ public class AdministrationMemberFinanceChargeTests
     }
 
     [Fact]
+    public async Task OnPostInitialElectricityReadingAsync_CreatesExactlyOneReadingAuditEntry()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseSqlite(connection)
+            .Options;
+
+        await using var dbContext = new ApplicationDbContext(options);
+        await dbContext.Database.EnsureCreatedAsync();
+
+        const string adminUserId = "admin-user";
+        const string adminUserName = "admin-initial@example.com";
+        const int memberId = 1151;
+        const int plotId = 1152;
+        const int meterId = 1153;
+
+        dbContext.Users.Add(CreateUser(adminUserId, adminUserName));
+        dbContext.Members.Add(new Member { Id = memberId, FullName = "Initial Reading Member", IsActive = true });
+        dbContext.Plots.Add(new Plot { Id = plotId, Number = "P-1152", IsActive = true });
+        dbContext.PlotOwnerships.Add(new PlotOwnership { Id = 1, PlotId = plotId, MemberId = memberId, ValidFrom = new DateOnly(2020, 1, 1), IsPrimaryContact = true });
+        dbContext.MemberElectricityMeters.Add(new MemberElectricityMeter
+        {
+            Id = meterId,
+            MemberId = memberId,
+            Name = "Initial Meter",
+            BillingPlotId = plotId,
+            IsActive = true
+        });
+        await dbContext.SaveChangesAsync();
+
+        var initialPlot = await dbContext.Plots.SingleAsync(plot => plot.Id == plotId);
+        initialPlot.MemberElectricityMeterId = meterId;
+        await dbContext.SaveChangesAsync();
+
+        using var userStore = new UserStore<ApplicationUser>(dbContext);
+        using var userManager = new UserManager<ApplicationUser>(
+            userStore,
+            Options.Create(new IdentityOptions()),
+            new PasswordHasher<ApplicationUser>(),
+            Array.Empty<IUserValidator<ApplicationUser>>(),
+            Array.Empty<IPasswordValidator<ApplicationUser>>(),
+            new UpperInvariantLookupNormalizer(),
+            new IdentityErrorDescriber(),
+            null,
+            NullLogger<UserManager<ApplicationUser>>.Instance);
+
+        var httpContextAccessor = new HttpContextAccessor();
+        var service = new MemberElectricityService(dbContext, new FinancialAuditService(dbContext, httpContextAccessor));
+        var model = new Neftyanik.Portal.Web.Pages.Administration.Electricity.Meters.InitialModel(dbContext, service, userManager)
+        {
+            Input = new Neftyanik.Portal.Web.Pages.Administration.Electricity.Meters.ReadingInputModel
+            {
+                ReadingDate = new DateOnly(2026, 2, 1),
+                CurrentReading = 111.222m
+            },
+            PageContext = CreatePageContext(adminUserId, adminUserName)
+        };
+
+        model.TempData = TestPageModelContext.CreateTempData(model.PageContext.HttpContext);
+        httpContextAccessor.HttpContext = model.PageContext.HttpContext;
+
+        var result = await model.OnPostAsync(meterId, CancellationToken.None);
+
+        var redirect = Assert.IsType<RedirectToPageResult>(result);
+        Assert.Equal("/Administration/Electricity/Meters/Details", redirect.PageName);
+
+        var reading = await dbContext.MemberElectricityReadings.AsNoTracking().SingleAsync();
+        var auditEntry = await dbContext.FinancialAuditLogs.AsNoTracking().SingleAsync();
+
+        Assert.True(reading.IsInitialReading);
+        Assert.Null(reading.AppliedMemberNightRate);
+        Assert.Equal(FinancialAuditLogActions.Created, auditEntry.Action);
+        Assert.Equal(nameof(MemberElectricityReading), auditEntry.EntityType);
+        Assert.Equal(reading.Id.ToString(), auditEntry.EntityId);
+        Assert.Equal(adminUserId, auditEntry.UserId);
+        Assert.Equal(adminUserName, auditEntry.UserName);
+        Assert.Contains("начальное показание", auditEntry.Description ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("\"AppliedMemberNightRate\":null", auditEntry.NewValuesJson, StringComparison.Ordinal);
+        Assert.Contains("\"ReadingId\":" + reading.Id, auditEntry.NewValuesJson, StringComparison.Ordinal);
+        Assert.Contains("\"RelatedChargeId\":null", auditEntry.NewValuesJson, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task OnPostInitializeElectricityAsync_CreatesInitialReadingAndOpeningDebtCharge()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
@@ -695,7 +858,8 @@ public class AdministrationMemberFinanceChargeTests
             null,
             NullLogger<UserManager<ApplicationUser>>.Instance);
 
-        var service = new MemberElectricityService(dbContext);
+        var httpContextAccessor = new HttpContextAccessor();
+        var service = new MemberElectricityService(dbContext, new FinancialAuditService(dbContext, httpContextAccessor));
         var model = new FinanceModel(dbContext, service, userManager)
         {
             InitializationInput = new MemberElectricityInitializationInputModel
@@ -709,7 +873,8 @@ public class AdministrationMemberFinanceChargeTests
             PaymentPage = 1
         };
 
-        model.PageContext = CreatePageContext(adminUserId);
+        model.PageContext = CreatePageContext(adminUserId, "admin5@example.com");
+        httpContextAccessor.HttpContext = model.PageContext.HttpContext;
 
         var result = await model.OnPostInitializeElectricityAsync(memberId, CancellationToken.None);
 
@@ -719,11 +884,25 @@ public class AdministrationMemberFinanceChargeTests
         var reading = await dbContext.MemberElectricityReadings.AsNoTracking().SingleAsync();
         Assert.True(reading.IsInitialReading);
         Assert.Equal(321.123m, reading.CurrentReading);
+        Assert.Null(reading.AppliedMemberNightRate);
 
         var charge = await dbContext.Charges.AsNoTracking().SingleAsync();
         Assert.Equal(450m, charge.Amount);
         Assert.Equal(plotId, charge.PlotId);
         Assert.Contains("Начальная задолженность по электроэнергии", charge.Description, StringComparison.Ordinal);
+
+        var auditEntries = await dbContext.FinancialAuditLogs
+            .AsNoTracking()
+            .OrderBy(item => item.EntityType)
+            .ThenBy(item => item.EntityId)
+            .ToListAsync();
+
+        Assert.Equal(2, auditEntries.Count);
+        Assert.Single(auditEntries, item => item.EntityType == nameof(MemberElectricityReading) && item.Action == FinancialAuditLogActions.Created && item.EntityId == reading.Id.ToString());
+        var readingAudit = Assert.Single(auditEntries.Where(item => item.EntityType == nameof(MemberElectricityReading)));
+        Assert.Equal(adminUserId, readingAudit.UserId);
+        Assert.Contains("\"RelatedChargeId\":" + charge.Id, readingAudit.NewValuesJson, StringComparison.Ordinal);
+        Assert.Single(auditEntries, item => item.EntityType == nameof(Charge) && item.Action == FinancialAuditLogActions.Created && item.EntityId == charge.Id.ToString());
     }
 
     [Fact]
@@ -761,7 +940,8 @@ public class AdministrationMemberFinanceChargeTests
             null,
             NullLogger<UserManager<ApplicationUser>>.Instance);
 
-        var service = new MemberElectricityService(dbContext);
+        var httpContextAccessor = new HttpContextAccessor();
+        var service = new MemberElectricityService(dbContext, new FinancialAuditService(dbContext, httpContextAccessor));
         var model = new FinanceModel(dbContext, service, userManager)
         {
             SetupInput = new MemberElectricitySetupInputModel
@@ -777,7 +957,8 @@ public class AdministrationMemberFinanceChargeTests
             PaymentPage = 1
         };
 
-        model.PageContext = CreatePageContext(adminUserId);
+        model.PageContext = CreatePageContext(adminUserId, "admin-setup@example.com");
+        httpContextAccessor.HttpContext = model.PageContext.HttpContext;
 
         var result = await model.OnPostSetupElectricityAsync(memberId, CancellationToken.None);
 
@@ -797,10 +978,24 @@ public class AdministrationMemberFinanceChargeTests
         var reading = await dbContext.MemberElectricityReadings.AsNoTracking().SingleAsync();
         Assert.True(reading.IsInitialReading);
         Assert.Equal(222.333m, reading.CurrentReading);
+        Assert.Null(reading.AppliedMemberNightRate);
 
         var charge = await dbContext.Charges.AsNoTracking().SingleAsync();
         Assert.Equal(150m, charge.Amount);
         Assert.Equal(plotId, charge.PlotId);
+
+        var auditEntries = await dbContext.FinancialAuditLogs
+            .AsNoTracking()
+            .OrderBy(item => item.EntityType)
+            .ThenBy(item => item.EntityId)
+            .ToListAsync();
+
+        Assert.Equal(2, auditEntries.Count);
+        var readingAudit = Assert.Single(auditEntries.Where(item => item.EntityType == nameof(MemberElectricityReading)));
+        Assert.Equal(FinancialAuditLogActions.Created, readingAudit.Action);
+        Assert.Equal(adminUserId, readingAudit.UserId);
+        Assert.Contains("\"RelatedChargeId\":" + charge.Id, readingAudit.NewValuesJson, StringComparison.Ordinal);
+        Assert.Single(auditEntries, item => item.EntityType == nameof(Charge) && item.Action == FinancialAuditLogActions.Created && item.EntityId == charge.Id.ToString());
     }
 
     [Fact]
@@ -861,7 +1056,8 @@ public class AdministrationMemberFinanceChargeTests
             null,
             NullLogger<UserManager<ApplicationUser>>.Instance);
 
-        var service = new MemberElectricityService(dbContext);
+        var httpContextAccessor = new HttpContextAccessor();
+        var service = new MemberElectricityService(dbContext, new FinancialAuditService(dbContext, httpContextAccessor));
         var model = new FinanceModel(dbContext, service, userManager)
         {
             ReadingInput = new MemberElectricityReadingInputModel
@@ -874,7 +1070,8 @@ public class AdministrationMemberFinanceChargeTests
             PaymentPage = 1
         };
 
-        model.PageContext = CreatePageContext(adminUserId);
+        model.PageContext = CreatePageContext(adminUserId, "admin6@example.com");
+        httpContextAccessor.HttpContext = model.PageContext.HttpContext;
 
         var result = await model.OnPostCreateElectricityReadingAsync(memberId, CancellationToken.None);
 
@@ -884,12 +1081,307 @@ public class AdministrationMemberFinanceChargeTests
         var readings = await dbContext.MemberElectricityReadings.AsNoTracking().OrderBy(item => item.ReadingDate).ToListAsync();
         Assert.Equal(2, readings.Count);
         Assert.Equal(30m, readings[1].CurrentReading - readings[0].CurrentReading);
+        Assert.Equal(5m, readings[1].AppliedMemberRate);
+        Assert.Null(readings[1].AppliedMemberNightRate);
         Assert.Equal(150m, readings[1].Amount);
 
         var charge = await dbContext.Charges.AsNoTracking().SingleAsync();
         Assert.Equal(150m, charge.Amount);
         Assert.Equal(plotId, charge.PlotId);
         Assert.Contains("Электроэнергия", charge.Description, StringComparison.Ordinal);
+
+        var auditEntries = await dbContext.FinancialAuditLogs
+            .AsNoTracking()
+            .OrderBy(item => item.EntityType)
+            .ThenBy(item => item.EntityId)
+            .ToListAsync();
+
+        Assert.Equal(2, auditEntries.Count);
+        var readingAudit = Assert.Single(auditEntries.Where(item => item.EntityType == nameof(MemberElectricityReading)));
+        Assert.Equal(FinancialAuditLogActions.Created, readingAudit.Action);
+        Assert.Equal(adminUserId, readingAudit.UserId);
+        Assert.Equal("admin6@example.com", readingAudit.UserName);
+        Assert.Contains("\"Consumption\":30", readingAudit.NewValuesJson, StringComparison.Ordinal);
+        Assert.Contains("\"AppliedMemberNightRate\":null", readingAudit.NewValuesJson, StringComparison.Ordinal);
+        Assert.Contains("\"RelatedChargeId\":" + charge.Id, readingAudit.NewValuesJson, StringComparison.Ordinal);
+
+        var chargeAudit = Assert.Single(auditEntries.Where(item => item.EntityType == nameof(Charge)));
+        Assert.Equal(FinancialAuditLogActions.Created, chargeAudit.Action);
+        Assert.Equal(adminUserId, chargeAudit.UserId);
+        Assert.Equal("admin6@example.com", chargeAudit.UserName);
+    }
+
+    [Fact]
+    public async Task OnPostMemberElectricityReadingAsync_CapturesAuthenticatedMemberUserOnce()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseSqlite(connection)
+            .Options;
+
+        await using var dbContext = new ApplicationDbContext(options);
+        await dbContext.Database.EnsureCreatedAsync();
+
+        const string memberUserId = "member-user";
+        const string memberUserName = "member-reading@example.com";
+        const int memberId = 1304;
+        const int plotId = 1305;
+        const int meterId = 1306;
+
+        dbContext.Users.Add(CreateUser(memberUserId, memberUserName));
+        dbContext.Members.Add(new Member
+        {
+            Id = memberId,
+            ApplicationUserId = memberUserId,
+            FullName = "Member Reading User",
+            IsActive = true
+        });
+        dbContext.Plots.Add(new Plot { Id = plotId, Number = "P-1305", IsActive = true });
+        dbContext.PlotOwnerships.Add(new PlotOwnership { Id = 1, PlotId = plotId, MemberId = memberId, ValidFrom = new DateOnly(2020, 1, 1), IsPrimaryContact = true });
+        dbContext.MemberElectricityMeters.Add(new MemberElectricityMeter
+        {
+            Id = meterId,
+            MemberId = memberId,
+            Name = "Member Reading Meter",
+            BillingPlotId = plotId,
+            IsActive = true,
+            Readings =
+            [
+                new MemberElectricityReading
+                {
+                    ReadingDate = new DateOnly(2026, 1, 1),
+                    CurrentReading = 100m,
+                    IsInitialReading = true
+                }
+            ]
+        });
+        dbContext.MemberElectricityTariffs.Add(new MemberElectricityTariff { EffectiveFrom = new DateOnly(2020, 1, 1), Rate = 5m });
+        await dbContext.SaveChangesAsync();
+
+        var memberReadingPlot = await dbContext.Plots.SingleAsync(plot => plot.Id == plotId);
+        memberReadingPlot.MemberElectricityMeterId = meterId;
+        await dbContext.SaveChangesAsync();
+
+        using var userStore = new UserStore<ApplicationUser>(dbContext);
+        using var userManager = new UserManager<ApplicationUser>(
+            userStore,
+            Options.Create(new IdentityOptions()),
+            new PasswordHasher<ApplicationUser>(),
+            Array.Empty<IUserValidator<ApplicationUser>>(),
+            Array.Empty<IPasswordValidator<ApplicationUser>>(),
+            new UpperInvariantLookupNormalizer(),
+            new IdentityErrorDescriber(),
+            null,
+            NullLogger<UserManager<ApplicationUser>>.Instance);
+
+        var httpContextAccessor = new HttpContextAccessor();
+        var service = new MemberElectricityService(dbContext, new FinancialAuditService(dbContext, httpContextAccessor));
+        var model = new Neftyanik.Portal.Web.Pages.Member.Electricity.Meters.Readings.CreateModel(dbContext, service, userManager)
+        {
+            Input = new Neftyanik.Portal.Web.Pages.Administration.Electricity.Meters.ReadingInputModel
+            {
+                ReadingDate = new DateOnly(2026, 2, 1),
+                CurrentReading = 140m
+            },
+            PageContext = CreatePageContext(memberUserId, memberUserName)
+        };
+
+        model.TempData = TestPageModelContext.CreateTempData(model.PageContext.HttpContext);
+        httpContextAccessor.HttpContext = model.PageContext.HttpContext;
+
+        var result = await model.OnPostAsync(meterId, CancellationToken.None);
+
+        var redirect = Assert.IsType<RedirectToPageResult>(result);
+        Assert.Equal("/Member/Electricity/Meters/Readings/Index", redirect.PageName);
+
+        var auditEntries = await dbContext.FinancialAuditLogs
+            .AsNoTracking()
+            .OrderBy(item => item.EntityType)
+            .ThenBy(item => item.EntityId)
+            .ToListAsync();
+
+        Assert.Equal(2, auditEntries.Count);
+        var readingAudit = Assert.Single(auditEntries.Where(item => item.EntityType == nameof(MemberElectricityReading)));
+        Assert.Equal(memberUserId, readingAudit.UserId);
+        Assert.Equal(memberUserName, readingAudit.UserName);
+        Assert.Contains("\"SubmittedByMember\":true", readingAudit.NewValuesJson, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task OnPostCreateElectricityReadingAsync_DayNightMeter_PersistsAppliedNightRate_AndPreservesCalculation()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseSqlite(connection)
+            .Options;
+
+        await using var dbContext = new ApplicationDbContext(options);
+        await dbContext.Database.EnsureCreatedAsync();
+
+        const string adminUserId = "admin-user";
+        const int memberId = 1307;
+        const int plotId = 1308;
+        const int meterId = 1309;
+
+        dbContext.Users.Add(CreateUser(adminUserId, "admin-daynight-reading@example.com"));
+        dbContext.Members.Add(new Member
+        {
+            Id = memberId,
+            FullName = "Day Night Reading Member",
+            IsActive = true,
+            ElectricityMeterType = Neftyanik.Portal.Domain.Enums.MemberElectricityMeterType.DayNight
+        });
+        dbContext.Plots.Add(new Plot { Id = plotId, Number = "P-1308", IsActive = true });
+        dbContext.PlotOwnerships.Add(new PlotOwnership { Id = 1, PlotId = plotId, MemberId = memberId, ValidFrom = new DateOnly(2020, 1, 1), IsPrimaryContact = true });
+        dbContext.MemberElectricityMeters.Add(new MemberElectricityMeter
+        {
+            Id = meterId,
+            MemberId = memberId,
+            Name = "Day Night Meter",
+            BillingPlotId = plotId,
+            IsActive = true,
+            Readings =
+            [
+                new MemberElectricityReading
+                {
+                    ReadingDate = new DateOnly(2026, 1, 1),
+                    CurrentReading = 100m,
+                    CurrentNightReading = 40m,
+                    IsInitialReading = true
+                }
+            ]
+        });
+        dbContext.MemberElectricityTariffs.Add(new MemberElectricityTariff
+        {
+            EffectiveFrom = new DateOnly(2020, 1, 1),
+            Rate = 5m,
+            NightRate = 2.50m
+        });
+        await dbContext.SaveChangesAsync();
+
+        var plot = await dbContext.Plots.SingleAsync(item => item.Id == plotId);
+        plot.MemberElectricityMeterId = meterId;
+        await dbContext.SaveChangesAsync();
+
+        using var userStore = new UserStore<ApplicationUser>(dbContext);
+        using var userManager = new UserManager<ApplicationUser>(
+            userStore,
+            Options.Create(new IdentityOptions()),
+            new PasswordHasher<ApplicationUser>(),
+            Array.Empty<IUserValidator<ApplicationUser>>(),
+            Array.Empty<IPasswordValidator<ApplicationUser>>(),
+            new UpperInvariantLookupNormalizer(),
+            new IdentityErrorDescriber(),
+            null,
+            NullLogger<UserManager<ApplicationUser>>.Instance);
+
+        var httpContextAccessor = new HttpContextAccessor();
+        var service = new MemberElectricityService(dbContext, new FinancialAuditService(dbContext, httpContextAccessor));
+        var model = new FinanceModel(dbContext, service, userManager)
+        {
+            ReadingInput = new MemberElectricityReadingInputModel
+            {
+                MeterId = meterId,
+                ReadingDate = new DateOnly(2026, 2, 1),
+                CurrentReading = 130m,
+                CurrentNightReading = 50m
+            },
+            ChargePage = 1,
+            PaymentPage = 1
+        };
+
+        model.PageContext = CreatePageContext(adminUserId, "admin-daynight-reading@example.com");
+        httpContextAccessor.HttpContext = model.PageContext.HttpContext;
+
+        var result = await model.OnPostCreateElectricityReadingAsync(memberId, CancellationToken.None);
+
+        var redirect = Assert.IsType<RedirectToPageResult>(result);
+        Assert.Equal("/Administration/Members/Finance", redirect.PageName);
+
+        var readings = await dbContext.MemberElectricityReadings.AsNoTracking().OrderBy(item => item.ReadingDate).ToListAsync();
+        Assert.Equal(2, readings.Count);
+        Assert.Equal(5m, readings[1].AppliedMemberRate);
+        Assert.Equal(2.50m, readings[1].AppliedMemberNightRate);
+        Assert.Equal(175m, readings[1].Amount);
+
+        var charge = await dbContext.Charges.AsNoTracking().SingleAsync();
+        Assert.Equal(175m, charge.Amount);
+
+        var auditEntries = await dbContext.FinancialAuditLogs.AsNoTracking().OrderBy(item => item.EntityType).ThenBy(item => item.EntityId).ToListAsync();
+        Assert.Equal(2, auditEntries.Count);
+        var readingAudit = Assert.Single(auditEntries.Where(item => item.EntityType == nameof(MemberElectricityReading)));
+        Assert.Contains("\"AppliedMemberNightRate\":2.5", readingAudit.NewValuesJson, StringComparison.Ordinal);
+        Assert.Single(auditEntries.Where(item => item.EntityType == nameof(MemberElectricityReading)));
+    }
+
+    [Fact]
+    public async Task CreateInitialReadingAsync_DayNightMeter_PersistsNoAppliedNightRate()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseSqlite(connection)
+            .Options;
+
+        await using var dbContext = new ApplicationDbContext(options);
+        await dbContext.Database.EnsureCreatedAsync();
+
+        const string adminUserId = "admin-user";
+        const int memberId = 1314;
+        const int plotId = 1315;
+        const int meterId = 1316;
+
+        dbContext.Users.Add(CreateUser(adminUserId, "admin-daynight-initial@example.com"));
+        dbContext.Members.Add(new Member
+        {
+            Id = memberId,
+            FullName = "Day Night Initial Member",
+            IsActive = true,
+            ElectricityMeterType = Neftyanik.Portal.Domain.Enums.MemberElectricityMeterType.DayNight
+        });
+        dbContext.Plots.Add(new Plot { Id = plotId, Number = "P-1315", IsActive = true });
+        dbContext.PlotOwnerships.Add(new PlotOwnership { Id = 1, PlotId = plotId, MemberId = memberId, ValidFrom = new DateOnly(2020, 1, 1), IsPrimaryContact = true });
+        dbContext.MemberElectricityMeters.Add(new MemberElectricityMeter
+        {
+            Id = meterId,
+            MemberId = memberId,
+            Name = "Day Night Initial Meter",
+            BillingPlotId = plotId,
+            IsActive = true
+        });
+        dbContext.MemberElectricityTariffs.Add(new MemberElectricityTariff
+        {
+            EffectiveFrom = new DateOnly(2020, 1, 1),
+            Rate = 5m,
+            NightRate = 2.50m
+        });
+        await dbContext.SaveChangesAsync();
+
+        var initialPlot = await dbContext.Plots.SingleAsync(item => item.Id == plotId);
+        initialPlot.MemberElectricityMeterId = meterId;
+        await dbContext.SaveChangesAsync();
+
+        var service = new MemberElectricityService(dbContext, new FinancialAuditService(dbContext, new HttpContextAccessor()));
+        var result = await service.CreateInitialReadingAsync(
+            new CreateMemberElectricityInitialReadingRequest(
+                meterId,
+                new DateOnly(2026, 2, 1),
+                100m,
+                50m,
+                adminUserId),
+            CancellationToken.None);
+
+        Assert.True(result.Succeeded);
+
+        var reading = await dbContext.MemberElectricityReadings.AsNoTracking().SingleAsync();
+        Assert.True(reading.IsInitialReading);
+        Assert.Null(reading.AppliedMemberRate);
+        Assert.Null(reading.AppliedMemberNightRate);
     }
 
     [Fact]
@@ -950,6 +1442,7 @@ public class AdministrationMemberFinanceChargeTests
 
         Assert.False(result.Succeeded);
         Assert.Equal("Изменение показаний не может превышать 500 кВт·ч.", result.ErrorMessage);
+        Assert.Empty(await dbContext.FinancialAuditLogs.AsNoTracking().ToListAsync());
     }
 
     [Fact]
@@ -1009,6 +1502,74 @@ public class AdministrationMemberFinanceChargeTests
 
         Assert.False(result.Succeeded);
         Assert.Equal("Для указанной даты не найден тариф для участников. Добавьте его на странице \"Тариф для участников\".", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task CreateMemberElectricityReadingAsync_WhenAuditFails_RollsBackReadingAndCharge()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseSqlite(connection)
+            .Options;
+
+        await using var dbContext = new ApplicationDbContext(options);
+        await dbContext.Database.EnsureCreatedAsync();
+
+        const string adminUserId = "admin-user";
+        const int memberId = 1331;
+        const int plotId = 1332;
+        const int meterId = 1333;
+
+        dbContext.Users.Add(CreateUser(adminUserId, "admin-rollback@example.com"));
+        dbContext.Members.Add(new Member { Id = memberId, FullName = "Rollback Member", IsActive = true });
+        dbContext.Plots.Add(new Plot { Id = plotId, Number = "P-1332", IsActive = true });
+        dbContext.PlotOwnerships.Add(new PlotOwnership { Id = 1, PlotId = plotId, MemberId = memberId, ValidFrom = new DateOnly(2020, 1, 1), IsPrimaryContact = true });
+        dbContext.MemberElectricityMeters.Add(new MemberElectricityMeter
+        {
+            Id = meterId,
+            MemberId = memberId,
+            Name = "Rollback Meter",
+            BillingPlotId = plotId,
+            IsActive = true,
+            Readings =
+            [
+                new MemberElectricityReading
+                {
+                    ReadingDate = new DateOnly(2026, 1, 1),
+                    CurrentReading = 100m,
+                    IsInitialReading = true
+                }
+            ]
+        });
+        dbContext.MemberElectricityTariffs.Add(new MemberElectricityTariff { EffectiveFrom = new DateOnly(2020, 1, 1), Rate = 5m });
+        await dbContext.SaveChangesAsync();
+
+        var rollbackPlot = await dbContext.Plots.SingleAsync(plot => plot.Id == plotId);
+        rollbackPlot.MemberElectricityMeterId = meterId;
+        await dbContext.SaveChangesAsync();
+
+        var service = new MemberElectricityService(dbContext, new ThrowingFinancialAuditService());
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.CreateReadingAsync(
+            new CreateMemberElectricityReadingRequest(
+                meterId,
+                new DateOnly(2026, 2, 1),
+                130m,
+                null,
+                adminUserId),
+            CancellationToken.None));
+
+        var readings = await dbContext.MemberElectricityReadings
+            .AsNoTracking()
+            .OrderBy(item => item.ReadingDate)
+            .ToListAsync();
+
+        Assert.Single(readings);
+        Assert.True(readings[0].IsInitialReading);
+        Assert.Empty(await dbContext.Charges.AsNoTracking().ToListAsync());
+        Assert.Empty(await dbContext.FinancialAuditLogs.AsNoTracking().ToListAsync());
     }
 
     [Fact]
@@ -1158,7 +1719,10 @@ public class AdministrationMemberFinanceChargeTests
             null,
             NullLogger<UserManager<ApplicationUser>>.Instance);
 
-        var model = new RegisterPaymentModel(dbContext, new PaymentService(dbContext), userManager)
+        var model = new RegisterPaymentModel(
+            dbContext,
+            new PaymentService(dbContext, new FinancialAuditService(dbContext, new Microsoft.AspNetCore.Http.HttpContextAccessor())),
+            userManager)
         {
             Input = new MemberPaymentInputModel
             {
@@ -1177,7 +1741,7 @@ public class AdministrationMemberFinanceChargeTests
         Assert.Equal("Выберите допустимый способ оплаты: наличные или перевод на карту.", error.ErrorMessage);
     }
 
-    private static PageContext CreatePageContext(string userId)
+    private static PageContext CreatePageContext(string userId, string? userName = null)
     {
         return new PageContext
         {
@@ -1185,7 +1749,8 @@ public class AdministrationMemberFinanceChargeTests
             {
                 User = new ClaimsPrincipal(new ClaimsIdentity(
                 [
-                    new Claim(ClaimTypes.NameIdentifier, userId)
+                    new Claim(ClaimTypes.NameIdentifier, userId),
+                    new Claim(ClaimTypes.Name, userName ?? userId)
                 ],
                 "Test"))
             }
@@ -1208,5 +1773,13 @@ public class AdministrationMemberFinanceChargeTests
             MustChangePassword = false,
             IsActive = true
         };
+    }
+
+    private sealed class ThrowingFinancialAuditService : IFinancialAuditService
+    {
+        public void Add(string action, string entityType, string entityId, string? description = null, object? oldValues = null, object? newValues = null)
+        {
+            throw new InvalidOperationException("Simulated audit failure.");
+        }
     }
 }

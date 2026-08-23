@@ -435,7 +435,7 @@ public class IndexModel : PageModel
                 .GroupBy(item => item.PlotId)
                 .ToDictionary(group => group.Key, group => group.Sum(item => item.Amount));
 
-        var paymentTotalsByPlot = await LoadPaymentTotalsByPlotAsync(plotIds, cancellationToken);
+        var paymentTotalsByPlot = await _dbContext.LoadActivePaymentTotalsByPlotAsync(plotIds, cancellationToken);
 
         member.Plots = plots
             .Select(plot => plot with
@@ -501,6 +501,7 @@ public class IndexModel : PageModel
             .Take(10)
             .Select(charge => new ChargeItemViewModel
             {
+                ChargeId = charge.Id,
                 PlotId = charge.PlotId!.Value,
                 PlotNumber = charge.Plot != null ? charge.Plot.Number : "—",
                 ChargeDate = charge.ChargeDate,
@@ -509,6 +510,7 @@ public class IndexModel : PageModel
                 DueDate = charge.DueDate,
                 Description = charge.Description,
                 IsCancelled = charge.CancelledAtUtc != null,
+                CancelledAtUtc = charge.CancelledAtUtc,
                 CancellationReason = charge.CancellationReason
             })
             .ToListAsync(cancellationToken);
@@ -539,6 +541,7 @@ public class IndexModel : PageModel
                 ReferenceNumber = payment.ReferenceNumber,
                 Description = payment.Description,
                 IsCancelled = payment.CancelledAtUtc != null,
+                CancelledAtUtc = payment.CancelledAtUtc,
                 CancellationReason = payment.CancellationReason
             })
             .ToListAsync(cancellationToken);
@@ -775,49 +778,6 @@ public class IndexModel : PageModel
         }
     }
 
-    private async Task<Dictionary<int, decimal>> LoadPaymentTotalsByPlotAsync(int[] plotIds, CancellationToken cancellationToken)
-    {
-        if (plotIds.Length == 0)
-        {
-            return [];
-        }
-
-        var charges = await _dbContext.Charges
-            .AsNoTracking()
-            .Where(charge => charge.CancelledAtUtc == null
-                && charge.PlotId.HasValue
-                && plotIds.Contains(charge.PlotId.Value))
-            .Select(charge => new
-            {
-                charge.Id,
-                PlotId = charge.PlotId!.Value
-            })
-            .ToListAsync(cancellationToken);
-
-        if (charges.Count == 0)
-        {
-            return [];
-        }
-
-        var chargeIds = charges.Select(charge => charge.Id).ToArray();
-        var allocations = await _dbContext.PaymentAllocations
-            .AsNoTracking()
-            .Where(allocation => chargeIds.Contains(allocation.ChargeId)
-                && allocation.Payment != null
-                && allocation.Payment.CancelledAtUtc == null)
-            .Select(allocation => new
-            {
-                allocation.ChargeId,
-                allocation.Amount
-            })
-            .ToListAsync(cancellationToken);
-
-        var plotIdsByCharge = charges.ToDictionary(charge => charge.Id, charge => charge.PlotId);
-        return allocations
-            .GroupBy(allocation => plotIdsByCharge[allocation.ChargeId])
-            .ToDictionary(group => group.Key, group => group.Sum(item => item.Amount));
-    }
-
     private async Task LoadElectricityStateAsync(int memberId, CancellationToken cancellationToken)
     {
         try
@@ -975,6 +935,8 @@ public class IndexModel : PageModel
 
     public sealed class ChargeItemViewModel
     {
+        public long ChargeId { get; init; }
+
         public int PlotId { get; init; }
 
         public string PlotNumber { get; init; } = string.Empty;
@@ -990,6 +952,8 @@ public class IndexModel : PageModel
         public string? Description { get; init; }
 
         public bool IsCancelled { get; init; }
+
+        public DateTime? CancelledAtUtc { get; init; }
 
         public string? CancellationReason { get; init; }
 
@@ -1015,6 +979,8 @@ public class IndexModel : PageModel
         public string? Description { get; init; }
 
         public bool IsCancelled { get; init; }
+
+        public DateTime? CancelledAtUtc { get; init; }
 
         public string? CancellationReason { get; init; }
 

@@ -73,8 +73,12 @@
     <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationMemberAccountTests.cs" />
     <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationMemberResetPasswordTests.cs" />
     <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationMemberTariffTests.cs" />
+    <Compile Include="tests\Neftyanik.Portal.Web.Tests\ChargeCancellationPageTests.cs" />
+    <Compile Include="tests\Neftyanik.Portal.Web.Tests\ChargeServiceTests.cs" />
+    <Compile Include="tests\Neftyanik.Portal.Web.Tests\FinancialAuditLogTests.cs" />
     <Compile Include="tests\Neftyanik.Portal.Web.Tests\HomePageLoginTests.cs" />
     <Compile Include="tests\Neftyanik.Portal.Web.Tests\Infrastructure\ResponseHtmlTestHelper.cs" />
+    <Compile Include="tests\Neftyanik.Portal.Web.Tests\PaymentCancellationPageTests.cs" />
     <Compile Include="tests\Neftyanik.Portal.Web.Tests\PaymentNotificationServiceTests.cs" />
     <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationPlotChargeTests.cs" />
     <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationPlotOwnershipTests.cs" />
@@ -83,6 +87,7 @@
     <Compile Include="tests\Neftyanik.Portal.Web.Tests\Infrastructure\TestAuthenticatedUser.cs" />
     <Compile Include="tests\Neftyanik.Portal.Web.Tests\Infrastructure\TestAuthenticationHandler.cs" />
     <Compile Include="tests\Neftyanik.Portal.Web.Tests\Infrastructure\TestPageModelContext.cs" />
+    <Compile Include="tests\Neftyanik.Portal.Web.Tests\PaymentServiceTests.cs" />
     <Compile Include="tests\Neftyanik.Portal.Web.Tests\ReverseProxyHttpsTests.cs" />
   </ItemGroup>
 

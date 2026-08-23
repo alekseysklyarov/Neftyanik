@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using Neftyanik.Portal.Application.Finance;
 using Neftyanik.Portal.Application.Payments;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
@@ -16,12 +17,14 @@ public sealed class PaymentNotificationService : IPaymentNotificationService
     private const int MaxAdministrationLimit = 200;
 
     private readonly ApplicationDbContext _dbContext;
+    private readonly IFinancialAuditService _financialAuditService;
     private readonly IPaymentService _paymentService;
 
-    public PaymentNotificationService(ApplicationDbContext dbContext, IPaymentService paymentService)
+    public PaymentNotificationService(ApplicationDbContext dbContext, IPaymentService paymentService, IFinancialAuditService financialAuditService)
     {
         _dbContext = dbContext;
         _paymentService = paymentService;
+        _financialAuditService = financialAuditService;
     }
 
     public async Task<PaymentNotificationOperationResult> CreateAsync(int memberId, CreatePaymentNotificationRequest request, CancellationToken cancellationToken = default)
@@ -56,10 +59,57 @@ public sealed class PaymentNotificationService : IPaymentNotificationService
             CreatedAtUtc = DateTimeOffset.UtcNow
         };
 
-        _dbContext.PaymentNotifications.Add(notification);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        IDbContextTransaction? transaction = null;
+        if (_dbContext.Database.IsRelational() && _dbContext.Database.CurrentTransaction is null)
+        {
+            transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+        }
 
-        return PaymentNotificationOperationResult.Success(notification.Id);
+        try
+        {
+            _dbContext.PaymentNotifications.Add(notification);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            _financialAuditService.Add(
+                FinancialAuditLogActions.Submitted,
+                nameof(PaymentNotification),
+                notification.Id.ToString(),
+                $"Создано уведомление о платеже #{notification.Id}.",
+                newValues: new
+                {
+                    PaymentNotificationId = notification.Id,
+                    notification.MemberId,
+                    notification.Amount,
+                    PaymentMethod = notification.PaymentMethod.ToString(),
+                    notification.Description,
+                    notification.Status
+                });
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            if (transaction is not null)
+            {
+                await transaction.CommitAsync(cancellationToken);
+            }
+
+            return PaymentNotificationOperationResult.Success(notification.Id);
+        }
+        catch
+        {
+            if (transaction is not null)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+            }
+
+            throw;
+        }
+        finally
+        {
+            if (transaction is not null)
+            {
+                await transaction.DisposeAsync();
+            }
+        }
     }
 
     public async Task<IReadOnlyList<PaymentNotificationListItem>> GetRecentForMemberAsync(int memberId, int limit = 5, CancellationToken cancellationToken = default)
@@ -229,7 +279,8 @@ public sealed class PaymentNotificationService : IPaymentNotificationService
                     notification.PaymentMethod,
                     null,
                     notification.Description,
-                    Normalize(request.ReviewedByUserId)),
+                    Normalize(request.ReviewedByUserId),
+                    notification.Id),
                 cancellationToken);
 
             if (!paymentResult.Succeeded || !paymentResult.PaymentId.HasValue)
@@ -242,12 +293,30 @@ public sealed class PaymentNotificationService : IPaymentNotificationService
                 return CreatePaymentFailureResult(paymentResult);
             }
 
+            var oldStatus = notification.Status;
             notification.Status = PaymentNotificationStatus.Confirmed;
             notification.PaymentId = paymentResult.PaymentId.Value;
             notification.ReviewedAtUtc = DateTimeOffset.UtcNow;
             notification.ReviewedByUserId = Normalize(request.ReviewedByUserId);
             notification.AdministratorComment = null;
             notification.ReviewVersion++;
+
+            _financialAuditService.Add(
+                FinancialAuditLogActions.Approved,
+                nameof(PaymentNotification),
+                notification.Id.ToString(),
+                $"Уведомление о платеже #{notification.Id} подтверждено. Создан платеж #{paymentResult.PaymentId.Value}.",
+                oldValues: new
+                {
+                    Status = oldStatus.ToString()
+                },
+                newValues: new
+                {
+                    Status = notification.Status.ToString(),
+                    notification.PaymentId,
+                    notification.ReviewedByUserId,
+                    notification.ReviewedAtUtc
+                });
 
             await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -308,11 +377,29 @@ public sealed class PaymentNotificationService : IPaymentNotificationService
                 return PaymentNotificationOperationResult.Failure(PaymentNotificationOperationResultCode.AlreadyProcessed, "Payment notification has already been processed.");
             }
 
+            var oldStatus = notification.Status;
             notification.Status = PaymentNotificationStatus.Rejected;
             notification.ReviewedAtUtc = DateTimeOffset.UtcNow;
             notification.ReviewedByUserId = Normalize(request.ReviewedByUserId);
             notification.AdministratorComment = Normalize(request.AdministratorComment);
             notification.ReviewVersion++;
+
+            _financialAuditService.Add(
+                FinancialAuditLogActions.Rejected,
+                nameof(PaymentNotification),
+                notification.Id.ToString(),
+                $"Уведомление о платеже #{notification.Id} отклонено.",
+                oldValues: new
+                {
+                    Status = oldStatus.ToString()
+                },
+                newValues: new
+                {
+                    Status = notification.Status.ToString(),
+                    notification.AdministratorComment,
+                    notification.ReviewedByUserId,
+                    notification.ReviewedAtUtc
+                });
 
             await _dbContext.SaveChangesAsync(cancellationToken);
             return PaymentNotificationOperationResult.Success(notification.Id);
