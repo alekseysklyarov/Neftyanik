@@ -12,11 +12,45 @@ public class AdministrationAccountantAuthorizationTests
     public async Task GetAdministrationMembersIndex_ForAccountant_ReturnsOk()
     {
         using var factory = new PortalWebApplicationFactory();
-        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser("accountant-user", RoleNames.Accountant));
+        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser("accountant-user", RoleNames.Accountant), cultureName: "ru");
 
         var response = await client.GetAsync("/Administration/Members");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetCashInitialization_ForAccountant_ReturnsOkWithoutAdjustmentForm()
+    {
+        using var factory = new PortalWebApplicationFactory();
+        await factory.ExecuteDbContextAsync(async dbContext =>
+        {
+            dbContext.FinancialAuditLogs.Add(new FinancialAuditLog
+            {
+                Action = FinancialAuditLogActions.Updated,
+                EntityType = nameof(SystemSetting),
+                EntityId = "1",
+                Description = "Скорректирована инициализация кассы. Причина: test"
+            });
+            dbContext.SystemSettings.Add(new SystemSetting
+            {
+                Id = 1,
+                Key = "Finance.CashInitialization",
+                Value = "{\"Amount\":120.00,\"AcceptedAt\":\"2025-01-10\",\"AcceptedFrom\":\"Кассир\",\"AdvancePaymentsAmount\":10.00}",
+                Description = "Initial cash amount configured from finance settings.",
+                UpdatedAt = DateTimeOffset.UtcNow
+            });
+            await dbContext.SaveChangesAsync();
+        });
+
+        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser("accountant-user", RoleNames.Accountant));
+
+        var response = await client.GetAsync("/Administration/Finance/Settings/CashInitialization");
+        var content = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.DoesNotContain("Сохранить корректировку", content, StringComparison.Ordinal);
+        Assert.DoesNotContain("Причина корректировки", content, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -26,6 +60,18 @@ public class AdministrationAccountantAuthorizationTests
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser("accountant-user", RoleNames.Accountant));
 
         var response = await client.GetAsync("/Administration/Members/Create");
+
+        Assert.Equal(HttpStatusCode.Found, response.StatusCode);
+        Assert.StartsWith("http://localhost/Account/AccessDenied", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task GetCashInitialization_ForMember_RedirectsToAccessDenied()
+    {
+        using var factory = new PortalWebApplicationFactory();
+        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser("member-user", RoleNames.Member));
+
+        var response = await client.GetAsync("/Administration/Finance/Settings/CashInitialization");
 
         Assert.Equal(HttpStatusCode.Found, response.StatusCode);
         Assert.StartsWith("http://localhost/Account/AccessDenied", response.Headers.Location?.OriginalString, StringComparison.Ordinal);

@@ -20,10 +20,23 @@
             <div class="card-body">
                 <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
-                @if (Model.IsReadOnly)
+                @if (Model.HasUnreadableCashInitialization)
+                {
+                    <div class="alert alert-warning" role="alert">
+                        @AppLocalizer.Get("Данные инициализации кассы повреждены. Корректировка недоступна до исправления данных.", "Дані ініціалізації каси пошкоджені. Коригування недоступне до виправлення даних.", "Cash initialization data is corrupted. Editing is unavailable until the data is fixed.")
+                    </div>
+                }
+                else if (Model.IsReadOnly)
                 {
                     <div class="alert alert-info" role="alert">
-                        @AppLocalizer.Get("Инициализация кассы уже выполнена. Изменение суммы недоступно.", "Ініціалізацію каси вже виконано. Зміна суми недоступна.", "Cash initialization has already been completed. Editing is unavailable.")
+                        @if (Model.IsAdministrator)
+                        {
+                            @AppLocalizer.Get("Инициализация кассы уже выполнена. Администратор может скорректировать первоначальную сумму ниже.", "Ініціалізацію каси вже виконано. Адміністратор може скоригувати початкову суму нижче.", "Cash initialization has already been completed. An administrator can adjust the original amount below.")
+                        }
+                        else
+                        {
+                            @AppLocalizer.Get("Инициализация кассы уже выполнена. Доступен только просмотр.", "Ініціалізацію каси вже виконано. Доступний лише перегляд.", "Cash initialization has already been completed. View-only access is available.")
+                        }
                     </div>
 
                     <dl class="row mb-0">
@@ -45,47 +58,119 @@
                         <dt class="col-sm-4">@AppLocalizer.Get("Когда сохранено", "Коли збережено", "Saved at")</dt>
                         <dd class="col-sm-8">@Model.CashInitialization.SavedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</dd>
                     </dl>
+
+                    @if (Model.CanAdjust)
+                    {
+                        <hr class="my-4" />
+
+                        <h2 class="h5 mb-3">@AppLocalizer.Get("Корректировка первоначальной суммы", "Коригування початкової суми", "Adjust original amount")</h2>
+                        <form method="post" asp-page-handler="Adjust" class="row g-3">
+                            <div class="col-md-4">
+                                <label asp-for="Adjustment.Amount" class="form-label"></label>
+                                <input asp-for="Adjustment.Amount" class="form-control" />
+                                <span asp-validation-for="Adjustment.Amount" class="text-danger"></span>
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="Adjustment.AdjustmentReason" class="form-label"></label>
+                                <textarea asp-for="Adjustment.AdjustmentReason" class="form-control" rows="3" maxlength="500"></textarea>
+                                <span asp-validation-for="Adjustment.AdjustmentReason" class="text-danger"></span>
+                                <div class="form-text">@AppLocalizer.Get("Укажите причину корректировки, не более 500 символов.", "Вкажіть причину коригування, не більше 500 символів.", "Provide the adjustment reason, up to 500 characters.")</div>
+                            </div>
+                            <div class="col-12 d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">@AppLocalizer.Get("Сохранить корректировку", "Зберегти коригування", "Save adjustment")</button>
+                            </div>
+                        </form>
+                    }
+
+                    <hr class="my-4" />
+
+                    <h2 class="h5 mb-3">@AppLocalizer.Get("История корректировок", "Історія коригувань", "Adjustment history")</h2>
+                    @if (Model.AdjustmentHistory.Count == 0)
+                    {
+                        <p class="text-muted mb-0">@AppLocalizer.Get("Корректировки пока отсутствуют.", "Коригування поки відсутні.", "There are no adjustments yet.")</p>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>@AppLocalizer.Get("Дата и время", "Дата й час", "Date and time")</th>
+                                        <th>@AppLocalizer.Get("Пользователь", "Користувач", "User")</th>
+                                        <th>@AppLocalizer.Get("Старая сумма", "Стара сума", "Old amount")</th>
+                                        <th>@AppLocalizer.Get("Новая сумма", "Нова сума", "New amount")</th>
+                                        <th>@AppLocalizer.Get("Причина", "Причина", "Reason")</th>
+                                        <th class="text-end">@AppLocalizer.Get("Аудит", "Аудит", "Audit")</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.AdjustmentHistory)
+                                    {
+                                        <tr>
+                                            <td>@item.ChangedAtUtc.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+                                            <td>@item.UserDisplayName</td>
+                                            <td>@(item.OldAmount.HasValue ? item.OldAmount.Value.ToString("0.00") : "—")</td>
+                                            <td>@(item.NewAmount.HasValue ? item.NewAmount.Value.ToString("0.00") : "—")</td>
+                                            <td>@(string.IsNullOrWhiteSpace(item.Description) ? "—" : item.Description)</td>
+                                            <td class="text-end">
+                                                <a class="btn btn-sm btn-outline-secondary" asp-page="/Administration/AuditLog/Details" asp-route-id="@item.AuditLogId">@AppLocalizer.Get("Открыть", "Відкрити", "Open")</a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
                 }
                 else
                 {
-                    <div class="alert alert-warning" role="alert">
-                        @AppLocalizer.Get("Сумму можно сохранить только один раз. После сохранения страница перейдёт в режим просмотра.", "Суму можна зберегти лише один раз. Після збереження сторінка перейде в режим перегляду.", "The amount can be saved only once. After saving, the page becomes read-only.")
-                    </div>
+                    @if (Model.CanCreate)
+                    {
+                        <div class="alert alert-warning" role="alert">
+                            @AppLocalizer.Get("Сумму можно сохранить только один раз. После сохранения страница перейдёт в режим просмотра.", "Суму можна зберегти лише один раз. Після збереження сторінка перейде в режим перегляду.", "The amount can be saved only once. After saving, the page becomes read-only.")
+                        </div>
 
-                    <form method="post" class="row g-3">
-                        <div class="col-md-4">
-                            <label asp-for="Input.Amount" class="form-label"></label>
-                            <input asp-for="Input.Amount" class="form-control" />
-                            <span asp-validation-for="Input.Amount" class="text-danger"></span>
-                        </div>
-                        <div class="col-md-4">
-                            <label asp-for="Input.AdvancePaymentsAmount" class="form-label"></label>
-                            <input asp-for="Input.AdvancePaymentsAmount" class="form-control" />
-                            <span asp-validation-for="Input.AdvancePaymentsAmount" class="text-danger"></span>
-                            <div class="form-text">@AppLocalizer.Get("Деньги, которые люди заплатили наперед. Эта сумма не будет учитываться в кассе, так как она будет внесена в платежи, но деньги фактически не поступят.", "Гроші, які люди сплатили наперед. Ця сума не буде враховуватися в касі, оскільки вона буде внесена в платежі, але кошти фактично не надійдуть.", "Money that people paid in advance. This amount is not included in cash because it will be entered in payments, but the money will not actually be received.")</div>
-                        </div>
-                        <div class="col-md-4">
-                            <label asp-for="Input.AcceptedAt" class="form-label"></label>
-                            <input asp-for="Input.AcceptedAt" class="form-control" />
-                            <span asp-validation-for="Input.AcceptedAt" class="text-danger"></span>
-                        </div>
-                        <div class="col-md-12">
-                            <label asp-for="Input.AcceptedFrom" class="form-label"></label>
-                            <input asp-for="Input.AcceptedFrom" class="form-control" />
-                            <span asp-validation-for="Input.AcceptedFrom" class="text-danger"></span>
-                        </div>
-                        <div class="col-12">
-                            <div class="form-check">
-                                <input asp-for="Input.IsConfirmed" class="form-check-input" />
-                                <label asp-for="Input.IsConfirmed" class="form-check-label"></label>
+                        <form method="post" class="row g-3">
+                            <div class="col-md-4">
+                                <label asp-for="Input.Amount" class="form-label"></label>
+                                <input asp-for="Input.Amount" class="form-control" />
+                                <span asp-validation-for="Input.Amount" class="text-danger"></span>
                             </div>
-                            <span asp-validation-for="Input.IsConfirmed" class="text-danger"></span>
+                            <div class="col-md-4">
+                                <label asp-for="Input.AdvancePaymentsAmount" class="form-label"></label>
+                                <input asp-for="Input.AdvancePaymentsAmount" class="form-control" />
+                                <span asp-validation-for="Input.AdvancePaymentsAmount" class="text-danger"></span>
+                                <div class="form-text">@AppLocalizer.Get("Деньги, которые люди заплатили наперед. Эта сумма не будет учитываться в кассе, так как она будет внесена в платежи, но деньги фактически не поступят.", "Гроші, які люди сплатили наперед. Ця сума не буде враховуватися в касі, оскільки вона буде внесена в платежі, але кошти фактично не надійдуть.", "Money that people paid in advance. This amount is not included in cash because it will be entered in payments, but the money will not actually be received.")</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="Input.AcceptedAt" class="form-label"></label>
+                                <input asp-for="Input.AcceptedAt" class="form-control" />
+                                <span asp-validation-for="Input.AcceptedAt" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-12">
+                                <label asp-for="Input.AcceptedFrom" class="form-label"></label>
+                                <input asp-for="Input.AcceptedFrom" class="form-control" />
+                                <span asp-validation-for="Input.AcceptedFrom" class="text-danger"></span>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check">
+                                    <input asp-for="Input.IsConfirmed" class="form-check-input" />
+                                    <label asp-for="Input.IsConfirmed" class="form-check-label"></label>
+                                </div>
+                                <span asp-validation-for="Input.IsConfirmed" class="text-danger"></span>
+                            </div>
+                            <div class="col-12 d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">@AppLocalizer.Get("Сохранить", "Зберегти", "Save")</button>
+                                <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/Settings/Index">@AppLocalizer.Get("Отмена", "Скасувати", "Cancel")</a>
+                            </div>
+                        </form>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info" role="alert">
+                            @AppLocalizer.Get("Инициализация кассы ещё не выполнена. Для вашей роли доступен только просмотр.", "Ініціалізацію каси ще не виконано. Для вашої ролі доступний лише перегляд.", "Cash initialization has not been completed yet. Your role has view-only access.")
                         </div>
-                        <div class="col-12 d-flex gap-2">
-                            <button type="submit" class="btn btn-primary">@AppLocalizer.Get("Сохранить", "Зберегти", "Save")</button>
-                            <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/Settings/Index">@AppLocalizer.Get("Отмена", "Скасувати", "Cancel")</a>
-                        </div>
-                    </form>
+                    }
                 }
             </div>
         </div>
