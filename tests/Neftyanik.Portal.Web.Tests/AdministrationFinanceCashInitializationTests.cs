@@ -63,6 +63,42 @@ public class AdministrationFinanceCashInitializationTests
     }
 
     [Fact]
+    public async Task OnPostAsync_WhenInactiveAdjustmentFieldsHaveValidationErrors_StillSavesInitialization()
+    {
+        await using var dbContext = await CreateDbContextAsync();
+
+        const string adminUserId = "admin-user";
+        dbContext.Users.Add(CreateUser(adminUserId, "admin-finance@example.com"));
+        await dbContext.SaveChangesAsync();
+
+        using var userManager = CreateUserManager(dbContext);
+        var model = CreateModel(dbContext, userManager, CreatePageContext(adminUserId, "admin-finance@example.com", RoleNames.Administrator));
+        model.Input = new CashInitializationModel.InputModel
+        {
+            Amount = 210m,
+            AdvancePaymentsAmount = 15m,
+            AcceptedAt = new DateOnly(2025, 2, 20),
+            AcceptedFrom = "Петров Петр",
+            IsConfirmed = true
+        };
+        model.ModelState.AddModelError($"{nameof(CashInitializationModel.Adjustment)}.{nameof(CashInitializationModel.AdjustmentInputModel.Amount)}", "Укажите сумму в кассе.");
+        model.ModelState.AddModelError($"{nameof(CashInitializationModel.Adjustment)}.{nameof(CashInitializationModel.AdjustmentInputModel.AdjustmentReason)}", "Укажите причину корректировки.");
+
+        var result = await model.OnPostAsync(CancellationToken.None);
+
+        var redirect = Assert.IsType<RedirectToPageResult>(result);
+        Assert.Equal("/Administration/Finance/Settings/CashInitialization", redirect.PageName);
+
+        var setting = await dbContext.SystemSettings.AsNoTracking().SingleAsync();
+        var storedValue = JsonSerializer.Deserialize<StoredCashInitialization>(setting.Value);
+
+        Assert.NotNull(storedValue);
+        Assert.Equal(210m, storedValue!.Amount);
+        Assert.DoesNotContain(model.ModelState.Keys, key => key == nameof(CashInitializationModel.Adjustment)
+            || key.StartsWith($"{nameof(CashInitializationModel.Adjustment)}.", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task OnGetAsync_WhenInitializationExists_LoadsReadOnlyView()
     {
         await using var dbContext = await CreateDbContextAsync();
@@ -200,6 +236,74 @@ public class AdministrationFinanceCashInitializationTests
         Assert.Contains("Скорректирована инициализация кассы. Причина: Пересчитали наличные после повторной инвентаризации.", auditEntry.Description, StringComparison.Ordinal);
         Assert.Contains("\"Amount\":100", auditEntry.OldValuesJson, StringComparison.Ordinal);
         Assert.Contains("\"Amount\":175.45", auditEntry.NewValuesJson, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task OnPostAdjustAsync_WhenInactiveInputFieldsHaveValidationErrors_StillAdjustsAmountAndCreatesAudit()
+    {
+        await using var dbContext = await CreateDbContextAsync();
+
+        const string adminUserId = "admin-user";
+        const string adminUserName = "administrator@example.com";
+        await SeedInitializationAsync(dbContext, adminUserId, 100m, 10m, new DateOnly(2025, 1, 10));
+
+        using var userManager = CreateUserManager(dbContext);
+        var model = CreateModel(dbContext, userManager, CreatePageContext(adminUserId, adminUserName, RoleNames.Administrator));
+        model.Adjustment = new CashInitializationModel.AdjustmentInputModel
+        {
+            Amount = 160m,
+            AdjustmentReason = "Корректировка после пересчёта"
+        };
+        model.ModelState.AddModelError($"{nameof(CashInitializationModel.Input)}.{nameof(CashInitializationModel.InputModel.Amount)}", "Укажите сумму в кассе.");
+        model.ModelState.AddModelError($"{nameof(CashInitializationModel.Input)}.{nameof(CashInitializationModel.InputModel.AcceptedFrom)}", "Укажите, от кого принята сумма.");
+
+        var result = await model.OnPostAdjustAsync(CancellationToken.None);
+
+        var redirect = Assert.IsType<RedirectToPageResult>(result);
+        Assert.Equal("/Administration/Finance/Settings/CashInitialization", redirect.PageName);
+
+        var setting = await dbContext.SystemSettings.AsNoTracking().SingleAsync();
+        var storedValue = JsonSerializer.Deserialize<StoredCashInitialization>(setting.Value);
+        var auditEntry = await dbContext.FinancialAuditLogs.AsNoTracking().SingleAsync();
+
+        Assert.NotNull(storedValue);
+        Assert.Equal(160m, storedValue!.Amount);
+        Assert.Equal(adminUserId, auditEntry.UserId);
+        Assert.Contains("Корректировка после пересчёта", auditEntry.Description, StringComparison.Ordinal);
+        Assert.DoesNotContain(model.ModelState.Keys, key => key == nameof(CashInitializationModel.Input)
+            || key.StartsWith($"{nameof(CashInitializationModel.Input)}.", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task OnPostAsync_WhenInputFieldsHaveValidationErrors_DoesNotSaveInitialization()
+    {
+        await using var dbContext = await CreateDbContextAsync();
+
+        const string adminUserId = "admin-user";
+        dbContext.Users.Add(CreateUser(adminUserId, "admin-finance@example.com"));
+        await dbContext.SaveChangesAsync();
+
+        using var userManager = CreateUserManager(dbContext);
+        var model = CreateModel(dbContext, userManager, CreatePageContext(adminUserId, "admin-finance@example.com", RoleNames.Administrator));
+        model.Input = new CashInitializationModel.InputModel
+        {
+            Amount = null,
+            AdvancePaymentsAmount = 5m,
+            AcceptedAt = new DateOnly(2025, 2, 20),
+            AcceptedFrom = string.Empty,
+            IsConfirmed = false
+        };
+        model.ModelState.AddModelError($"{nameof(CashInitializationModel.Input)}.{nameof(CashInitializationModel.InputModel.Amount)}", "Укажите сумму в кассе.");
+        model.ModelState.AddModelError($"{nameof(CashInitializationModel.Input)}.{nameof(CashInitializationModel.InputModel.AcceptedFrom)}", "Укажите, от кого принята сумма.");
+        model.ModelState.AddModelError($"{nameof(CashInitializationModel.Input)}.{nameof(CashInitializationModel.InputModel.IsConfirmed)}", "Подтвердите одноразовое сохранение суммы кассы.");
+        model.ModelState.AddModelError($"{nameof(CashInitializationModel.Adjustment)}.{nameof(CashInitializationModel.AdjustmentInputModel.Amount)}", "Укажите сумму в кассе.");
+
+        var result = await model.OnPostAsync(CancellationToken.None);
+
+        Assert.IsType<PageResult>(result);
+        Assert.Empty(await dbContext.SystemSettings.AsNoTracking().ToListAsync());
+        Assert.Contains(model.ModelState[$"{nameof(CashInitializationModel.Input)}.{nameof(CashInitializationModel.InputModel.Amount)}"]!.Errors,
+            error => error.ErrorMessage.Contains("Укажите сумму в кассе", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -383,6 +487,39 @@ public class AdministrationFinanceCashInitializationTests
         Assert.Empty(await dbContext.FinancialAuditLogs.AsNoTracking().ToListAsync());
         Assert.Contains(model.ModelState[$"{nameof(CashInitializationModel.Adjustment)}.{nameof(CashInitializationModel.AdjustmentInputModel.Amount)}"]!.Errors,
             error => error.ErrorMessage.Contains("Сумма должна быть больше нуля", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task OnPostAdjustAsync_WhenAdjustmentFieldsHaveValidationErrors_DoesNotAdjustAmount()
+    {
+        await using var dbContext = await CreateDbContextAsync();
+
+        const string adminUserId = "admin-user";
+        await SeedInitializationAsync(dbContext, adminUserId, 100m, 0m, new DateOnly(2025, 1, 10));
+
+        using var userManager = CreateUserManager(dbContext);
+        var model = CreateModel(dbContext, userManager, CreatePageContext(adminUserId, "administrator@example.com", RoleNames.Administrator));
+        model.Adjustment = new CashInitializationModel.AdjustmentInputModel
+        {
+            Amount = null,
+            AdjustmentReason = string.Empty
+        };
+        model.ModelState.AddModelError($"{nameof(CashInitializationModel.Adjustment)}.{nameof(CashInitializationModel.AdjustmentInputModel.Amount)}", "Укажите сумму в кассе.");
+        model.ModelState.AddModelError($"{nameof(CashInitializationModel.Adjustment)}.{nameof(CashInitializationModel.AdjustmentInputModel.AdjustmentReason)}", "Укажите причину корректировки.");
+        model.ModelState.AddModelError($"{nameof(CashInitializationModel.Input)}.{nameof(CashInitializationModel.InputModel.Amount)}", "Укажите сумму в кассе.");
+
+        var result = await model.OnPostAdjustAsync(CancellationToken.None);
+
+        Assert.IsType<PageResult>(result);
+
+        var setting = await dbContext.SystemSettings.AsNoTracking().SingleAsync();
+        var storedValue = JsonSerializer.Deserialize<StoredCashInitialization>(setting.Value);
+
+        Assert.NotNull(storedValue);
+        Assert.Equal(100m, storedValue!.Amount);
+        Assert.Empty(await dbContext.FinancialAuditLogs.AsNoTracking().ToListAsync());
+        Assert.Contains(model.ModelState[$"{nameof(CashInitializationModel.Adjustment)}.{nameof(CashInitializationModel.AdjustmentInputModel.Amount)}"]!.Errors,
+            error => error.ErrorMessage.Contains("Укажите сумму в кассе", StringComparison.Ordinal));
     }
 
     [Fact]

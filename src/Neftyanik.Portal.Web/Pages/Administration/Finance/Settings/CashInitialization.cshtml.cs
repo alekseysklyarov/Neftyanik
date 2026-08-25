@@ -69,6 +69,8 @@ public class CashInitializationModel : PageModel
             return Forbid();
         }
 
+        RemoveModelStatePrefix(nameof(Adjustment));
+
         await LoadCashInitializationAsync(cancellationToken);
         if (HasExistingSetting)
         {
@@ -138,6 +140,8 @@ public class CashInitializationModel : PageModel
         {
             return Forbid();
         }
+
+        RemoveModelStatePrefix(nameof(Input));
 
         Adjustment.AdjustmentReason = Adjustment.AdjustmentReason?.Trim();
 
@@ -366,6 +370,18 @@ public class CashInitializationModel : PageModel
         return string.IsNullOrWhiteSpace(user.UserName)
             ? "—"
             : user.UserName;
+    }
+
+    private void RemoveModelStatePrefix(string prefix)
+    {
+        var keysToRemove = ModelState.Keys
+            .Where(key => key == prefix || key.StartsWith($"{prefix}.", StringComparison.Ordinal))
+            .ToList();
+
+        foreach (var key in keysToRemove)
+        {
+            ModelState.Remove(key);
+        }
     }
 
     public sealed class InputModel
