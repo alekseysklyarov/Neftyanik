@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -18,16 +19,19 @@ public class CashInitializationModel : PageModel
 {
     private readonly ApplicationDbContext _dbContext;
     private readonly IFinancialAuditService _financialAuditService;
+    private readonly ILogger<CashInitializationModel> _logger;
     private readonly UserManager<ApplicationUser> _userManager;
 
     public CashInitializationModel(
         ApplicationDbContext dbContext,
         IFinancialAuditService financialAuditService,
-        UserManager<ApplicationUser> userManager)
+        UserManager<ApplicationUser> userManager,
+        ILogger<CashInitializationModel> logger)
     {
         _dbContext = dbContext;
         _financialAuditService = financialAuditService;
         _userManager = userManager;
+        _logger = logger;
     }
 
     [BindProperty]
@@ -69,7 +73,7 @@ public class CashInitializationModel : PageModel
             return Forbid();
         }
 
-        RemoveModelStatePrefix(nameof(Adjustment));
+        RemoveModelStateEntriesFor<AdjustmentInputModel>(nameof(Adjustment));
 
         await LoadCashInitializationAsync(cancellationToken);
         if (HasExistingSetting)
@@ -141,12 +145,13 @@ public class CashInitializationModel : PageModel
             return Forbid();
         }
 
-        RemoveModelStatePrefix(nameof(Input));
+        RemoveModelStateEntriesFor<InputModel>(nameof(Input));
 
         Adjustment.AdjustmentReason = Adjustment.AdjustmentReason?.Trim();
 
         if (!ModelState.IsValid)
         {
+            LogInvalidModelState(nameof(OnPostAdjustAsync));
             await LoadCashInitializationAsync(cancellationToken);
             return Page();
         }
@@ -191,6 +196,7 @@ public class CashInitializationModel : PageModel
 
         if (!ModelState.IsValid)
         {
+            LogInvalidModelState(nameof(OnPostAdjustAsync));
             await LoadCashInitializationAsync(cancellationToken);
             return Page();
         }
@@ -372,16 +378,53 @@ public class CashInitializationModel : PageModel
             : user.UserName;
     }
 
-    private void RemoveModelStatePrefix(string prefix)
+    private void RemoveModelStateEntriesFor<TModel>(string prefix)
     {
+        var memberNames = typeof(TModel)
+            .GetProperties()
+            .Select(property => property.Name)
+            .ToHashSet(StringComparer.Ordinal);
+
         var keysToRemove = ModelState.Keys
-            .Where(key => key == prefix || key.StartsWith($"{prefix}.", StringComparison.Ordinal))
+            .Where(key => key == prefix
+                || key.StartsWith($"{prefix}.", StringComparison.Ordinal)
+                || memberNames.Contains(key))
             .ToList();
 
         foreach (var key in keysToRemove)
         {
             ModelState.Remove(key);
         }
+    }
+
+    private void LogInvalidModelState(string handlerName)
+    {
+        var validationErrors = ModelState
+            .Where(entry => entry.Value is not null && entry.Value.Errors.Count > 0)
+            .SelectMany(entry => entry.Value!.Errors.Select(error => $"{entry.Key}: {SanitizeErrorMessage(error.ErrorMessage)}"))
+            .ToArray();
+
+        if (validationErrors.Length == 0)
+        {
+            return;
+        }
+
+        _logger.LogWarning(
+            "Cash initialization handler {HandlerName} returned page because ModelState is invalid. Validation errors: {ValidationErrors}",
+            handlerName,
+            string.Join(" | ", validationErrors));
+    }
+
+    private static string SanitizeErrorMessage(string errorMessage)
+    {
+        if (string.IsNullOrWhiteSpace(errorMessage))
+        {
+            return string.Empty;
+        }
+
+        var sanitized = Regex.Replace(errorMessage, "'[^']*'", "'<redacted>'");
+        sanitized = Regex.Replace(sanitized, "\"[^\"]*\"", "\"<redacted>\"");
+        return sanitized;
     }
 
     public sealed class InputModel

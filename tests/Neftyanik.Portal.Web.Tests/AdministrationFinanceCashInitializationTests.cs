@@ -1,14 +1,18 @@
 using System.Security.Claims;
 using System.Text.Json;
+using System.Text.RegularExpressions;
+using System.Net;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Neftyanik.Portal.Domain.Constants;
@@ -609,6 +613,110 @@ public class AdministrationFinanceCashInitializationTests
         Assert.Equal(180m, financeModel.Summary.CurrentCashOnlyAmount);
     }
 
+    [Fact]
+    public async Task OnPostAdjustAsync_HttpPost_AdjustsCashInitializationWithoutSubmittingInputFields()
+    {
+        var logProvider = new TestLoggerProvider();
+        await using var baseFactory = new PortalWebApplicationFactory();
+        await using var factory = baseFactory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureServices(services => services.AddSingleton<ILoggerProvider>(logProvider));
+        });
+
+        const string adminUserId = "admin-http-user";
+        await ExecuteDbContextAsync(factory, async dbContext =>
+        {
+            await SeedInitializationAsync(dbContext, adminUserId, 100m, 0m, new DateOnly(2025, 1, 10));
+        });
+
+        var client = CreateAuthenticatedClient(factory, new TestAuthenticatedUser(adminUserId, RoleNames.Administrator), allowAutoRedirect: false, cultureName: "uk-UA");
+        var antiforgeryToken = await GetAntiforgeryTokenAsync(client, "/Administration/Finance/Settings/CashInitialization");
+
+        using var response = await client.PostAsync(
+            "/Administration/Finance/Settings/CashInitialization?handler=Adjust",
+            new FormUrlEncodedContent(new[]
+            {
+                new KeyValuePair<string, string>("__RequestVerificationToken", antiforgeryToken),
+                new KeyValuePair<string, string>("Adjustment.Amount", "23128"),
+                new KeyValuePair<string, string>("Adjustment.AdjustmentReason", "Коротка причина")
+            }));
+
+        var html = await response.ReadDecodedHtmlAsync();
+
+        Assert.True(
+            response.StatusCode == HttpStatusCode.Redirect,
+            $"Expected redirect, but got {(int)response.StatusCode}. Body:{Environment.NewLine}{html}{Environment.NewLine}Warnings:{Environment.NewLine}{string.Join(Environment.NewLine, logProvider.Records.Select(record => $"[{record.LogLevel}] {record.Category}: {record.Message}"))}");
+        Assert.Equal("/Administration/Finance/Settings/CashInitialization", response.Headers.Location?.OriginalString);
+
+        await ExecuteDbContextAsync(factory, async dbContext =>
+        {
+            var setting = await dbContext.SystemSettings.AsNoTracking().SingleAsync(item => item.Key == "Finance.CashInitialization");
+            var storedValue = JsonSerializer.Deserialize<StoredCashInitialization>(setting.Value);
+            var auditLogs = await dbContext.FinancialAuditLogs.AsNoTracking().ToListAsync();
+
+            Assert.NotNull(storedValue);
+            Assert.Equal(23128m, storedValue!.Amount);
+            Assert.Single(auditLogs);
+        });
+
+        Assert.DoesNotContain(logProvider.Records, record => record.LogLevel >= LogLevel.Warning && record.Category.Contains(nameof(CashInitializationModel), StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task OnPostAsync_HttpPost_CreatesCashInitializationWithoutSubmittingAdjustmentFields()
+    {
+        var logProvider = new TestLoggerProvider();
+        await using var baseFactory = new PortalWebApplicationFactory();
+        await using var factory = baseFactory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureServices(services => services.AddSingleton<ILoggerProvider>(logProvider));
+        });
+
+        const string adminUserId = "admin-http-user";
+        await ExecuteDbContextAsync(factory, async dbContext =>
+        {
+            if (!await dbContext.Users.AnyAsync(user => user.Id == adminUserId))
+            {
+                dbContext.Users.Add(CreateUser(adminUserId, "admin-http-user@example.com"));
+                await dbContext.SaveChangesAsync();
+            }
+        });
+
+        var client = CreateAuthenticatedClient(factory, new TestAuthenticatedUser(adminUserId, RoleNames.Administrator), allowAutoRedirect: false, cultureName: "uk-UA");
+        var antiforgeryToken = await GetAntiforgeryTokenAsync(client, "/Administration/Finance/Settings/CashInitialization");
+
+        using var response = await client.PostAsync(
+            "/Administration/Finance/Settings/CashInitialization",
+            new FormUrlEncodedContent(new[]
+            {
+                new KeyValuePair<string, string>("__RequestVerificationToken", antiforgeryToken),
+                new KeyValuePair<string, string>("Input.Amount", "23128"),
+                new KeyValuePair<string, string>("Input.AdvancePaymentsAmount", "0"),
+                new KeyValuePair<string, string>("Input.AcceptedAt", "2025-02-20"),
+                new KeyValuePair<string, string>("Input.AcceptedFrom", "Тестовий касир"),
+                new KeyValuePair<string, string>("Input.IsConfirmed", "true")
+            }));
+
+        var html = await response.ReadDecodedHtmlAsync();
+
+        Assert.True(
+            response.StatusCode == HttpStatusCode.Redirect,
+            $"Expected redirect, but got {(int)response.StatusCode}. Body:{Environment.NewLine}{html}{Environment.NewLine}Warnings:{Environment.NewLine}{string.Join(Environment.NewLine, logProvider.Records.Select(record => $"[{record.LogLevel}] {record.Category}: {record.Message}"))}");
+        Assert.Equal("/Administration/Finance/Settings/CashInitialization", response.Headers.Location?.OriginalString);
+
+        await ExecuteDbContextAsync(factory, async dbContext =>
+        {
+            var setting = await dbContext.SystemSettings.AsNoTracking().SingleAsync(item => item.Key == "Finance.CashInitialization");
+            var storedValue = JsonSerializer.Deserialize<StoredCashInitialization>(setting.Value);
+
+            Assert.NotNull(storedValue);
+            Assert.Equal(23128m, storedValue!.Amount);
+            Assert.Equal("Тестовий касир", storedValue.AcceptedFrom);
+        });
+
+        Assert.DoesNotContain(logProvider.Records, record => record.LogLevel >= LogLevel.Warning && record.Category.Contains(nameof(CashInitializationModel), StringComparison.Ordinal));
+    }
+
     private static CashInitializationModel CreateModel(
         ApplicationDbContext dbContext,
         UserManager<ApplicationUser> userManager,
@@ -619,13 +727,48 @@ public class AdministrationFinanceCashInitializationTests
             HttpContext = pageContext.HttpContext
         };
 
-        var model = new CashInitializationModel(dbContext, new FinancialAuditService(dbContext, httpContextAccessor), userManager)
+        var model = new CashInitializationModel(dbContext, new FinancialAuditService(dbContext, httpContextAccessor), userManager, NullLogger<CashInitializationModel>.Instance)
         {
             PageContext = pageContext,
             TempData = new TempDataDictionary(pageContext.HttpContext, new TestTempDataProvider())
         };
 
         return model;
+    }
+
+    private static async Task ExecuteDbContextAsync(WebApplicationFactory<Program> factory, Func<ApplicationDbContext, Task> action)
+    {
+        await using var scope = factory.Services.CreateAsyncScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        await action(dbContext);
+    }
+
+    private static HttpClient CreateAuthenticatedClient(WebApplicationFactory<Program> factory, TestAuthenticatedUser user, bool allowAutoRedirect, string cultureName)
+    {
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = allowAutoRedirect
+        });
+
+        client.DefaultRequestHeaders.Add(TestAuthenticationHandler.UserIdHeaderName, user.UserId);
+        client.DefaultRequestHeaders.Add(TestAuthenticationHandler.RolesHeaderName, string.Join(',', user.Roles));
+        client.DefaultRequestHeaders.AcceptLanguage.Clear();
+        client.DefaultRequestHeaders.AcceptLanguage.ParseAdd(cultureName);
+        client.DefaultRequestHeaders.Add(
+            "Cookie",
+            $".AspNetCore.Culture={Uri.EscapeDataString($"c={cultureName}|uic={cultureName}")}");
+
+        return client;
+    }
+
+    private static async Task<string> GetAntiforgeryTokenAsync(HttpClient client, string url)
+    {
+        using var response = await client.GetAsync(url);
+        var html = await response.Content.ReadAsStringAsync();
+        var match = Regex.Match(html, "name=\"__RequestVerificationToken\"[^>]*value=\"(?<value>[^\"]+)\"");
+
+        Assert.True(match.Success, $"Antiforgery token not found in response for '{url}'.");
+        return match.Groups["value"].Value;
     }
 
     private static async Task<SystemSetting> SeedInitializationAsync(
@@ -746,6 +889,60 @@ public class AdministrationFinanceCashInitializationTests
         }
 
         public void SaveTempData(HttpContext context, IDictionary<string, object> values)
+        {
+        }
+    }
+
+    private sealed record TestLogRecord(LogLevel LogLevel, string Category, string Message);
+
+    private sealed class TestLoggerProvider : ILoggerProvider
+    {
+        private readonly List<TestLogRecord> _records = [];
+
+        public IReadOnlyList<TestLogRecord> Records => _records;
+
+        public ILogger CreateLogger(string categoryName)
+        {
+            return new TestLogger(categoryName, _records);
+        }
+
+        public void Dispose()
+        {
+        }
+    }
+
+    private sealed class TestLogger : ILogger
+    {
+        private readonly string _categoryName;
+        private readonly List<TestLogRecord> _records;
+
+        public TestLogger(string categoryName, List<TestLogRecord> records)
+        {
+            _categoryName = categoryName;
+            _records = records;
+        }
+
+        public IDisposable BeginScope<TState>(TState state) where TState : notnull
+        {
+            return NullScope.Instance;
+        }
+
+        public bool IsEnabled(LogLevel logLevel)
+        {
+            return true;
+        }
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+        {
+            _records.Add(new TestLogRecord(logLevel, _categoryName, formatter(state, exception)));
+        }
+    }
+
+    private sealed class NullScope : IDisposable
+    {
+        public static NullScope Instance { get; } = new();
+
+        public void Dispose()
         {
         }
     }
