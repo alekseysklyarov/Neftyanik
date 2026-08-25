@@ -266,8 +266,8 @@ a:hover {
 }
 
 .portal-navbar {
-  padding-top: 0.85rem;
-  padding-bottom: 0.85rem;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
 }
 
 .portal-navbar .navbar-toggler {
@@ -323,7 +323,7 @@ a:hover {
 .portal-nav-link {
   color: var(--portal-text) !important;
   font-weight: 500;
-  padding: 0.5rem 0.75rem !important;
+  padding: 0.5rem 0.6rem !important;
   border-radius: var(--portal-radius-sm);
 }
 
@@ -342,14 +342,25 @@ a:hover {
   border-radius: 999px;
   color: var(--portal-muted);
   font-size: 0.95rem;
+  min-width: 0;
 }
 
 .portal-language-form {
-  padding: 0.35rem;
+  padding: 0.25rem 0.35rem;
   background: var(--portal-surface);
   border: 1px solid var(--portal-border);
   border-radius: var(--portal-radius);
   box-shadow: none;
+}
+
+.portal-navbar-content {
+  gap: 0.75rem;
+}
+
+.portal-navbar-primary,
+.portal-navbar-primary .nav-item {
+  min-width: 0;
+  flex-shrink: 0;
 }
 
 .portal-navbar-actions {
@@ -366,11 +377,18 @@ a:hover {
 }
 
 .portal-language-form .form-select {
-  min-width: 8rem;
+  min-width: 6.5rem;
   border: 0;
+  padding-top: 0.35rem;
+  padding-bottom: 0.35rem;
+  padding-left: 0.5rem;
   padding-right: 2rem;
   background-color: transparent;
   box-shadow: none;
+}
+
+.portal-navbar-primary .portal-nav-link {
+  white-space: nowrap;
 }
 
 .portal-main-shell {
@@ -596,7 +614,7 @@ a:hover {
   font-weight: 600;
 }
 
-@media (max-width: 991.98px) {
+@media (max-width: 1199.98px) {
   .portal-navbar .navbar-toggler {
     display: inline-flex;
   }
@@ -620,6 +638,10 @@ a:hover {
     margin-top: 1rem;
     padding-top: 1rem;
     border-top: 1px solid var(--portal-border);
+  }
+
+  .portal-navbar-content {
+    gap: 0;
   }
 
   .portal-navbar-actions {
@@ -657,12 +679,11 @@ a:hover {
     width: 100%;
   }
 
-  .portal-language-form .btn {
-    width: 100%;
-  }
-
   .portal-user-pill {
     justify-content: flex-start;
+    max-width: none;
+    overflow: visible;
+    text-overflow: clip;
     white-space: normal;
     word-break: break-word;
   }
@@ -680,9 +701,13 @@ a:hover {
   }
 }
 
-@media (min-width: 992px) {
+@media (min-width: 1200px) {
   .portal-navbar .navbar-toggler {
     display: none;
+  }
+
+  .portal-navbar-primary {
+    gap: 0.1rem;
   }
 
   .portal-navbar-actions {
@@ -691,12 +716,19 @@ a:hover {
     border-top: 0;
   }
 
+  .portal-language-form {
+    flex-wrap: nowrap;
+  }
+
   .portal-logout-form,
   .portal-logout-button {
     width: auto;
   }
 
   .portal-user-pill {
+    max-width: 14rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
   }
 }
