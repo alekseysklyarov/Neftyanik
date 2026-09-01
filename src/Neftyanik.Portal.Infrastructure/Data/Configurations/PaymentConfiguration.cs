@@ -21,6 +21,12 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         builder.Property(x => x.Amount)
             .HasPrecision(18, 2);
 
+        builder.Property(x => x.BalanceBeforePayment)
+            .HasPrecision(18, 2);
+
+        builder.Property(x => x.BalanceAfterPayment)
+            .HasPrecision(18, 2);
+
         builder.Property(x => x.ReferenceNumber)
             .HasMaxLength(150)
             .IsUnicode();
@@ -39,6 +45,8 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         builder.Property(x => x.CreatedAtUtc)
             .IsRequired();
 
+        builder.HasIndex(x => x.MemberId);
+
         builder.HasIndex(x => x.PlotId);
 
         builder.HasIndex(x => x.PaymentDate);
@@ -46,6 +54,11 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         builder.HasIndex(x => x.CancelledAtUtc);
 
         builder.HasIndex(x => x.ReferenceNumber);
+
+        builder.HasOne(x => x.Member)
+            .WithMany(x => x.Payments)
+            .HasForeignKey(x => x.MemberId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(x => x.Plot)
             .WithMany(x => x.Payments)

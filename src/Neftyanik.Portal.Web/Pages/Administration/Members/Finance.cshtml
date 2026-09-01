@@ -138,7 +138,6 @@
                                     <th>Тип</th>
                                     <th>Сумма</th>
                                     <th>Срок</th>
-                                    <th>Статус</th>
                                     <th class="text-end">Действия</th>
                                 </tr>
                             </thead>
@@ -149,18 +148,14 @@
                                         <td>@charge.ChargeDate.ToString("dd.MM.yyyy")</td>
                                         <td>@charge.PlotNumber</td>
                                         <td>@charge.ChargeTypeName</td>
-                                        <td>@charge.Amount.ToString("0.00")</td>
-                                        <td>@(charge.DueDate.HasValue ? charge.DueDate.Value.ToString("dd.MM.yyyy") : "—")</td>
                                         <td>
+                                            <span>@charge.Amount.ToString("0.00")</span>
                                             @if (charge.IsCancelled)
                                             {
-                                                <span class="badge text-bg-secondary">@charge.StatusText</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="badge text-bg-success">@charge.StatusText</span>
+                                                <span class="badge text-bg-secondary ms-2">@charge.StatusText</span>
                                             }
                                         </td>
+                                        <td>@(charge.DueDate.HasValue ? charge.DueDate.Value.ToString("dd.MM.yyyy") : "—")</td>
                                         <td class="text-end">
                                             @if (!charge.IsCancelled)
                                             {
@@ -175,7 +170,7 @@
                                     @if (!string.IsNullOrWhiteSpace(charge.Description) || !string.IsNullOrWhiteSpace(charge.CancellationReason) || charge.CancelledAtUtc.HasValue)
                                     {
                                         <tr class="table-light">
-                                            <td colspan="7" class="small text-muted">
+                                            <td colspan="6" class="small text-muted">
                                                 @if (!string.IsNullOrWhiteSpace(charge.Description))
                                                 {
                                                     <div><strong>Описание:</strong> @charge.Description</div>
@@ -241,7 +236,6 @@
                                     <th>Сумма</th>
                                     <th>Способ</th>
                                     <th>Документ</th>
-                                    <th>Статус</th>
                                     <th class="text-end">Действия</th>
                                 </tr>
                             </thead>
@@ -251,34 +245,29 @@
                                     <tr class="@(payment.IsCancelled ? "table-secondary" : string.Empty)">
                                         <td>@payment.PaymentDate.ToString("dd.MM.yyyy")</td>
                                         <td>@payment.PlotNumber</td>
-                                        <td>@payment.Amount.ToString("0.00")</td>
-                                        <td>@payment.PaymentMethodText</td>
-                                        <td>@(string.IsNullOrWhiteSpace(payment.ReferenceNumber) ? "—" : payment.ReferenceNumber)</td>
                                         <td>
+                                            <span>@payment.Amount.ToString("0.00")</span>
                                             @if (payment.IsCancelled)
                                             {
-                                                <div><span class="badge text-bg-secondary">@payment.StatusText</span></div>
-                                            }
-                                            else
-                                            {
-                                                <span class="badge text-bg-success">@payment.StatusText</span>
+                                                <span class="badge text-bg-secondary ms-2">@payment.StatusText</span>
                                             }
                                         </td>
+                                        <td>@payment.PaymentMethodText</td>
+                                        <td>@(string.IsNullOrWhiteSpace(payment.ReferenceNumber) ? "—" : payment.ReferenceNumber)</td>
                                         <td class="text-end">
-                                            @if (!payment.IsCancelled)
-                                            {
-                                                <a class="btn btn-sm btn-outline-warning" asp-page="/Administration/Members/Finance/CancelPayment" asp-route-memberId="@Model.Member.Id" asp-route-paymentId="@payment.PaymentId">Отменить платеж</a>
-                                            }
-                                            else
-                                            {
-                                                <span class="text-muted">—</span>
-                                            }
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <a class="btn btn-outline-secondary" asp-page="/Payments/Receipt" asp-route-paymentId="@payment.PaymentId" asp-route-memberId="@Model.Member.Id">@AppLocalizer.Get("Платёжка", "Платіжка", "Receipt")</a>
+                                                @if (!payment.IsCancelled)
+                                                {
+                                                    <a class="btn btn-outline-warning" asp-page="/Administration/Members/Finance/CancelPayment" asp-route-memberId="@Model.Member.Id" asp-route-paymentId="@payment.PaymentId">Отменить платеж</a>
+                                                }
+                                            </div>
                                         </td>
                                     </tr>
                                     @if (!string.IsNullOrWhiteSpace(payment.Description) || !string.IsNullOrWhiteSpace(payment.CancellationReason) || payment.CancelledAtUtc.HasValue)
                                     {
                                         <tr class="table-light">
-                                            <td colspan="7" class="small text-muted">
+                                            <td colspan="6" class="small text-muted">
                                                 @if (!string.IsNullOrWhiteSpace(payment.Description))
                                                 {
                                                     <div><strong>Описание:</strong> @payment.Description</div>

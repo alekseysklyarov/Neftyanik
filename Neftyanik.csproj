@@ -63,6 +63,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="tests\Neftyanik.Portal.Infrastructure.Tests\Data\Queries\MemberFinanceBalanceQueriesTests.cs" />
     <Compile Include="tests\Neftyanik.Portal.Infrastructure.Tests\LegacyElectricityImportTests.cs" />
     <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationAccountantAuthorizationTests.cs" />
     <Compile Include="tests\Neftyanik.Portal.Web.Tests\AdministrationAssociationTariffTests.cs" />
@@ -87,6 +88,7 @@
     <Compile Include="tests\Neftyanik.Portal.Web.Tests\Infrastructure\TestAuthenticatedUser.cs" />
     <Compile Include="tests\Neftyanik.Portal.Web.Tests\Infrastructure\TestAuthenticationHandler.cs" />
     <Compile Include="tests\Neftyanik.Portal.Web.Tests\Infrastructure\TestPageModelContext.cs" />
+    <Compile Include="tests\Neftyanik.Portal.Web.Tests\PaymentReceiptPageTests.cs" />
     <Compile Include="tests\Neftyanik.Portal.Web.Tests\PaymentServiceTests.cs" />
     <Compile Include="tests\Neftyanik.Portal.Web.Tests\ReverseProxyHttpsTests.cs" />
   </ItemGroup>

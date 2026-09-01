@@ -237,24 +237,28 @@
                                                     <th>@AppLocalizer.Get("Тип", "Тип", "Type")</th>
                                                     <th>@AppLocalizer.Get("Сумма", "Сума", "Amount")</th>
                                                     <th>@AppLocalizer.Get("Срок", "Строк", "Due")</th>
-                                                    <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 @foreach (var charge in Model.Charges)
                                                 {
-                                                    <tr>
+                                                     <tr class="@(charge.IsCancelled ? "table-secondary" : string.Empty)">
                                                         <td>@charge.ChargeDate.ToString("dd.MM.yyyy")</td>
                                                         <td>@charge.PlotNumber</td>
                                                         <td>@charge.ChargeTypeName</td>
-                                                        <td>@charge.Amount.ToString("0.00") <span class="member-dashboard-currency">₴</span></td>
+                                                         <td>
+                                                             <span>@charge.Amount.ToString("0.00") <span class="member-dashboard-currency">₴</span></span>
+                                                             @if (charge.IsCancelled)
+                                                             {
+                                                                 <span class="badge text-bg-secondary ms-2">@charge.StatusText</span>
+                                                             }
+                                                         </td>
                                                         <td>@(charge.DueDate.HasValue ? charge.DueDate.Value.ToString("dd.MM.yyyy") : "—")</td>
-                                                        <td>@charge.StatusText</td>
                                                     </tr>
-                                                    @if (!string.IsNullOrWhiteSpace(charge.Description) || !string.IsNullOrWhiteSpace(charge.CancellationReason))
+                                                     @if (!string.IsNullOrWhiteSpace(charge.Description) || !string.IsNullOrWhiteSpace(charge.CancellationReason) || charge.CancelledAtUtc.HasValue)
                                                     {
                                                         <tr class="member-dashboard-table-note-row">
-                                                            <td colspan="6" class="small text-muted">
+                                                             <td colspan="5" class="small text-muted">
                                                                 @if (!string.IsNullOrWhiteSpace(charge.Description))
                                                                 {
                                                                     <div><strong>@AppLocalizer.Get("Описание:", "Опис:", "Description:")</strong> @charge.Description</div>
@@ -320,24 +324,34 @@
                                                     <th>@AppLocalizer.Get("Сумма", "Сума", "Amount")</th>
                                                     <th>@AppLocalizer.Get("Способ", "Спосіб", "Method")</th>
                                                     <th>@AppLocalizer.Get("Документ", "Документ", "Document")</th>
-                                                    <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
+                                                    <th class="text-end">@AppLocalizer.Get("Платёжка", "Платіжка", "Receipt")</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 @foreach (var payment in Model.Payments)
                                                 {
-                                                    <tr>
+                                                     <tr class="@(payment.IsCancelled ? "table-secondary" : string.Empty)">
                                                         <td>@payment.PaymentDate.ToString("dd.MM.yyyy")</td>
                                                         <td>@payment.PlotNumber</td>
-                                                        <td>@payment.Amount.ToString("0.00") <span class="member-dashboard-currency">₴</span></td>
+                                                         <td>
+                                                             <span>@payment.Amount.ToString("0.00") <span class="member-dashboard-currency">₴</span></span>
+                                                             @if (payment.IsCancelled)
+                                                             {
+                                                                 <span class="badge text-bg-secondary ms-2">@payment.StatusText</span>
+                                                             }
+                                                         </td>
                                                         <td>@payment.PaymentMethodText</td>
                                                         <td>@(string.IsNullOrWhiteSpace(payment.ReferenceNumber) ? "—" : payment.ReferenceNumber)</td>
-                                                        <td>@payment.StatusText</td>
+                                                        <td class="text-end">
+                                                            <a class="btn btn-sm btn-outline-secondary"
+                                                               asp-page="/Payments/Receipt"
+                                                               asp-route-paymentId="@payment.PaymentId">@AppLocalizer.Get("Платёжка", "Платіжка", "Receipt")</a>
+                                                        </td>
                                                     </tr>
-                                                    @if (!string.IsNullOrWhiteSpace(payment.Description) || !string.IsNullOrWhiteSpace(payment.CancellationReason))
+                                                     @if (!string.IsNullOrWhiteSpace(payment.Description) || !string.IsNullOrWhiteSpace(payment.CancellationReason) || payment.CancelledAtUtc.HasValue)
                                                     {
                                                         <tr class="member-dashboard-table-note-row">
-                                                            <td colspan="6" class="small text-muted">
+                                                             <td colspan="6" class="small text-muted">
                                                                 @if (!string.IsNullOrWhiteSpace(payment.Description))
                                                                 {
                                                                     <div><strong>@AppLocalizer.Get("Описание:", "Опис:", "Description:")</strong> @payment.Description</div>

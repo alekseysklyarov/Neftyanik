@@ -63,7 +63,6 @@
                             <th>@AppLocalizer.Get("Сумма", "Сума", "Amount")</th>
                             <th>@AppLocalizer.Get("Срок оплаты", "Строк оплати", "Due date")</th>
                             <th>@AppLocalizer.Get("Описание", "Опис", "Description")</th>
-                            <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -72,22 +71,23 @@
                             <tr class="@(charge.IsCancelled ? "table-secondary" : string.Empty)">
                                 <td>@charge.ChargeDate.ToString("dd.MM.yyyy")</td>
                                 <td>@charge.ChargeTypeName</td>
-                                <td>@charge.Amount.ToString("0.00")</td>
+                                 <td>
+                                     <span>@charge.Amount.ToString("0.00")</span>
+                                     @if (charge.IsCancelled)
+                                     {
+                                         <span class="badge text-bg-secondary ms-2">@charge.StatusText</span>
+                                     }
+                                 </td>
                                 <td>@(charge.DueDate.HasValue ? charge.DueDate.Value.ToString("dd.MM.yyyy") : "—")</td>
-                                <td>@(string.IsNullOrWhiteSpace(charge.Description) ? "—" : charge.Description)</td>
-                                <td>
+                                 <td>
+                                     <div>@(string.IsNullOrWhiteSpace(charge.Description) ? "—" : charge.Description)</div>
                                     @if (charge.IsCancelled)
                                     {
-                                        <div><span class="badge text-bg-secondary">@charge.StatusText</span></div>
                                         @if (charge.CancelledAtUtc.HasValue)
                                         {
                                             <small class="d-block text-muted">@charge.CancelledAtUtc.Value.ToString("dd.MM.yyyy HH:mm") UTC</small>
                                         }
                                         <small class="text-muted">@(string.IsNullOrWhiteSpace(charge.CancellationReason) ? AppLocalizer.Get("Причина не указана", "Причину не вказано", "Reason not specified") : charge.CancellationReason)</small>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge text-bg-success">@charge.StatusText</span>
                                     }
                                 </td>
                             </tr>
@@ -153,7 +153,7 @@
                             <th>@AppLocalizer.Get("Способ оплаты", "Спосіб оплати", "Payment method")</th>
                             <th>@AppLocalizer.Get("Номер документа", "Номер документа", "Document number")</th>
                             <th>@AppLocalizer.Get("Описание", "Опис", "Description")</th>
-                            <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
+                            <th class="text-end">@AppLocalizer.Get("Платёжка", "Платіжка", "Receipt")</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -161,24 +161,30 @@
                         {
                             <tr class="@(payment.IsCancelled ? "table-secondary" : string.Empty)">
                                 <td>@payment.PaymentDate.ToString("dd.MM.yyyy")</td>
-                                <td>@payment.Amount.ToString("0.00")</td>
+                                 <td>
+                                     <span>@payment.Amount.ToString("0.00")</span>
+                                     @if (payment.IsCancelled)
+                                     {
+                                         <span class="badge text-bg-secondary ms-2">@payment.StatusText</span>
+                                     }
+                                 </td>
                                 <td>@payment.PaymentMethodText</td>
                                 <td>@(string.IsNullOrWhiteSpace(payment.ReferenceNumber) ? "—" : payment.ReferenceNumber)</td>
-                                <td>@(string.IsNullOrWhiteSpace(payment.Description) ? "—" : payment.Description)</td>
-                                <td>
+                                 <td>
+                                     <div>@(string.IsNullOrWhiteSpace(payment.Description) ? "—" : payment.Description)</div>
                                     @if (payment.IsCancelled)
                                     {
-                                        <div><span class="badge text-bg-secondary">@payment.StatusText</span></div>
                                          @if (payment.CancelledAtUtc.HasValue)
                                          {
                                              <small class="d-block text-muted">@payment.CancelledAtUtc.Value.ToString("dd.MM.yyyy HH:mm") UTC</small>
                                          }
                                          <small class="text-muted">@(string.IsNullOrWhiteSpace(payment.CancellationReason) ? AppLocalizer.Get("Причина не указана", "Причину не вказано", "Reason not specified") : payment.CancellationReason)</small>
                                     }
-                                    else
-                                    {
-                                        <span class="badge text-bg-success">@payment.StatusText</span>
-                                    }
+                                </td>
+                                <td class="text-end">
+                                    <a class="btn btn-sm btn-outline-secondary"
+                                       asp-page="/Payments/Receipt"
+                                       asp-route-paymentId="@payment.PaymentId">@AppLocalizer.Get("Платёжка", "Платіжка", "Receipt")</a>
                                 </td>
                             </tr>
                         }

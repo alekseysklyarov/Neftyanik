@@ -173,6 +173,7 @@ public sealed class PaymentNotificationServiceTests
         testContext.DbContext.Payments.Add(new Payment
         {
             Id = 5001,
+            MemberId = 1,
             PlotId = 101,
             PaymentDate = new DateOnly(2026, 8, 1),
             Amount = 50m,
@@ -300,6 +301,7 @@ public sealed class PaymentNotificationServiceTests
 
         var payments = await testContext.DbContext.Payments.ToListAsync();
         Assert.Single(payments);
+        Assert.Equal(1, payments[0].MemberId);
         Assert.Equal(101, payments[0].PlotId);
         Assert.Equal(150m, payments[0].Amount);
 

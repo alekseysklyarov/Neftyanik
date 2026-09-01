@@ -478,8 +478,17 @@ public class ChargeCancellationPageTests
 
         public async Task<Payment> SeedPaymentAsync(int plotId, decimal amount, DateOnly paymentDate)
         {
+            var memberId = await DbContext.PlotOwnerships
+                .AsNoTracking()
+                .Where(item => item.PlotId == plotId)
+                .OrderByDescending(item => item.ValidFrom)
+                .ThenByDescending(item => item.Id)
+                .Select(item => (int?)item.MemberId)
+                .FirstOrDefaultAsync();
+
             var payment = new Payment
             {
+                MemberId = memberId,
                 PlotId = plotId,
                 Amount = amount,
                 PaymentDate = paymentDate,

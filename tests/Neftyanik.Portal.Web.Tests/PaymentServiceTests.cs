@@ -39,7 +39,10 @@ public sealed class PaymentServiceTests
         Assert.NotNull(result.PaymentId);
 
         var payment = await testContext.DbContext.Payments.SingleAsync();
+        Assert.Equal(1, payment.MemberId);
         Assert.Equal(150m, payment.Amount);
+        Assert.Equal(250m, payment.BalanceBeforePayment);
+        Assert.Equal(100m, payment.BalanceAfterPayment);
 
         var auditEntry = await testContext.DbContext.FinancialAuditLogs.SingleAsync();
         Assert.Equal(FinancialAuditLogActions.Created, auditEntry.Action);
@@ -49,7 +52,61 @@ public sealed class PaymentServiceTests
         Assert.Equal("accountant@example.com", auditEntry.UserName);
         Assert.Contains("Создан платеж", auditEntry.Description, StringComparison.Ordinal);
         Assert.Contains("\"MemberId\":1", auditEntry.NewValuesJson, StringComparison.Ordinal);
+        Assert.Contains("\"BalanceBeforePayment\":250", auditEntry.NewValuesJson, StringComparison.Ordinal);
+        Assert.Contains("\"BalanceAfterPayment\":100", auditEntry.NewValuesJson, StringComparison.Ordinal);
         Assert.Contains("\"PaymentDate\":\"2026-08-01\"", auditEntry.NewValuesJson, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task CreateMemberPaymentAsync_WhenPaymentClosesDebt_StoresZeroAfterBalance()
+    {
+        await using var testContext = await PaymentServiceTestContext.CreateAsync();
+        await testContext.SeedMemberWithPlotAndChargeAsync(memberId: 1, plotId: 101, chargeAmount: 150m);
+        await testContext.SeedUserAsync("accountant-user", "accountant@example.com", "Portal Accountant");
+
+        var service = testContext.CreatePaymentService();
+        var result = await service.CreateMemberPaymentAsync(new CreateMemberPaymentRequest(
+            1,
+            101,
+            new DateOnly(2026, 8, 1),
+            150m,
+            PaymentMethod.Cash,
+            "RCPT-ZERO",
+            "Закрытие долга",
+            "accountant-user"));
+
+        Assert.True(result.Succeeded);
+
+        var payment = await testContext.DbContext.Payments.AsNoTracking().SingleAsync();
+        Assert.Equal(150m, payment.BalanceBeforePayment);
+        Assert.Equal(0m, payment.BalanceAfterPayment);
+    }
+
+    [Fact]
+    public async Task CreateMemberPaymentAsync_WhenPaymentCreatesOverpayment_StoresNegativeAfterBalance()
+    {
+        await using var testContext = await PaymentServiceTestContext.CreateAsync();
+        await testContext.SeedMemberWithPlotAndChargeAsync(memberId: 1, plotId: 101, chargeAmount: 100m);
+        await testContext.SeedUserAsync("accountant-user", "accountant@example.com", "Portal Accountant");
+
+        var service = testContext.CreatePaymentService();
+        var result = await service.CreateMemberPaymentAsync(new CreateMemberPaymentRequest(
+            1,
+            101,
+            new DateOnly(2026, 8, 1),
+            150m,
+            PaymentMethod.Cash,
+            "RCPT-OVERPAY",
+            "Переплата",
+            "accountant-user"));
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(100m, result.AllocatedAmount);
+        Assert.Equal(50m, result.AdvanceAmount);
+
+        var payment = await testContext.DbContext.Payments.AsNoTracking().SingleAsync();
+        Assert.Equal(100m, payment.BalanceBeforePayment);
+        Assert.Equal(-50m, payment.BalanceAfterPayment);
     }
 
     [Fact]
@@ -86,6 +143,7 @@ public sealed class PaymentServiceTests
         testContext.SetCurrentUser("accountant-user", "accountant@example.com");
 
         var payment = await testContext.SeedPaymentAsync(
+            memberId: 1,
             plotId: 101,
             amount: 150m,
             paymentDate: new DateOnly(2026, 8, 1),
@@ -102,6 +160,8 @@ public sealed class PaymentServiceTests
         Assert.Equal(payment.Id, storedPayment.Id);
         Assert.NotNull(storedPayment.CancelledAtUtc);
         Assert.Equal("Платеж внесен вручную ошибочно.", storedPayment.CancellationReason);
+        Assert.Equal(payment.BalanceBeforePayment, storedPayment.BalanceBeforePayment);
+        Assert.Equal(payment.BalanceAfterPayment, storedPayment.BalanceAfterPayment);
 
         var allocations = await testContext.DbContext.PaymentAllocations.AsNoTracking().ToListAsync();
         Assert.Single(allocations);
@@ -122,11 +182,38 @@ public sealed class PaymentServiceTests
     }
 
     [Fact]
+    public async Task CancelPaymentAsync_DoesNotRewriteHistoricalBalanceSnapshots()
+    {
+        await using var testContext = await PaymentServiceTestContext.CreateAsync();
+        await testContext.SeedMemberWithPlotAndChargeAsync(memberId: 1, plotId: 101, chargeAmount: 250m);
+        var payment = await testContext.SeedPaymentAsync(
+            memberId: 1,
+            plotId: 101,
+            amount: 150m,
+            paymentDate: new DateOnly(2026, 8, 1),
+            cancellationReason: null,
+            cancelledAtUtc: null,
+            balanceBeforePayment: 250m,
+            balanceAfterPayment: 100m,
+            allocations: [(101L, 100m)]);
+
+        var service = testContext.CreatePaymentService();
+        var result = await service.CancelPaymentAsync(new CancelPaymentRequest(payment.Id, "Отмена без изменения истории."));
+
+        Assert.True(result.Succeeded);
+
+        var storedPayment = await testContext.DbContext.Payments.AsNoTracking().SingleAsync();
+        Assert.Equal(250m, storedPayment.BalanceBeforePayment);
+        Assert.Equal(100m, storedPayment.BalanceAfterPayment);
+    }
+
+    [Fact]
     public async Task CancelPaymentAsync_WhitespaceReason_IsRejected()
     {
         await using var testContext = await PaymentServiceTestContext.CreateAsync();
         await testContext.SeedMemberWithPlotAndChargeAsync(memberId: 1, plotId: 101, chargeAmount: 250m);
         var payment = await testContext.SeedPaymentAsync(
+            memberId: 1,
             plotId: 101,
             amount: 150m,
             paymentDate: new DateOnly(2026, 8, 1),
@@ -152,6 +239,7 @@ public sealed class PaymentServiceTests
         await testContext.SeedMemberWithPlotAndChargeAsync(memberId: 1, plotId: 101, chargeAmount: 250m);
         var cancelledAtUtc = DateTime.UtcNow.AddDays(-1);
         var payment = await testContext.SeedPaymentAsync(
+            memberId: 1,
             plotId: 101,
             amount: 150m,
             paymentDate: new DateOnly(2026, 8, 1),
@@ -227,6 +315,7 @@ public sealed class PaymentServiceTests
         testContext.SetCurrentUser("admin-user", "admin@example.com");
 
         var payment = await testContext.SeedPaymentAsync(
+            memberId: 1,
             plotId: 101,
             amount: 150m,
             paymentDate: new DateOnly(2026, 8, 1),
@@ -266,6 +355,7 @@ public sealed class PaymentServiceTests
         await using var testContext = await PaymentServiceTestContext.CreateAsync();
         await testContext.SeedMemberWithPlotAndChargeAsync(memberId: 1, plotId: 101, chargeAmount: 250m);
         var payment = await testContext.SeedPaymentAsync(
+            memberId: 1,
             plotId: 101,
             amount: 150m,
             paymentDate: new DateOnly(2026, 8, 1),
@@ -402,18 +492,24 @@ public sealed class PaymentServiceTests
         }
 
         public async Task<Payment> SeedPaymentAsync(
+            int? memberId,
             int plotId,
             decimal amount,
             DateOnly paymentDate,
             string? cancellationReason,
             DateTime? cancelledAtUtc,
+            decimal? balanceBeforePayment = null,
+            decimal? balanceAfterPayment = null,
             params (long ChargeId, decimal Amount)[] allocations)
         {
             var payment = new Payment
             {
+                MemberId = memberId,
                 PlotId = plotId,
                 PaymentDate = paymentDate,
                 Amount = amount,
+                BalanceBeforePayment = balanceBeforePayment,
+                BalanceAfterPayment = balanceAfterPayment,
                 PaymentMethod = PaymentMethod.Cash,
                 CreatedAtUtc = DateTime.UtcNow,
                 CancellationReason = cancellationReason,

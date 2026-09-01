@@ -404,11 +404,11 @@ public class FinanceModel : PageModel
                 .GroupBy(item => item.PlotId)
                 .ToDictionary(group => group.Key, group => group.Sum(item => item.Amount));
 
-            var paymentTotalsByPlot = await _dbContext.LoadActivePaymentTotalsByPlotAsync(plotIds, cancellationToken);
+            var paymentTotalsByPlot = await _dbContext.LoadActivePaymentTotalsByPlotAsync(plotIds, id, cancellationToken);
 
             var totalPayments = (await _dbContext.Payments
                 .AsNoTracking()
-                .Where(payment => payment.PlotId != null && plotIds.Contains(payment.PlotId.Value) && payment.CancelledAtUtc == null)
+                .Where(payment => payment.MemberId == id && payment.CancelledAtUtc == null)
                 .Select(payment => payment.Amount)
                 .ToListAsync(cancellationToken))
                 .Sum();
@@ -464,7 +464,8 @@ public class FinanceModel : PageModel
 
             var paymentsQuery = _dbContext.Payments
                 .AsNoTracking()
-                .Where(payment => payment.PlotId != null && plotIds.Contains(payment.PlotId.Value))
+                .Where(payment => payment.MemberId == id
+                    && payment.PlotId != null)
                 .OrderByDescending(payment => payment.PaymentDate)
                 .ThenByDescending(payment => payment.Id);
 

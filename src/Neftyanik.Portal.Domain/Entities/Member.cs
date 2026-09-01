@@ -43,5 +43,7 @@ public class Member
 
     public List<MemberElectricityMeter> MemberElectricityMeters { get; set; } = [];
 
+    public List<Payment> Payments { get; set; } = [];
+
     public List<PaymentNotification> PaymentNotifications { get; set; } = [];
 }

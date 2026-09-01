@@ -199,6 +199,7 @@ public class PaymentCancellationPageTests
 
             var activePayment = new Payment
             {
+                MemberId = memberId,
                 PlotId = plotId,
                 Amount = 40m,
                 PaymentDate = new DateOnly(2026, 8, 2),
@@ -207,6 +208,7 @@ public class PaymentCancellationPageTests
             };
             var cancelledPayment = new Payment
             {
+                MemberId = memberId,
                 PlotId = plotId,
                 Amount = 60m,
                 PaymentDate = new DateOnly(2026, 8, 3),
@@ -376,8 +378,17 @@ public class PaymentCancellationPageTests
             DateTime? cancelledAtUtc,
             params (long ChargeId, decimal Amount)[] allocations)
         {
+            var memberId = await DbContext.PlotOwnerships
+                .AsNoTracking()
+                .Where(item => item.PlotId == plotId)
+                .OrderByDescending(item => item.ValidFrom)
+                .ThenByDescending(item => item.Id)
+                .Select(item => (int?)item.MemberId)
+                .FirstOrDefaultAsync();
+
             var payment = new Payment
             {
+                MemberId = memberId,
                 PlotId = plotId,
                 PaymentDate = paymentDate,
                 Amount = amount,

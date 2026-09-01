@@ -435,7 +435,7 @@ public class IndexModel : PageModel
                 .GroupBy(item => item.PlotId)
                 .ToDictionary(group => group.Key, group => group.Sum(item => item.Amount));
 
-        var paymentTotalsByPlot = await _dbContext.LoadActivePaymentTotalsByPlotAsync(plotIds, cancellationToken);
+        var paymentTotalsByPlot = await _dbContext.LoadActivePaymentTotalsByPlotAsync(plotIds, member.MemberId, cancellationToken);
 
         member.Plots = plots
             .Select(plot => plot with
@@ -450,7 +450,7 @@ public class IndexModel : PageModel
         var totalCharges = Plots.Sum(plot => plot.ActiveChargesTotal);
         var totalPayments = await _dbContext.Payments
             .AsNoTracking()
-            .Where(payment => payment.PlotId != null && plotIds.Contains(payment.PlotId.Value) && payment.CancelledAtUtc == null)
+            .Where(payment => payment.MemberId == member.MemberId && payment.CancelledAtUtc == null)
             .Select(payment => payment.Amount)
             .ToListAsync(cancellationToken);
 
@@ -517,7 +517,8 @@ public class IndexModel : PageModel
 
         var paymentsQuery = _dbContext.Payments
             .AsNoTracking()
-            .Where(payment => payment.PlotId != null && plotIds.Contains(payment.PlotId.Value))
+            .Where(payment => payment.MemberId == member.MemberId
+                && payment.PlotId != null)
             .OrderByDescending(payment => payment.PaymentDate)
             .ThenByDescending(payment => payment.Id);
 
@@ -533,6 +534,7 @@ public class IndexModel : PageModel
             .Take(10)
             .Select(payment => new PaymentItemViewModel
             {
+                PaymentId = payment.Id,
                 PlotId = payment.PlotId!.Value,
                 PlotNumber = payment.Plot != null ? payment.Plot.Number : "—",
                 PaymentDate = payment.PaymentDate,
@@ -964,6 +966,8 @@ public class IndexModel : PageModel
 
     public sealed class PaymentItemViewModel
     {
+        public long PaymentId { get; init; }
+
         public int PlotId { get; init; }
 
         public string PlotNumber { get; init; } = string.Empty;

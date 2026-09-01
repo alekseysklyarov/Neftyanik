@@ -7,6 +7,10 @@ public class Payment : IValidatableObject
 {
     public long Id { get; set; }
 
+    public int? MemberId { get; set; }
+
+    public Member? Member { get; set; }
+
     public int? PlotId { get; set; }
 
     public Plot? Plot { get; set; }
@@ -14,6 +18,10 @@ public class Payment : IValidatableObject
     public DateOnly PaymentDate { get; set; }
 
     public decimal Amount { get; set; }
+
+    public decimal? BalanceBeforePayment { get; set; }
+
+    public decimal? BalanceAfterPayment { get; set; }
 
     public PaymentMethod PaymentMethod { get; set; }
 

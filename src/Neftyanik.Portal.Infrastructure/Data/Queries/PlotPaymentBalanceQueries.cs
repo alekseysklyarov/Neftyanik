@@ -10,6 +10,15 @@ public static class PlotPaymentBalanceQueries
         IEnumerable<int> plotIds,
         CancellationToken cancellationToken = default)
     {
+        return await dbContext.LoadActivePaymentTotalsByPlotAsync(plotIds, memberId: null, cancellationToken);
+    }
+
+    public static async Task<Dictionary<int, decimal>> LoadActivePaymentTotalsByPlotAsync(
+        this ApplicationDbContext dbContext,
+        IEnumerable<int> plotIds,
+        int? memberId,
+        CancellationToken cancellationToken = default)
+    {
         var plotIdArray = plotIds.Distinct().ToArray();
         if (plotIdArray.Length == 0)
         {
@@ -20,6 +29,7 @@ public static class PlotPaymentBalanceQueries
             .AsNoTracking()
             .Where(payment => payment.CancelledAtUtc == null
                 && payment.PlotId.HasValue
+                && (!memberId.HasValue || payment.MemberId == memberId.Value)
                 && plotIdArray.Contains(payment.PlotId.Value))
             .Select(payment => new ActivePaymentItem(
                 payment.Id,
@@ -31,6 +41,7 @@ public static class PlotPaymentBalanceQueries
             .AsNoTracking()
             .Where(allocation => allocation.Payment != null
                 && allocation.Payment.CancelledAtUtc == null
+                && (!memberId.HasValue || allocation.Payment.MemberId == memberId.Value)
                 && allocation.Charge != null
                 && allocation.Charge.CancelledAtUtc == null
                 && ((allocation.Payment.PlotId.HasValue && plotIdArray.Contains(allocation.Payment.PlotId.Value))
