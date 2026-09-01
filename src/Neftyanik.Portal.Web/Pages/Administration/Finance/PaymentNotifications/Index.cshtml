@@ -92,6 +92,13 @@
                                             <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#@rejectModalId">@AppLocalizer.Get("Отклонить", "Відхилити", "Reject")</button>
                                         </div>
                                     }
+                                    else if (notification.PaymentId.HasValue)
+                                    {
+                                        <a class="btn btn-sm btn-outline-secondary"
+                                           asp-page="/Payments/Receipt"
+                                           asp-route-paymentId="@notification.PaymentId.Value"
+                                           asp-route-memberId="@notification.MemberId">@AppLocalizer.Get("Платёжка", "Платіжка", "Receipt")</a>
+                                    }
                                     else
                                     {
                                         <span class="text-muted">—</span>

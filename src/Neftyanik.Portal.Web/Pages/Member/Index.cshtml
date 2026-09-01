@@ -171,6 +171,7 @@
                                             <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
                                             <th>@AppLocalizer.Get("Описание", "Опис", "Description")</th>
                                             <th>@AppLocalizer.Get("Комментарий администратора", "Коментар адміністратора", "Administrator comment")</th>
+                                            <th class="text-end">@AppLocalizer.Get("Платёжка", "Платіжка", "Receipt")</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -190,6 +191,18 @@
                                                     else
                                                     {
                                                         @:—
+                                                    }
+                                                </td>
+                                                <td class="text-end">
+                                                    @if (notification.PaymentId.HasValue)
+                                                    {
+                                                        <a class="btn btn-sm btn-outline-secondary"
+                                                           asp-page="/Payments/Receipt"
+                                                           asp-route-paymentId="@notification.PaymentId.Value">@AppLocalizer.Get("Платёжка", "Платіжка", "Receipt")</a>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted">—</span>
                                                     }
                                                 </td>
                                             </tr>

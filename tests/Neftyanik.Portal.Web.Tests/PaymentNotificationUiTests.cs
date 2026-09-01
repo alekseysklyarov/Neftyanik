@@ -64,6 +64,93 @@ public sealed class PaymentNotificationUiTests
     }
 
     [Fact]
+    public async Task GetMemberDashboard_ShowsReceiptOnlyForNotificationsWithPaymentId_WithoutMemberContext()
+    {
+        using var factory = new PortalWebApplicationFactory();
+        const string memberUserId = "member-notification-receipt-user";
+        const string adminUserId = "admin-user";
+        const int memberId = 11;
+        const int plotId = 111;
+        const long cancelledPaymentId = 7111;
+
+        await SeedUserAsync(factory, adminUserId, "admin@example.com");
+        await SeedMemberWithFinanceAsync(factory, memberId, memberUserId, plotId, 200m);
+        await factory.ExecuteDbContextAsync(async dbContext =>
+        {
+            dbContext.Payments.Add(new Payment
+            {
+                Id = cancelledPaymentId,
+                MemberId = memberId,
+                PlotId = plotId,
+                PaymentDate = new DateOnly(2026, 8, 10),
+                Amount = 90m,
+                PaymentMethod = PaymentMethod.Card,
+                ReferenceNumber = "MEM-REC-7111",
+                CancelledAtUtc = DateTime.UtcNow,
+                CancellationReason = "Cancelled but printable",
+                CreatedAtUtc = DateTime.UtcNow
+            });
+
+            dbContext.PaymentNotifications.AddRange(
+                new PaymentNotification
+                {
+                    Id = 7101,
+                    MemberId = memberId,
+                    Amount = 90m,
+                    PaymentMethod = PaymentMethod.Card,
+                    Description = "Confirmed linked notification",
+                    Status = PaymentNotificationStatus.Confirmed,
+                    PaymentId = cancelledPaymentId,
+                    ReviewedAtUtc = DateTimeOffset.UtcNow,
+                    ReviewedByUserId = adminUserId,
+                    CreatedAtUtc = DateTimeOffset.UtcNow.AddMinutes(-30)
+                },
+                new PaymentNotification
+                {
+                    Id = 7102,
+                    MemberId = memberId,
+                    Amount = 40m,
+                    PaymentMethod = PaymentMethod.Cash,
+                    Description = "Pending without payment",
+                    Status = PaymentNotificationStatus.Pending,
+                    CreatedAtUtc = DateTimeOffset.UtcNow.AddMinutes(-20)
+                },
+                new PaymentNotification
+                {
+                    Id = 7103,
+                    MemberId = memberId,
+                    Amount = 25m,
+                    PaymentMethod = PaymentMethod.Cash,
+                    Description = "Rejected without payment",
+                    Status = PaymentNotificationStatus.Rejected,
+                    AdministratorComment = "Нужна корректировка",
+                    ReviewedAtUtc = DateTimeOffset.UtcNow.AddMinutes(-10),
+                    ReviewedByUserId = adminUserId,
+                    CreatedAtUtc = DateTimeOffset.UtcNow.AddMinutes(-15)
+                });
+
+            await dbContext.SaveChangesAsync();
+        });
+
+        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(memberUserId, RoleNames.Member), cultureName: "ru-RU");
+        var response = await client.GetAsync("/Member");
+        var html = await response.ReadDecodedHtmlAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains($"/Payments/{cancelledPaymentId}/Receipt", html, StringComparison.Ordinal);
+        Assert.DoesNotContain($"/Payments/{cancelledPaymentId}/Receipt?memberId={memberId}", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("/Payments/7102/Receipt", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("/Payments/7103/Receipt", html, StringComparison.Ordinal);
+        Assert.Contains("Confirmed linked notification", html, StringComparison.Ordinal);
+        Assert.Contains("Pending without payment", html, StringComparison.Ordinal);
+        Assert.Contains("Rejected without payment", html, StringComparison.Ordinal);
+        Assert.Contains("Нужна корректировка", html, StringComparison.Ordinal);
+        Assert.Contains("Подтверждено", html, StringComparison.Ordinal);
+        Assert.Contains("Ожидает подтверждения", html, StringComparison.Ordinal);
+        Assert.Contains("Отклонено", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task PostMemberPaymentNotification_ValidRequest_CreatesPendingNotificationWithoutPayment()
     {
         using var factory = new PortalWebApplicationFactory();
@@ -385,6 +472,129 @@ public sealed class PaymentNotificationUiTests
         Assert.Equal(HttpStatusCode.OK, invalidStatusResponse.StatusCode);
         Assert.Contains("Member 1", invalidStatusHtml, StringComparison.Ordinal);
         Assert.DoesNotContain("Confirmed item", invalidStatusHtml, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(RoleNames.Administrator)]
+    [InlineData(RoleNames.Accountant)]
+    public async Task GetAdministrationPaymentNotifications_ShowsReceiptOnlyForNotificationsWithPaymentId_AndPreservesActions(string role)
+    {
+        using var factory = new PortalWebApplicationFactory();
+        const string financeUserId = "finance-notification-receipt-user";
+        const int memberId = 21;
+        const int plotId = 121;
+        const long activePaymentId = 8201;
+        const long cancelledPaymentId = 8202;
+
+        await SeedUserAsync(factory, financeUserId, "finance-notification-receipt@example.com");
+        await SeedMemberWithFinanceAsync(factory, memberId, "member-notification-target", plotId, 200m);
+
+        await factory.ExecuteDbContextAsync(async dbContext =>
+        {
+            dbContext.Payments.AddRange(
+                new Payment
+                {
+                    Id = activePaymentId,
+                    MemberId = memberId,
+                    PlotId = plotId,
+                    PaymentDate = new DateOnly(2026, 8, 11),
+                    Amount = 50m,
+                    PaymentMethod = PaymentMethod.Cash,
+                    CreatedByUserId = financeUserId,
+                    CreatedAtUtc = DateTime.UtcNow
+                },
+                new Payment
+                {
+                    Id = cancelledPaymentId,
+                    MemberId = memberId,
+                    PlotId = plotId,
+                    PaymentDate = new DateOnly(2026, 8, 12),
+                    Amount = 75m,
+                    PaymentMethod = PaymentMethod.Card,
+                    CancelledAtUtc = DateTime.UtcNow,
+                    CancellationReason = "Cancelled but printable",
+                    CreatedByUserId = financeUserId,
+                    CreatedAtUtc = DateTime.UtcNow
+                });
+
+            dbContext.PaymentNotifications.AddRange(
+                new PaymentNotification
+                {
+                    Id = 82011,
+                    MemberId = memberId,
+                    Amount = 30m,
+                    PaymentMethod = PaymentMethod.Cash,
+                    Description = "Pending without payment",
+                    Status = PaymentNotificationStatus.Pending,
+                    CreatedAtUtc = DateTimeOffset.UtcNow.AddHours(-3)
+                },
+                new PaymentNotification
+                {
+                    Id = 82012,
+                    MemberId = memberId,
+                    Amount = 50m,
+                    PaymentMethod = PaymentMethod.Cash,
+                    Description = "Confirmed with payment",
+                    Status = PaymentNotificationStatus.Confirmed,
+                    PaymentId = activePaymentId,
+                    ReviewedAtUtc = DateTimeOffset.UtcNow.AddHours(-2),
+                    ReviewedByUserId = financeUserId,
+                    CreatedAtUtc = DateTimeOffset.UtcNow.AddHours(-2.5)
+                },
+                new PaymentNotification
+                {
+                    Id = 82013,
+                    MemberId = memberId,
+                    Amount = 75m,
+                    PaymentMethod = PaymentMethod.Card,
+                    Description = "Confirmed with cancelled payment",
+                    Status = PaymentNotificationStatus.Confirmed,
+                    PaymentId = cancelledPaymentId,
+                    ReviewedAtUtc = DateTimeOffset.UtcNow.AddHours(-1),
+                    ReviewedByUserId = financeUserId,
+                    CreatedAtUtc = DateTimeOffset.UtcNow.AddHours(-1.5)
+                },
+                new PaymentNotification
+                {
+                    Id = 82014,
+                    MemberId = memberId,
+                    Amount = 20m,
+                    PaymentMethod = PaymentMethod.Cash,
+                    Description = "Rejected without payment",
+                    Status = PaymentNotificationStatus.Rejected,
+                    AdministratorComment = "Rejected reason",
+                    ReviewedAtUtc = DateTimeOffset.UtcNow.AddMinutes(-20),
+                    ReviewedByUserId = financeUserId,
+                    CreatedAtUtc = DateTimeOffset.UtcNow.AddMinutes(-40)
+                });
+
+            await dbContext.SaveChangesAsync();
+        });
+
+        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(financeUserId, role), allowAutoRedirect: false, cultureName: "ru-RU");
+
+        var pendingHtml = await (await client.GetAsync("/Administration/Finance/PaymentNotifications?status=Pending")).ReadDecodedHtmlAsync();
+        Assert.Contains("Pending without payment", pendingHtml, StringComparison.Ordinal);
+        Assert.Contains("data-bs-target=\"#confirm-notification-82011\"", pendingHtml, StringComparison.Ordinal);
+        Assert.Contains("data-bs-target=\"#reject-notification-82011\"", pendingHtml, StringComparison.Ordinal);
+        Assert.DoesNotContain($"/Payments/{activePaymentId}/Receipt?memberId={memberId}", pendingHtml, StringComparison.Ordinal);
+        Assert.DoesNotContain($"/Payments/{cancelledPaymentId}/Receipt?memberId={memberId}", pendingHtml, StringComparison.Ordinal);
+
+        var confirmedHtml = await (await client.GetAsync("/Administration/Finance/PaymentNotifications?status=Confirmed")).ReadDecodedHtmlAsync();
+        Assert.Contains("Confirmed with payment", confirmedHtml, StringComparison.Ordinal);
+        Assert.Contains("Confirmed with cancelled payment", confirmedHtml, StringComparison.Ordinal);
+        Assert.Contains($"/Payments/{activePaymentId}/Receipt?memberId={memberId}", confirmedHtml, StringComparison.Ordinal);
+        Assert.Contains($"/Payments/{cancelledPaymentId}/Receipt?memberId={memberId}", confirmedHtml, StringComparison.Ordinal);
+        Assert.DoesNotContain("data-bs-target=\"#confirm-notification-82012\"", confirmedHtml, StringComparison.Ordinal);
+        Assert.DoesNotContain("data-bs-target=\"#reject-notification-82012\"", confirmedHtml, StringComparison.Ordinal);
+        Assert.Contains("Подтверждено", confirmedHtml, StringComparison.Ordinal);
+
+        var rejectedHtml = await (await client.GetAsync("/Administration/Finance/PaymentNotifications?status=Rejected")).ReadDecodedHtmlAsync();
+        Assert.Contains("Rejected without payment", rejectedHtml, StringComparison.Ordinal);
+        Assert.Contains("Rejected reason", rejectedHtml, StringComparison.Ordinal);
+        Assert.DoesNotContain($"/Payments/{activePaymentId}/Receipt?memberId={memberId}", rejectedHtml, StringComparison.Ordinal);
+        Assert.DoesNotContain($"/Payments/{cancelledPaymentId}/Receipt?memberId={memberId}", rejectedHtml, StringComparison.Ordinal);
+        Assert.Contains("Отклонено", rejectedHtml, StringComparison.Ordinal);
     }
 
     [Theory]
