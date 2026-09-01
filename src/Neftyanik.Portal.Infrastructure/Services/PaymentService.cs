@@ -6,6 +6,7 @@ using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Domain.Enums;
 using Neftyanik.Portal.Infrastructure.Data;
+using Neftyanik.Portal.Infrastructure.Data.Queries;
 
 namespace Neftyanik.Portal.Infrastructure.Services;
 
@@ -55,18 +56,6 @@ public sealed class PaymentService : IPaymentService
 
         var effectivePlotId = request.PaymentPlotId ?? memberPlotIds.OrderBy(plotId => plotId).First();
 
-        var payment = new Payment
-        {
-            PlotId = effectivePlotId,
-            PaymentDate = paymentDate,
-            Amount = request.Amount,
-            PaymentMethod = request.PaymentMethod,
-            ReferenceNumber = Normalize(request.ReferenceNumber),
-            Description = Normalize(request.Description),
-            CreatedByUserId = Normalize(request.CreatedByUserId),
-            CreatedAtUtc = DateTime.UtcNow
-        };
-
         IDbContextTransaction? transaction = null;
         if (_dbContext.Database.IsRelational() && _dbContext.Database.CurrentTransaction is null)
         {
@@ -75,6 +64,22 @@ public sealed class PaymentService : IPaymentService
 
         try
         {
+            var balanceBeforePayment = await _dbContext.CalculateActiveBalanceAsync(request.MemberId, memberPlotIds, cancellationToken);
+
+            var payment = new Payment
+            {
+                MemberId = request.MemberId,
+                PlotId = effectivePlotId,
+                PaymentDate = paymentDate,
+                Amount = request.Amount,
+                BalanceBeforePayment = balanceBeforePayment,
+                PaymentMethod = request.PaymentMethod,
+                ReferenceNumber = Normalize(request.ReferenceNumber),
+                Description = Normalize(request.Description),
+                CreatedByUserId = Normalize(request.CreatedByUserId),
+                CreatedAtUtc = DateTime.UtcNow
+            };
+
             _dbContext.Payments.Add(payment);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -111,6 +116,8 @@ public sealed class PaymentService : IPaymentService
                 _dbContext.PaymentAllocations.AddRange(allocations);
             }
 
+            payment.BalanceAfterPayment = await _dbContext.CalculateActiveBalanceAsync(request.MemberId, memberPlotIds, cancellationToken);
+
             _financialAuditService.Add(
                 FinancialAuditLogActions.Created,
                 nameof(Payment),
@@ -121,10 +128,12 @@ public sealed class PaymentService : IPaymentService
                 newValues: new
                 {
                     PaymentId = payment.Id,
-                    request.MemberId,
+                    payment.MemberId,
                     payment.PlotId,
                     payment.PaymentDate,
                     payment.Amount,
+                    payment.BalanceBeforePayment,
+                    payment.BalanceAfterPayment,
                     PaymentMethod = payment.PaymentMethod.ToString(),
                     payment.ReferenceNumber,
                     payment.Description,
@@ -265,9 +274,12 @@ public sealed class PaymentService : IPaymentService
         return new
         {
             PaymentId = payment.Id,
+            payment.MemberId,
             payment.PlotId,
             payment.PaymentDate,
             payment.Amount,
+            payment.BalanceBeforePayment,
+            payment.BalanceAfterPayment,
             PaymentMethod = payment.PaymentMethod.ToString(),
             payment.ReferenceNumber,
             payment.Description,

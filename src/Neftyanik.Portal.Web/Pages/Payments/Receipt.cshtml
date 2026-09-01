@@ -1,0 +1,383 @@
+@page "/Payments/{paymentId:long}/Receipt"
+@model Neftyanik.Portal.Web.Pages.Payments.ReceiptModel
+@{
+    ViewData["Title"] = AppLocalizer.Get($"Платёжка #{Model.Receipt.PaymentId}", $"Платіжка #{Model.Receipt.PaymentId}", $"Payment receipt #{Model.Receipt.PaymentId}");
+}
+
+<style>
+    .payment-receipt {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .payment-receipt-sheet {
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 0.75rem;
+        padding: 2rem;
+    }
+
+    .payment-receipt-title {
+        letter-spacing: .02em;
+    }
+
+    .payment-receipt-amount {
+        font-size: 2rem;
+        font-weight: 700;
+    }
+
+    .payment-receipt-balance-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    .payment-receipt-balance-card {
+        border: 1px solid #dee2e6;
+        border-radius: .75rem;
+        padding: 1rem;
+        background: #f8f9fa;
+    }
+
+    .payment-receipt-balance-value {
+        font-size: 1.05rem;
+        font-weight: 600;
+    }
+
+    .payment-receipt-grid {
+        display: grid;
+        grid-template-columns: minmax(180px, .8fr) minmax(0, 1.7fr);
+        gap: .5rem 1.25rem;
+    }
+
+    .payment-receipt-label {
+        color: #6c757d;
+    }
+
+    .payment-receipt-value {
+        overflow-wrap: anywhere;
+    }
+
+    .payment-receipt-cancelled {
+        border: 2px solid #dc3545;
+        color: #842029;
+        background: #f8d7da;
+        padding: .75rem 1rem;
+        font-weight: 700;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+    }
+
+    @@media (max-width: 575.98px) {
+        .payment-receipt-sheet {
+            padding: 1.25rem;
+        }
+
+        .payment-receipt-grid,
+        .payment-receipt-balance-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .payment-receipt-value {
+            margin-bottom: .65rem;
+        }
+    }
+
+    @@media print {
+        body {
+            background: #fff !important;
+        }
+
+        .portal-header,
+        .portal-footer,
+        .payment-receipt-actions,
+        .cookie-consent,
+        .no-print {
+            display: none !important;
+        }
+
+        main,
+        .portal-main-shell,
+        .container-fluid {
+            width: 100% !important;
+            max-width: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .payment-receipt {
+            max-width: none;
+            margin: 0;
+        }
+
+        .payment-receipt-sheet {
+            border: 0;
+            border-radius: 0;
+            box-shadow: none !important;
+            padding: 0;
+        }
+
+        .payment-receipt-table {
+            break-inside: avoid;
+        }
+
+        @@page {
+            size: A4 portrait;
+            margin: 12mm;
+        }
+    }
+</style>
+
+<div class="payment-receipt">
+    <div class="payment-receipt-actions d-flex flex-wrap justify-content-between gap-2 mb-3">
+        <div>
+            @if (!Model.IsAdministrationView)
+            {
+                <a class="btn btn-outline-secondary" asp-page="/Member/Index">@AppLocalizer.Get("Назад в личный кабинет", "Назад до особистого кабінету", "Back to dashboard")</a>
+            }
+            else
+            {
+                <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Finance" asp-route-id="@Model.Receipt.MemberId">@AppLocalizer.Get("Назад к финансам", "Назад до фінансів", "Back to finance")</a>
+            }
+        </div>
+        <button type="button" class="btn btn-primary" onclick="window.print()">@AppLocalizer.Get("Распечатать", "Роздрукувати", "Print")</button>
+    </div>
+
+    <article class="payment-receipt-sheet shadow-sm">
+        <header class="border-bottom pb-3 mb-4 d-flex flex-column flex-sm-row justify-content-between gap-3">
+            <div>
+                <div class="text-muted small">@AppLocalizer.Get("Садовое товарищество", "Садове товариство", "Garden association")</div>
+                <div class="h3 mb-1">@AppLocalizer.Get("Нефтяник", "Нафтовик", "Neftyanik")</div>
+                <div class="text-muted">DachaHub</div>
+            </div>
+            <div class="text-sm-end">
+                <h1 class="h4 payment-receipt-title mb-1">@AppLocalizer.Get("Платёжка", "Платіжка", "Payment receipt")</h1>
+                <div class="text-muted">№ @Model.Receipt.PaymentId</div>
+                <div class="text-muted">@Model.Receipt.PaymentDate.ToString("dd.MM.yyyy")</div>
+            </div>
+        </header>
+
+        @if (Model.Receipt.IsCancelled)
+        {
+            <div class="payment-receipt-cancelled mb-4">@AppLocalizer.Get("Платёж отменён", "Платіж скасовано", "Payment cancelled")</div>
+        }
+
+        <section class="mb-4">
+            <div class="text-muted small mb-1">@AppLocalizer.Get("Сумма платежа", "Сума платежу", "Payment amount")</div>
+            <div class="payment-receipt-amount">@Model.Receipt.Amount.ToString("0.00") ₴</div>
+        </section>
+
+        <section class="mb-4">
+            <h2 class="h6 border-bottom pb-2 mb-3">@AppLocalizer.Get("Финансовое положение на дату платежа", "Фінансовий стан на дату платежу", "Financial position on the payment date")</h2>
+            <div class="payment-receipt-balance-grid">
+                <div class="payment-receipt-balance-card">
+                    <div class="text-muted small mb-2">@AppLocalizer.Get("До платежа", "До платежу", "Before payment")</div>
+                    @if (Model.Receipt.BalanceBeforeSummary.IsAvailable)
+                    {
+                        <div class="payment-receipt-balance-value @Model.Receipt.BalanceBeforeSummary.CssClass">
+                            <span>@Model.Receipt.BalanceBeforeSummary.Label</span>
+                            @if (!string.IsNullOrWhiteSpace(Model.Receipt.BalanceBeforeSummary.Value))
+                            {
+                                <span>: @Model.Receipt.BalanceBeforeSummary.Value</span>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="payment-receipt-balance-value text-muted">@Model.Receipt.BalanceBeforeSummary.Value</div>
+                    }
+                </div>
+                <div class="payment-receipt-balance-card">
+                    <div class="text-muted small mb-2">@AppLocalizer.Get("Платёж", "Платіж", "Payment")</div>
+                    <div class="payment-receipt-balance-value">@Model.Receipt.Amount.ToString("0.00") ₴</div>
+                </div>
+                <div class="payment-receipt-balance-card">
+                    <div class="text-muted small mb-2">@AppLocalizer.Get("После платежа", "Після платежу", "After payment")</div>
+                    @if (Model.Receipt.BalanceAfterSummary.IsAvailable)
+                    {
+                        <div class="payment-receipt-balance-value @Model.Receipt.BalanceAfterSummary.CssClass">
+                            <span>@Model.Receipt.BalanceAfterSummary.Label</span>
+                            @if (!string.IsNullOrWhiteSpace(Model.Receipt.BalanceAfterSummary.Value))
+                            {
+                                <span>: @Model.Receipt.BalanceAfterSummary.Value</span>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="payment-receipt-balance-value text-muted">@Model.Receipt.BalanceAfterSummary.Value</div>
+                    }
+                </div>
+            </div>
+        </section>
+
+        <section class="mb-4">
+            <h2 class="h6 border-bottom pb-2 mb-3">@AppLocalizer.Get("Плательщик и участок", "Платник і ділянка", "Payer and plot")</h2>
+            <div class="payment-receipt-grid">
+                <div class="payment-receipt-label">@AppLocalizer.Get("ФИО", "ПІБ", "Full name")</div>
+                <div class="payment-receipt-value fw-semibold">@Model.Receipt.MemberFullName</div>
+
+                <div class="payment-receipt-label">@AppLocalizer.Get("Участок", "Ділянка", "Plot")</div>
+                <div class="payment-receipt-value">@Model.Receipt.PlotNumber</div>
+
+                <div class="payment-receipt-label">@AppLocalizer.Get("Адрес участка", "Адреса ділянки", "Plot address")</div>
+                <div class="payment-receipt-value">@(string.IsNullOrWhiteSpace(Model.Receipt.PlotAddress) ? "—" : Model.Receipt.PlotAddress)</div>
+
+                <div class="payment-receipt-label">@AppLocalizer.Get("Телефон", "Телефон", "Phone")</div>
+                <div class="payment-receipt-value">@(string.IsNullOrWhiteSpace(Model.Receipt.MemberPhoneNumber) ? "—" : Model.Receipt.MemberPhoneNumber)</div>
+
+                <div class="payment-receipt-label">Email</div>
+                <div class="payment-receipt-value">@(string.IsNullOrWhiteSpace(Model.Receipt.MemberEmail) ? "—" : Model.Receipt.MemberEmail)</div>
+            </div>
+        </section>
+
+        <section class="mb-4">
+            <h2 class="h6 border-bottom pb-2 mb-3">@AppLocalizer.Get("Информация о платеже", "Інформація про платіж", "Payment information")</h2>
+            <div class="payment-receipt-grid">
+                <div class="payment-receipt-label">@AppLocalizer.Get("Дата платежа", "Дата платежу", "Payment date")</div>
+                <div class="payment-receipt-value">@Model.Receipt.PaymentDate.ToString("dd.MM.yyyy")</div>
+
+                <div class="payment-receipt-label">@AppLocalizer.Get("Способ оплаты", "Спосіб оплати", "Payment method")</div>
+                <div class="payment-receipt-value">@Model.Receipt.PaymentMethodText</div>
+
+                <div class="payment-receipt-label">@AppLocalizer.Get("Номер документа", "Номер документа", "Document number")</div>
+                <div class="payment-receipt-value">@(string.IsNullOrWhiteSpace(Model.Receipt.ReferenceNumber) ? "—" : Model.Receipt.ReferenceNumber)</div>
+
+                <div class="payment-receipt-label">@AppLocalizer.Get("Назначение / описание", "Призначення / опис", "Purpose / description")</div>
+                <div class="payment-receipt-value">@(string.IsNullOrWhiteSpace(Model.Receipt.Description) ? "—" : Model.Receipt.Description)</div>
+
+                <div class="payment-receipt-label">@AppLocalizer.Get("Источник", "Джерело", "Source")</div>
+                <div class="payment-receipt-value">@(Model.Receipt.HasPaymentNotification ? AppLocalizer.Get("Подтверждённое уведомление пользователя", "Підтверджене повідомлення користувача", "Confirmed member notification") : AppLocalizer.Get("Зарегистрирован бухгалтером / администратором", "Зареєстровано бухгалтером / адміністратором", "Registered by accountant / administrator"))</div>
+
+                <div class="payment-receipt-label">@AppLocalizer.Get("Зарегистрировал", "Зареєстрував", "Registered by")</div>
+                <div class="payment-receipt-value">@Model.Receipt.RegisteredBy</div>
+
+                <div class="payment-receipt-label">@AppLocalizer.Get("Дата регистрации", "Дата реєстрації", "Registration date")</div>
+                <div class="payment-receipt-value">@Model.Receipt.RegisteredAtUtc.ToString("dd.MM.yyyy HH:mm") UTC</div>
+
+                <div class="payment-receipt-label">@AppLocalizer.Get("Статус", "Статус", "Status")</div>
+                <div class="payment-receipt-value fw-semibold">@Model.Receipt.StatusText</div>
+            </div>
+        </section>
+
+        <section class="mb-4 payment-receipt-table">
+            <h2 class="h6 border-bottom pb-2 mb-3">@AppLocalizer.Get("Распределение платежа", "Розподіл платежу", "Payment allocation")</h2>
+            @if (Model.Receipt.Allocations.Count == 0)
+            {
+                <div class="text-muted">@AppLocalizer.Get("Платёж не распределён по начислениям.", "Платіж не розподілено за нарахуваннями.", "The payment is not allocated to charges.")</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered align-middle mb-2">
+                        <thead class="table-light">
+                            <tr>
+                                <th>@AppLocalizer.Get("Начисление", "Нарахування", "Charge")</th>
+                                <th>@AppLocalizer.Get("Дата", "Дата", "Date")</th>
+                                <th>@AppLocalizer.Get("Тип", "Тип", "Type")</th>
+                                <th class="text-end">@AppLocalizer.Get("Сумма начисления", "Сума нарахування", "Charge amount")</th>
+                                <th class="text-end">@AppLocalizer.Get("Зачтено", "Зараховано", "Allocated")</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var allocation in Model.Receipt.Allocations)
+                            {
+                                <tr class="@(allocation.IsChargeCancelled ? "table-secondary" : string.Empty)">
+                                    <td>#@allocation.ChargeId</td>
+                                    <td>@(allocation.ChargeDate.HasValue ? allocation.ChargeDate.Value.ToString("dd.MM.yyyy") : "—")</td>
+                                    <td>
+                                        <div>@allocation.ChargeTypeName</div>
+                                        @if (!string.IsNullOrWhiteSpace(allocation.ChargeDescription))
+                                        {
+                                            <small class="text-muted">@allocation.ChargeDescription</small>
+                                        }
+                                        @if (allocation.IsChargeCancelled)
+                                        {
+                                            <small class="d-block text-danger">@AppLocalizer.Get("Начисление отменено", "Нарахування скасовано", "Charge cancelled")</small>
+                                        }
+                                    </td>
+                                    <td class="text-end">@(allocation.ChargeAmount.HasValue ? $"{allocation.ChargeAmount.Value:0.00} ₴" : "—")</td>
+                                    <td class="text-end fw-semibold">@allocation.AllocatedAmount.ToString("0.00") ₴</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+
+            <div class="d-flex justify-content-end">
+                <div style="min-width: 250px">
+                    <div class="d-flex justify-content-between gap-3"><span>@AppLocalizer.Get("Распределено", "Розподілено", "Allocated"):</span><strong>@Model.Receipt.AllocatedTotal.ToString("0.00") ₴</strong></div>
+                    <div class="d-flex justify-content-between gap-3"><span>@AppLocalizer.Get("Нераспределённый остаток", "Нерозподілений залишок", "Unallocated remainder"):</span><strong>@Model.Receipt.UnallocatedAmount.ToString("0.00") ₴</strong></div>
+                </div>
+            </div>
+        </section>
+
+        @if (Model.Receipt.ElectricityReadings.Count > 0)
+        {
+            <section class="mb-4 payment-receipt-table">
+                <h2 class="h6 border-bottom pb-2 mb-3">@AppLocalizer.Get("Показания электросчётчика", "Показники електролічильника", "Electricity meter readings")</h2>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>@AppLocalizer.Get("Участок", "Ділянка", "Plot")</th>
+                                <th>@AppLocalizer.Get("Дата", "Дата", "Date")</th>
+                                <th>@AppLocalizer.Get("Счётчик", "Лічильник", "Meter")</th>
+                                <th>@AppLocalizer.Get("Показания", "Показники", "Readings")</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var reading in Model.Receipt.ElectricityReadings)
+                            {
+                                <tr>
+                                    <td>@reading.PlotNumber</td>
+                                    <td>@reading.ReadingDate.ToString("dd.MM.yyyy")</td>
+                                    <td>
+                                        <div class="fw-semibold">@reading.MeterDisplayName</div>
+                                        <small class="text-muted">@reading.MeterTypeText</small>
+                                    </td>
+                                    <td>
+                                        @if (!reading.IsDayNight)
+                                        {
+                                            <div>@AppLocalizer.Get("Предыдущее:", "Попереднє:", "Previous:") @(reading.PreviousReading.HasValue ? reading.PreviousReading.Value.ToString("0.000") : "—")</div>
+                                            <div>@AppLocalizer.Get("Текущее:", "Поточне:", "Current:") @reading.CurrentReading.ToString("0.000")</div>
+                                            <div>@AppLocalizer.Get("Расход:", "Споживання:", "Consumption:") @(reading.DayConsumption.HasValue ? reading.DayConsumption.Value.ToString("0.000") : "—")</div>
+                                        }
+                                        else
+                                        {
+                                            <div>@AppLocalizer.Get("День:", "День:", "Day:") @(reading.PreviousReading.HasValue ? reading.PreviousReading.Value.ToString("0.000") : "—") → @reading.CurrentReading.ToString("0.000")</div>
+                                            <div>@AppLocalizer.Get("Расход день:", "Споживання день:", "Day consumption:") @(reading.DayConsumption.HasValue ? reading.DayConsumption.Value.ToString("0.000") : "—")</div>
+                                            <div>@AppLocalizer.Get("Ночь:", "Ніч:", "Night:") @(reading.PreviousNightReading.HasValue ? reading.PreviousNightReading.Value.ToString("0.000") : "—") → @(reading.CurrentNightReading.HasValue ? reading.CurrentNightReading.Value.ToString("0.000") : "—")</div>
+                                            <div>@AppLocalizer.Get("Расход ночь:", "Споживання ніч:", "Night consumption:") @(reading.NightConsumption.HasValue ? reading.NightConsumption.Value.ToString("0.000") : "—")</div>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        }
+
+        @if (Model.Receipt.IsCancelled)
+        {
+            <section class="mb-4">
+                <h2 class="h6 border-bottom pb-2 mb-3 text-danger">@AppLocalizer.Get("Отмена платежа", "Скасування платежу", "Payment cancellation")</h2>
+                <div class="payment-receipt-grid">
+                    <div class="payment-receipt-label">@AppLocalizer.Get("Дата отмены", "Дата скасування", "Cancellation date")</div>
+                    <div class="payment-receipt-value">@(Model.Receipt.CancelledAtUtc.HasValue ? Model.Receipt.CancelledAtUtc.Value.ToString("dd.MM.yyyy HH:mm") + " UTC" : "—")</div>
+
+                    <div class="payment-receipt-label">@AppLocalizer.Get("Причина", "Причина", "Reason")</div>
+                    <div class="payment-receipt-value">@(string.IsNullOrWhiteSpace(Model.Receipt.CancellationReason) ? "—" : Model.Receipt.CancellationReason)</div>
+                </div>
+            </section>
+        }
+
+        <footer class="border-top pt-3 mt-4 small text-muted d-flex flex-column flex-sm-row justify-content-between gap-2">
+            <span>@AppLocalizer.Get("Документ сформирован системой DachaHub.", "Документ сформовано системою DachaHub.", "Document generated by DachaHub.")</span>
+            <span>@AppLocalizer.Get("Сформировано", "Сформовано", "Generated") @Model.GeneratedAtUtc.ToString("dd.MM.yyyy HH:mm") UTC</span>
+        </footer>
+    </article>
+</div>

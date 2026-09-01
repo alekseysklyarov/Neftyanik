@@ -244,6 +244,132 @@ public class AdministrationMemberFinanceChargeTests
     }
 
     [Fact]
+    public async Task GetAdministrationMemberFinance_RendersInlineCancelledStateWithoutStatusColumns()
+    {
+        using var factory = new PortalWebApplicationFactory();
+        const string adminUserId = "admin-finance-inline-status";
+        const int memberId = 221;
+        const int plotId = 321;
+        const int chargeTypeId = 421;
+        const long cancelledChargeId = 521;
+        const long activeChargeId = 522;
+        const long cancelledPaymentId = 621;
+        const long activePaymentId = 622;
+
+        await factory.ExecuteDbContextAsync(async dbContext =>
+        {
+            dbContext.Users.Add(CreateUser(adminUserId, "admin-finance-inline-status@example.com"));
+            dbContext.Members.Add(new Member
+            {
+                Id = memberId,
+                FullName = "Inline Status Member",
+                IsActive = true
+            });
+            dbContext.Plots.Add(new Plot
+            {
+                Id = plotId,
+                Number = "P-321",
+                Address = "Finance Plot 321",
+                IsActive = true
+            });
+            dbContext.PlotOwnerships.Add(new PlotOwnership
+            {
+                Id = 21,
+                PlotId = plotId,
+                MemberId = memberId,
+                ValidFrom = new DateOnly(2020, 1, 1),
+                IsPrimaryContact = true
+            });
+            dbContext.ChargeTypes.Add(new ChargeType
+            {
+                Id = chargeTypeId,
+                Name = "Членский взнос",
+                IsActive = true,
+                DefaultAmount = 500m
+            });
+            dbContext.Charges.AddRange(
+                new Charge
+                {
+                    Id = cancelledChargeId,
+                    PlotId = plotId,
+                    ChargeTypeId = chargeTypeId,
+                    ChargeDate = new DateOnly(2026, 4, 1),
+                    Amount = 500m,
+                    DueDate = new DateOnly(2026, 4, 15),
+                    Description = "Cancelled charge description",
+                    CancelledAtUtc = new DateTime(2026, 4, 20, 10, 30, 0, DateTimeKind.Utc),
+                    CancellationReason = "Cancelled charge reason"
+                },
+                new Charge
+                {
+                    Id = activeChargeId,
+                    PlotId = plotId,
+                    ChargeTypeId = chargeTypeId,
+                    ChargeDate = new DateOnly(2026, 5, 1),
+                    Amount = 250m,
+                    DueDate = new DateOnly(2026, 5, 15),
+                    Description = "Active charge description"
+                });
+            dbContext.Payments.AddRange(
+                new Payment
+                {
+                    Id = cancelledPaymentId,
+                    MemberId = memberId,
+                    PlotId = plotId,
+                    PaymentDate = new DateOnly(2026, 4, 2),
+                    Amount = 300m,
+                    PaymentMethod = Neftyanik.Portal.Domain.Enums.PaymentMethod.Cash,
+                    ReferenceNumber = "PAY-CANCELLED",
+                    Description = "Cancelled payment description",
+                    CancelledAtUtc = new DateTime(2026, 4, 22, 9, 15, 0, DateTimeKind.Utc),
+                    CancellationReason = "Cancelled payment reason",
+                    CreatedAtUtc = DateTime.UtcNow
+                },
+                new Payment
+                {
+                    Id = activePaymentId,
+                    MemberId = memberId,
+                    PlotId = plotId,
+                    PaymentDate = new DateOnly(2026, 5, 2),
+                    Amount = 125m,
+                    PaymentMethod = Neftyanik.Portal.Domain.Enums.PaymentMethod.Card,
+                    ReferenceNumber = "PAY-ACTIVE",
+                    Description = "Active payment description",
+                    CreatedAtUtc = DateTime.UtcNow
+                });
+
+            await dbContext.SaveChangesAsync();
+        });
+
+        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(adminUserId, RoleNames.Administrator), cultureName: "ru-RU");
+
+        var response = await client.GetAsync($"/Administration/Members/Finance/{memberId}/Finance");
+        var html = await response.ReadDecodedHtmlAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var chargesSection = ExtractSection(html, "<h2 class=\"h5 mb-0\">Начисления</h2>", "<h2 class=\"h5 mb-0\">Платежи</h2>");
+        var paymentsSection = ExtractSection(html, "<h2 class=\"h5 mb-0\">Платежи</h2>", "<h2 class=\"h5 mb-0\">Электросчётчики</h2>");
+
+        Assert.DoesNotContain("<th>Статус</th>", chargesSection, StringComparison.Ordinal);
+        Assert.DoesNotContain("<th>Статус</th>", paymentsSection, StringComparison.Ordinal);
+
+        Assert.Contains("Отменено", chargesSection, StringComparison.Ordinal);
+        Assert.Contains("Отменено", paymentsSection, StringComparison.Ordinal);
+        Assert.Contains("Cancelled charge description", chargesSection, StringComparison.Ordinal);
+        Assert.Contains("Cancelled charge reason", chargesSection, StringComparison.Ordinal);
+        Assert.Contains("Cancelled payment description", paymentsSection, StringComparison.Ordinal);
+        Assert.Contains("Cancelled payment reason", paymentsSection, StringComparison.Ordinal);
+
+        Assert.Contains($"/Payments/{cancelledPaymentId}/Receipt?memberId={memberId}", paymentsSection, StringComparison.Ordinal);
+        Assert.Contains($"/Payments/{activePaymentId}/Receipt?memberId={memberId}", paymentsSection, StringComparison.Ordinal);
+        Assert.Contains($"/Administration/Members/Finance/{memberId}/Charges/{activeChargeId}/Cancel", chargesSection, StringComparison.Ordinal);
+        Assert.Contains($"/Administration/Members/Finance/{memberId}/Payments/{activePaymentId}/Cancel", paymentsSection, StringComparison.Ordinal);
+        Assert.Contains("colspan=\"6\"", chargesSection, StringComparison.Ordinal);
+        Assert.Contains("colspan=\"6\"", paymentsSection, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task GetAdministrationMemberCreateCharge_ShowsOnlyActiveMemberPlotsAndActiveChargeTypes()
     {
         using var factory = new PortalWebApplicationFactory();
@@ -474,10 +600,10 @@ public class AdministrationMemberFinanceChargeTests
         dbContext.Plots.Add(new Plot { Id = plotId, Number = "P-866", IsActive = true });
         dbContext.PlotOwnerships.Add(new PlotOwnership { Id = 1, PlotId = plotId, MemberId = memberId, ValidFrom = new DateOnly(2020, 1, 1), IsPrimaryContact = true });
         dbContext.Payments.AddRange(
-            new Payment { Id = 1, PlotId = plotId, PaymentDate = beforeInitialization, Amount = 200m, PaymentMethod = Domain.Enums.PaymentMethod.Cash, CreatedAtUtc = DateTime.UtcNow },
-            new Payment { Id = 2, PlotId = plotId, PaymentDate = afterInitialization, Amount = 60m, PaymentMethod = Domain.Enums.PaymentMethod.Cash, CreatedAtUtc = DateTime.UtcNow },
-            new Payment { Id = 3, PlotId = plotId, PaymentDate = beforeInitialization, Amount = 50m, PaymentMethod = Domain.Enums.PaymentMethod.Card, CreatedAtUtc = DateTime.UtcNow },
-            new Payment { Id = 4, PlotId = plotId, PaymentDate = afterInitialization, Amount = 40m, PaymentMethod = Domain.Enums.PaymentMethod.Card, CreatedAtUtc = DateTime.UtcNow });
+            new Payment { Id = 1, MemberId = memberId, PlotId = plotId, PaymentDate = beforeInitialization, Amount = 200m, PaymentMethod = Domain.Enums.PaymentMethod.Cash, CreatedAtUtc = DateTime.UtcNow },
+            new Payment { Id = 2, MemberId = memberId, PlotId = plotId, PaymentDate = afterInitialization, Amount = 60m, PaymentMethod = Domain.Enums.PaymentMethod.Cash, CreatedAtUtc = DateTime.UtcNow },
+            new Payment { Id = 3, MemberId = memberId, PlotId = plotId, PaymentDate = beforeInitialization, Amount = 50m, PaymentMethod = Domain.Enums.PaymentMethod.Card, CreatedAtUtc = DateTime.UtcNow },
+            new Payment { Id = 4, MemberId = memberId, PlotId = plotId, PaymentDate = afterInitialization, Amount = 40m, PaymentMethod = Domain.Enums.PaymentMethod.Card, CreatedAtUtc = DateTime.UtcNow });
         dbContext.Expenses.AddRange(
             new Expense
             {
@@ -572,6 +698,7 @@ public class AdministrationMemberFinanceChargeTests
         dbContext.Payments.Add(new Payment
         {
             Id = 21,
+            MemberId = memberId,
             PlotId = firstPlotId,
             Amount = 150m,
             PaymentDate = new DateOnly(2026, 1, 10),
@@ -662,8 +789,8 @@ public class AdministrationMemberFinanceChargeTests
                 new Charge { PlotId = debtorPlotId, ChargeTypeId = chargeTypeId, Amount = 1000m, ChargeDate = new DateOnly(2026, 1, 15) },
                 new Charge { PlotId = overpaidPlotId, ChargeTypeId = chargeTypeId, Amount = 200m, ChargeDate = new DateOnly(2026, 1, 15) });
             dbContext.Payments.AddRange(
-                new Payment { PlotId = debtorPlotId, Amount = 400m, PaymentDate = new DateOnly(2026, 1, 20) },
-                new Payment { PlotId = overpaidPlotId, Amount = 500m, PaymentDate = new DateOnly(2026, 1, 20) });
+                new Payment { MemberId = debtorMemberId, PlotId = debtorPlotId, Amount = 400m, PaymentDate = new DateOnly(2026, 1, 20) },
+                new Payment { MemberId = overpaidMemberId, PlotId = overpaidPlotId, Amount = 500m, PaymentDate = new DateOnly(2026, 1, 20) });
 
             await dbContext.SaveChangesAsync();
         });
@@ -713,8 +840,8 @@ public class AdministrationMemberFinanceChargeTests
             new Charge { PlotId = debtorPlotId, ChargeTypeId = chargeTypeId, Amount = 1000m, ChargeDate = new DateOnly(2026, 1, 15) },
             new Charge { PlotId = overpaidPlotId, ChargeTypeId = chargeTypeId, Amount = 200m, ChargeDate = new DateOnly(2026, 1, 15) });
         dbContext.Payments.AddRange(
-            new Payment { PlotId = debtorPlotId, Amount = 400m, PaymentDate = new DateOnly(2026, 1, 20) },
-            new Payment { PlotId = overpaidPlotId, Amount = 500m, PaymentDate = new DateOnly(2026, 1, 20) });
+            new Payment { MemberId = debtorMemberId, PlotId = debtorPlotId, Amount = 400m, PaymentDate = new DateOnly(2026, 1, 20) },
+            new Payment { MemberId = overpaidMemberId, PlotId = overpaidPlotId, Amount = 500m, PaymentDate = new DateOnly(2026, 1, 20) });
         await dbContext.SaveChangesAsync();
 
         var model = new IndexModel(dbContext);
@@ -1773,6 +1900,17 @@ public class AdministrationMemberFinanceChargeTests
             MustChangePassword = false,
             IsActive = true
         };
+    }
+
+    private static string ExtractSection(string html, string startMarker, string endMarker)
+    {
+        var startIndex = html.IndexOf(startMarker, StringComparison.Ordinal);
+        Assert.True(startIndex >= 0, $"Start marker not found: {startMarker}");
+
+        var endIndex = html.IndexOf(endMarker, startIndex + startMarker.Length, StringComparison.Ordinal);
+        Assert.True(endIndex > startIndex, $"End marker not found: {endMarker}");
+
+        return html[startIndex..endIndex];
     }
 
     private sealed class ThrowingFinancialAuditService : IFinancialAuditService

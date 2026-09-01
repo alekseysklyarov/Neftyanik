@@ -111,7 +111,7 @@ public class IndexModel : PageModel
             .Select(charge => charge.Amount)
             .ToListAsync(cancellationToken);
 
-        var paymentTotalsByPlot = await _dbContext.LoadActivePaymentTotalsByPlotAsync([plotId], cancellationToken);
+        var paymentTotalsByPlot = await _dbContext.LoadActivePaymentTotalsByPlotAsync([plotId], memberId.Value, cancellationToken);
 
         Plot = new PlotFinanceViewModel
         {
@@ -168,7 +168,7 @@ public class IndexModel : PageModel
 
             var paymentsQuery = _dbContext.Payments
                 .AsNoTracking()
-                .Where(payment => payment.PlotId == plotId)
+                .Where(payment => payment.MemberId == memberId.Value && payment.PlotId == plotId)
                 .OrderByDescending(payment => payment.PaymentDate)
                 .ThenByDescending(payment => payment.Id);
 
@@ -184,6 +184,7 @@ public class IndexModel : PageModel
                 .Take(PageSize)
                 .Select(payment => new
                 {
+                    payment.Id,
                     payment.PaymentDate,
                     payment.Amount,
                     payment.PaymentMethod,
@@ -196,6 +197,7 @@ public class IndexModel : PageModel
                 .ToListAsync(cancellationToken))
                 .Select(payment => new PaymentItemViewModel
                 {
+                    PaymentId = payment.Id,
                     PaymentDate = payment.PaymentDate,
                     Amount = payment.Amount,
                     PaymentMethodText = FinanceDisplayHelper.GetPaymentMethodText(payment.PaymentMethod),
@@ -284,6 +286,8 @@ public class IndexModel : PageModel
 
     public sealed class PaymentItemViewModel
     {
+        public long PaymentId { get; init; }
+
         public DateOnly PaymentDate { get; init; }
 
         public decimal Amount { get; init; }

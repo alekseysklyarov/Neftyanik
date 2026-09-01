@@ -94,6 +94,7 @@ public class MemberFinanceAuthorizationTests
             dbContext.Payments.Add(new Payment
             {
                 Id = 1,
+                MemberId = memberId,
                 PlotId = plotId,
                 Amount = 50m,
                 PaymentDate = new DateOnly(2026, 1, 11),
@@ -171,6 +172,7 @@ public class MemberFinanceAuthorizationTests
             dbContext.Payments.Add(new Payment
             {
                 Id = 1,
+                MemberId = memberId,
                 PlotId = firstPlotId,
                 Amount = 150m,
                 PaymentDate = new DateOnly(2026, 1, 10),
@@ -479,6 +481,7 @@ public class MemberFinanceAuthorizationTests
             dbContext.Payments.Add(new Payment
             {
                 Id = 1,
+                MemberId = memberBId,
                 PlotId = plotBId,
                 Amount = 123m,
                 PaymentDate = new DateOnly(2026, 2, 2),

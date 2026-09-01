@@ -309,6 +309,7 @@ public sealed class PaymentNotificationUiTests
             dbContext.Payments.Add(new Payment
             {
                 Id = 5001,
+                MemberId = 1,
                 PlotId = 101,
                 PaymentDate = new DateOnly(2026, 8, 1),
                 Amount = 50m,
