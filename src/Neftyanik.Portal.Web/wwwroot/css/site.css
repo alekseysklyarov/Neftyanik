@@ -53,6 +53,10 @@ a:hover {
   color: var(--portal-primary-hover);
 }
 
+tr[data-row-url] {
+  cursor: pointer;
+}
+
 .btn {
   border-radius: var(--portal-radius-sm);
 }

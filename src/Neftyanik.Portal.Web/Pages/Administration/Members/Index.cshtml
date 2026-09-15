@@ -92,7 +92,7 @@
                     <tbody>
                         @foreach (var member in Model.Members)
                         {
-                            <tr>
+                            <tr data-row-url="@Url.Page("/Administration/Members/Finance", new { id = member.Id })">
                                 <td class="fw-semibold">@member.FullName</td>
                                 <td>@(string.IsNullOrWhiteSpace(member.PhoneNumber) ? "—" : member.PhoneNumber)</td>
                                 <td>@(member.ElectricityMeterType == MemberElectricityMeterType.DayNight ? AppLocalizer.Get("Двухзонный", "Двозонний", "Day/night") : AppLocalizer.Get("Однозонный", "Однозонний", "Single-rate"))</td>

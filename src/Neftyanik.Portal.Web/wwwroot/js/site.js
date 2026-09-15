@@ -17,3 +17,17 @@ document.querySelectorAll('[data-auto-submit="culture-selector"]').forEach((sele
     form.submit();
   });
 });
+
+document.querySelectorAll("tr[data-row-url]").forEach((row) => {
+  row.addEventListener("click", (event) => {
+    if (event.defaultPrevented || event.button !== 0 || !(event.target instanceof Element)) {
+      return;
+    }
+
+    if (event.target.closest('a, button, input, select, textarea, label, summary, [role="button"], [role="link"], [role="checkbox"], [role="menuitem"], [role="combobox"], [tabindex], [contenteditable]:not([contenteditable="false"]), [data-bs-toggle], .dropdown-menu')) {
+      return;
+    }
+
+    window.location.assign(row.dataset.rowUrl);
+  });
+});
