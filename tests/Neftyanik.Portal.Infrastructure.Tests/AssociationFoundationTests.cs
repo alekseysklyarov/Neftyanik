@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Storage;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data;
 using Xunit;
@@ -38,7 +39,7 @@ public class AssociationFoundationTests : IClassFixture<AssociationDatabaseFixtu
     }
 
     [Fact]
-    public async Task SaveChangesAsync_ResolvesBySlugRatherThanSeedId()
+    public async Task SaveChangesAsync_UsesExplicitResolvedContextRatherThanSeedId()
     {
         await using var context = _database.CreateContext();
         await using var transaction = await context.Database.BeginTransactionAsync();
@@ -49,35 +50,35 @@ public class AssociationFoundationTests : IClassFixture<AssociationDatabaseFixtu
         context.Associations.Add(replacement);
         await context.SaveChangesAsync();
         var plot = new Plot { Number = "lookup-by-slug" };
-        context.Plots.Add(plot);
-        await context.SaveChangesAsync();
+        await using var resolved = await ForAssociationAsync(context, replacement.Id, replacement.Slug);
+        resolved.Plots.Add(plot);
+        await resolved.SaveChangesAsync();
         Assert.NotEqual(seeded.Id, replacement.Id);
         Assert.Equal(replacement.Id, plot.AssociationId);
     }
 
     [Fact]
-    public async Task SaveChangesAsync_PreservesExplicitIdAndNewAssociationNavigation()
+    public async Task SaveChangesAsync_PreservesCurrentAssociationIdAndRejectsAnotherAssociationNavigation()
     {
         await using var context = _database.CreateContext();
         await using var transaction = await context.Database.BeginTransactionAsync();
         var other = new Association { Name = "Other", Slug = "other" };
-        var plot = new Plot { Number = "explicit-navigation", Association = other };
-        context.Plots.Add(plot);
+        context.Associations.Add(other);
         await context.SaveChangesAsync();
-        var second = new Plot { Number = "explicit-id", AssociationId = other.Id };
+        var second = new Plot { Number = "explicit-id", AssociationId = context.CurrentAssociationId };
         context.Plots.Add(second);
         await context.SaveChangesAsync();
-        Assert.Equal(other.Id, plot.AssociationId);
-        Assert.Equal(other.Id, second.AssociationId);
-        Assert.NotEqual(await context.Associations.Where(x => x.Slug == "neftyanik").Select(x => x.Id).SingleAsync(), other.Id);
+        Assert.Equal(context.CurrentAssociationId, second.AssociationId);
+        context.Plots.Add(new Plot { Number = "explicit-navigation", Association = other });
+        await Assert.ThrowsAsync<Neftyanik.Portal.Application.Associations.AssociationIsolationException>(() => context.SaveChangesAsync());
     }
 
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task SaveChangesAsync_RejectsImplicitOwnershipWhenNeftyanikIsMissingOrInactive(bool inactive)
+    public async Task SaveChangesAsync_RequiresResolutionRegardlessOfSeedActivity(bool inactive)
     {
-        await using var context = _database.CreateContext();
+        await using var context = _database.CreateUnresolvedContext();
         await using var transaction = await context.Database.BeginTransactionAsync();
         var initial = await context.Associations.SingleAsync(x => x.Slug == "neftyanik");
         if (inactive)
@@ -90,8 +91,8 @@ public class AssociationFoundationTests : IClassFixture<AssociationDatabaseFixtu
         }
         await context.SaveChangesAsync();
         context.Plots.Add(new Plot { Number = "must-not-save" });
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => context.SaveChangesAsync());
-        Assert.Contains("existing active 'neftyanik'", exception.Message);
+        var exception = await Assert.ThrowsAsync<Neftyanik.Portal.Application.Associations.AssociationIsolationException>(() => context.SaveChangesAsync());
+        Assert.Contains("Resolve an association", exception.Message);
         Assert.True(context.ChangeTracker.AutoDetectChangesEnabled);
         Assert.False(await context.Plots.AsNoTracking().AnyAsync(x => x.Number == "must-not-save"));
         Assert.Equal(1, await context.Associations.CountAsync());
@@ -116,8 +117,10 @@ public class AssociationFoundationTests : IClassFixture<AssociationDatabaseFixtu
         context.Associations.Add(other);
         await context.SaveChangesAsync();
         context.Add(CreateIdentifier(kind, initialId, 1));
-        context.Add(CreateIdentifier(kind, other.Id, 2));
         await context.SaveChangesAsync();
+        await using var otherContext = await ForAssociationAsync(context, other.Id, other.Slug);
+        otherContext.Add(CreateIdentifier(kind, other.Id, 2));
+        await otherContext.SaveChangesAsync();
         context.Add(CreateIdentifier(kind, initialId, 3));
         var exception = await Assert.ThrowsAsync<DbUpdateException>(() => context.SaveChangesAsync());
         Assert.Contains(((SqlException)exception.InnerException!).Number, new[] { 2601, 2627 });
@@ -136,8 +139,10 @@ public class AssociationFoundationTests : IClassFixture<AssociationDatabaseFixtu
         var first = CreateBusinessGraph(initialId, user.Id);
         var second = CreateBusinessGraph(other.Id, user.Id);
         context.AddRange(first);
-        context.AddRange(second);
         await context.SaveChangesAsync();
+        await using var otherContext = await ForAssociationAsync(context, other.Id, other.Slug);
+        otherContext.AddRange(second);
+        await otherContext.SaveChangesAsync();
         var tested = 0;
         foreach (var dependent in first)
         {
@@ -162,7 +167,7 @@ public class AssociationFoundationTests : IClassFixture<AssociationDatabaseFixtu
     }
 
     [Fact]
-    public async Task Model_HasOwnershipForAllBusinessTypesAndNoFiltersOrDuplicateIndexes()
+    public async Task Model_FiltersEveryOwnedTypeButNotGlobalsAndHasNoDuplicateIndexes()
     {
         await using var context = _database.CreateContext();
         var entities = context.Model.GetEntityTypes().ToArray();
@@ -170,7 +175,14 @@ public class AssociationFoundationTests : IClassFixture<AssociationDatabaseFixtu
         Assert.Equal(22, owned.Length);
         foreach (var entity in entities)
         {
-            Assert.Null(entity.GetQueryFilter());
+            if (typeof(IAssociationOwned).IsAssignableFrom(entity.ClrType))
+            {
+                Assert.NotNull(entity.GetQueryFilter());
+            }
+            else
+            {
+                Assert.Null(entity.GetQueryFilter());
+            }
             var indexes = entity.GetIndexes().Select(x => string.Join(",", x.Properties.Select(p => p.Name))).ToArray();
             Assert.Equal(indexes.Length, indexes.Distinct().Count());
         }
@@ -199,6 +211,14 @@ public class AssociationFoundationTests : IClassFixture<AssociationDatabaseFixtu
         await using var context = _database.CreateContext();
         context.Associations.Add(new Association { Name = "Invalid", Slug = slug });
         await Assert.ThrowsAsync<InvalidOperationException>(() => context.SaveChangesAsync());
+    }
+
+    internal static async Task<ApplicationDbContext> ForAssociationAsync(ApplicationDbContext context, int id, string slug)
+    {
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>().UseSqlServer(context.Database.GetDbConnection()).Options;
+        var other = new ApplicationDbContext(options, TestAssociations.Resolved(id, slug));
+        await other.Database.UseTransactionAsync(context.Database.CurrentTransaction!.GetDbTransaction());
+        return other;
     }
 
     private static IAssociationOwned CreateIdentifier(string kind, int associationId, int sequence)
@@ -267,7 +287,9 @@ public sealed class AssociationDatabaseFixture : IAsyncLifetime
             .UseSqlServer($"Server=(localdb)\\mssqllocaldb;Database=NeftyanikAssociationTests_{Guid.NewGuid():N};Trusted_Connection=True;TrustServerCertificate=True")
             .Options;
 
-    public ApplicationDbContext CreateContext() => new(_options);
+    public ApplicationDbContext CreateContext() => new(_options, TestAssociations.Neftyanik);
+
+    public ApplicationDbContext CreateUnresolvedContext() => new(_options);
 
     public async Task InitializeAsync()
     {

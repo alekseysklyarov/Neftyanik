@@ -16,10 +16,10 @@ public class MemberFinanceAuthorizationTests
         using var factory = new PortalWebApplicationFactory();
         using var client = factory.CreateAnonymousClient();
 
-        var response = await client.GetAsync("/Member");
+        var response = await client.GetAsync("/neftyanik/Member");
 
         Assert.Equal(HttpStatusCode.Found, response.StatusCode);
-        Assert.StartsWith("http://localhost/Account/Login", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
+        Assert.StartsWith("http://localhost/neftyanik/Account/Login", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -36,10 +36,10 @@ public class MemberFinanceAuthorizationTests
 
         using var client = factory.CreateAnonymousClient();
 
-        var response = await client.GetAsync($"/Member/Plots/{ownedPlotId}/Finance");
+        var response = await client.GetAsync($"/neftyanik/Member/Plots/{ownedPlotId}/Finance");
 
         Assert.Equal(HttpStatusCode.Found, response.StatusCode);
-        Assert.StartsWith("http://localhost/Account/Login", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
+        Assert.StartsWith("http://localhost/neftyanik/Account/Login", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -107,15 +107,15 @@ public class MemberFinanceAuthorizationTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userId, RoleNames.Member), cultureName: "ru-RU");
 
-        var response = await client.GetAsync($"/Member/Plots/{plotId}/Finance");
+        var response = await client.GetAsync($"/neftyanik/Member/Plots/{plotId}/Finance");
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Contains("OWNED-PLOT-301", html, StringComparison.Ordinal);
         Assert.Contains("Owned charge description", html, StringComparison.Ordinal);
         Assert.Contains("OWNED-PAYMENT-REF", html, StringComparison.Ordinal);
-        Assert.Contains($"/Member/Plots/{plotId}/Finance", html, StringComparison.Ordinal);
-        Assert.DoesNotContain("/Administration/", html, StringComparison.Ordinal);
+        Assert.Contains($"/neftyanik/Member/Plots/{plotId}/Finance", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("/neftyanik/Administration/", html, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -188,7 +188,7 @@ public class MemberFinanceAuthorizationTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userId, RoleNames.Member), cultureName: "ru-RU");
 
-        var response = await client.GetAsync("/Member");
+        var response = await client.GetAsync("/neftyanik/Member");
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -197,8 +197,8 @@ public class MemberFinanceAuthorizationTests
         Assert.Contains("100,00", html, StringComparison.Ordinal);
         Assert.Contains("50,00", html, StringComparison.Ordinal);
         Assert.DoesNotContain("-50,00", html, StringComparison.Ordinal);
-        Assert.Contains($"/Member/Plots/{firstPlotId}/Finance", html, StringComparison.Ordinal);
-        Assert.Contains($"/Member/Plots/{secondPlotId}/Finance", html, StringComparison.Ordinal);
+        Assert.Contains($"/neftyanik/Member/Plots/{firstPlotId}/Finance", html, StringComparison.Ordinal);
+        Assert.Contains($"/neftyanik/Member/Plots/{secondPlotId}/Finance", html, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -273,7 +273,7 @@ public class MemberFinanceAuthorizationTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userId, RoleNames.Member), cultureName: "ru-RU");
 
-        var response = await client.GetAsync($"/Member?chargeTypeId={electricityChargeTypeId}");
+        var response = await client.GetAsync($"/neftyanik/Member?chargeTypeId={electricityChargeTypeId}");
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -341,11 +341,11 @@ public class MemberFinanceAuthorizationTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userId, RoleNames.Member), cultureName: "ru-RU");
 
-        var response = await client.GetAsync("/Member");
+        var response = await client.GetAsync("/neftyanik/Member");
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains($"/Member/Electricity/Meters/{meterId}/Readings/Create", html, StringComparison.Ordinal);
+        Assert.Contains($"/neftyanik/Member/Electricity/Meters/{meterId}/Readings/Create", html, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -415,7 +415,7 @@ public class MemberFinanceAuthorizationTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userId, RoleNames.Member), cultureName: "ru-RU");
 
-        var response = await client.GetAsync("/Member");
+        var response = await client.GetAsync("/neftyanik/Member");
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -426,7 +426,7 @@ public class MemberFinanceAuthorizationTests
         Assert.Contains("150", html, StringComparison.Ordinal);
         Assert.Contains("01.01.2026", html, StringComparison.Ordinal);
         Assert.Contains("100", html, StringComparison.Ordinal);
-        Assert.Contains($"/Member/Plots/{plotId}/Finance", html, StringComparison.Ordinal);
+        Assert.Contains($"/neftyanik/Member/Plots/{plotId}/Finance", html, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -495,7 +495,7 @@ public class MemberFinanceAuthorizationTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userAId, RoleNames.Member));
 
-        var response = await client.GetAsync($"/Member/Plots/{plotBId}/Finance");
+        var response = await client.GetAsync($"/neftyanik/Member/Plots/{plotBId}/Finance");
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
@@ -522,7 +522,7 @@ public class MemberFinanceAuthorizationTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userId, RoleNames.Member));
 
-        var response = await client.GetAsync($"/Member/Plots/{plotId}/Finance");
+        var response = await client.GetAsync($"/neftyanik/Member/Plots/{plotId}/Finance");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -541,10 +541,10 @@ public class MemberFinanceAuthorizationTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userId));
 
-        var response = await client.GetAsync("/Member/Plots/999/Finance");
+        var response = await client.GetAsync("/neftyanik/Member/Plots/999/Finance");
 
         Assert.Equal(HttpStatusCode.Found, response.StatusCode);
-        Assert.StartsWith("http://localhost/Account/AccessDenied", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
+        Assert.StartsWith("http://localhost/neftyanik/Account/AccessDenied", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -561,10 +561,10 @@ public class MemberFinanceAuthorizationTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userId, RoleNames.Administrator));
 
-        var response = await client.GetAsync("/Member/Plots/999/Finance");
+        var response = await client.GetAsync("/neftyanik/Member/Plots/999/Finance");
 
         Assert.Equal(HttpStatusCode.Found, response.StatusCode);
-        Assert.StartsWith("http://localhost/Account/AccessDenied", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
+        Assert.StartsWith("http://localhost/neftyanik/Account/AccessDenied", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
     }
 
     private static ApplicationUser CreateUser(string id, string email)

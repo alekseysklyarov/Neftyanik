@@ -34,7 +34,7 @@ public class AdministrationAssociationTariffTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         const string adminUserId = "admin-user";
@@ -122,7 +122,7 @@ public class AdministrationAssociationTariffTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         const string adminUserId = "admin-user";
@@ -186,7 +186,7 @@ public class AdministrationAssociationTariffTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         var service = new AssociationElectricityService(dbContext, new ThrowingFinancialAuditService());

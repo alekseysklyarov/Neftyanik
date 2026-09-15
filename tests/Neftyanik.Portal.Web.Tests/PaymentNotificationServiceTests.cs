@@ -463,7 +463,7 @@ public sealed class PaymentNotificationServiceTests
                 .UseSqlite(connection)
                 .Options;
 
-            var dbContext = new ApplicationDbContext(options);
+        var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
             await dbContext.Database.EnsureCreatedAsync();
 
             var httpContextAccessor = new HttpContextAccessor();

@@ -3,15 +3,23 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data.Configurations;
+using Neftyanik.Portal.Application.Associations;
+using System.Linq.Expressions;
 
 namespace Neftyanik.Portal.Infrastructure.Data;
 
 public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 {
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+    private readonly IAssociationContext _associationContext;
+
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, IAssociationContext? associationContext = null)
         : base(options)
     {
+        _associationContext = associationContext ?? new AssociationContext();
     }
+
+    public int CurrentAssociationId => _associationContext.AssociationId;
+    public bool IsAssociationResolved => _associationContext.IsResolved;
 
     public DbSet<Association> Associations => Set<Association>();
 
@@ -61,51 +69,70 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
 public DbSet<UserLoginHistory> UserLoginHistories => Set<UserLoginHistory>();
 
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        if (ChangeTracker.Entries<IAssociationOwned>().Any(x => x.State is EntityState.Added or EntityState.Modified or EntityState.Deleted))
+        {
+            throw new AssociationIsolationException("Use SaveChangesAsync for association-owned writes so stored ownership can be verified.");
+        }
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
     public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
-        // Assign before DetectChanges can propagate an unassigned new meter's key to an existing plot.
+        // Assign before navigation fix-up can propagate an unassigned meter key to an existing plot.
         var autoDetectChanges = ChangeTracker.AutoDetectChangesEnabled;
         ChangeTracker.AutoDetectChangesEnabled = false;
         try
         {
-            foreach (var entry in ChangeTracker.Entries<Association>()
-                         .Where(x => x.State != EntityState.Deleted))
+            EnforceAssociationOwnership();
+            ChangeTracker.DetectChanges();
+            EnforceAssociationOwnership();
+
+            foreach (var entry in ChangeTracker.Entries<IAssociationOwned>()
+                         .Where(x => x.State is EntityState.Modified or EntityState.Deleted))
+            {
+                // OriginalValues on an attached form/stub are not proof of database ownership.
+                var stored = await entry.GetDatabaseValuesAsync(cancellationToken);
+                if (stored is null || stored.GetValue<int>(nameof(IAssociationOwned.AssociationId)) != CurrentAssociationId)
+                {
+                    throw new AssociationIsolationException("The record does not belong to the current association.");
+                }
+            }
+            foreach (var entry in ChangeTracker.Entries<Association>().Where(x => x.State != EntityState.Deleted))
             {
                 entry.Entity.ValidateSlug();
             }
-
-            // Stage 1 only: remove this fallback when callers supply tenant ownership in Stage 2.
-            var unassigned = ChangeTracker.Entries<IAssociationOwned>()
-                .Where(x => x.State == EntityState.Added && x.Entity.AssociationId == 0 && x.Entity.Association is null)
-                .ToArray();
-
-            if (unassigned.Length > 0)
-            {
-                var associationId = await Associations.AsNoTracking()
-                    .Where(x => x.Slug == SeedDataConstants.InitialAssociationSlug && x.IsActive)
-                    .Select(x => (int?)x.Id)
-                    .SingleOrDefaultAsync(cancellationToken);
-
-                if (associationId is null)
-                {
-                    throw new InvalidOperationException("Stage 1 compatibility requires the existing active 'neftyanik' association. Apply the association foundation migration before writing business data.");
-                }
-
-                foreach (var entry in unassigned)
-                {
-                    if (entry.Entity.AssociationId == 0)
-                    {
-                        entry.Property(x => x.AssociationId).CurrentValue = associationId.Value;
-                    }
-                }
-            }
+            return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
         }
         finally
         {
             ChangeTracker.AutoDetectChangesEnabled = autoDetectChanges;
         }
+    }
 
-        return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    private void EnforceAssociationOwnership()
+    {
+        foreach (var entry in ChangeTracker.Entries<IAssociationOwned>().ToArray())
+        {
+            if (!IsAssociationResolved)
+            {
+                throw new AssociationIsolationException("Resolve an association before saving association-owned data.");
+            }
+            if (entry.Entity.Association is { } association && association.Id != CurrentAssociationId)
+            {
+                throw new AssociationIsolationException("The association navigation does not match the current association.");
+            }
+            if (entry.State == EntityState.Added && entry.Entity.AssociationId == 0)
+            {
+                entry.Property(x => x.AssociationId).CurrentValue = CurrentAssociationId;
+            }
+            if (entry.Entity.AssociationId != CurrentAssociationId
+                || (entry.State != EntityState.Added && entry.Property(x => x.AssociationId).OriginalValue != CurrentAssociationId))
+            {
+                throw new AssociationIsolationException("Association ownership cannot be changed or supplied for another association.");
+            }
+        }
     }
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -113,6 +140,16 @@ public DbSet<UserLoginHistory> UserLoginHistories => Set<UserLoginHistory>();
         base.OnModelCreating(builder);
 
         builder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+
+        foreach (var entity in builder.Model.GetEntityTypes().Where(x => typeof(IAssociationOwned).IsAssignableFrom(x.ClrType)))
+        {
+            var parameter = Expression.Parameter(entity.ClrType, "entity");
+            var predicate = Expression.AndAlso(
+                Expression.Property(Expression.Constant(this), nameof(IsAssociationResolved)),
+                Expression.Equal(Expression.Property(parameter, nameof(IAssociationOwned.AssociationId)),
+                    Expression.Property(Expression.Constant(this), nameof(CurrentAssociationId))));
+            builder.Entity(entity.ClrType).HasQueryFilter(Expression.Lambda(predicate, parameter));
+        }
 
         builder.Entity<ApplicationUser>(entity =>
         {

@@ -27,6 +27,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Neftyanik.Portal.Infrastructure\Neftyanik.Portal.Infrastructure.csproj" />
+    <Compile Include="../Shared/TestAssociations.cs" Link="TestAssociations.cs" />
   </ItemGroup>
 
 </Project>

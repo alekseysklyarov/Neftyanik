@@ -206,7 +206,7 @@ public class MemberOwnershipQueriesTests
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
 
-        var context = new ApplicationDbContext(options);
+        var context = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await context.Database.EnsureCreatedAsync();
         return context;
     }

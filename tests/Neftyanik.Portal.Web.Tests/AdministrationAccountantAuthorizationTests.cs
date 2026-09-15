@@ -14,7 +14,7 @@ public class AdministrationAccountantAuthorizationTests
         using var factory = new PortalWebApplicationFactory();
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser("accountant-user", RoleNames.Accountant), cultureName: "ru");
 
-        var response = await client.GetAsync("/Administration/Members");
+        var response = await client.GetAsync("/neftyanik/Administration/Members");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
@@ -45,7 +45,7 @@ public class AdministrationAccountantAuthorizationTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser("accountant-user", RoleNames.Accountant));
 
-        var response = await client.GetAsync("/Administration/Finance/Settings/CashInitialization");
+        var response = await client.GetAsync("/neftyanik/Administration/Finance/Settings/CashInitialization");
         var content = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -59,10 +59,10 @@ public class AdministrationAccountantAuthorizationTests
         using var factory = new PortalWebApplicationFactory();
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser("accountant-user", RoleNames.Accountant));
 
-        var response = await client.GetAsync("/Administration/Members/Create");
+        var response = await client.GetAsync("/neftyanik/Administration/Members/Create");
 
         Assert.Equal(HttpStatusCode.Found, response.StatusCode);
-        Assert.StartsWith("http://localhost/Account/AccessDenied", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
+        Assert.StartsWith("http://localhost/neftyanik/Account/AccessDenied?", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -71,10 +71,10 @@ public class AdministrationAccountantAuthorizationTests
         using var factory = new PortalWebApplicationFactory();
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser("member-user", RoleNames.Member));
 
-        var response = await client.GetAsync("/Administration/Finance/Settings/CashInitialization");
+        var response = await client.GetAsync("/neftyanik/Administration/Finance/Settings/CashInitialization");
 
         Assert.Equal(HttpStatusCode.Found, response.StatusCode);
-        Assert.StartsWith("http://localhost/Account/AccessDenied", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
+        Assert.StartsWith("http://localhost/neftyanik/Account/AccessDenied?", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -83,10 +83,10 @@ public class AdministrationAccountantAuthorizationTests
         using var factory = new PortalWebApplicationFactory();
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser("accountant-user", RoleNames.Accountant));
 
-        var response = await client.GetAsync("/Administration/Plots/1/Ownerships");
+        var response = await client.GetAsync("/neftyanik/Administration/Plots/1/Ownerships");
 
         Assert.Equal(HttpStatusCode.Found, response.StatusCode);
-        Assert.StartsWith("http://localhost/Account/AccessDenied", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
+        Assert.StartsWith("http://localhost/neftyanik/Account/AccessDenied?", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -95,7 +95,7 @@ public class AdministrationAccountantAuthorizationTests
         using var factory = new PortalWebApplicationFactory();
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser("administrator-user", RoleNames.Administrator));
 
-        var response = await client.GetAsync("/Administration/AuditLog");
+        var response = await client.GetAsync("/neftyanik/Administration/AuditLog");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
@@ -118,7 +118,7 @@ public class AdministrationAccountantAuthorizationTests
         });
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser("administrator-user", RoleNames.Administrator));
 
-        var response = await client.GetAsync("/Administration/AuditLog/1");
+        var response = await client.GetAsync("/neftyanik/Administration/AuditLog/1");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
@@ -129,7 +129,7 @@ public class AdministrationAccountantAuthorizationTests
         using var factory = new PortalWebApplicationFactory();
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser("accountant-user", RoleNames.Accountant));
 
-        var response = await client.GetAsync("/Administration/AuditLog");
+        var response = await client.GetAsync("/neftyanik/Administration/AuditLog");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
@@ -152,7 +152,7 @@ public class AdministrationAccountantAuthorizationTests
         });
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser("accountant-user", RoleNames.Accountant));
 
-        var response = await client.GetAsync("/Administration/AuditLog/2");
+        var response = await client.GetAsync("/neftyanik/Administration/AuditLog/2");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
@@ -163,10 +163,10 @@ public class AdministrationAccountantAuthorizationTests
         using var factory = new PortalWebApplicationFactory();
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser("member-user", RoleNames.Member));
 
-        var response = await client.GetAsync("/Administration/AuditLog");
+        var response = await client.GetAsync("/neftyanik/Administration/AuditLog");
 
         Assert.Equal(HttpStatusCode.Found, response.StatusCode);
-        Assert.StartsWith("http://localhost/Account/AccessDenied", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
+        Assert.StartsWith("http://localhost/neftyanik/Account/AccessDenied?", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -186,10 +186,10 @@ public class AdministrationAccountantAuthorizationTests
         });
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser("member-user", RoleNames.Member));
 
-        var response = await client.GetAsync("/Administration/AuditLog/3");
+        var response = await client.GetAsync("/neftyanik/Administration/AuditLog/3");
 
         Assert.Equal(HttpStatusCode.Found, response.StatusCode);
-        Assert.StartsWith("http://localhost/Account/AccessDenied", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
+        Assert.StartsWith("http://localhost/neftyanik/Account/AccessDenied?", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -201,10 +201,10 @@ public class AdministrationAccountantAuthorizationTests
             AllowAutoRedirect = false
         });
 
-        var response = await client.GetAsync("/Administration/AuditLog");
+        var response = await client.GetAsync("/neftyanik/Administration/AuditLog");
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
-        Assert.StartsWith("http://localhost/Account/Login", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
+        Assert.StartsWith("http://localhost/neftyanik/Account/Login?", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -227,10 +227,10 @@ public class AdministrationAccountantAuthorizationTests
             AllowAutoRedirect = false
         });
 
-        var response = await client.GetAsync("/Administration/AuditLog/4");
+        var response = await client.GetAsync("/neftyanik/Administration/AuditLog/4");
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
-        Assert.StartsWith("http://localhost/Account/Login", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
+        Assert.StartsWith("http://localhost/neftyanik/Account/Login?", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -239,11 +239,11 @@ public class AdministrationAccountantAuthorizationTests
         using var factory = new PortalWebApplicationFactory();
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser("administrator-user", RoleNames.Administrator));
 
-        var response = await client.GetAsync("/Administration");
+        var response = await client.GetAsync("/neftyanik/Administration");
         var content = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains("/Administration/AuditLog", content, StringComparison.Ordinal);
+        Assert.Contains("/neftyanik/Administration/AuditLog", content, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -252,11 +252,11 @@ public class AdministrationAccountantAuthorizationTests
         using var factory = new PortalWebApplicationFactory();
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser("accountant-user", RoleNames.Accountant));
 
-        var response = await client.GetAsync("/Administration");
+        var response = await client.GetAsync("/neftyanik/Administration");
         var content = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains("/Administration/AuditLog", content, StringComparison.Ordinal);
+        Assert.Contains("/neftyanik/Administration/AuditLog", content, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -265,11 +265,11 @@ public class AdministrationAccountantAuthorizationTests
         using var factory = new PortalWebApplicationFactory();
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser("accountant-user", RoleNames.Accountant));
 
-        var response = await client.GetAsync("/Administration/Finance");
+        var response = await client.GetAsync("/neftyanik/Administration/Finance");
         var content = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains("/Administration/AuditLog", content, StringComparison.Ordinal);
+        Assert.Contains("/neftyanik/Administration/AuditLog", content, StringComparison.Ordinal);
     }
 }
 #endif

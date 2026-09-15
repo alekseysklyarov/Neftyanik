@@ -22,7 +22,7 @@ public class FinancialAuditLogTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         var httpContextAccessor = new HttpContextAccessor
@@ -81,7 +81,7 @@ public class FinancialAuditLogTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         dbContext.FinancialAuditLogs.AddRange(
@@ -148,7 +148,7 @@ public class FinancialAuditLogTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         var entries = Enumerable.Range(1, 55)

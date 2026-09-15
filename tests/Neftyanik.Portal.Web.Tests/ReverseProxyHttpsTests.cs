@@ -19,7 +19,7 @@ public class ReverseProxyHttpsTests
     {
         using var factory = CreateProductionFactory();
         using var client = factory.CreateAnonymousClient();
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/Account/Login");
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/neftyanik/Account/Login");
         request.Headers.TryAddWithoutValidation("X-Forwarded-Proto", "https");
         request.Headers.TryAddWithoutValidation("X-Forwarded-For", "203.0.113.10");
 
@@ -33,7 +33,7 @@ public class ReverseProxyHttpsTests
     {
         using var factory = CreateProductionFactory();
         using var client = factory.CreateAnonymousClient();
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/Account/Login");
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/neftyanik/Account/Login");
         request.Headers.TryAddWithoutValidation("X-Forwarded-Proto", "https");
         request.Headers.TryAddWithoutValidation("X-Forwarded-For", "203.0.113.10");
 
@@ -57,7 +57,7 @@ public class ReverseProxyHttpsTests
         using var factory = CreateProductionFactory();
         using var client = factory.CreateAnonymousClient();
 
-        using var response = await client.GetAsync("/Account/Login");
+        using var response = await client.GetAsync("/neftyanik/Account/Login");
 
         Assert.Equal(HttpStatusCode.TemporaryRedirect, response.StatusCode);
         Assert.NotNull(response.Headers.Location);
@@ -73,7 +73,7 @@ public class ReverseProxyHttpsTests
         });
         using var client = factory.CreateAnonymousClient();
 
-        using var response = await client.GetAsync("/Account/Login");
+        using var response = await client.GetAsync("/neftyanik/Account/Login");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Null(response.Headers.Location);
@@ -88,7 +88,7 @@ public class ReverseProxyHttpsTests
         });
         using var client = factory.CreateAnonymousClient();
 
-        using var response = await client.GetAsync("/Account/Login");
+        using var response = await client.GetAsync("/neftyanik/Account/Login");
         var content = await response.Content.ReadAsStringAsync();
         var setCookieHeaders = response.Headers.TryGetValues("Set-Cookie", out var values)
             ? values.ToArray()
@@ -108,7 +108,7 @@ public class ReverseProxyHttpsTests
         using var factory = new PortalWebApplicationFactory();
         using var client = factory.CreateAnonymousClient();
 
-        using var response = await client.GetAsync("/Account/Login");
+        using var response = await client.GetAsync("/neftyanik/Account/Login");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
@@ -119,7 +119,7 @@ public class ReverseProxyHttpsTests
         using var factory = new PortalWebApplicationFactory(environmentName: "Development", useSqlite: false);
         using var client = factory.CreateAnonymousClient();
 
-        using var response = await client.GetAsync("/Account/Login");
+        using var response = await client.GetAsync("/neftyanik/Account/Login");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }

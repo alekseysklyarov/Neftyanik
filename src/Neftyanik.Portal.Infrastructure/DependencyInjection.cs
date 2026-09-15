@@ -12,6 +12,7 @@ using Neftyanik.Portal.Infrastructure.Identity;
 using Neftyanik.Portal.Infrastructure.LegacyImport;
 using Neftyanik.Portal.Infrastructure.Repositories;
 using Neftyanik.Portal.Infrastructure.Services;
+using Neftyanik.Portal.Application.Associations;
 
 namespace Neftyanik.Portal.Infrastructure
 {
@@ -24,6 +25,9 @@ namespace Neftyanik.Portal.Infrastructure
 
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(connectionString));
+
+            services.AddScoped<AssociationContext>();
+            services.AddScoped<IAssociationContext>(provider => provider.GetRequiredService<AssociationContext>());
 
             services.AddSingleton(TimeProvider.System);
 

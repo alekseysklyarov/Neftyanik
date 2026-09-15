@@ -275,7 +275,7 @@ public class ChargeCancellationPageTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(adminUserId, RoleNames.Administrator), cultureName: "ru-RU");
 
-        var response = await client.GetAsync($"/Administration/Members/Finance/{memberId}/Finance");
+        var response = await client.GetAsync($"/neftyanik/Administration/Members/Finance/{memberId}/Finance");
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.True(response.IsSuccessStatusCode);
@@ -323,7 +323,7 @@ public class ChargeCancellationPageTests
                 .UseSqlite(connection)
                 .Options;
 
-            var dbContext = new ApplicationDbContext(options);
+        var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
             await dbContext.Database.EnsureCreatedAsync();
 
             return new ChargeCancellationTestContext(connection, dbContext, new HttpContextAccessor());

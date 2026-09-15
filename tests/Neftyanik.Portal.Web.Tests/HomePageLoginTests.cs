@@ -18,7 +18,7 @@ public class HomePageLoginTests
         using var factory = new PortalWebApplicationFactory();
         using var client = factory.CreateAnonymousClient();
 
-        using var response = await client.GetAsync("/");
+        using var response = await client.GetAsync("/neftyanik/");
         var html = await response.ReadDecodedHtmlAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -35,9 +35,9 @@ public class HomePageLoginTests
     {
         using var factory = new PortalWebApplicationFactory();
         using var client = factory.CreateAnonymousClient();
-        var token = await GetAntiforgeryTokenAsync(client, "/");
+        var token = await GetAntiforgeryTokenAsync(client, "/neftyanik/");
 
-        using var response = await client.PostAsync("/", CreateLoginContent(token, "unknown", "wrong-password"));
+        using var response = await client.PostAsync("/neftyanik/", CreateLoginContent(token, "unknown", "wrong-password"));
         var html = await response.ReadDecodedHtmlAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -55,10 +55,10 @@ public class HomePageLoginTests
         using var factory = new PortalWebApplicationFactory();
         await CreateUserAsync(factory, "member@example.com", "Pass123!");
         using var client = factory.CreateAnonymousClient();
-        const string returnUrl = "/Member/Finance";
-        var token = await GetAntiforgeryTokenAsync(client, $"/?ReturnUrl={Uri.EscapeDataString(returnUrl)}");
+        const string returnUrl = "/neftyanik/Member/Finance";
+        var token = await GetAntiforgeryTokenAsync(client, $"/neftyanik/?ReturnUrl={Uri.EscapeDataString(returnUrl)}");
 
-        using var response = await client.PostAsync("/", CreateLoginContent(token, "member@example.com", "Pass123!", returnUrl));
+        using var response = await client.PostAsync("/neftyanik/", CreateLoginContent(token, "member@example.com", "Pass123!", returnUrl));
 
         Assert.Equal(HttpStatusCode.Found, response.StatusCode);
         Assert.Equal(returnUrl, response.Headers.Location?.OriginalString);
@@ -70,12 +70,12 @@ public class HomePageLoginTests
         using var factory = new PortalWebApplicationFactory();
         await CreateUserAsync(factory, "admin@example.com", "Pass123!", RoleNames.Administrator);
         using var client = factory.CreateAnonymousClient();
-        var token = await GetAntiforgeryTokenAsync(client, "/");
+        var token = await GetAntiforgeryTokenAsync(client, "/neftyanik/");
 
-        using var response = await client.PostAsync("/", CreateLoginContent(token, "admin@example.com", "Pass123!"));
+        using var response = await client.PostAsync("/neftyanik/", CreateLoginContent(token, "admin@example.com", "Pass123!"));
 
         Assert.Equal(HttpStatusCode.Found, response.StatusCode);
-        Assert.Equal("/Administration", response.Headers.Location?.OriginalString);
+        Assert.Equal("/neftyanik/Administration", response.Headers.Location?.OriginalString);
     }
 
     [Fact]
@@ -84,12 +84,12 @@ public class HomePageLoginTests
         using var factory = new PortalWebApplicationFactory();
         await CreateUserAsync(factory, "member-default@example.com", "Pass123!");
         using var client = factory.CreateAnonymousClient();
-        var token = await GetAntiforgeryTokenAsync(client, "/");
+        var token = await GetAntiforgeryTokenAsync(client, "/neftyanik/");
 
-        using var response = await client.PostAsync("/", CreateLoginContent(token, "member-default@example.com", "Pass123!"));
+        using var response = await client.PostAsync("/neftyanik/", CreateLoginContent(token, "member-default@example.com", "Pass123!"));
 
         Assert.Equal(HttpStatusCode.Found, response.StatusCode);
-        Assert.Equal("/Member", response.Headers.Location?.OriginalString);
+        Assert.Equal("/neftyanik/Member", response.Headers.Location?.OriginalString);
     }
 
     [Fact]
@@ -98,7 +98,7 @@ public class HomePageLoginTests
         using var factory = new PortalWebApplicationFactory();
         using var client = factory.CreateAnonymousClient();
 
-        using var response = await client.GetAsync("/Account/Login");
+        using var response = await client.GetAsync("/neftyanik/Account/Login");
         var html = await response.ReadDecodedHtmlAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -114,10 +114,10 @@ public class HomePageLoginTests
         using var factory = new PortalWebApplicationFactory();
         await CreateUserAsync(factory, "admin@example.com", "Pass123!");
         using var client = factory.CreateAnonymousClient();
-        const string returnUrl = "/Member/Index";
-        var token = await GetAntiforgeryTokenAsync(client, $"/Account/Login?ReturnUrl={Uri.EscapeDataString(returnUrl)}");
+        const string returnUrl = "/neftyanik/Member/Index";
+        var token = await GetAntiforgeryTokenAsync(client, $"/neftyanik/Account/Login?ReturnUrl={Uri.EscapeDataString(returnUrl)}");
 
-        using var response = await client.PostAsync("/Account/Login", CreateLoginContent(token, "admin@example.com", "Pass123!", returnUrl, rememberMe: true));
+        using var response = await client.PostAsync("/neftyanik/Account/Login", CreateLoginContent(token, "admin@example.com", "Pass123!", returnUrl, rememberMe: true));
 
         Assert.Equal(HttpStatusCode.Found, response.StatusCode);
         Assert.Equal(returnUrl, response.Headers.Location?.OriginalString);
@@ -130,10 +130,10 @@ public class HomePageLoginTests
         await CreateUserAsync(factory, "admin-get@example.com", "Pass123!", RoleNames.Administrator, "admin-user");
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser("admin-user", RoleNames.Administrator));
 
-        using var response = await client.GetAsync("/");
+        using var response = await client.GetAsync("/neftyanik/");
 
         Assert.Equal(HttpStatusCode.Found, response.StatusCode);
-        Assert.Equal("/Administration", response.Headers.Location?.OriginalString);
+        Assert.Equal("/neftyanik/Administration", response.Headers.Location?.OriginalString);
     }
 
     [Fact]
@@ -143,10 +143,10 @@ public class HomePageLoginTests
         await CreateUserAsync(factory, "member-get@example.com", "Pass123!", RoleNames.Member, "member-user");
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser("member-user", RoleNames.Member));
 
-        using var response = await client.GetAsync("/");
+        using var response = await client.GetAsync("/neftyanik/");
 
         Assert.Equal(HttpStatusCode.Found, response.StatusCode);
-        Assert.Equal("/Member", response.Headers.Location?.OriginalString);
+        Assert.Equal("/neftyanik/Member", response.Headers.Location?.OriginalString);
     }
 
     private static async Task CreateUserAsync(PortalWebApplicationFactory factory, string email, string password, string? role = null, string? userId = null)

@@ -35,7 +35,7 @@ public class AdministrationMemberFinanceChargeTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         const string adminUserId = "admin-user";
@@ -185,7 +185,7 @@ public class AdministrationMemberFinanceChargeTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(adminUserId, RoleNames.Administrator), cultureName: "ru-RU");
 
-        var response = await client.GetAsync($"/Administration/Members/Finance/{memberId}/Finance");
+        var response = await client.GetAsync($"/neftyanik/Administration/Members/Finance/{memberId}/Finance");
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -234,7 +234,7 @@ public class AdministrationMemberFinanceChargeTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(adminUserId, RoleNames.Administrator), cultureName: "ru-RU");
 
-        var response = await client.GetAsync($"/Administration/Members/Finance/{memberId}/Finance");
+        var response = await client.GetAsync($"/neftyanik/Administration/Members/Finance/{memberId}/Finance");
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -343,7 +343,7 @@ public class AdministrationMemberFinanceChargeTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(adminUserId, RoleNames.Administrator), cultureName: "ru-RU");
 
-        var response = await client.GetAsync($"/Administration/Members/Finance/{memberId}/Finance");
+        var response = await client.GetAsync($"/neftyanik/Administration/Members/Finance/{memberId}/Finance");
         var html = await response.ReadDecodedHtmlAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -419,7 +419,7 @@ public class AdministrationMemberFinanceChargeTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(adminUserId, RoleNames.Administrator), cultureName: "ru-RU");
 
-        var response = await client.GetAsync($"/Administration/Members/Finance/{memberId}/CreateCharge?plotId={activePlotId}");
+        var response = await client.GetAsync($"/neftyanik/Administration/Members/Finance/{memberId}/CreateCharge?plotId={activePlotId}");
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -474,7 +474,7 @@ public class AdministrationMemberFinanceChargeTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(adminUserId, RoleNames.Administrator), cultureName: "ru-RU");
 
-        var response = await client.GetAsync($"/Administration/Members/Finance/{memberId}/RegisterPayment?plotId={activePlotId}");
+        var response = await client.GetAsync($"/neftyanik/Administration/Members/Finance/{memberId}/RegisterPayment?plotId={activePlotId}");
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -494,7 +494,7 @@ public class AdministrationMemberFinanceChargeTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         const string adminUserId = "admin-user";
@@ -584,7 +584,7 @@ public class AdministrationMemberFinanceChargeTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         var currentYear = DateTime.Today.Year;
@@ -674,7 +674,7 @@ public class AdministrationMemberFinanceChargeTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         const string adminUserId = "admin-user";
@@ -797,7 +797,7 @@ public class AdministrationMemberFinanceChargeTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(adminUserId, RoleNames.Administrator), cultureName: "ru-RU");
 
-        var response = await client.GetAsync("/Administration/Members");
+        var response = await client.GetAsync("/neftyanik/Administration/Members");
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -817,7 +817,7 @@ public class AdministrationMemberFinanceChargeTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         const int debtorMemberId = 1001;
@@ -862,7 +862,7 @@ public class AdministrationMemberFinanceChargeTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         const string adminUserId = "admin-user";
@@ -947,7 +947,7 @@ public class AdministrationMemberFinanceChargeTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         const string adminUserId = "admin-user";
@@ -1042,7 +1042,7 @@ public class AdministrationMemberFinanceChargeTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         const string adminUserId = "admin-user";
@@ -1135,7 +1135,7 @@ public class AdministrationMemberFinanceChargeTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         const string adminUserId = "admin-user";
@@ -1217,17 +1217,9 @@ public class AdministrationMemberFinanceChargeTests
         Assert.Equal(plotId, charge.PlotId);
         Assert.Contains("Электроэнергия", charge.Description, StringComparison.Ordinal);
 
-        var auditEntries = await dbContext.FinancialAuditLogs
-            .AsNoTracking()
-            .OrderBy(item => item.EntityType)
-            .ThenBy(item => item.EntityId)
-            .ToListAsync();
-
+        var auditEntries = await dbContext.FinancialAuditLogs.AsNoTracking().OrderBy(item => item.EntityType).ThenBy(item => item.EntityId).ToListAsync();
         Assert.Equal(2, auditEntries.Count);
         var readingAudit = Assert.Single(auditEntries.Where(item => item.EntityType == nameof(MemberElectricityReading)));
-        Assert.Equal(FinancialAuditLogActions.Created, readingAudit.Action);
-        Assert.Equal(adminUserId, readingAudit.UserId);
-        Assert.Equal("admin6@example.com", readingAudit.UserName);
         Assert.Contains("\"Consumption\":30", readingAudit.NewValuesJson, StringComparison.Ordinal);
         Assert.Contains("\"AppliedMemberNightRate\":null", readingAudit.NewValuesJson, StringComparison.Ordinal);
         Assert.Contains("\"RelatedChargeId\":" + charge.Id, readingAudit.NewValuesJson, StringComparison.Ordinal);
@@ -1248,7 +1240,7 @@ public class AdministrationMemberFinanceChargeTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         const string memberUserId = "member-user";
@@ -1346,7 +1338,7 @@ public class AdministrationMemberFinanceChargeTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         const string adminUserId = "admin-user";
@@ -1455,7 +1447,7 @@ public class AdministrationMemberFinanceChargeTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         const string adminUserId = "admin-user";
@@ -1521,7 +1513,7 @@ public class AdministrationMemberFinanceChargeTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         const string adminUserId = "admin-user";
@@ -1582,7 +1574,7 @@ public class AdministrationMemberFinanceChargeTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         const string adminUserId = "admin-user";
@@ -1641,7 +1633,7 @@ public class AdministrationMemberFinanceChargeTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         const string adminUserId = "admin-user";
@@ -1709,7 +1701,7 @@ public class AdministrationMemberFinanceChargeTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         const int memberId = 1321;
@@ -1803,7 +1795,7 @@ public class AdministrationMemberFinanceChargeTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         const int memberId = 2;

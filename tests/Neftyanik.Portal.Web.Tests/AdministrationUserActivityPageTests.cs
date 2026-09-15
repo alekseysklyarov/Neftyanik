@@ -12,7 +12,7 @@ public class AdministrationUserActivityPageTests
         using var factory = new PortalWebApplicationFactory();
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser("administrator-user", RoleNames.Administrator));
 
-        var response = await client.GetAsync("/Administration/UserActivity");
+        var response = await client.GetAsync("/neftyanik/Administration/UserActivity");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
@@ -23,10 +23,10 @@ public class AdministrationUserActivityPageTests
         using var factory = new PortalWebApplicationFactory();
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser("accountant-user", RoleNames.Accountant));
 
-        var response = await client.GetAsync("/Administration/UserActivity");
+        var response = await client.GetAsync("/neftyanik/Administration/UserActivity");
 
         Assert.Equal(HttpStatusCode.Found, response.StatusCode);
-        Assert.StartsWith("http://localhost/Account/AccessDenied", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
+        Assert.StartsWith("http://localhost/neftyanik/Account/AccessDenied?", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -35,10 +35,10 @@ public class AdministrationUserActivityPageTests
         using var factory = new PortalWebApplicationFactory();
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser("administrator-user", RoleNames.Administrator));
 
-        var response = await client.GetAsync("/Administration");
+        var response = await client.GetAsync("/neftyanik/Administration");
         var content = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains("/Administration/UserActivity", content, StringComparison.Ordinal);
+        Assert.Contains("/neftyanik/Administration/UserActivity", content, StringComparison.Ordinal);
     }
 }

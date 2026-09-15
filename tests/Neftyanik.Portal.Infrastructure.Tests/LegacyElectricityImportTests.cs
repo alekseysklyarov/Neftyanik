@@ -474,7 +474,7 @@ public class LegacyElectricityImportTests
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseSqlite($"Data Source={databasePath}")
             .Options;
-        var dbContext = new ApplicationDbContext(options);
+        var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureDeletedAsync();
         await dbContext.Database.EnsureCreatedAsync();
         return new TestDatabaseScope(rootPath, dbContext);

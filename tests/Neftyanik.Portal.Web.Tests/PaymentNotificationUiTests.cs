@@ -50,7 +50,7 @@ public sealed class PaymentNotificationUiTests
         });
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(memberUserId, RoleNames.Member), cultureName: "ru-RU");
-        var response = await client.GetAsync("/Member");
+        var response = await client.GetAsync("/neftyanik/Member");
         var html = await response.ReadDecodedHtmlAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -133,7 +133,7 @@ public sealed class PaymentNotificationUiTests
         });
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(memberUserId, RoleNames.Member), cultureName: "ru-RU");
-        var response = await client.GetAsync("/Member");
+        var response = await client.GetAsync("/neftyanik/Member");
         var html = await response.ReadDecodedHtmlAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -158,10 +158,10 @@ public sealed class PaymentNotificationUiTests
         await SeedMemberAsync(factory, 1, memberUserId, "Member One");
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(memberUserId, RoleNames.Member), allowAutoRedirect: false, cultureName: "ru-RU");
-        var token = await GetAntiforgeryTokenAsync(client, "/Member");
+        var token = await GetAntiforgeryTokenAsync(client, "/neftyanik/Member");
 
         var response = await client.PostAsync(
-            "/Member?handler=CreatePaymentNotification",
+            "/neftyanik/Member?handler=CreatePaymentNotification",
             new FormUrlEncodedContent(new Dictionary<string, string>
             {
                 ["__RequestVerificationToken"] = token,
@@ -173,7 +173,7 @@ public sealed class PaymentNotificationUiTests
             }));
 
         Assert.Equal(HttpStatusCode.Found, response.StatusCode);
-        Assert.Equal("/Member?chargePage=1&paymentPage=1", response.Headers.Location?.OriginalString);
+        Assert.Equal("/neftyanik/Member?chargePage=1&paymentPage=1", response.Headers.Location?.OriginalString);
 
         var redirectedResponse = await client.GetAsync(response.Headers.Location);
         var redirectedHtml = await redirectedResponse.ReadDecodedHtmlAsync();
@@ -194,7 +194,7 @@ public sealed class PaymentNotificationUiTests
             Assert.Empty(payments);
         });
 
-        var refreshResponse = await client.GetAsync("/Member?chargePage=1&paymentPage=1");
+        var refreshResponse = await client.GetAsync("/neftyanik/Member?chargePage=1&paymentPage=1");
         Assert.Equal(HttpStatusCode.OK, refreshResponse.StatusCode);
 
         await factory.ExecuteDbContextAsync(async dbContext =>
@@ -213,10 +213,10 @@ public sealed class PaymentNotificationUiTests
         await SeedMemberAsync(factory, 1, memberUserId, "Member One");
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(memberUserId, RoleNames.Member), cultureName: "ru-RU");
-        var token = await GetAntiforgeryTokenAsync(client, "/Member");
+        var token = await GetAntiforgeryTokenAsync(client, "/neftyanik/Member");
 
         var response = await client.PostAsync(
-            "/Member?handler=CreatePaymentNotification",
+            "/neftyanik/Member?handler=CreatePaymentNotification",
             new FormUrlEncodedContent(new Dictionary<string, string>
             {
                 ["__RequestVerificationToken"] = token,
@@ -246,10 +246,10 @@ public sealed class PaymentNotificationUiTests
         await SeedMemberAsync(factory, 1, memberUserId, "Member One");
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(memberUserId, RoleNames.Member), cultureName: "ru-RU");
-        var token = await GetAntiforgeryTokenAsync(client, "/Member");
+        var token = await GetAntiforgeryTokenAsync(client, "/neftyanik/Member");
 
         var response = await client.PostAsync(
-            "/Member?handler=CreatePaymentNotification",
+            "/neftyanik/Member?handler=CreatePaymentNotification",
             new FormUrlEncodedContent(new Dictionary<string, string>
             {
                 ["__RequestVerificationToken"] = token,
@@ -272,7 +272,7 @@ public sealed class PaymentNotificationUiTests
         using var client = factory.CreateAnonymousClient(allowAutoRedirect: false, cultureName: "ru-RU");
 
         var response = await client.PostAsync(
-            "/Member?handler=CreatePaymentNotification",
+            "/neftyanik/Member?handler=CreatePaymentNotification",
             new FormUrlEncodedContent(new Dictionary<string, string>
             {
                 ["PaymentNotification.Amount"] = "10",
@@ -306,7 +306,7 @@ public sealed class PaymentNotificationUiTests
         });
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(financeUserId, role), cultureName: "ru-RU");
-        var response = await client.GetAsync("/Administration");
+        var response = await client.GetAsync("/neftyanik/Administration");
         var html = await response.ReadDecodedHtmlAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -327,12 +327,12 @@ public sealed class PaymentNotificationUiTests
         await SeedMemberAsync(factory, 1, memberUserId, "Member One");
 
         using var financeClient = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(financeUserId, role), cultureName: "ru-RU");
-        var financeHtml = await (await financeClient.GetAsync("/Administration")).ReadDecodedHtmlAsync();
+        var financeHtml = await (await financeClient.GetAsync("/neftyanik/Administration")).ReadDecodedHtmlAsync();
         Assert.Contains("id=\"payment-notification-bell\"", financeHtml, StringComparison.Ordinal);
         Assert.DoesNotContain("id=\"payment-notification-bell-count\"", financeHtml, StringComparison.Ordinal);
 
         using var memberClient = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(memberUserId, RoleNames.Member), cultureName: "ru-RU");
-        var memberHtml = await (await memberClient.GetAsync("/Member")).ReadDecodedHtmlAsync();
+        var memberHtml = await (await memberClient.GetAsync("/neftyanik/Member")).ReadDecodedHtmlAsync();
         Assert.DoesNotContain("id=\"payment-notification-bell\"", memberHtml, StringComparison.Ordinal);
     }
 
@@ -355,21 +355,21 @@ public sealed class PaymentNotificationUiTests
         });
 
         using var financeClient = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(financeUserId, role), allowAutoRedirect: false, cultureName: "ru-RU");
-        var defaultResponse = await financeClient.GetAsync("/Administration/Finance/PaymentNotifications");
+        var defaultResponse = await financeClient.GetAsync("/neftyanik/Administration/Finance/PaymentNotifications");
         var defaultHtml = await defaultResponse.ReadDecodedHtmlAsync();
         Assert.Equal(HttpStatusCode.OK, defaultResponse.StatusCode);
         Assert.Contains("Pending item", defaultHtml, StringComparison.Ordinal);
         Assert.DoesNotContain("Confirmed item", defaultHtml, StringComparison.Ordinal);
 
-        var filteredResponse = await financeClient.GetAsync("/Administration/Finance/PaymentNotifications?status=Confirmed");
+        var filteredResponse = await financeClient.GetAsync("/neftyanik/Administration/Finance/PaymentNotifications?status=Confirmed");
         var filteredHtml = await filteredResponse.ReadDecodedHtmlAsync();
         Assert.Contains("Confirmed item", filteredHtml, StringComparison.Ordinal);
         Assert.DoesNotContain("Pending item", filteredHtml, StringComparison.Ordinal);
 
         using var memberClient = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(memberUserId, RoleNames.Member), allowAutoRedirect: false, cultureName: "ru-RU");
-        var memberResponse = await memberClient.GetAsync("/Administration/Finance/PaymentNotifications");
+        var memberResponse = await memberClient.GetAsync("/neftyanik/Administration/Finance/PaymentNotifications");
         Assert.Equal(HttpStatusCode.Found, memberResponse.StatusCode);
-        Assert.StartsWith("http://localhost/Account/AccessDenied", memberResponse.Headers.Location?.OriginalString, StringComparison.Ordinal);
+        Assert.StartsWith("http://localhost/neftyanik/Account/AccessDenied?", memberResponse.Headers.Location?.OriginalString, StringComparison.Ordinal);
     }
 
     [Theory]
@@ -385,7 +385,7 @@ public sealed class PaymentNotificationUiTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(financeUserId, role), allowAutoRedirect: false, cultureName: "ru-RU");
 
-        var emptyResponse = await client.GetAsync("/Administration/Finance/PaymentNotifications");
+        var emptyResponse = await client.GetAsync("/neftyanik/Administration/Finance/PaymentNotifications");
         var emptyHtml = await emptyResponse.ReadDecodedHtmlAsync();
 
         Assert.Equal(HttpStatusCode.OK, emptyResponse.StatusCode);
@@ -448,26 +448,26 @@ public sealed class PaymentNotificationUiTests
             await dbContext.SaveChangesAsync();
         });
 
-        var pendingResponse = await client.GetAsync("/Administration/Finance/PaymentNotifications?status=Pending");
+        var pendingResponse = await client.GetAsync("/neftyanik/Administration/Finance/PaymentNotifications?status=Pending");
         var pendingHtml = await pendingResponse.ReadDecodedHtmlAsync();
         Assert.Equal(HttpStatusCode.OK, pendingResponse.StatusCode);
         Assert.Contains("Member 1", pendingHtml, StringComparison.Ordinal);
         Assert.Contains("P-101", pendingHtml, StringComparison.Ordinal);
         Assert.Contains("—", pendingHtml, StringComparison.Ordinal);
 
-        var confirmedResponse = await client.GetAsync("/Administration/Finance/PaymentNotifications?status=Confirmed");
+        var confirmedResponse = await client.GetAsync("/neftyanik/Administration/Finance/PaymentNotifications?status=Confirmed");
         var confirmedHtml = await confirmedResponse.ReadDecodedHtmlAsync();
         Assert.Equal(HttpStatusCode.OK, confirmedResponse.StatusCode);
         Assert.Contains("Confirmed item", confirmedHtml, StringComparison.Ordinal);
         Assert.Contains("#5001", confirmedHtml, StringComparison.Ordinal);
 
-        var rejectedResponse = await client.GetAsync("/Administration/Finance/PaymentNotifications?status=Rejected");
+        var rejectedResponse = await client.GetAsync("/neftyanik/Administration/Finance/PaymentNotifications?status=Rejected");
         var rejectedHtml = await rejectedResponse.ReadDecodedHtmlAsync();
         Assert.Equal(HttpStatusCode.OK, rejectedResponse.StatusCode);
         Assert.Contains("Member Without Plot", rejectedHtml, StringComparison.Ordinal);
         Assert.Contains("Причина отклонения", rejectedHtml, StringComparison.Ordinal);
 
-        var invalidStatusResponse = await client.GetAsync("/Administration/Finance/PaymentNotifications?status=NotARealStatus");
+        var invalidStatusResponse = await client.GetAsync("/neftyanik/Administration/Finance/PaymentNotifications?status=NotARealStatus");
         var invalidStatusHtml = await invalidStatusResponse.ReadDecodedHtmlAsync();
         Assert.Equal(HttpStatusCode.OK, invalidStatusResponse.StatusCode);
         Assert.Contains("Member 1", invalidStatusHtml, StringComparison.Ordinal);
@@ -573,14 +573,14 @@ public sealed class PaymentNotificationUiTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(financeUserId, role), allowAutoRedirect: false, cultureName: "ru-RU");
 
-        var pendingHtml = await (await client.GetAsync("/Administration/Finance/PaymentNotifications?status=Pending")).ReadDecodedHtmlAsync();
+        var pendingHtml = await (await client.GetAsync("/neftyanik/Administration/Finance/PaymentNotifications?status=Pending")).ReadDecodedHtmlAsync();
         Assert.Contains("Pending without payment", pendingHtml, StringComparison.Ordinal);
         Assert.Contains("data-bs-target=\"#confirm-notification-82011\"", pendingHtml, StringComparison.Ordinal);
         Assert.Contains("data-bs-target=\"#reject-notification-82011\"", pendingHtml, StringComparison.Ordinal);
         Assert.DoesNotContain($"/Payments/{activePaymentId}/Receipt?memberId={memberId}", pendingHtml, StringComparison.Ordinal);
         Assert.DoesNotContain($"/Payments/{cancelledPaymentId}/Receipt?memberId={memberId}", pendingHtml, StringComparison.Ordinal);
 
-        var confirmedHtml = await (await client.GetAsync("/Administration/Finance/PaymentNotifications?status=Confirmed")).ReadDecodedHtmlAsync();
+        var confirmedHtml = await (await client.GetAsync("/neftyanik/Administration/Finance/PaymentNotifications?status=Confirmed")).ReadDecodedHtmlAsync();
         Assert.Contains("Confirmed with payment", confirmedHtml, StringComparison.Ordinal);
         Assert.Contains("Confirmed with cancelled payment", confirmedHtml, StringComparison.Ordinal);
         Assert.Contains($"/Payments/{activePaymentId}/Receipt?memberId={memberId}", confirmedHtml, StringComparison.Ordinal);
@@ -589,7 +589,7 @@ public sealed class PaymentNotificationUiTests
         Assert.DoesNotContain("data-bs-target=\"#reject-notification-82012\"", confirmedHtml, StringComparison.Ordinal);
         Assert.Contains("Подтверждено", confirmedHtml, StringComparison.Ordinal);
 
-        var rejectedHtml = await (await client.GetAsync("/Administration/Finance/PaymentNotifications?status=Rejected")).ReadDecodedHtmlAsync();
+        var rejectedHtml = await (await client.GetAsync("/neftyanik/Administration/Finance/PaymentNotifications?status=Rejected")).ReadDecodedHtmlAsync();
         Assert.Contains("Rejected without payment", rejectedHtml, StringComparison.Ordinal);
         Assert.Contains("Rejected reason", rejectedHtml, StringComparison.Ordinal);
         Assert.DoesNotContain($"/Payments/{activePaymentId}/Receipt?memberId={memberId}", rejectedHtml, StringComparison.Ordinal);
@@ -623,10 +623,10 @@ public sealed class PaymentNotificationUiTests
         });
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(financeUserId, role), allowAutoRedirect: false, cultureName: "ru-RU");
-        var token = await GetAntiforgeryTokenAsync(client, "/Administration/Finance/PaymentNotifications");
+        var token = await GetAntiforgeryTokenAsync(client, "/neftyanik/Administration/Finance/PaymentNotifications");
 
         var response = await client.PostAsync(
-            "/Administration/Finance/PaymentNotifications?handler=Confirm&status=Pending",
+            "/neftyanik/Administration/Finance/PaymentNotifications?handler=Confirm&status=Pending",
             new FormUrlEncodedContent(new Dictionary<string, string>
             {
                 ["__RequestVerificationToken"] = token,
@@ -644,7 +644,7 @@ public sealed class PaymentNotificationUiTests
             Assert.Single(payments);
         });
 
-        var processedHtml = await (await client.GetAsync("/Administration/Finance/PaymentNotifications?status=Confirmed")).ReadDecodedHtmlAsync();
+        var processedHtml = await (await client.GetAsync("/neftyanik/Administration/Finance/PaymentNotifications?status=Confirmed")).ReadDecodedHtmlAsync();
         Assert.DoesNotContain("data-bs-target=\"#confirm-notification-1001\"", processedHtml, StringComparison.Ordinal);
         Assert.DoesNotContain("data-bs-target=\"#reject-notification-1001\"", processedHtml, StringComparison.Ordinal);
     }
@@ -676,7 +676,7 @@ public sealed class PaymentNotificationUiTests
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(financeUserId, role), allowAutoRedirect: false, cultureName: "ru-RU");
 
         var badResponse = await client.PostAsync(
-            "/Administration/Finance/PaymentNotifications?handler=Reject&status=Pending",
+            "/neftyanik/Administration/Finance/PaymentNotifications?handler=Reject&status=Pending",
             new FormUrlEncodedContent(new Dictionary<string, string>
             {
                 ["notificationId"] = "1002",
@@ -684,9 +684,9 @@ public sealed class PaymentNotificationUiTests
             }));
         Assert.Equal(HttpStatusCode.BadRequest, badResponse.StatusCode);
 
-        var token = await GetAntiforgeryTokenAsync(client, "/Administration/Finance/PaymentNotifications");
+        var token = await GetAntiforgeryTokenAsync(client, "/neftyanik/Administration/Finance/PaymentNotifications");
         var response = await client.PostAsync(
-            "/Administration/Finance/PaymentNotifications?handler=Reject&status=Pending",
+            "/neftyanik/Administration/Finance/PaymentNotifications?handler=Reject&status=Pending",
             new FormUrlEncodedContent(new Dictionary<string, string>
             {
                 ["__RequestVerificationToken"] = token,

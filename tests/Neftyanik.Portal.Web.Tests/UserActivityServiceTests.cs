@@ -21,7 +21,7 @@ public class UserActivityServiceTests
             .Options;
 
         var fixedUtcNow = new DateTimeOffset(2026, 8, 15, 12, 0, 0, TimeSpan.Zero);
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         dbContext.Users.AddRange(
@@ -62,7 +62,7 @@ public class UserActivityServiceTests
             .Options;
 
         var fixedUtcNow = new DateTimeOffset(2026, 8, 15, 12, 0, 0, TimeSpan.Zero);
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         dbContext.Users.AddRange(
@@ -120,7 +120,7 @@ public class UserActivityServiceTests
             .Options;
 
         var fixedUtcNow = new DateTimeOffset(2026, 8, 15, 12, 0, 0, TimeSpan.Zero);
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         dbContext.Users.Add(CreateUser("user-1", "user1@example.com"));

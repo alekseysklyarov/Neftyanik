@@ -34,7 +34,7 @@ public class AdministrationMemberAccountTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         const int memberId = 1;
@@ -113,7 +113,7 @@ public class AdministrationMemberAccountTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         const int memberId = 2;
@@ -188,7 +188,7 @@ public class AdministrationMemberAccountTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         var user = new ApplicationUser
@@ -232,7 +232,7 @@ public class AdministrationMemberAccountTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         var user = new ApplicationUser
@@ -334,7 +334,7 @@ public class AdministrationMemberAccountTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         using var userStore = new UserStore<ApplicationUser>(dbContext);
@@ -424,7 +424,7 @@ public class AdministrationMemberAccountTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         using var userStore = new UserStore<ApplicationUser>(dbContext);
@@ -517,7 +517,7 @@ public class AdministrationMemberAccountTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         using var userStore = new UserStore<ApplicationUser>(dbContext);

@@ -18,6 +18,8 @@ using Neftyanik.Portal.Infrastructure;
 using Neftyanik.Portal.Infrastructure.Data;
 using Neftyanik.Portal.Web.Localization;
 using Neftyanik.Portal.Web.Security;
+using Neftyanik.Portal.Web.Associations;
+using Neftyanik.Portal.Application.Associations;
 
 var currentDirectory = Directory.GetCurrentDirectory();
 var repositoryWebRootPath = Path.Combine(currentDirectory, "src", "Neftyanik.Portal.Web", "wwwroot");
@@ -174,6 +176,10 @@ app.UseCookiePolicy();
 app.UseRequestLocalization(LocalizationConfiguration.CreateOptions());
 app.UseStaticFiles();
 
+app.UseMiddleware<AssociationRoutingMiddleware>();
+
+app.UseStaticFiles();
+
 app.UseRouting();
 
 app.UseAuthentication();
@@ -226,6 +232,13 @@ static async Task<int> ExecuteLegacyElectricityImportCommandAsync(WebApplication
         using var scope = app.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         await dbContext.Database.MigrateAsync();
+
+        var slug = ParseStringOption(arguments, "--association")
+            ?? throw new InvalidOperationException("Specify --association=<slug> for the legacy import.");
+        var association = await dbContext.Associations.AsNoTracking()
+            .SingleOrDefaultAsync(x => x.Slug == slug && x.IsActive)
+            ?? throw new InvalidOperationException("The requested active association was not found.");
+        scope.ServiceProvider.GetRequiredService<AssociationContext>().Resolve(association);
 
         var service = scope.ServiceProvider.GetRequiredService<ILegacyElectricityImportService>();
         var result = await service.ExecuteAsync(request);
@@ -299,7 +312,8 @@ static LegacyElectricityImportRequest CreateLegacyElectricityImportRequest(strin
         "--import-legacy-electricity",
         "--dry-run",
         "--commit",
-        "--force"
+        "--force",
+        "--association"
     };
 
     var commit = arguments.Any(argument => string.Equals(argument, "--commit", StringComparison.OrdinalIgnoreCase));

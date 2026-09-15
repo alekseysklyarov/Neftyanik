@@ -23,7 +23,7 @@ public class AdministrationPlotOwnershipTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         dbContext.Members.AddRange(
@@ -68,7 +68,7 @@ public class AdministrationPlotOwnershipTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         dbContext.Members.AddRange(
@@ -118,7 +118,7 @@ public class AdministrationPlotOwnershipTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         dbContext.Members.Add(new Member

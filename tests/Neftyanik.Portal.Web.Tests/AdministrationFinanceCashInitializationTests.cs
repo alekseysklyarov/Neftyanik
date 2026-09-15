@@ -630,10 +630,10 @@ public class AdministrationFinanceCashInitializationTests
         });
 
         var client = CreateAuthenticatedClient(factory, new TestAuthenticatedUser(adminUserId, RoleNames.Administrator), allowAutoRedirect: false, cultureName: "uk-UA");
-        var antiforgeryToken = await GetAntiforgeryTokenAsync(client, "/Administration/Finance/Settings/CashInitialization");
+        var antiforgeryToken = await GetAntiforgeryTokenAsync(client, "/neftyanik/Administration/Finance/Settings/CashInitialization");
 
         using var response = await client.PostAsync(
-            "/Administration/Finance/Settings/CashInitialization?handler=Adjust",
+            "/neftyanik/Administration/Finance/Settings/CashInitialization?handler=Adjust",
             new FormUrlEncodedContent(new[]
             {
                 new KeyValuePair<string, string>("__RequestVerificationToken", antiforgeryToken),
@@ -646,7 +646,7 @@ public class AdministrationFinanceCashInitializationTests
         Assert.True(
             response.StatusCode == HttpStatusCode.Redirect,
             $"Expected redirect, but got {(int)response.StatusCode}. Body:{Environment.NewLine}{html}{Environment.NewLine}Warnings:{Environment.NewLine}{string.Join(Environment.NewLine, logProvider.Records.Select(record => $"[{record.LogLevel}] {record.Category}: {record.Message}"))}");
-        Assert.Equal("/Administration/Finance/Settings/CashInitialization", response.Headers.Location?.OriginalString);
+        Assert.Equal("/neftyanik/Administration/Finance/Settings/CashInitialization", response.Headers.Location?.OriginalString);
 
         await ExecuteDbContextAsync(factory, async dbContext =>
         {
@@ -683,10 +683,10 @@ public class AdministrationFinanceCashInitializationTests
         });
 
         var client = CreateAuthenticatedClient(factory, new TestAuthenticatedUser(adminUserId, RoleNames.Administrator), allowAutoRedirect: false, cultureName: "uk-UA");
-        var antiforgeryToken = await GetAntiforgeryTokenAsync(client, "/Administration/Finance/Settings/CashInitialization");
+        var antiforgeryToken = await GetAntiforgeryTokenAsync(client, "/neftyanik/Administration/Finance/Settings/CashInitialization");
 
         using var response = await client.PostAsync(
-            "/Administration/Finance/Settings/CashInitialization",
+            "/neftyanik/Administration/Finance/Settings/CashInitialization",
             new FormUrlEncodedContent(new[]
             {
                 new KeyValuePair<string, string>("__RequestVerificationToken", antiforgeryToken),
@@ -702,7 +702,7 @@ public class AdministrationFinanceCashInitializationTests
         Assert.True(
             response.StatusCode == HttpStatusCode.Redirect,
             $"Expected redirect, but got {(int)response.StatusCode}. Body:{Environment.NewLine}{html}{Environment.NewLine}Warnings:{Environment.NewLine}{string.Join(Environment.NewLine, logProvider.Records.Select(record => $"[{record.LogLevel}] {record.Category}: {record.Message}"))}");
-        Assert.Equal("/Administration/Finance/Settings/CashInitialization", response.Headers.Location?.OriginalString);
+        Assert.Equal("/neftyanik/Administration/Finance/Settings/CashInitialization", response.Headers.Location?.OriginalString);
 
         await ExecuteDbContextAsync(factory, async dbContext =>
         {
@@ -740,6 +740,8 @@ public class AdministrationFinanceCashInitializationTests
     {
         await using var scope = factory.Services.CreateAsyncScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var association = await dbContext.Associations.AsNoTracking().SingleAsync(x => x.Slug == "neftyanik");
+        scope.ServiceProvider.GetRequiredService<Neftyanik.Portal.Application.Associations.AssociationContext>().Resolve(association);
         await action(dbContext);
     }
 
@@ -812,7 +814,7 @@ public class AdministrationFinanceCashInitializationTests
             .UseSqlite(connection)
             .Options;
 
-        var dbContext = new ApplicationDbContext(options);
+        var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
         return dbContext;
     }

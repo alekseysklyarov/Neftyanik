@@ -210,7 +210,7 @@ public sealed class ChargeServiceTests
                 .UseSqlite(connection)
                 .Options;
 
-            var dbContext = new ApplicationDbContext(options);
+        var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
             await dbContext.Database.EnsureCreatedAsync();
 
             return new ChargeServiceTestContext(connection, dbContext, new HttpContextAccessor());

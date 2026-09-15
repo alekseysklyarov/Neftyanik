@@ -34,6 +34,7 @@ public class SetLanguageModel : PageModel
     private string GetReturnUrl(string? returnUrl)
     {
         return Url.IsLocalUrl(returnUrl)
+            && Neftyanik.Portal.Web.Associations.TenantReturnUrls.IsWithinAssociation(Request, returnUrl)
             ? returnUrl!
             : Url.Content("~/");
     }

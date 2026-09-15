@@ -42,7 +42,7 @@ public sealed class PaymentReceiptPageTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userId, RoleNames.Member), allowAutoRedirect: false, cultureName: "ru-RU");
 
-        var response = await client.GetAsync($"/Payments/{paymentId}/Receipt");
+        var response = await client.GetAsync($"/neftyanik/Payments/{paymentId}/Receipt");
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -77,7 +77,7 @@ public sealed class PaymentReceiptPageTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userId, RoleNames.Member), allowAutoRedirect: false, cultureName: "ru-RU");
 
-        var response = await client.GetAsync("/Payments/302/Receipt");
+        var response = await client.GetAsync("/neftyanik/Payments/302/Receipt");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -130,7 +130,7 @@ public sealed class PaymentReceiptPageTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(currentOwnerUserId, RoleNames.Member), allowAutoRedirect: false, cultureName: "ru-RU");
 
-        var response = await client.GetAsync($"/Payments/{paymentId}/Receipt");
+        var response = await client.GetAsync($"/neftyanik/Payments/{paymentId}/Receipt");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -161,11 +161,11 @@ public sealed class PaymentReceiptPageTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(adminUserId, RoleNames.Administrator), allowAutoRedirect: false, cultureName: "ru-RU");
 
-        var response = await client.GetAsync("/Payments/305/Receipt?memberId=105");
+        var response = await client.GetAsync("/neftyanik/Payments/305/Receipt?memberId=105");
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains("/Administration/Members/Finance/105/Finance", html, StringComparison.Ordinal);
+        Assert.Contains("/neftyanik/Administration/Members/Finance/105/Finance", html, StringComparison.Ordinal);
         Assert.Contains("Admin Target Member", html, StringComparison.Ordinal);
     }
 
@@ -196,7 +196,7 @@ public sealed class PaymentReceiptPageTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(adminUserId, RoleNames.Administrator), allowAutoRedirect: false, cultureName: "ru-RU");
 
-        var response = await client.GetAsync("/Payments/306/Receipt?memberId=107");
+        var response = await client.GetAsync("/neftyanik/Payments/306/Receipt?memberId=107");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -227,7 +227,7 @@ public sealed class PaymentReceiptPageTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(accountantUserId, RoleNames.Accountant), allowAutoRedirect: false, cultureName: "ru-RU");
 
-        var response = await client.GetAsync("/Payments/307/Receipt?memberId=108");
+        var response = await client.GetAsync("/neftyanik/Payments/307/Receipt?memberId=108");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
@@ -258,7 +258,7 @@ public sealed class PaymentReceiptPageTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userId, RoleNames.Member, RoleNames.Administrator), allowAutoRedirect: false, cultureName: "ru-RU");
 
-        var response = await client.GetAsync("/Payments/308/Receipt?memberId=110");
+        var response = await client.GetAsync("/neftyanik/Payments/308/Receipt?memberId=110");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -310,7 +310,7 @@ public sealed class PaymentReceiptPageTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userId, RoleNames.Member), allowAutoRedirect: false, cultureName: "ru-RU");
 
-        var response = await client.GetAsync($"/Payments/{paymentId}/Receipt");
+        var response = await client.GetAsync($"/neftyanik/Payments/{paymentId}/Receipt");
         var html = await response.ReadDecodedHtmlAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -378,14 +378,14 @@ public sealed class PaymentReceiptPageTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(currentOwnerUserId, RoleNames.Member), allowAutoRedirect: false, cultureName: "ru-RU");
 
-        var response = await client.GetAsync($"/Member/Plots/{plotId}/Finance");
+        var response = await client.GetAsync($"/neftyanik/Member/Plots/{plotId}/Finance");
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Contains("CURRENT-OWNER-REF", html, StringComparison.Ordinal);
         Assert.DoesNotContain("PREVIOUS-OWNER-REF", html, StringComparison.Ordinal);
-        Assert.Contains($"/Payments/311/Receipt", html, StringComparison.Ordinal);
-        Assert.DoesNotContain($"/Payments/310/Receipt", html, StringComparison.Ordinal);
+        Assert.Contains($"/neftyanik/Payments/311/Receipt", html, StringComparison.Ordinal);
+        Assert.DoesNotContain($"/neftyanik/Payments/310/Receipt", html, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -447,13 +447,13 @@ public sealed class PaymentReceiptPageTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(currentOwnerUserId, RoleNames.Member), allowAutoRedirect: false, cultureName: "ru-RU");
 
-        var response = await client.GetAsync("/Member");
+        var response = await client.GetAsync("/neftyanik/Member");
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Contains("CURRENT-DASHBOARD-REF", html, StringComparison.Ordinal);
         Assert.DoesNotContain("OLD-DASHBOARD-REF", html, StringComparison.Ordinal);
-        Assert.Contains($"/Payments/313/Receipt", html, StringComparison.Ordinal);
+        Assert.Contains($"/neftyanik/Payments/313/Receipt", html, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -516,14 +516,14 @@ public sealed class PaymentReceiptPageTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(adminUserId, RoleNames.Administrator), allowAutoRedirect: false, cultureName: "ru-RU");
 
-        var response = await client.GetAsync("/Administration/Members/Finance/117/Finance");
+        var response = await client.GetAsync("/neftyanik/Administration/Members/Finance/117/Finance");
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Contains("CURRENT-ADMIN-REF", html, StringComparison.Ordinal);
         Assert.DoesNotContain("OLD-ADMIN-REF", html, StringComparison.Ordinal);
-        Assert.Contains("/Payments/315/Receipt?memberId=117", html, StringComparison.Ordinal);
-        Assert.DoesNotContain("/Payments/314/Receipt?memberId=117", html, StringComparison.Ordinal);
+        Assert.Contains("/neftyanik/Payments/315/Receipt?memberId=117", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("/neftyanik/Payments/314/Receipt?memberId=117", html, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -570,7 +570,7 @@ public sealed class PaymentReceiptPageTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userId, RoleNames.Member), allowAutoRedirect: false, cultureName: "ru-RU");
 
-        var response = await client.GetAsync("/Member");
+        var response = await client.GetAsync("/neftyanik/Member");
         var html = await response.ReadDecodedHtmlAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -630,7 +630,7 @@ public sealed class PaymentReceiptPageTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userId, RoleNames.Member), allowAutoRedirect: false, cultureName: "ru-RU");
 
-        var response = await client.GetAsync($"/Member/Plots/{plotId}/Finance");
+        var response = await client.GetAsync($"/neftyanik/Member/Plots/{plotId}/Finance");
         var html = await response.ReadDecodedHtmlAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -674,7 +674,7 @@ public sealed class PaymentReceiptPageTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userId, RoleNames.Member), allowAutoRedirect: false, cultureName: "ru-RU");
 
-        var response = await client.GetAsync("/Payments/320/Receipt");
+        var response = await client.GetAsync("/neftyanik/Payments/320/Receipt");
         var html = await response.ReadDecodedHtmlAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -713,7 +713,7 @@ public sealed class PaymentReceiptPageTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userId, RoleNames.Member), allowAutoRedirect: false, cultureName: "ru-RU");
 
-        var response = await client.GetAsync("/Payments/321/Receipt");
+        var response = await client.GetAsync("/neftyanik/Payments/321/Receipt");
         var html = await response.ReadDecodedHtmlAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -745,7 +745,7 @@ public sealed class PaymentReceiptPageTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userId, RoleNames.Member), allowAutoRedirect: false, cultureName: "ru-RU");
 
-        var response = await client.GetAsync("/Payments/322/Receipt");
+        var response = await client.GetAsync("/neftyanik/Payments/322/Receipt");
         var html = await response.ReadDecodedHtmlAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -851,7 +851,7 @@ public sealed class PaymentReceiptPageTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userId, RoleNames.Member), allowAutoRedirect: false, cultureName: "ru-RU");
 
-        var response = await client.GetAsync("/Payments/323/Receipt");
+        var response = await client.GetAsync("/neftyanik/Payments/323/Receipt");
         var html = await response.ReadDecodedHtmlAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -892,7 +892,7 @@ public sealed class PaymentReceiptPageTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userId, RoleNames.Member), allowAutoRedirect: false, cultureName: "ru-RU");
 
-        var response = await client.GetAsync("/Payments/324/Receipt");
+        var response = await client.GetAsync("/neftyanik/Payments/324/Receipt");
         var html = await response.ReadDecodedHtmlAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -996,7 +996,7 @@ public sealed class PaymentReceiptPageTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userId, RoleNames.Member), allowAutoRedirect: false, cultureName: "ru-RU");
 
-        var response = await client.GetAsync("/Payments/325/Receipt");
+        var response = await client.GetAsync("/neftyanik/Payments/325/Receipt");
         var html = await response.ReadDecodedHtmlAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);

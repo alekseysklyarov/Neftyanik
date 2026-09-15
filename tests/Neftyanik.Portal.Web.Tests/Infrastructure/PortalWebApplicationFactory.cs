@@ -149,10 +149,12 @@ public sealed class PortalWebApplicationFactory : WebApplicationFactory<Program>
             $"{CookieRequestCultureProvider.DefaultCookieName}={CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(cultureName))}");
     }
 
-    public async Task ExecuteDbContextAsync(Func<ApplicationDbContext, Task> action)
+    public async Task ExecuteDbContextAsync(Func<ApplicationDbContext, Task> action, string associationSlug = "neftyanik")
     {
         await using var scope = Services.CreateAsyncScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var association = await dbContext.Associations.AsNoTracking().SingleAsync(x => x.Slug == associationSlug && x.IsActive);
+        scope.ServiceProvider.GetRequiredService<Neftyanik.Portal.Application.Associations.AssociationContext>().Resolve(association);
         await action(dbContext);
     }
 

@@ -226,7 +226,7 @@ public sealed class MemberFinanceBalanceQueriesTests
                 .UseSqlite(connection)
                 .Options;
 
-            var dbContext = new ApplicationDbContext(options);
+        var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
             await dbContext.Database.EnsureCreatedAsync();
 
             return new BalanceQueryTestContext(connection, dbContext);

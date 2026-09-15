@@ -105,7 +105,8 @@ public abstract class LoginPageModelBase : PageModel
 
     protected async Task<IActionResult> RedirectAuthenticatedUserAsync(ApplicationUser? user, string? returnUrl = null)
     {
-        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
+            && Neftyanik.Portal.Web.Associations.TenantReturnUrls.IsWithinAssociation(Request, returnUrl))
         {
             return LocalRedirect(returnUrl);
         }

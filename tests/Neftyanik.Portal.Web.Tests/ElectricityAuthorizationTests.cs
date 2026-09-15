@@ -13,10 +13,10 @@ public class ElectricityAuthorizationTests
         using var factory = new PortalWebApplicationFactory();
         using var client = factory.CreateAnonymousClient();
 
-        var response = await client.GetAsync("/Administration/Electricity/Association/Tariffs");
+        var response = await client.GetAsync("/neftyanik/Administration/Electricity/Association/Tariffs");
 
         Assert.Equal(HttpStatusCode.Found, response.StatusCode);
-        Assert.StartsWith("http://localhost/Account/Login", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
+        Assert.StartsWith("http://localhost/neftyanik/Account/Login?", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -33,10 +33,10 @@ public class ElectricityAuthorizationTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userId, RoleNames.Member));
 
-        var response = await client.GetAsync("/Administration/Electricity/Association/Tariffs");
+        var response = await client.GetAsync("/neftyanik/Administration/Electricity/Association/Tariffs");
 
         Assert.Equal(HttpStatusCode.Found, response.StatusCode);
-        Assert.StartsWith("http://localhost/Account/AccessDenied", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
+        Assert.StartsWith("http://localhost/neftyanik/Account/AccessDenied?", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -53,10 +53,10 @@ public class ElectricityAuthorizationTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(userId, RoleNames.Member));
 
-        var response = await client.GetAsync("/Administration/Electricity/Association");
+        var response = await client.GetAsync("/neftyanik/Administration/Electricity/Association");
 
         Assert.Equal(HttpStatusCode.Found, response.StatusCode);
-        Assert.StartsWith("http://localhost/Account/AccessDenied", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
+        Assert.StartsWith("http://localhost/neftyanik/Account/AccessDenied?", response.Headers.Location?.OriginalString, StringComparison.Ordinal);
     }
 
     private static ApplicationUser CreateUser(string id, string email)

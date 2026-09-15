@@ -407,7 +407,7 @@ public sealed class PaymentServiceTests
                 .UseSqlite(connection)
                 .Options;
 
-            var dbContext = new ApplicationDbContext(options);
+        var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
             await dbContext.Database.EnsureCreatedAsync();
 
             return new PaymentServiceTestContext(connection, dbContext, new HttpContextAccessor());

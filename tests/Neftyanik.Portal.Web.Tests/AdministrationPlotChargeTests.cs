@@ -67,7 +67,7 @@ public class AdministrationPlotChargeTests
 
         using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser(adminUserId, RoleNames.Administrator), cultureName: "ru-RU");
 
-        var response = await client.GetAsync("/Administration/Plots?status=active&ownership=withowners");
+        var response = await client.GetAsync("/neftyanik/Administration/Plots?status=active&ownership=withowners");
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -96,7 +96,7 @@ public class AdministrationPlotChargeTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         const int plotId = 1501;
@@ -153,7 +153,7 @@ public class AdministrationPlotChargeTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         const int plotId = 1701;
@@ -225,7 +225,7 @@ public class AdministrationPlotChargeTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         const string adminUserId = "admin-user";
@@ -365,7 +365,7 @@ public class AdministrationPlotChargeTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         const string adminUserId = "admin-user";
@@ -499,7 +499,7 @@ public class AdministrationPlotChargeTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         const string adminUserId = "admin-user";
@@ -603,7 +603,7 @@ public class AdministrationPlotChargeTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         const string adminUserId = "admin-user";
@@ -719,6 +719,9 @@ public class AdministrationPlotChargeTests
                 Assert.Equal(DateOnly.FromDateTime(DateTime.Today), charge.ChargeDate);
             });
     }
+
+    // Only for HTTP integration tests, prefix request, antiforgery, and expected Location/href/action URLs for /Administration, /Account, /Member with /neftyanik.
+    // Preserve all PageName assertions for direct PageModel tests and all business assertions.
 
     private static ApplicationUser CreateUser(string id, string email)
     {

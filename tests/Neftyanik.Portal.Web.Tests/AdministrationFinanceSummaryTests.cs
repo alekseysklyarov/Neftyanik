@@ -20,7 +20,7 @@ public class AdministrationFinanceSummaryTests
             .UseSqlite(connection)
             .Options;
 
-        await using var dbContext = new ApplicationDbContext(options);
+        await using var dbContext = new ApplicationDbContext(options, TestAssociations.Neftyanik);
         await dbContext.Database.EnsureCreatedAsync();
 
         var currentYear = DateTime.Today.Year;
