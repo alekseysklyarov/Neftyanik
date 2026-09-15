@@ -12,7 +12,7 @@ public class PlotFinanceQueriesTests
     [Fact]
     public async Task WhereCurrentForUser_ReturnsOnlyCurrentOwnershipsForLinkedUser()
     {
-        await using var context = CreateContext();
+        await using var context = await CreateContextAsync();
         var currentDate = new DateOnly(2026, 1, 1);
 
         var memberA = new Member { Id = 1, FullName = "Member A", ApplicationUserId = "member-a" };
@@ -43,7 +43,7 @@ public class PlotFinanceQueriesTests
     [Fact]
     public async Task SelectFinanceSummary_ExcludesCancelledChargesAndPaymentsFromBalance()
     {
-        await using var context = CreateContext();
+        await using var context = await CreateContextAsync();
 
         var plot = new Plot { Id = 15, Number = "15" };
         context.Plots.Add(plot);
@@ -70,7 +70,7 @@ public class PlotFinanceQueriesTests
     [Fact]
     public async Task SelectFinanceSummary_ReturnsZeroTotalsForPlotWithoutTransactions()
     {
-        await using var context = CreateContext();
+        await using var context = await CreateContextAsync();
 
         context.Plots.Add(new Plot { Id = 30, Number = "30" });
         await context.SaveChangesAsync();
@@ -86,12 +86,14 @@ public class PlotFinanceQueriesTests
         Assert.Equal(0m, summary.Balance);
     }
 
-    private static ApplicationDbContext CreateContext()
+    private static async Task<ApplicationDbContext> CreateContextAsync()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
 
-        return new ApplicationDbContext(options);
+        var context = new ApplicationDbContext(options);
+        await context.Database.EnsureCreatedAsync();
+        return context;
     }
 }

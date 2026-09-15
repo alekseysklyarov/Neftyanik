@@ -18,23 +18,23 @@ public class ApplicationDbContextModelTests
     }
 
     [Fact]
-    public void Plot_HasUniqueIndex_OnNumber()
+    public void Plot_HasUniqueIndex_OnAssociationAndNumber()
     {
         using var context = CreateContext();
         var entityType = context.Model.FindEntityType(typeof(Plot));
 
-        var index = entityType!.GetIndexes().Single(x => x.Properties.Select(p => p.Name).SequenceEqual([nameof(Plot.Number)]));
+        var index = entityType!.GetIndexes().Single(x => x.Properties.Select(p => p.Name).SequenceEqual([nameof(Plot.AssociationId), nameof(Plot.Number)]));
 
         Assert.True(index.IsUnique);
     }
 
     [Fact]
-    public void MemberElectricityReading_HasUniqueCompositeIndex_OnMeterIdAndReadingDate()
+    public void MemberElectricityReading_HasUniqueCompositeIndex_OnAssociationMeterIdAndReadingDate()
     {
         using var context = CreateContext();
         var entityType = context.Model.FindEntityType(typeof(MemberElectricityReading));
 
-        var index = entityType!.GetIndexes().Single(x => x.Properties.Select(p => p.Name).SequenceEqual([nameof(MemberElectricityReading.MemberElectricityMeterId), nameof(MemberElectricityReading.ReadingDate)]));
+        var index = entityType!.GetIndexes().Single(x => x.Properties.Select(p => p.Name).SequenceEqual([nameof(MemberElectricityReading.AssociationId), nameof(MemberElectricityReading.MemberElectricityMeterId), nameof(MemberElectricityReading.ReadingDate)]));
 
         Assert.True(index.IsUnique);
     }
@@ -53,23 +53,23 @@ public class ApplicationDbContextModelTests
     }
 
     [Fact]
-    public void MembershipFeeRate_HasUniqueIndex_OnYear()
+    public void MembershipFeeRate_HasUniqueIndex_OnAssociationAndYear()
     {
         using var context = CreateContext();
         var entityType = context.Model.FindEntityType(typeof(MembershipFeeRate));
 
-        var index = entityType!.GetIndexes().Single(x => x.Properties.Select(p => p.Name).SequenceEqual([nameof(MembershipFeeRate.Year)]));
+        var index = entityType!.GetIndexes().Single(x => x.Properties.Select(p => p.Name).SequenceEqual([nameof(MembershipFeeRate.AssociationId), nameof(MembershipFeeRate.Year)]));
 
         Assert.True(index.IsUnique);
     }
 
     [Fact]
-    public void SystemSetting_HasUniqueIndex_OnKey()
+    public void SystemSetting_HasUniqueIndex_OnAssociationAndKey()
     {
         using var context = CreateContext();
         var entityType = context.Model.FindEntityType(typeof(SystemSetting));
 
-        var index = entityType!.GetIndexes().Single(x => x.Properties.Select(p => p.Name).SequenceEqual([nameof(SystemSetting.Key)]));
+        var index = entityType!.GetIndexes().Single(x => x.Properties.Select(p => p.Name).SequenceEqual([nameof(SystemSetting.AssociationId), nameof(SystemSetting.Key)]));
 
         Assert.True(index.IsUnique);
     }

@@ -12,6 +12,8 @@ public class SystemSettingConfiguration : IEntityTypeConfiguration<SystemSetting
 
         builder.HasKey(x => x.Id);
 
+        builder.ConfigureAssociationOwnership();
+
         builder.Property(x => x.Key)
             .IsRequired()
             .HasMaxLength(200);
@@ -26,7 +28,7 @@ public class SystemSettingConfiguration : IEntityTypeConfiguration<SystemSetting
         builder.Property(x => x.UpdatedByUserId)
             .HasMaxLength(450);
 
-        builder.HasIndex(x => x.Key)
+        builder.HasIndex(x => new { x.AssociationId, x.Key })
             .IsUnique();
 
         builder.HasOne(x => x.UpdatedByUser)

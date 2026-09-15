@@ -12,6 +12,8 @@ public class PlotOwnershipHistoryConfiguration : IEntityTypeConfiguration<PlotOw
 
         builder.HasKey(x => x.Id);
 
+        builder.ConfigureAssociationOwnership();
+
         builder.Property(x => x.OwnerId)
             .IsRequired()
             .HasMaxLength(450);
@@ -21,7 +23,8 @@ public class PlotOwnershipHistoryConfiguration : IEntityTypeConfiguration<PlotOw
 
         builder.HasOne(x => x.Plot)
             .WithMany(x => x.OwnershipHistory)
-            .HasForeignKey(x => x.PlotId)
+            .HasForeignKey(x => new { x.AssociationId, x.PlotId })
+            .HasPrincipalKey(x => new { x.AssociationId, x.Id })
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(x => x.Owner)

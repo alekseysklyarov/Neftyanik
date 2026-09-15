@@ -12,6 +12,8 @@ public class NewsArticleConfiguration : IEntityTypeConfiguration<NewsArticle>
 
         builder.HasKey(x => x.Id);
 
+        builder.ConfigureAssociationOwnership();
+
         builder.Property(x => x.Title)
             .IsRequired()
             .HasMaxLength(200);
@@ -26,7 +28,7 @@ public class NewsArticleConfiguration : IEntityTypeConfiguration<NewsArticle>
             .IsRequired()
             .HasMaxLength(450);
 
-        builder.HasIndex(x => new { x.IsPublished, x.PublishedAt });
+        builder.HasIndex(x => new { x.AssociationId, x.IsPublished, x.PublishedAt });
 
         builder.HasOne(x => x.CreatedByUser)
             .WithMany(x => x.CreatedNewsArticles)

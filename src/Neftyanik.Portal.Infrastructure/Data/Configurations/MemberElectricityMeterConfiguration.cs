@@ -12,6 +12,8 @@ public class MemberElectricityMeterConfiguration : IEntityTypeConfiguration<Memb
 
         builder.HasKey(x => x.Id);
 
+        builder.ConfigureAssociationOwnership();
+
         builder.Property(x => x.MeterNumber)
             .HasMaxLength(100);
 
@@ -24,23 +26,26 @@ public class MemberElectricityMeterConfiguration : IEntityTypeConfiguration<Memb
         builder.Property(x => x.CreatedByUserId)
             .HasMaxLength(450);
 
-        builder.HasIndex(x => x.MemberId);
+        builder.HasIndex(x => new { x.AssociationId, x.MemberId });
 
-        builder.HasIndex(x => x.BillingPlotId);
+        builder.HasIndex(x => new { x.AssociationId, x.BillingPlotId });
 
         builder.HasOne(x => x.Member)
             .WithMany(x => x.MemberElectricityMeters)
-            .HasForeignKey(x => x.MemberId)
+            .HasForeignKey(x => new { x.AssociationId, x.MemberId })
+            .HasPrincipalKey(x => new { x.AssociationId, x.Id })
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(x => x.BillingPlot)
             .WithMany(x => x.BillingMemberElectricityMeters)
-            .HasForeignKey(x => x.BillingPlotId)
+            .HasForeignKey(x => new { x.AssociationId, x.BillingPlotId })
+            .HasPrincipalKey(x => new { x.AssociationId, x.Id })
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasMany(x => x.Plots)
             .WithOne(x => x.MemberElectricityMeter)
-            .HasForeignKey(x => x.MemberElectricityMeterId)
+            .HasForeignKey(x => new { x.AssociationId, x.MemberElectricityMeterId })
+            .HasPrincipalKey(x => new { x.AssociationId, x.Id })
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(x => x.CreatedByUser)

@@ -12,15 +12,18 @@ public class MembershipFeeRateConfiguration : IEntityTypeConfiguration<Membershi
 
         builder.HasKey(x => x.Id);
 
+        builder.ConfigureAssociationOwnership();
+
         builder.Property(x => x.AmountPerPlot)
             .HasPrecision(18, 2);
 
-        builder.HasIndex(x => x.Year)
+        builder.HasIndex(x => new { x.AssociationId, x.Year })
             .IsUnique();
 
         builder.HasData(new MembershipFeeRate
         {
             Id = SeedDataConstants.InitialMembershipFeeRateId,
+            AssociationId = SeedDataConstants.InitialAssociationId,
             Year = 2026,
             AmountPerPlot = 500.00m,
             DueDate = SeedDataConstants.InitialMembershipFeeDueDate,

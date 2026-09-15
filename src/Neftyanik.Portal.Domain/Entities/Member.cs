@@ -3,8 +3,12 @@ using Neftyanik.Portal.Domain.Enums;
 
 namespace Neftyanik.Portal.Domain.Entities;
 
-public class Member
+public class Member : IAssociationOwned
 {
+    public int AssociationId { get; set; }
+
+    public Association? Association { get; set; }
+
     public int Id { get; set; }
 
     [Required]

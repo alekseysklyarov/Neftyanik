@@ -15,6 +15,8 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
 
         builder.HasKey(x => x.Id);
 
+        builder.ConfigureAssociationOwnership();
+
         builder.Property(x => x.CreatedByUserId)
             .HasMaxLength(450);
 
@@ -45,24 +47,26 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         builder.Property(x => x.CreatedAtUtc)
             .IsRequired();
 
-        builder.HasIndex(x => x.MemberId);
+        builder.HasIndex(x => new { x.AssociationId, x.MemberId });
 
-        builder.HasIndex(x => x.PlotId);
+        builder.HasIndex(x => new { x.AssociationId, x.PlotId });
 
-        builder.HasIndex(x => x.PaymentDate);
+        builder.HasIndex(x => new { x.AssociationId, x.PaymentDate });
 
-        builder.HasIndex(x => x.CancelledAtUtc);
+        builder.HasIndex(x => new { x.AssociationId, x.CancelledAtUtc });
 
-        builder.HasIndex(x => x.ReferenceNumber);
+        builder.HasIndex(x => new { x.AssociationId, x.ReferenceNumber });
 
         builder.HasOne(x => x.Member)
             .WithMany(x => x.Payments)
-            .HasForeignKey(x => x.MemberId)
+            .HasForeignKey(x => new { x.AssociationId, x.MemberId })
+            .HasPrincipalKey(x => new { x.AssociationId, x.Id })
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(x => x.Plot)
             .WithMany(x => x.Payments)
-            .HasForeignKey(x => x.PlotId)
+            .HasForeignKey(x => new { x.AssociationId, x.PlotId })
+            .HasPrincipalKey(x => new { x.AssociationId, x.Id })
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(x => x.CreatedByUser)

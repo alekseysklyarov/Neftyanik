@@ -16,6 +16,8 @@ public class ChargeTypeConfiguration : IEntityTypeConfiguration<ChargeType>
 
         builder.HasKey(x => x.Id);
 
+        builder.ConfigureAssociationOwnership();
+
         builder.Property(x => x.Code)
             .HasMaxLength(64)
             .IsUnicode(false);
@@ -47,13 +49,13 @@ public class ChargeTypeConfiguration : IEntityTypeConfiguration<ChargeType>
         builder.Property(x => x.CreatedAtUtc)
             .IsRequired();
 
-        builder.HasIndex(x => x.Name);
+        builder.HasIndex(x => new { x.AssociationId, x.Name });
 
-        builder.HasIndex(x => x.Code)
+        builder.HasIndex(x => new { x.AssociationId, x.Code })
             .IsUnique()
             .HasFilter("[Code] IS NOT NULL");
 
-        builder.HasIndex(x => x.IsDefault)
+        builder.HasIndex(x => new { x.AssociationId, x.IsDefault })
             .IsUnique()
             .HasFilter("[IsDefault] = 1 AND [IsActive] = 1");
     }

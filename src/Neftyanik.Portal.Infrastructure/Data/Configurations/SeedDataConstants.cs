@@ -4,6 +4,10 @@ namespace Neftyanik.Portal.Infrastructure.Data.Configurations;
 
 internal static class SeedDataConstants
 {
+    // Safe only because the Stage 1 migration creates a new Associations table.
+    public const int InitialAssociationId = 1;
+    public const string InitialAssociationSlug = "neftyanik";
+
     public const string AdministratorRoleId = "role-administrator";
     public const string AccountantRoleId = "role-accountant";
     public const string MemberRoleId = "role-member";

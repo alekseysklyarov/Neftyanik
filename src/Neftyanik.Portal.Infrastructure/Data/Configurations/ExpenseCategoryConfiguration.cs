@@ -12,6 +12,8 @@ public class ExpenseCategoryConfiguration : IEntityTypeConfiguration<ExpenseCate
 
         builder.HasKey(x => x.Id);
 
+        builder.ConfigureAssociationOwnership();
+
         builder.Property(x => x.Name)
             .IsRequired()
             .HasMaxLength(200);
@@ -22,6 +24,7 @@ public class ExpenseCategoryConfiguration : IEntityTypeConfiguration<ExpenseCate
         builder.HasData(SeedDataConstants.ExpenseCategories.Select(x => new ExpenseCategory
         {
             Id = x.Id,
+            AssociationId = SeedDataConstants.InitialAssociationId,
             Name = x.Name,
             IsActive = x.IsActive
         }));

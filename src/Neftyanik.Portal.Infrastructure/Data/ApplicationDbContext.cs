@@ -13,6 +13,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
     }
 
+    public DbSet<Association> Associations => Set<Association>();
+
     public DbSet<Plot> Plots => Set<Plot>();
 
     public DbSet<Member> Members => Set<Member>();
@@ -58,6 +60,53 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<FinancialAuditLog> FinancialAuditLogs => Set<FinancialAuditLog>();
 
 public DbSet<UserLoginHistory> UserLoginHistories => Set<UserLoginHistory>();
+
+    public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        // Assign before DetectChanges can propagate an unassigned new meter's key to an existing plot.
+        var autoDetectChanges = ChangeTracker.AutoDetectChangesEnabled;
+        ChangeTracker.AutoDetectChangesEnabled = false;
+        try
+        {
+            foreach (var entry in ChangeTracker.Entries<Association>()
+                         .Where(x => x.State != EntityState.Deleted))
+            {
+                entry.Entity.ValidateSlug();
+            }
+
+            // Stage 1 only: remove this fallback when callers supply tenant ownership in Stage 2.
+            var unassigned = ChangeTracker.Entries<IAssociationOwned>()
+                .Where(x => x.State == EntityState.Added && x.Entity.AssociationId == 0 && x.Entity.Association is null)
+                .ToArray();
+
+            if (unassigned.Length > 0)
+            {
+                var associationId = await Associations.AsNoTracking()
+                    .Where(x => x.Slug == SeedDataConstants.InitialAssociationSlug && x.IsActive)
+                    .Select(x => (int?)x.Id)
+                    .SingleOrDefaultAsync(cancellationToken);
+
+                if (associationId is null)
+                {
+                    throw new InvalidOperationException("Stage 1 compatibility requires the existing active 'neftyanik' association. Apply the association foundation migration before writing business data.");
+                }
+
+                foreach (var entry in unassigned)
+                {
+                    if (entry.Entity.AssociationId == 0)
+                    {
+                        entry.Property(x => x.AssociationId).CurrentValue = associationId.Value;
+                    }
+                }
+            }
+        }
+        finally
+        {
+            ChangeTracker.AutoDetectChangesEnabled = autoDetectChanges;
+        }
+
+        return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

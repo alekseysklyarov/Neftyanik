@@ -1,7 +1,11 @@
 namespace Neftyanik.Portal.Domain.Entities;
 
-public class SystemSetting
+public class SystemSetting : IAssociationOwned
 {
+    public int AssociationId { get; set; }
+
+    public Association? Association { get; set; }
+
     public int Id { get; set; }
 
     public string Key { get; set; } = string.Empty;

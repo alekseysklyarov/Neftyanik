@@ -3,8 +3,12 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Neftyanik.Portal.Domain.Entities;
 
-public class PaymentNotification : IValidatableObject
+public class PaymentNotification : IValidatableObject, IAssociationOwned
 {
+    public int AssociationId { get; set; }
+
+    public Association? Association { get; set; }
+
     public const int DescriptionMaxLength = 1000;
     public const int AdministratorCommentMaxLength = 1000;
 

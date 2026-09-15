@@ -16,6 +16,8 @@ public class PaymentNotificationConfiguration : IEntityTypeConfiguration<Payment
 
         builder.HasKey(x => x.Id);
 
+        builder.ConfigureAssociationOwnership();
+
         builder.Property(x => x.Amount)
             .HasPrecision(18, 2);
 
@@ -42,15 +44,16 @@ public class PaymentNotificationConfiguration : IEntityTypeConfiguration<Payment
             .HasDefaultValue(0)
             .IsConcurrencyToken();
 
-        builder.HasIndex(x => x.MemberId);
-        builder.HasIndex(x => x.Status);
-        builder.HasIndex(x => x.CreatedAtUtc);
-        builder.HasIndex(x => x.PaymentId)
+        builder.HasIndex(x => new { x.AssociationId, x.MemberId });
+        builder.HasIndex(x => new { x.AssociationId, x.Status });
+        builder.HasIndex(x => new { x.AssociationId, x.CreatedAtUtc });
+        builder.HasIndex(x => new { x.AssociationId, x.PaymentId })
             .IsUnique();
 
         builder.HasOne(x => x.Member)
             .WithMany(x => x.PaymentNotifications)
-            .HasForeignKey(x => x.MemberId)
+            .HasForeignKey(x => new { x.AssociationId, x.MemberId })
+            .HasPrincipalKey(x => new { x.AssociationId, x.Id })
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(x => x.ReviewedByUser)
@@ -60,7 +63,8 @@ public class PaymentNotificationConfiguration : IEntityTypeConfiguration<Payment
 
         builder.HasOne(x => x.Payment)
             .WithOne(x => x.PaymentNotification)
-            .HasForeignKey<PaymentNotification>(x => x.PaymentId)
+            .HasForeignKey<PaymentNotification>(x => new { x.AssociationId, x.PaymentId })
+            .HasPrincipalKey<Payment>(x => new { x.AssociationId, x.Id })
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

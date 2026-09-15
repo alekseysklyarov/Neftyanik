@@ -18,6 +18,8 @@ public class ChargeConfiguration : IEntityTypeConfiguration<Charge>
 
         builder.HasKey(x => x.Id);
 
+        builder.ConfigureAssociationOwnership();
+
         builder.Property(x => x.Amount)
             .IsRequired()
             .HasPrecision(18, 2);
@@ -47,24 +49,26 @@ public class ChargeConfiguration : IEntityTypeConfiguration<Charge>
         builder.Property(x => x.CreatedAtUtc)
             .IsRequired();
 
-        builder.HasIndex(x => x.PlotId);
+        builder.HasIndex(x => new { x.AssociationId, x.PlotId });
 
-        builder.HasIndex(x => x.ChargeTypeId);
+        builder.HasIndex(x => new { x.AssociationId, x.ChargeTypeId });
 
-        builder.HasIndex(x => x.ChargeDate);
+        builder.HasIndex(x => new { x.AssociationId, x.ChargeDate });
 
-        builder.HasIndex(x => x.DueDate);
+        builder.HasIndex(x => new { x.AssociationId, x.DueDate });
 
-        builder.HasIndex(x => x.CancelledAtUtc);
+        builder.HasIndex(x => new { x.AssociationId, x.CancelledAtUtc });
 
         builder.HasOne(x => x.Plot)
             .WithMany(x => x.Charges)
-            .HasForeignKey(x => x.PlotId)
+            .HasForeignKey(x => new { x.AssociationId, x.PlotId })
+            .HasPrincipalKey(x => new { x.AssociationId, x.Id })
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(x => x.ChargeType)
             .WithMany(x => x.Charges)
-            .HasForeignKey(x => x.ChargeTypeId)
+            .HasForeignKey(x => new { x.AssociationId, x.ChargeTypeId })
+            .HasPrincipalKey(x => new { x.AssociationId, x.Id })
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(x => x.CreatedByUser)

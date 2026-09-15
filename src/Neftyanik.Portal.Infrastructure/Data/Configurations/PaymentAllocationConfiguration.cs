@@ -12,21 +12,25 @@ public class PaymentAllocationConfiguration : IEntityTypeConfiguration<PaymentAl
 
         builder.HasKey(x => x.Id);
 
+        builder.ConfigureAssociationOwnership();
+
         builder.Property(x => x.Amount)
             .HasPrecision(18, 2);
 
-        builder.HasIndex(x => x.PaymentId);
+        builder.HasIndex(x => new { x.AssociationId, x.PaymentId });
 
-        builder.HasIndex(x => x.ChargeId);
+        builder.HasIndex(x => new { x.AssociationId, x.ChargeId });
 
         builder.HasOne(x => x.Payment)
             .WithMany(x => x.PaymentAllocations)
-            .HasForeignKey(x => x.PaymentId)
+            .HasForeignKey(x => new { x.AssociationId, x.PaymentId })
+            .HasPrincipalKey(x => new { x.AssociationId, x.Id })
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(x => x.Charge)
             .WithMany(x => x.PaymentAllocations)
-            .HasForeignKey(x => x.ChargeId)
+            .HasForeignKey(x => new { x.AssociationId, x.ChargeId })
+            .HasPrincipalKey(x => new { x.AssociationId, x.Id })
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

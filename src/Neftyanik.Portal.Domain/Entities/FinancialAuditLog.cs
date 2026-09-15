@@ -1,7 +1,11 @@
 namespace Neftyanik.Portal.Domain.Entities;
 
-public class FinancialAuditLog
+public class FinancialAuditLog : IAssociationOwned
 {
+    public int AssociationId { get; set; }
+
+    public Association? Association { get; set; }
+
     public const int ActionMaxLength = 50;
     public const int EntityTypeMaxLength = 100;
     public const int EntityIdMaxLength = 100;

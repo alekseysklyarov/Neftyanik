@@ -12,6 +12,8 @@ public class ExpenseConfiguration : IEntityTypeConfiguration<Expense>
 
         builder.HasKey(x => x.Id);
 
+        builder.ConfigureAssociationOwnership();
+
         builder.Property(x => x.Amount)
             .HasPrecision(18, 2);
 
@@ -35,15 +37,16 @@ public class ExpenseConfiguration : IEntityTypeConfiguration<Expense>
             .IsRequired()
             .HasMaxLength(450);
 
-        builder.HasIndex(x => x.AssociationElectricityReadingId)
+        builder.HasIndex(x => new { x.AssociationId, x.AssociationElectricityReadingId })
             .IsUnique()
             .HasFilter("[AssociationElectricityReadingId] IS NOT NULL");
 
-        builder.HasIndex(x => x.ExpenseDate);
+        builder.HasIndex(x => new { x.AssociationId, x.ExpenseDate });
 
         builder.HasOne(x => x.ExpenseCategory)
             .WithMany(x => x.Expenses)
-            .HasForeignKey(x => x.ExpenseCategoryId)
+            .HasForeignKey(x => new { x.AssociationId, x.ExpenseCategoryId })
+            .HasPrincipalKey(x => new { x.AssociationId, x.Id })
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(x => x.CreatedByUser)
@@ -53,7 +56,8 @@ public class ExpenseConfiguration : IEntityTypeConfiguration<Expense>
 
         builder.HasOne(x => x.AssociationElectricityReading)
             .WithOne(x => x.SupplierExpense)
-            .HasForeignKey<Expense>(x => x.AssociationElectricityReadingId)
+            .HasForeignKey<Expense>(x => new { x.AssociationId, x.AssociationElectricityReadingId })
+            .HasPrincipalKey<AssociationElectricityReading>(x => new { x.AssociationId, x.Id })
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.Ignore(x => x.CategoryId);

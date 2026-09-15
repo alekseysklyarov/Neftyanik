@@ -12,6 +12,8 @@ public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
 
         builder.HasKey(x => x.Id);
 
+        builder.ConfigureAssociationOwnership();
+
         builder.Property(x => x.UserId)
             .HasMaxLength(450);
 
@@ -29,7 +31,7 @@ public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
         builder.Property(x => x.IpAddress)
             .HasMaxLength(45);
 
-        builder.HasIndex(x => new { x.EntityType, x.EntityId });
+        builder.HasIndex(x => new { x.AssociationId, x.EntityType, x.EntityId });
 
         builder.HasOne(x => x.User)
             .WithMany(x => x.AuditLogs)

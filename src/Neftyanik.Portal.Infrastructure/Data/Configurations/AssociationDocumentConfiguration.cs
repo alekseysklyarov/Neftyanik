@@ -12,6 +12,8 @@ public class AssociationDocumentConfiguration : IEntityTypeConfiguration<Associa
 
         builder.HasKey(x => x.Id);
 
+        builder.ConfigureAssociationOwnership();
+
         builder.Property(x => x.Title)
             .IsRequired()
             .HasMaxLength(200);

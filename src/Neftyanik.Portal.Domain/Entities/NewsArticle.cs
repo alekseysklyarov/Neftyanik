@@ -1,7 +1,11 @@
 namespace Neftyanik.Portal.Domain.Entities;
 
-public class NewsArticle
+public class NewsArticle : IAssociationOwned
 {
+    public int AssociationId { get; set; }
+
+    public Association? Association { get; set; }
+
     public int Id { get; set; }
 
     public string Title { get; set; } = string.Empty;

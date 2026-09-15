@@ -12,6 +12,8 @@ public class PlotConfiguration : IEntityTypeConfiguration<Plot>
 
         builder.HasKey(x => x.Id);
 
+        builder.ConfigureAssociationOwnership();
+
         builder.Property(x => x.Number)
             .IsRequired()
             .HasMaxLength(50)
@@ -38,16 +40,17 @@ public class PlotConfiguration : IEntityTypeConfiguration<Plot>
         builder.Property(x => x.CreatedAtUtc)
             .IsRequired();
 
-        builder.HasIndex(x => x.Number)
+        builder.HasIndex(x => new { x.AssociationId, x.Number })
             .IsUnique();
 
-        builder.HasIndex(x => x.CadastralNumber);
+        builder.HasIndex(x => new { x.AssociationId, x.CadastralNumber });
 
-        builder.HasIndex(x => x.MemberElectricityMeterId);
+        builder.HasIndex(x => new { x.AssociationId, x.MemberElectricityMeterId });
 
         builder.HasOne(x => x.MemberElectricityMeter)
             .WithMany(x => x.Plots)
-            .HasForeignKey(x => x.MemberElectricityMeterId)
+            .HasForeignKey(x => new { x.AssociationId, x.MemberElectricityMeterId })
+            .HasPrincipalKey(x => new { x.AssociationId, x.Id })
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

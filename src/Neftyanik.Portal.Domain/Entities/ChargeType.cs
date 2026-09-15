@@ -2,8 +2,12 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Neftyanik.Portal.Domain.Entities;
 
-public class ChargeType : IValidatableObject
+public class ChargeType : IValidatableObject, IAssociationOwned
 {
+    public int AssociationId { get; set; }
+
+    public Association? Association { get; set; }
+
     public int Id { get; set; }
 
     [StringLength(64)]

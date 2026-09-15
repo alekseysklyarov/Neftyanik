@@ -1,7 +1,11 @@
 namespace Neftyanik.Portal.Domain.Entities;
 
-public class MemberElectricityTariff
+public class MemberElectricityTariff : IAssociationOwned
 {
+    public int AssociationId { get; set; }
+
+    public Association? Association { get; set; }
+
     public int Id { get; set; }
 
     public DateOnly EffectiveFrom { get; set; }

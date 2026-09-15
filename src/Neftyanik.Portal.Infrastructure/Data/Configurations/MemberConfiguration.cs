@@ -13,6 +13,8 @@ public class MemberConfiguration : IEntityTypeConfiguration<Member>
 
         builder.HasKey(x => x.Id);
 
+        builder.ConfigureAssociationOwnership();
+
         builder.Property(x => x.FullName)
             .IsRequired()
             .HasMaxLength(200)
@@ -46,9 +48,9 @@ public class MemberConfiguration : IEntityTypeConfiguration<Member>
         builder.Property(x => x.CreatedAtUtc)
             .IsRequired();
 
-        builder.HasIndex(x => x.FullName);
+        builder.HasIndex(x => new { x.AssociationId, x.FullName });
 
-        builder.HasIndex(x => x.Email);
+        builder.HasIndex(x => new { x.AssociationId, x.Email });
 
         builder.HasOne(x => x.ApplicationUser)
             .WithMany(x => x.Members)

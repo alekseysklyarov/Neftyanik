@@ -11,7 +11,7 @@ public class MemberOwnershipQueriesTests
     [Fact]
     public async Task WhereCurrentForMember_WhenOwnershipBeginsToday_ReturnsOwnership()
     {
-        await using var context = CreateContext();
+        await using var context = await CreateContextAsync();
         var currentDate = new DateOnly(2026, 5, 10);
 
         context.PlotOwnerships.Add(new PlotOwnership
@@ -37,7 +37,7 @@ public class MemberOwnershipQueriesTests
     [Fact]
     public async Task WhereCurrentForMember_WhenOwnershipBeginsTomorrow_DoesNotReturnOwnership()
     {
-        await using var context = CreateContext();
+        await using var context = await CreateContextAsync();
         var currentDate = new DateOnly(2026, 5, 10);
 
         context.PlotOwnerships.Add(new PlotOwnership
@@ -62,7 +62,7 @@ public class MemberOwnershipQueriesTests
     [Fact]
     public async Task WhereCurrentForMember_WhenOwnershipEndsToday_ReturnsOwnership()
     {
-        await using var context = CreateContext();
+        await using var context = await CreateContextAsync();
         var currentDate = new DateOnly(2026, 5, 10);
 
         context.PlotOwnerships.Add(new PlotOwnership
@@ -89,7 +89,7 @@ public class MemberOwnershipQueriesTests
     [Fact]
     public async Task WhereCurrentForMember_WhenOwnershipEndedYesterday_DoesNotReturnOwnership()
     {
-        await using var context = CreateContext();
+        await using var context = await CreateContextAsync();
         var currentDate = new DateOnly(2026, 5, 10);
 
         context.PlotOwnerships.Add(new PlotOwnership
@@ -115,7 +115,7 @@ public class MemberOwnershipQueriesTests
     [Fact]
     public async Task WhereCurrentForMember_WhenOwnershipHasNoEndDateAndPastStart_ReturnsOwnership()
     {
-        await using var context = CreateContext();
+        await using var context = await CreateContextAsync();
         var currentDate = new DateOnly(2026, 5, 10);
 
         context.PlotOwnerships.Add(new PlotOwnership
@@ -141,7 +141,7 @@ public class MemberOwnershipQueriesTests
     [Fact]
     public async Task WhereCurrentForMember_WhenValidFromIsNull_TreatsOwnershipAsCurrent()
     {
-        await using var context = CreateContext();
+        await using var context = await CreateContextAsync();
         var currentDate = new DateOnly(2026, 5, 10);
 
         context.PlotOwnerships.Add(new PlotOwnership
@@ -168,7 +168,7 @@ public class MemberOwnershipQueriesTests
     [Fact]
     public async Task WhereCurrentForMember_DoesNotReturnAnotherMembersOwnership()
     {
-        await using var context = CreateContext();
+        await using var context = await CreateContextAsync();
         var currentDate = new DateOnly(2026, 5, 10);
 
         context.PlotOwnerships.AddRange(
@@ -200,12 +200,14 @@ public class MemberOwnershipQueriesTests
         Assert.DoesNotContain(2, ownershipIds);
     }
 
-    private static ApplicationDbContext CreateContext()
+    private static async Task<ApplicationDbContext> CreateContextAsync()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
 
-        return new ApplicationDbContext(options);
+        var context = new ApplicationDbContext(options);
+        await context.Database.EnsureCreatedAsync();
+        return context;
     }
 }

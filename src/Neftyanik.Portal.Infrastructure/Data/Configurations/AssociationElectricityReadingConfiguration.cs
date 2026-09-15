@@ -24,6 +24,8 @@ public class AssociationElectricityReadingConfiguration : IEntityTypeConfigurati
 
         builder.HasKey(x => x.Id);
 
+        builder.ConfigureAssociationOwnership();
+
         builder.Property(x => x.ReadingDate)
             .HasColumnType("date");
 
@@ -69,10 +71,10 @@ public class AssociationElectricityReadingConfiguration : IEntityTypeConfigurati
         builder.Property(x => x.CreatedByUserId)
             .HasMaxLength(450);
 
-        builder.HasIndex(x => x.ReadingDate)
+        builder.HasIndex(x => new { x.AssociationId, x.ReadingDate })
             .IsUnique();
 
-        builder.HasIndex(x => x.IsInitialReading)
+        builder.HasIndex(x => new { x.AssociationId, x.IsInitialReading })
             .IsUnique()
             .HasFilter("[IsInitialReading] = 1");
 

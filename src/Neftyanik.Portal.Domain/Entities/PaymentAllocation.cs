@@ -1,7 +1,11 @@
 namespace Neftyanik.Portal.Domain.Entities;
 
-public class PaymentAllocation
+public class PaymentAllocation : IAssociationOwned
 {
+    public int AssociationId { get; set; }
+
+    public Association? Association { get; set; }
+
     public long Id { get; set; }
 
     public long PaymentId { get; set; }

@@ -11,23 +11,23 @@ namespace Neftyanik.Portal.Infrastructure.Tests;
 public class ElectricityModelTests
 {
     [Fact]
-    public void AssociationElectricityReading_HasUniqueIndex_OnReadingDate()
+    public void AssociationElectricityReading_HasUniqueIndex_OnAssociationAndReadingDate()
     {
         using var context = CreateContext();
         var entityType = context.Model.FindEntityType(typeof(AssociationElectricityReading));
 
-        var index = entityType!.GetIndexes().Single(x => x.Properties.Select(p => p.Name).SequenceEqual([nameof(AssociationElectricityReading.ReadingDate)]));
+        var index = entityType!.GetIndexes().Single(x => x.Properties.Select(p => p.Name).SequenceEqual([nameof(AssociationElectricityReading.AssociationId), nameof(AssociationElectricityReading.ReadingDate)]));
 
         Assert.True(index.IsUnique);
     }
 
     [Fact]
-    public void AssociationElectricityTariff_HasUniqueIndex_OnEffectiveFrom()
+    public void AssociationElectricityTariff_HasUniqueIndex_OnAssociationAndEffectiveFrom()
     {
         using var context = CreateContext();
         var entityType = context.Model.FindEntityType(typeof(AssociationElectricityTariff));
 
-        var index = entityType!.GetIndexes().Single(x => x.Properties.Select(p => p.Name).SequenceEqual([nameof(AssociationElectricityTariff.EffectiveFrom)]));
+        var index = entityType!.GetIndexes().Single(x => x.Properties.Select(p => p.Name).SequenceEqual([nameof(AssociationElectricityTariff.AssociationId), nameof(AssociationElectricityTariff.EffectiveFrom)]));
 
         Assert.True(index.IsUnique);
     }

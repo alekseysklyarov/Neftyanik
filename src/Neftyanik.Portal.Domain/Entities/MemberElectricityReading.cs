@@ -1,7 +1,11 @@
 namespace Neftyanik.Portal.Domain.Entities;
 
-public class MemberElectricityReading
+public class MemberElectricityReading : IAssociationOwned
 {
+    public int AssociationId { get; set; }
+
+    public Association? Association { get; set; }
+
     public long Id { get; set; }
 
     public int MemberElectricityMeterId { get; set; }

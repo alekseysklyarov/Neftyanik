@@ -13,6 +13,8 @@ public class FinancialAuditLogConfiguration : IEntityTypeConfiguration<Financial
 
         builder.HasKey(x => x.Id);
 
+        builder.ConfigureAssociationOwnership();
+
         builder.Property(x => x.CreatedAtUtc)
             .IsRequired();
 
@@ -38,8 +40,8 @@ public class FinancialAuditLogConfiguration : IEntityTypeConfiguration<Financial
             .HasMaxLength(FinancialAuditLog.DescriptionMaxLength)
             .IsUnicode();
 
-        builder.HasIndex(x => x.CreatedAtUtc);
+        builder.HasIndex(x => new { x.AssociationId, x.CreatedAtUtc });
         builder.HasIndex(x => x.UserId);
-        builder.HasIndex(x => new { x.EntityType, x.EntityId });
+        builder.HasIndex(x => new { x.AssociationId, x.EntityType, x.EntityId });
     }
 }

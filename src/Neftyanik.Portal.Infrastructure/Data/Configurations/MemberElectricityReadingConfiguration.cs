@@ -19,6 +19,8 @@ public class MemberElectricityReadingConfiguration : IEntityTypeConfiguration<Me
 
         builder.HasKey(x => x.Id);
 
+        builder.ConfigureAssociationOwnership();
+
         builder.Property(x => x.ReadingDate)
             .HasColumnType("date");
 
@@ -43,25 +45,27 @@ public class MemberElectricityReadingConfiguration : IEntityTypeConfiguration<Me
         builder.Property(x => x.CreatedByUserId)
             .HasMaxLength(450);
 
-        builder.HasIndex(x => new { x.MemberElectricityMeterId, x.ReadingDate })
+        builder.HasIndex(x => new { x.AssociationId, x.MemberElectricityMeterId, x.ReadingDate })
             .IsUnique();
 
-        builder.HasIndex(x => new { x.MemberElectricityMeterId, x.IsInitialReading })
+        builder.HasIndex(x => new { x.AssociationId, x.MemberElectricityMeterId, x.IsInitialReading })
             .IsUnique()
             .HasFilter("[IsInitialReading] = 1");
 
-        builder.HasIndex(x => x.ChargeId)
+        builder.HasIndex(x => new { x.AssociationId, x.ChargeId })
             .IsUnique()
             .HasFilter("[ChargeId] IS NOT NULL");
 
         builder.HasOne(x => x.MemberElectricityMeter)
             .WithMany(x => x.Readings)
-            .HasForeignKey(x => x.MemberElectricityMeterId)
+            .HasForeignKey(x => new { x.AssociationId, x.MemberElectricityMeterId })
+            .HasPrincipalKey(x => new { x.AssociationId, x.Id })
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(x => x.Charge)
             .WithOne(x => x.MemberElectricityReading)
-            .HasForeignKey<MemberElectricityReading>(x => x.ChargeId)
+            .HasForeignKey<MemberElectricityReading>(x => new { x.AssociationId, x.ChargeId })
+            .HasPrincipalKey<Charge>(x => new { x.AssociationId, x.Id })
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(x => x.CreatedByUser)

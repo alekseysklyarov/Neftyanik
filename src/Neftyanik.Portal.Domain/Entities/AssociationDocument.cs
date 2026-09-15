@@ -2,8 +2,12 @@ using Neftyanik.Portal.Domain.Enums;
 
 namespace Neftyanik.Portal.Domain.Entities;
 
-public class AssociationDocument
+public class AssociationDocument : IAssociationOwned
 {
+    public int AssociationId { get; set; }
+
+    public Association? Association { get; set; }
+
     public int Id { get; set; }
 
     public string Title { get; set; } = string.Empty;

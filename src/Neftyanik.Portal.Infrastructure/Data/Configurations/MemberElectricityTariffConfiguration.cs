@@ -16,6 +16,8 @@ public class MemberElectricityTariffConfiguration : IEntityTypeConfiguration<Mem
 
         builder.HasKey(x => x.Id);
 
+        builder.ConfigureAssociationOwnership();
+
         builder.Property(x => x.EffectiveFrom)
             .HasColumnType("date");
 
@@ -31,7 +33,7 @@ public class MemberElectricityTariffConfiguration : IEntityTypeConfiguration<Mem
         builder.Property(x => x.CreatedByUserId)
             .HasMaxLength(450);
 
-        builder.HasIndex(x => x.EffectiveFrom)
+        builder.HasIndex(x => new { x.AssociationId, x.EffectiveFrom })
             .IsUnique();
 
         builder.HasOne(x => x.CreatedByUser)
