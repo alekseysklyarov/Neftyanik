@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Neftyanik.Portal.Application.Identity;
+using Neftyanik.Portal.Application.Associations;
 using Neftyanik.Portal.Domain.Entities;
 
 namespace Neftyanik.Portal.Web.Pages.Account;
@@ -12,8 +13,9 @@ public class LoginModel : LoginPageModelBase
     public LoginModel(
         SignInManager<ApplicationUser> signInManager,
         IUserActivityService userActivityService,
-        ILogger<LoginModel> logger)
-        : base(signInManager, userActivityService, logger)
+        ILogger<LoginModel> logger,
+        IAssociationMembershipService memberships)
+        : base(signInManager, userActivityService, logger, memberships)
     {
     }
 

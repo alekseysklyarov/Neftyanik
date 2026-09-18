@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Infrastructure.Data;
+using Neftyanik.Portal.Infrastructure.Data.Queries;
 using Neftyanik.Portal.Web.Localization;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Finance.Expenses;
@@ -53,6 +54,7 @@ public class IndexModel : PageModel
         Status = NormalizeStatus(Status);
         Kind = NormalizeKind(Kind);
         PageNumber = PageNumber < 1 ? 1 : PageNumber;
+        var electricityCategoryId = await _dbContext.GetElectricityExpenseCategoryIdAsync(cancellationToken);
 
         ExpenseCategoryOptions = await _dbContext.ExpenseCategories
             .AsNoTracking()
@@ -109,8 +111,8 @@ public class IndexModel : PageModel
 
         query = Kind switch
         {
-            "electricity" => query.Where(item => item.ExpenseCategoryId == Neftyanik.Portal.Domain.Constants.ExpenseCategoryIds.ElectricityPayment),
-            "manual" => query.Where(item => item.ExpenseCategoryId != Neftyanik.Portal.Domain.Constants.ExpenseCategoryIds.ElectricityPayment),
+            "electricity" => query.Where(item => item.ExpenseCategoryId == electricityCategoryId),
+            "manual" => query.Where(item => item.ExpenseCategoryId != electricityCategoryId),
             _ => query
         };
 
@@ -158,8 +160,8 @@ public class IndexModel : PageModel
         Summary = new ExpenseSummaryViewModel
         {
             TotalActiveExpenses = await _dbContext.Expenses.AsNoTracking().Where(item => !item.IsCancelled).SumAsync(item => (decimal?)item.Amount, cancellationToken) ?? 0m,
-            ElectricityExpenses = await _dbContext.Expenses.AsNoTracking().Where(item => !item.IsCancelled && item.ExpenseCategoryId == Neftyanik.Portal.Domain.Constants.ExpenseCategoryIds.ElectricityPayment).SumAsync(item => (decimal?)item.Amount, cancellationToken) ?? 0m,
-            ManualExpenses = await _dbContext.Expenses.AsNoTracking().Where(item => !item.IsCancelled && item.ExpenseCategoryId != Neftyanik.Portal.Domain.Constants.ExpenseCategoryIds.ElectricityPayment).SumAsync(item => (decimal?)item.Amount, cancellationToken) ?? 0m,
+            ElectricityExpenses = await _dbContext.Expenses.AsNoTracking().Where(item => !item.IsCancelled && item.ExpenseCategoryId == electricityCategoryId).SumAsync(item => (decimal?)item.Amount, cancellationToken) ?? 0m,
+            ManualExpenses = await _dbContext.Expenses.AsNoTracking().Where(item => !item.IsCancelled && item.ExpenseCategoryId != electricityCategoryId).SumAsync(item => (decimal?)item.Amount, cancellationToken) ?? 0m,
             ActiveExpensesCount = await _dbContext.Expenses.AsNoTracking().CountAsync(item => !item.IsCancelled, cancellationToken)
         };
 

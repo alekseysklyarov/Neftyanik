@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Neftyanik.Portal.Application.Identity;
+using Neftyanik.Portal.Application.Associations;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Web.Pages.Account;
 
@@ -14,8 +15,9 @@ public class IndexModel : LoginPageModelBase
     public IndexModel(
         SignInManager<ApplicationUser> signInManager,
         IUserActivityService userActivityService,
-        ILogger<IndexModel> logger)
-        : base(signInManager, userActivityService, logger)
+        ILogger<IndexModel> logger,
+        IAssociationMembershipService memberships)
+        : base(signInManager, userActivityService, logger, memberships)
     {
     }
 

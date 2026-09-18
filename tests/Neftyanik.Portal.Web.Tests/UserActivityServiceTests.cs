@@ -37,6 +37,7 @@ public class UserActivityServiceTests
             new UserLoginHistory { UserId = "user-3", LoggedInAtUtc = fixedUtcNow.AddDays(-20) },
             new UserLoginHistory { UserId = "user-4", LoggedInAtUtc = fixedUtcNow.AddDays(-40) });
 
+        AttributeFixtureData(dbContext);
         await dbContext.SaveChangesAsync();
 
         var service = new UserActivityService(dbContext, new FixedTimeProvider(fixedUtcNow));
@@ -88,6 +89,7 @@ public class UserActivityServiceTests
             new UserLoginHistory { UserId = "user-1", LoggedInAtUtc = fixedUtcNow.AddHours(-3) },
             new UserLoginHistory { UserId = "user-2", LoggedInAtUtc = fixedUtcNow.AddDays(-15) });
 
+        AttributeFixtureData(dbContext);
         await dbContext.SaveChangesAsync();
 
         var service = new UserActivityService(dbContext, new FixedTimeProvider(fixedUtcNow));
@@ -124,6 +126,7 @@ public class UserActivityServiceTests
         await dbContext.Database.EnsureCreatedAsync();
 
         dbContext.Users.Add(CreateUser("user-1", "user1@example.com"));
+        AttributeFixtureData(dbContext);
         await dbContext.SaveChangesAsync();
 
         var service = new UserActivityService(dbContext, new FixedTimeProvider(fixedUtcNow));
@@ -139,6 +142,18 @@ public class UserActivityServiceTests
         Assert.Equal(fixedUtcNow, history.LoggedInAtUtc);
         Assert.Equal(UserLoginHistory.IpAddressMaxLength, history.IpAddress?.Length);
         Assert.Equal(UserLoginHistory.UserAgentMaxLength, history.UserAgent?.Length);
+    }
+
+    private static void AttributeFixtureData(ApplicationDbContext database)
+    {
+        database.AssociationUserMemberships.AddRange(database.Users.Local.Select(user => new AssociationUserMembership
+        {
+            ApplicationUserId = user.Id, Role = "Member"
+        }).ToArray());
+        database.AssociationLoginEvents.AddRange(database.UserLoginHistories.Local.Select(history => new AssociationLoginEvent
+        {
+            UserLoginHistory = history
+        }).ToArray());
     }
 
     private static ApplicationUser CreateUser(string id, string userName, string? displayName = null)

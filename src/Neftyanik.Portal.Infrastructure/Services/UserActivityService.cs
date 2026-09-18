@@ -21,6 +21,11 @@ public class UserActivityService : IUserActivityService
     public async Task RecordSuccessfulLoginAsync(RecordSuccessfulLoginRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(request.UserId);
+        if (!await _dbContext.AssociationUserMemberships.AsNoTracking()
+            .AnyAsync(x => x.ApplicationUserId == request.UserId && x.IsActive, cancellationToken))
+        {
+            throw new Neftyanik.Portal.Application.Associations.AssociationIsolationException("Active membership is required to record association login activity.");
+        }
 
         var history = new UserLoginHistory
         {
@@ -31,13 +36,14 @@ public class UserActivityService : IUserActivityService
         };
 
         _dbContext.UserLoginHistories.Add(history);
+        _dbContext.AssociationLoginEvents.Add(new AssociationLoginEvent { UserLoginHistory = history });
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<UserActivityDashboardSummary> GetDashboardSummaryAsync(CancellationToken cancellationToken = default)
     {
         var boundaries = CreateBoundaries();
-        var totalRegisteredUsers = await _dbContext.Users.AsNoTracking().CountAsync(cancellationToken);
+        var totalRegisteredUsers = await AssociationUsers.CountAsync(cancellationToken);
         var loginSummaries = await GetLoginSummariesAsync(cancellationToken);
 
         var everLoggedInUsers = loginSummaries.Count;
@@ -56,8 +62,7 @@ public class UserActivityService : IUserActivityService
     public async Task<IReadOnlyList<UserActivityListItem>> GetUserActivityAsync(CancellationToken cancellationToken = default)
     {
         var boundaries = CreateBoundaries();
-        var users = await _dbContext.Users
-            .AsNoTracking()
+        var users = await AssociationUsers
             .Select(user => new UserRecord(
                 user.Id,
                 user.UserName,
@@ -122,8 +127,10 @@ public class UserActivityService : IUserActivityService
 
     private async Task<List<UserLoginSummaryRecord>> GetLoginSummariesAsync(CancellationToken cancellationToken)
     {
-        var loginEvents = await _dbContext.UserLoginHistories
+        var loginEvents = await _dbContext.AssociationLoginEvents
             .AsNoTracking()
+            .Where(x => AssociationUsers.Any(user => user.Id == x.UserLoginHistory.UserId))
+            .Select(x => x.UserLoginHistory)
             .ToListAsync(cancellationToken);
 
         return loginEvents
@@ -134,6 +141,9 @@ public class UserActivityService : IUserActivityService
                 group.Max(history => history.LoggedInAtUtc)))
             .ToList();
     }
+
+    private IQueryable<ApplicationUser> AssociationUsers => _dbContext.Users.AsNoTracking()
+        .Where(user => _dbContext.AssociationUserMemberships.Any(membership => membership.ApplicationUserId == user.Id));
 
     private BoundaryContext CreateBoundaries()
     {

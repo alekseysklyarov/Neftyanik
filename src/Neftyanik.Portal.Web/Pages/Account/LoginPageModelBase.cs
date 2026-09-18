@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Neftyanik.Portal.Application.Identity;
+using Neftyanik.Portal.Application.Associations;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Web.Localization;
@@ -14,15 +15,18 @@ public abstract class LoginPageModelBase : PageModel
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly IUserActivityService _userActivityService;
     private readonly ILogger _logger;
+    private readonly IAssociationMembershipService _memberships;
 
     protected LoginPageModelBase(
         SignInManager<ApplicationUser> signInManager,
         IUserActivityService userActivityService,
-        ILogger logger)
+        ILogger logger,
+        IAssociationMembershipService memberships)
     {
         _signInManager = signInManager;
         _userActivityService = userActivityService;
         _logger = logger;
+        _memberships = memberships;
     }
 
     [BindProperty]
@@ -52,7 +56,14 @@ public abstract class LoginPageModelBase : PageModel
             ?? await _signInManager.UserManager.FindByEmailAsync(login);
         var userName = user?.UserName ?? login;
 
-        var signInResult = await _signInManager.PasswordSignInAsync(userName, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+        var signInResult = user is null ? Microsoft.AspNetCore.Identity.SignInResult.Failed
+            : await _signInManager.CheckPasswordSignInAsync(user, Input.Password, lockoutOnFailure: false);
+        if (signInResult.Succeeded)
+        {
+            var roles = await _memberships.GetRolesAsync(user!.Id, HttpContext.RequestAborted);
+            signInResult = roles.Count == 0 ? Microsoft.AspNetCore.Identity.SignInResult.Failed
+                : await _signInManager.PasswordSignInAsync(userName, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+        }
         if (signInResult.Succeeded)
         {
             var signedInUser = user ?? await _signInManager.UserManager.FindByNameAsync(userName);
@@ -105,13 +116,19 @@ public abstract class LoginPageModelBase : PageModel
 
     protected async Task<IActionResult> RedirectAuthenticatedUserAsync(ApplicationUser? user, string? returnUrl = null)
     {
+        var roles = user is null ? Array.Empty<string>()
+            : await _memberships.GetRolesAsync(user.Id, HttpContext.RequestAborted);
+        if (roles.Count == 0)
+        {
+            return RedirectToPage("/Account/AccessDenied");
+        }
         if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
             && Neftyanik.Portal.Web.Associations.TenantReturnUrls.IsWithinAssociation(Request, returnUrl))
         {
             return LocalRedirect(returnUrl);
         }
 
-        if (user is not null && await _signInManager.UserManager.IsInRoleAsync(user, RoleNames.Administrator))
+        if (roles.Contains(RoleNames.Administrator) || roles.Contains(RoleNames.Accountant))
         {
             return RedirectToPage("/Administration/Index");
         }

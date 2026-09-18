@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data;
@@ -56,43 +57,27 @@ public class RolesModel : MemberAccountPageModelBase
             return RedirectToPage("/Administration/Members/Details", new { id = memberId });
         }
 
-        var isAccountant = CurrentRoles.Any(role => string.Equals(role, RoleNames.Accountant, StringComparison.OrdinalIgnoreCase));
-        IdentityResult roleUpdateResult;
-
-        if (Input.IsAccountant)
+        var membership = await DbContext.AssociationUserMemberships
+            .SingleOrDefaultAsync(x => x.ApplicationUserId == user.Id && x.Role == RoleNames.Accountant, cancellationToken);
+        if (Input.IsAccountant && membership is null)
         {
-            if (isAccountant)
+            DbContext.AssociationUserMemberships.Add(new AssociationUserMembership
             {
-                TempData["SuccessMessage"] = AppLocalizer.Get("Изменения сохранены.", "Зміни збережено.", "Changes have been saved.");
-                return RedirectToPage("/Administration/Members/Details", new { id = memberId });
-            }
-
-            if (!await EnsureRoleExistsAsync(RoleNames.Accountant))
-            {
-                return Page();
-            }
-
-            roleUpdateResult = await UserManager.AddToRoleAsync(user, RoleNames.Accountant);
+                ApplicationUserId = user.Id, Role = RoleNames.Accountant
+            });
         }
-        else
+        else if (membership is not null)
         {
-            if (!isAccountant)
+            if (Input.IsAccountant)
             {
-                TempData["SuccessMessage"] = AppLocalizer.Get("Изменения сохранены.", "Зміни збережено.", "Changes have been saved.");
-                return RedirectToPage("/Administration/Members/Details", new { id = memberId });
+                membership.IsActive = true;
             }
-
-            roleUpdateResult = await UserManager.RemoveFromRoleAsync(user, RoleNames.Accountant);
+            else
+            {
+                DbContext.AssociationUserMemberships.Remove(membership);
+            }
         }
-
-        if (!roleUpdateResult.Succeeded)
-        {
-            AddIdentityErrors(roleUpdateResult, string.Empty, string.Empty);
-            CurrentRoles = (await UserManager.GetRolesAsync(user))
-                .OrderBy(role => role)
-                .ToArray();
-            return Page();
-        }
+        await DbContext.SaveChangesAsync(cancellationToken);
 
         TempData["SuccessMessage"] = Input.IsAccountant
             ? AppLocalizer.Get("Роль бухгалтера назначена.", "Роль бухгалтера призначено.", "The accountant role has been assigned.")
@@ -122,9 +107,9 @@ public class RolesModel : MemberAccountPageModelBase
             return RedirectToPage("/Administration/Members/Details", new { id = memberId });
         }
 
-        var roles = (await UserManager.GetRolesAsync(user))
-            .OrderBy(role => role)
-            .ToArray();
+        var roles = await DbContext.AssociationUserMemberships.AsNoTracking()
+            .Where(x => x.ApplicationUserId == user.Id && x.IsActive)
+            .Select(x => x.Role).OrderBy(role => role).ToArrayAsync(cancellationToken);
 
         Member = member;
         LoginEmail = user.Email ?? user.UserName ?? string.Empty;
@@ -136,27 +121,6 @@ public class RolesModel : MemberAccountPageModelBase
         }
 
         return null;
-    }
-
-    private async Task<bool> EnsureRoleExistsAsync(string roleName)
-    {
-        if (await _roleManager.RoleExistsAsync(roleName))
-        {
-            return true;
-        }
-
-        var createRoleResult = await _roleManager.CreateAsync(new IdentityRole(roleName));
-        if (createRoleResult.Succeeded || await _roleManager.RoleExistsAsync(roleName))
-        {
-            return true;
-        }
-
-        foreach (var error in createRoleResult.Errors)
-        {
-            ModelState.AddModelError(string.Empty, error.Description);
-        }
-
-        return false;
     }
 
     public sealed class InputModel

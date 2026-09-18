@@ -8,6 +8,7 @@ using Neftyanik.Portal.Application.Finance;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data;
+using Neftyanik.Portal.Infrastructure.Data.Queries;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Finance.Expenses;
 
@@ -146,9 +147,10 @@ public class EditModel : PageModel
 
     private async Task LoadExpenseCategoryOptionsAsync(CancellationToken cancellationToken)
     {
+        var electricityCategoryId = await _dbContext.GetElectricityExpenseCategoryIdAsync(cancellationToken);
         ExpenseCategoryOptions = await _dbContext.ExpenseCategories
             .AsNoTracking()
-            .Where(category => category.IsActive && category.Id != ExpenseCategoryIds.ElectricityPayment)
+            .Where(category => category.IsActive && category.Id != electricityCategoryId)
             .OrderBy(category => category.Name)
             .Select(category => new SelectListItem
             {

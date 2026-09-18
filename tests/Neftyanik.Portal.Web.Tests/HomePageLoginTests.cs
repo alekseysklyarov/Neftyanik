@@ -170,6 +170,10 @@ public class HomePageLoginTests
 
             user.PasswordHash = new PasswordHasher<ApplicationUser>().HashPassword(user, password);
             dbContext.Users.Add(user);
+            dbContext.AssociationUserMemberships.Add(new AssociationUserMembership
+            {
+                ApplicationUserId = user.Id, Role = role ?? RoleNames.Member
+            });
 
             if (!string.IsNullOrWhiteSpace(role))
             {

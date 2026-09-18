@@ -629,6 +629,11 @@ public class AdministrationFinanceCashInitializationTests
             await SeedInitializationAsync(dbContext, adminUserId, 100m, 0m, new DateOnly(2025, 1, 10));
         });
 
+        await ExecuteDbContextAsync(factory, async database =>
+        {
+            database.AssociationUserMemberships.Add(new AssociationUserMembership { ApplicationUserId = adminUserId, Role = RoleNames.Administrator });
+            await database.SaveChangesAsync();
+        });
         var client = CreateAuthenticatedClient(factory, new TestAuthenticatedUser(adminUserId, RoleNames.Administrator), allowAutoRedirect: false, cultureName: "uk-UA");
         var antiforgeryToken = await GetAntiforgeryTokenAsync(client, "/neftyanik/Administration/Finance/Settings/CashInitialization");
 
@@ -680,6 +685,8 @@ public class AdministrationFinanceCashInitializationTests
                 dbContext.Users.Add(CreateUser(adminUserId, "admin-http-user@example.com"));
                 await dbContext.SaveChangesAsync();
             }
+            dbContext.AssociationUserMemberships.Add(new AssociationUserMembership { ApplicationUserId = adminUserId, Role = RoleNames.Administrator });
+            await dbContext.SaveChangesAsync();
         });
 
         var client = CreateAuthenticatedClient(factory, new TestAuthenticatedUser(adminUserId, RoleNames.Administrator), allowAutoRedirect: false, cultureName: "uk-UA");

@@ -172,7 +172,8 @@ public class AssociationFoundationTests : IClassFixture<AssociationDatabaseFixtu
         await using var context = _database.CreateContext();
         var entities = context.Model.GetEntityTypes().ToArray();
         var owned = entities.Where(x => typeof(IAssociationOwned).IsAssignableFrom(x.ClrType)).ToArray();
-        Assert.Equal(22, owned.Length);
+        Assert.Equal(24, owned.Length);
+        Assert.Equal(22, owned.Count(x => x.ClrType != typeof(AssociationUserMembership) && x.ClrType != typeof(AssociationLoginEvent)));
         foreach (var entity in entities)
         {
             if (typeof(IAssociationOwned).IsAssignableFrom(entity.ClrType))
@@ -191,7 +192,14 @@ public class AssociationFoundationTests : IClassFixture<AssociationDatabaseFixtu
             Assert.False(entity.FindProperty("AssociationId")!.IsNullable);
             var associationKey = Assert.Single(entity.GetForeignKeys().Where(x => x.PrincipalEntityType.ClrType == typeof(Association)));
             Assert.Equal(DeleteBehavior.Restrict, associationKey.DeleteBehavior);
-            Assert.All(entity.GetIndexes().Where(x => x.IsUnique), index => Assert.Equal("AssociationId", index.Properties[0].Name));
+            if (entity.ClrType == typeof(AssociationLoginEvent))
+            {
+                Assert.Equal("UserLoginHistoryId", Assert.Single(entity.GetIndexes().Where(x => x.IsUnique)).Properties.Single().Name);
+            }
+            else
+            {
+                Assert.All(entity.GetIndexes().Where(x => x.IsUnique), index => Assert.Equal("AssociationId", index.Properties[0].Name));
+            }
         }
         Assert.Null(context.Model.FindEntityType(typeof(ApplicationUser))!.FindProperty("AssociationId"));
         Assert.Null(context.Model.FindEntityType(typeof(UserLoginHistory))!.FindProperty("AssociationId"));

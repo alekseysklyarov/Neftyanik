@@ -52,8 +52,10 @@ public class IndexModel : PageModel
             DatabaseAvailable = false;
         }
 
-        RegisteredUsersCount = await _dbContext.Users.AsNoTracking().CountAsync();
-        RolesCount = await _dbContext.Roles.AsNoTracking().CountAsync();
+        RegisteredUsersCount = await _dbContext.AssociationUserMemberships.AsNoTracking()
+            .Select(x => x.ApplicationUserId).Distinct().CountAsync(HttpContext.RequestAborted);
+        RolesCount = await _dbContext.AssociationUserMemberships.AsNoTracking()
+            .Select(x => x.Role).Distinct().CountAsync(HttpContext.RequestAborted);
         AppliedMigrationsCount = (await _dbContext.Database.GetAppliedMigrationsAsync()).Count();
 
         CanViewUserActivity = User.IsInRole(RoleNames.Administrator);

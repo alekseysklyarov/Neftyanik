@@ -117,6 +117,10 @@ builder.Services.Configure<ForwardedHeadersOptions>(options => ConfigureForwarde
 
 builder.Services.AddAuthorization(options =>
 {
+    options.DefaultPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .RequireRole(RoleNames.Administrator, RoleNames.Accountant, RoleNames.Member)
+        .Build();
     options.AddPolicy("RequireAdministrator", policy => policy.RequireRole(RoleNames.Administrator));
     options.AddPolicy("RequireAccountant", policy => policy.RequireRole(RoleNames.Accountant));
     options.AddPolicy("RequireMember", policy => policy.RequireRole(RoleNames.Member));
@@ -186,6 +190,7 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.UseAuthentication();
+app.UseMiddleware<AssociationAuthorizationMiddleware>();
 app.UseAuthorization();
 
 app.MapControllerRoute(
@@ -289,6 +294,11 @@ static async Task<int> ExecuteCreateAdminCommandAsync(WebApplication app, string
         ValidateCreateAdminCommandArguments(commandArguments);
 
         using var scope = app.Services.CreateScope();
+        var database = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var association = await database.Associations.AsNoTracking()
+            .SingleOrDefaultAsync(x => x.Slug == "neftyanik" && x.IsActive)
+            ?? throw new AdminBootstrapException("The active neftyanik association was not found.");
+        scope.ServiceProvider.GetRequiredService<AssociationContext>().Resolve(association);
         var service = scope.ServiceProvider.GetRequiredService<IAdminBootstrapService>();
         var result = await service.CreateAdministratorAsync(CreateAdminRequest(commandArguments));
 

@@ -23,6 +23,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<Association> Associations => Set<Association>();
 
+    public DbSet<AssociationUserMembership> AssociationUserMemberships => Set<AssociationUserMembership>();
+    public DbSet<AssociationLoginEvent> AssociationLoginEvents => Set<AssociationLoginEvent>();
+
     public DbSet<Plot> Plots => Set<Plot>();
 
     public DbSet<Member> Members => Set<Member>();

@@ -6,6 +6,7 @@ using Neftyanik.Portal.Application.Finance;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data;
+using Neftyanik.Portal.Infrastructure.Data.Queries;
 
 namespace Neftyanik.Portal.Infrastructure.Services;
 
@@ -311,9 +312,15 @@ public sealed class AssociationElectricityService : IAssociationElectricityServi
             return AssociationElectricityExpenseOperationResult.Failure("Недостаточно данных для создания расхода по указанным показаниям.");
         }
 
+        var electricityCategoryId = await _dbContext.GetElectricityExpenseCategoryIdAsync(cancellationToken);
+        if (!electricityCategoryId.HasValue)
+        {
+            return AssociationElectricityExpenseOperationResult.Failure("Для товарищества не настроен тип расхода на электроэнергию.");
+        }
+
         var expense = new Expense
         {
-            ExpenseCategoryId = ExpenseCategoryIds.ElectricityPayment,
+            ExpenseCategoryId = electricityCategoryId.Value,
             ExpenseDate = reading.ReadingDate,
             Amount = reading.TotalSupplierAmount.Value,
             Description = BuildElectricityExpenseDescription(

@@ -155,7 +155,7 @@ public class AuthenticationCookieTests
         await AssertAuthenticatedAsync(client, "neftyanik");
     }
 
-    private static WebApplicationFactory<Program> CreateCookieApplication(PortalWebApplicationFactory factory) =>
+    internal static WebApplicationFactory<Program> CreateCookieApplication(PortalWebApplicationFactory factory) =>
         factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
             services.PostConfigure<AuthenticationOptions>(options =>
                 options.DefaultAuthenticateScheme = IdentityConstants.ApplicationScheme)));
@@ -181,6 +181,16 @@ public class AuthenticationCookieTests
                 IsActive = true, MustChangePassword = false
             }, Password);
         Assert.True(result.Succeeded, string.Join(", ", result.Errors.Select(x => x.Description)));
+        var user = await scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>().FindByNameAsync(Login);
+        foreach (var slug in new[] { "neftyanik", "second" })
+        {
+            await using var tenantScope = app.Services.CreateAsyncScope();
+            var tenantDatabase = tenantScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var association = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.SingleAsync(tenantDatabase.Associations, x => x.Slug == slug);
+            tenantScope.ServiceProvider.GetRequiredService<Neftyanik.Portal.Application.Associations.AssociationContext>().Resolve(association);
+            tenantDatabase.AssociationUserMemberships.Add(new AssociationUserMembership { ApplicationUserId = user!.Id, Role = "Member" });
+            await tenantDatabase.SaveChangesAsync();
+        }
     }
 
     private static async Task AddExistingSessionAsync(WebApplicationFactory<Program> app, CookieContainer cookies, string path, bool chunked = false)
@@ -208,7 +218,7 @@ public class AuthenticationCookieTests
         }
     }
 
-    private static HttpClient CreateBrowser(WebApplicationFactory<Program> app, CookieContainer cookies) =>
+    internal static HttpClient CreateBrowser(WebApplicationFactory<Program> app, CookieContainer cookies) =>
         new(new BrowserCookieHandler(cookies) { InnerHandler = app.Server.CreateHandler() }) { BaseAddress = Origin };
 
     private static async Task<HttpResponseMessage> LoginAsync(HttpClient client, string slug)
@@ -232,7 +242,7 @@ public class AuthenticationCookieTests
         }));
     }
 
-    private static async Task<string> TokenAsync(HttpClient client, string path)
+    internal static async Task<string> TokenAsync(HttpClient client, string path)
     {
         using var response = await client.GetAsync(path);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);

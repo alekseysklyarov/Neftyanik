@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Infrastructure.Data;
+using Neftyanik.Portal.Infrastructure.Data.Queries;
 using Neftyanik.Portal.Web.Localization;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Finance.ExpenseCategories;
@@ -39,6 +40,7 @@ public class IndexModel : PageModel
         Search = string.IsNullOrWhiteSpace(Search) ? null : Search.Trim();
         Status = NormalizeStatus(Status);
         PageNumber = PageNumber < 1 ? 1 : PageNumber;
+        var electricityCategoryId = await _dbContext.GetElectricityExpenseCategoryIdAsync(cancellationToken);
 
         var query = _dbContext.ExpenseCategories.AsNoTracking().AsQueryable();
 
@@ -72,6 +74,7 @@ public class IndexModel : PageModel
                 Name = category.Name,
                 Description = category.Description,
                 IsActive = category.IsActive,
+                IsElectricityCategory = category.Id == electricityCategoryId,
                 ExpensesCount = category.Expenses.Count()
             })
             .ToListAsync(cancellationToken);
@@ -107,6 +110,6 @@ public class IndexModel : PageModel
 
         public int ExpensesCount { get; init; }
 
-        public bool IsElectricityCategory => Id == ExpenseCategoryIds.ElectricityPayment;
+        public bool IsElectricityCategory { get; init; }
     }
 }

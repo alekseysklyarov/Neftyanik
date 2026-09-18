@@ -61,7 +61,8 @@ public class AdminBootstrapServiceTests
         Assert.NotNull(user);
         Assert.True(user!.EmailConfirmed);
         Assert.Equal(1, context.DbContext.Users.Count());
-        Assert.True(await context.UserManager.IsInRoleAsync(user, RoleNames.Administrator));
+        Assert.True(await context.DbContext.AssociationUserMemberships.AnyAsync(x => x.ApplicationUserId == user.Id && x.Role == RoleNames.Administrator && x.IsActive));
+        Assert.False(await context.UserManager.IsInRoleAsync(user, RoleNames.Administrator));
         Assert.Equal(AdminBootstrapOutcome.Created, result.Outcome);
     }
 
@@ -78,7 +79,7 @@ public class AdminBootstrapServiceTests
 
         Assert.NotNull(user);
         Assert.Equal(1, context.DbContext.Users.Count());
-        Assert.Equal(1, context.DbContext.UserRoles.Count(x => x.UserId == user!.Id));
+        Assert.Equal(1, context.DbContext.AssociationUserMemberships.Count(x => x.ApplicationUserId == user!.Id));
         Assert.Equal(AdminBootstrapOutcome.AlreadyAdministrator, result.Outcome);
     }
 
@@ -103,6 +104,7 @@ public class AdminBootstrapServiceTests
         var exception = await Assert.ThrowsAsync<AdminBootstrapException>(() => context.Service.CreateAdministratorAsync(request));
 
         Assert.False(await context.UserManager.IsInRoleAsync(existingUser, RoleNames.Administrator));
+        Assert.False(await context.DbContext.AssociationUserMemberships.AnyAsync(x => x.ApplicationUserId == existingUser.Id));
         Assert.Equal(1, context.DbContext.Users.Count());
         Assert.Contains("allow-existing-user-role-assignment", exception.Message, StringComparison.Ordinal);
     }
@@ -127,7 +129,8 @@ public class AdminBootstrapServiceTests
 
         var result = await context.Service.CreateAdministratorAsync(request);
 
-        Assert.True(await context.UserManager.IsInRoleAsync(existingUser, RoleNames.Administrator));
+        Assert.True(await context.DbContext.AssociationUserMemberships.AnyAsync(x => x.ApplicationUserId == existingUser.Id && x.Role == RoleNames.Administrator && x.IsActive));
+        Assert.False(await context.UserManager.IsInRoleAsync(existingUser, RoleNames.Administrator));
         Assert.Equal(AdminBootstrapOutcome.RoleAssignedToExistingUser, result.Outcome);
     }
 
@@ -166,6 +169,7 @@ public class AdminBootstrapServiceTests
     private static async Task<AdminBootstrapTestContext> CreateTestContextAsync()
     {
         var services = new ServiceCollection();
+        services.AddScoped<Neftyanik.Portal.Application.Associations.IAssociationContext>(_ => TestAssociations.Neftyanik);
         services.AddDbContext<ApplicationDbContext>(options => options.UseInMemoryDatabase(Guid.NewGuid().ToString()));
         services
             .AddIdentityCore<ApplicationUser>(options =>

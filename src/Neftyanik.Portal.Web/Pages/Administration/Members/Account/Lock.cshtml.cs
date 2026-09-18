@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data;
+using Neftyanik.Portal.Infrastructure.Identity;
 using Neftyanik.Portal.Web.Localization;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Members.Account;
@@ -46,7 +48,7 @@ public class LockModel : MemberAccountPageModelBase
         }
 
         Member = member;
-        Account = BuildAccountContext(user);
+        Account = await BuildAccountContextAsync(user, cancellationToken);
 
         var currentUser = await UserManager.GetUserAsync(User);
         if (!Account.IsLockedOut && currentUser?.Id == user.Id)
@@ -55,38 +57,29 @@ public class LockModel : MemberAccountPageModelBase
             return Page();
         }
 
-        if (Account.IsLockedOut)
+        if (Account.IsGloballyLockedOut)
         {
-            var unlockResult = await UserManager.SetLockoutEndDateAsync(user, null);
-            if (!unlockResult.Succeeded)
+            if (!await AssociationAccountAccess.CanManageGlobalAccountAsync(DbContext, user.Id, cancellationToken))
             {
-                AddIdentityErrors(unlockResult, string.Empty, string.Empty);
+                return Forbid();
+            }
+
+            var result = await UserManager.SetLockoutEndDateAsync(user, null);
+            if (!result.Succeeded)
+            {
+                AddIdentityErrors(result, string.Empty, string.Empty);
                 return Page();
             }
-
-            TempData["SuccessMessage"] = AppLocalizer.Get("Учетная запись пользователя разблокирована.", "Обліковий запис користувача розблоковано.", "The user account has been unlocked.");
         }
-        else
+
+        var memberships = await DbContext.AssociationUserMemberships
+            .Where(x => x.ApplicationUserId == user.Id).ToListAsync(cancellationToken);
+        foreach (var membership in memberships)
         {
-            if (!user.LockoutEnabled)
-            {
-                var enableLockoutResult = await UserManager.SetLockoutEnabledAsync(user, true);
-                if (!enableLockoutResult.Succeeded)
-                {
-                    AddIdentityErrors(enableLockoutResult, string.Empty, string.Empty);
-                    return Page();
-                }
-            }
-
-            var lockResult = await UserManager.SetLockoutEndDateAsync(user, DateTimeOffset.UtcNow.AddYears(100));
-            if (!lockResult.Succeeded)
-            {
-                AddIdentityErrors(lockResult, string.Empty, string.Empty);
-                return Page();
-            }
-
-            TempData["SuccessMessage"] = AppLocalizer.Get("Учетная запись пользователя заблокирована.", "Обліковий запис користувача заблоковано.", "The user account has been locked.");
+            membership.IsActive = Account.IsLockedOut && member.IsActive;
         }
+        await DbContext.SaveChangesAsync(cancellationToken);
+        TempData["SuccessMessage"] = AppLocalizer.Get("Изменения сохранены.", "Зміни збережено.", "Changes have been saved.");
 
         return RedirectToPage("/Administration/Members/Details", new { id = memberId });
     }
@@ -113,19 +106,22 @@ public class LockModel : MemberAccountPageModelBase
         }
 
         Member = member;
-        Account = BuildAccountContext(user);
+        Account = await BuildAccountContextAsync(user, cancellationToken);
         return Page();
     }
 
-    private static AccountContextViewModel BuildAccountContext(ApplicationUser user)
+    private async Task<AccountContextViewModel> BuildAccountContextAsync(ApplicationUser user, CancellationToken cancellationToken)
     {
-        var isLockedOut = user.LockoutEnabled && user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTimeOffset.UtcNow;
+        var isLockedOut = !await DbContext.AssociationUserMemberships.AsNoTracking()
+            .AnyAsync(x => x.ApplicationUserId == user.Id && x.IsActive, cancellationToken);
+        var isGloballyLockedOut = user.LockoutEnabled && user.LockoutEnd > DateTimeOffset.UtcNow;
 
         return new AccountContextViewModel
         {
             LoginEmail = user.Email ?? user.UserName ?? string.Empty,
-            IsLockedOut = isLockedOut,
-            LockoutEnd = user.LockoutEnd
+            IsLockedOut = isLockedOut || isGloballyLockedOut,
+            IsGloballyLockedOut = isGloballyLockedOut,
+            LockoutEnd = isGloballyLockedOut ? user.LockoutEnd : null
         };
     }
 
@@ -134,6 +130,8 @@ public class LockModel : MemberAccountPageModelBase
         public string LoginEmail { get; init; } = string.Empty;
 
         public bool IsLockedOut { get; init; }
+
+        public bool IsGloballyLockedOut { get; init; }
 
         public DateTimeOffset? LockoutEnd { get; init; }
     }

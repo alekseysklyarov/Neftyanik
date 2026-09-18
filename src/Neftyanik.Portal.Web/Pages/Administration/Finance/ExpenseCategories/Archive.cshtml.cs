@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Infrastructure.Data;
+using Neftyanik.Portal.Infrastructure.Data.Queries;
 using Neftyanik.Portal.Web.Localization;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Finance.ExpenseCategories;
@@ -42,7 +43,7 @@ public class ArchiveModel : PageModel
             return NotFound();
         }
 
-        if (expenseCategory.Id == ExpenseCategoryIds.ElectricityPayment && expenseCategory.IsActive)
+        if (expenseCategory.Id == await _dbContext.GetElectricityExpenseCategoryIdAsync(cancellationToken) && expenseCategory.IsActive)
         {
             TempData["ErrorMessage"] = AppLocalizer.Get("Системный тип расхода 'Электроэнергия' нельзя перевести в архив.", "Системний тип витрати 'Електроенергія' не можна перевести в архів.", "The system expense type 'Electricity' cannot be archived.");
             return RedirectToPage("/Administration/Finance/ExpenseCategories/Index");
@@ -62,6 +63,7 @@ public class ArchiveModel : PageModel
 
     private async Task<ExpenseCategoryArchiveViewModel?> LoadViewModelAsync(int id, CancellationToken cancellationToken)
     {
+        var electricityCategoryId = await _dbContext.GetElectricityExpenseCategoryIdAsync(cancellationToken);
         return await _dbContext.ExpenseCategories
             .AsNoTracking()
             .Where(item => item.Id == id)
@@ -71,7 +73,7 @@ public class ArchiveModel : PageModel
                 Name = item.Name,
                 IsActive = item.IsActive,
                 ExpensesCount = item.Expenses.Count(),
-                IsElectricityCategory = item.Id == ExpenseCategoryIds.ElectricityPayment
+                IsElectricityCategory = item.Id == electricityCategoryId
             })
             .FirstOrDefaultAsync(cancellationToken);
     }

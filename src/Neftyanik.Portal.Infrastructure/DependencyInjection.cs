@@ -28,6 +28,7 @@ namespace Neftyanik.Portal.Infrastructure
 
             services.AddScoped<AssociationContext>();
             services.AddScoped<IAssociationContext>(provider => provider.GetRequiredService<AssociationContext>());
+            services.AddScoped<IAssociationMembershipService, AssociationMembershipService>();
 
             services.AddSingleton(TimeProvider.System);
 

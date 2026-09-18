@@ -103,19 +103,27 @@ public class DetailsModel : PageModel
             };
         }
 
-        var roles = await _userManager.GetRolesAsync(user);
+        var roles = await _dbContext.AssociationUserMemberships.AsNoTracking()
+            .Where(x => x.ApplicationUserId == user.Id && x.IsActive)
+            .Select(x => x.Role).ToListAsync(HttpContext.RequestAborted);
         var isLockedOut = user.LockoutEnabled && user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTimeOffset.UtcNow;
 
         return new MemberAccountViewModel
         {
             Exists = true,
-            StatusText = isLockedOut
-                ? AppLocalizer.Get("Учетная запись заблокирована", "Обліковий запис заблоковано", "Account is locked")
-                : AppLocalizer.Get("Учетная запись активна", "Обліковий запис активний", "Account is active"),
+            StatusText = !user.IsActive
+                ? AppLocalizer.Get("Глобальная учетная запись отключена", "Глобальний обліковий запис вимкнено", "Global account is disabled")
+                : isLockedOut
+                    ? AppLocalizer.Get("Глобальная учетная запись заблокирована", "Глобальний обліковий запис заблоковано", "Global account is locked")
+                    : roles.Count == 0
+                        ? AppLocalizer.Get("Доступ к товариществу отключен", "Доступ до товариства вимкнено", "Association access is disabled")
+                        : AppLocalizer.Get("Доступ к товариществу активен", "Доступ до товариства активний", "Association access is active"),
                 Login = user.UserName,
                 Email = user.Email,
             IdentityUserId = user.Id,
-            IsLockedOut = isLockedOut,
+            IsLockedOut = isLockedOut || roles.Count == 0,
+            IsGloballyLockedOut = isLockedOut,
+            IsAssociationAccessDisabled = roles.Count == 0,
             LockoutEnd = user.LockoutEnd,
             EmailConfirmed = user.EmailConfirmed,
             MustChangePassword = user.MustChangePassword,
@@ -188,6 +196,10 @@ public class DetailsModel : PageModel
         public string? IdentityUserId { get; init; }
 
         public bool IsLockedOut { get; init; }
+
+        public bool IsGloballyLockedOut { get; init; }
+
+        public bool IsAssociationAccessDisabled { get; init; }
 
         public DateTimeOffset? LockoutEnd { get; init; }
 

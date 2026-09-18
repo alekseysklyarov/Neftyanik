@@ -40,7 +40,8 @@ public class AssociationMigrationTests
             await context.Database.ExecuteSqlRawAsync("UPDATE [MembershipFeeRates] SET [AmountPerPlot] = 777.77 WHERE [Id] = 1");
 
             var before = new Dictionary<string, (string Columns, string OrderBy, string Json)>();
-            foreach (var entity in context.Model.GetEntityTypes().Where(x => x.ClrType != typeof(Association)))
+            foreach (var entity in context.Model.GetEntityTypes().Where(x => x.ClrType != typeof(Association)
+                && x.ClrType != typeof(AssociationUserMembership) && x.ClrType != typeof(AssociationLoginEvent)))
             {
                 var table = entity.GetTableName()!;
                 var columns = string.Join(",", entity.GetProperties().Where(x => x.Name != "AssociationId").Select(x => $"[{x.GetColumnName()}]"));
@@ -58,7 +59,7 @@ public class AssociationMigrationTests
             {
                 await migrator.MigrateAsync(FoundationMigration);
             }
-            await migrator.MigrateAsync();
+            await migrator.MigrateAsync(FoundationMigration);
 
             foreach (var (table, snapshot) in before)
             {
@@ -68,7 +69,8 @@ public class AssociationMigrationTests
             Assert.Equal("Нефтяник", initial.Name);
             Assert.Equal("neftyanik", initial.Slug);
             Assert.True(initial.IsActive);
-            foreach (var entity in context.Model.GetEntityTypes().Where(x => typeof(IAssociationOwned).IsAssignableFrom(x.ClrType)))
+            foreach (var entity in context.Model.GetEntityTypes().Where(x => typeof(IAssociationOwned).IsAssignableFrom(x.ClrType)
+                && x.ClrType != typeof(AssociationUserMembership) && x.ClrType != typeof(AssociationLoginEvent)))
             {
                 var table = entity.GetTableName()!;
                 await using var command = context.Database.GetDbConnection().CreateCommand();
@@ -141,7 +143,7 @@ public class AssociationMigrationTests
         key.PropertyInfo!.SetValue(entity, Convert.ChangeType(id, key.ClrType));
     }
 
-    private static async Task<string> ReadJsonAsync(ApplicationDbContext context, string table, string columns, string orderBy)
+    internal static async Task<string> ReadJsonAsync(ApplicationDbContext context, string table, string columns, string orderBy)
     {
         await using var command = context.Database.GetDbConnection().CreateCommand();
         command.CommandText = $"SELECT {columns} FROM [{table}] ORDER BY {orderBy} FOR JSON PATH, INCLUDE_NULL_VALUES";
@@ -154,7 +156,7 @@ public class AssociationMigrationTests
         return json.ToString();
     }
 
-    private static async Task ExecuteScriptAsync(ApplicationDbContext context, string script)
+    internal static async Task ExecuteScriptAsync(ApplicationDbContext context, string script)
     {
         foreach (var batch in Regex.Split(script, @"^GO\s*$", RegexOptions.Multiline | RegexOptions.IgnoreCase))
         {

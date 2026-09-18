@@ -213,6 +213,7 @@ public class AdministrationMemberAccountTests
             IsActive = true,
             ApplicationUserId = user.Id
         });
+        dbContext.AssociationUserMemberships.Add(new AssociationUserMembership { ApplicationUserId = user.Id, Role = RoleNames.Member });
         await dbContext.SaveChangesAsync();
 
         var model = new IndexModel(dbContext);
@@ -473,6 +474,9 @@ public class AdministrationMemberAccountTests
         });
         await dbContext.SaveChangesAsync();
 
+        dbContext.AssociationUserMemberships.Add(new AssociationUserMembership { ApplicationUserId = user.Id, Role = RoleNames.Member });
+        await dbContext.SaveChangesAsync();
+
         var model = new AdministrationMemberEditModel(dbContext, userManager)
         {
             Input = new MemberInputModel
@@ -581,7 +585,8 @@ public class AdministrationMemberAccountTests
 
         var redirect = Assert.IsType<RedirectToPageResult>(result);
         Assert.Equal("/Administration/Members/Details", redirect.PageName);
-        Assert.True(await userManager.IsInRoleAsync(user, RoleNames.Accountant));
+        Assert.True(await dbContext.AssociationUserMemberships.AnyAsync(x => x.ApplicationUserId == user.Id && x.Role == RoleNames.Accountant && x.IsActive));
+        Assert.False(await userManager.IsInRoleAsync(user, RoleNames.Accountant));
     }
 
 }

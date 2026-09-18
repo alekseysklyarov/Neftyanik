@@ -29,7 +29,8 @@ public class ResetPasswordModel : MemberAccountPageModelBase
     public async Task<IActionResult> OnPostAsync(int memberId, CancellationToken cancellationToken)
     {
         var member = await GetMemberContextAsync(memberId, cancellationToken);
-        if (member is null)
+        if (member is null || (member.ApplicationUserId is not null
+            && !await Neftyanik.Portal.Infrastructure.Identity.AssociationAccountAccess.CanManageGlobalAccountAsync(DbContext, member.ApplicationUserId, cancellationToken)))
         {
             return NotFound();
         }
@@ -75,7 +76,8 @@ public class ResetPasswordModel : MemberAccountPageModelBase
     private async Task<IActionResult> LoadPageAsync(int memberId, CancellationToken cancellationToken)
     {
         var member = await GetMemberContextAsync(memberId, cancellationToken);
-        if (member is null)
+        if (member is null || (member.ApplicationUserId is not null
+            && !await Neftyanik.Portal.Infrastructure.Identity.AssociationAccountAccess.CanManageGlobalAccountAsync(DbContext, member.ApplicationUserId, cancellationToken)))
         {
             return NotFound();
         }

@@ -270,7 +270,7 @@ public class TenantHttpIsolationTests
         using var login = await client.PostAsync("/neftyanik/Account/Login", Form(token,
             ("Input.Login", "stage2-user"), ("Input.Password", "Pass123!"), ("ReturnUrl", "/second/Administration/Members")));
         Assert.Equal(HttpStatusCode.Found, login.StatusCode);
-        Assert.Equal("/neftyanik/Member", login.Headers.Location?.OriginalString);
+        Assert.Equal("/neftyanik/Administration", login.Headers.Location?.OriginalString);
 
         using var authenticated = factory.CreateAuthenticatedClient(Administrator);
         token = await TokenAsync(authenticated, "/second/Administration/Plots/Create");
@@ -292,6 +292,7 @@ public class TenantHttpIsolationTests
         {
             await factory.ExecuteDbContextAsync(async context =>
             {
+                context.AssociationUserMemberships.AddRange(Administrator.Roles.Select(role => new AssociationUserMembership { ApplicationUserId = UserId, Role = role }));
                 var member = new Member { FullName = $"member-marker-{slug}", ApplicationUserId = UserId };
                 var plot = new Plot { Number = "10", Address = $"plot-marker-{slug}" };
                 var chargeType = new ChargeType { Name = "Test charge", Code = "TEST" };

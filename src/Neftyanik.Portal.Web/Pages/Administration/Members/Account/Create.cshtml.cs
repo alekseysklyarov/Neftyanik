@@ -121,13 +121,11 @@ public class CreateModel : MemberAccountPageModelBase
             return Page();
         }
 
-        var addToRoleResult = await UserManager.AddToRoleAsync(user, RoleNames.Member);
-        if (!addToRoleResult.Succeeded)
+        DbContext.AssociationUserMemberships.Add(new AssociationUserMembership
         {
-            await transaction.RollbackAsync(cancellationToken);
-            AddIdentityErrors(addToRoleResult, "Input.Login", "Input.TemporaryPassword");
-            return Page();
-        }
+            ApplicationUserId = user.Id,
+            Role = RoleNames.Member
+        });
 
         member.ApplicationUserId = user.Id;
         member.UpdatedAtUtc = DateTime.UtcNow;

@@ -122,8 +122,9 @@ public sealed class PortalWebApplicationFactory : WebApplicationFactory<Program>
         return client;
     }
 
-    public HttpClient CreateAuthenticatedClient(TestAuthenticatedUser user, bool allowAutoRedirect = false, string? cultureName = null)
+    public HttpClient CreateAuthenticatedClient(TestAuthenticatedUser user, bool allowAutoRedirect = false, string? cultureName = null, string associationSlug = "neftyanik")
     {
+        SeedMembershipsAsync(user, associationSlug).GetAwaiter().GetResult();
         var client = CreateAnonymousClient(allowAutoRedirect, cultureName);
         client.DefaultRequestHeaders.Add(TestAuthenticationHandler.UserIdHeaderName, user.UserId);
 
@@ -134,6 +135,22 @@ public sealed class PortalWebApplicationFactory : WebApplicationFactory<Program>
 
         return client;
     }
+
+    public Task SeedMembershipsAsync(TestAuthenticatedUser user, string associationSlug = "neftyanik") => ExecuteDbContextAsync(async database =>
+    {
+        if (!await database.Users.AnyAsync(x => x.Id == user.UserId))
+        {
+            database.Users.Add(new ApplicationUser { Id = user.UserId, UserName = user.UserId, FirstName = "Test", LastName = "User" });
+        }
+        foreach (var role in user.Roles)
+        {
+            if (!await database.AssociationUserMemberships.AnyAsync(x => x.ApplicationUserId == user.UserId && x.Role == role))
+            {
+                database.AssociationUserMemberships.Add(new AssociationUserMembership { ApplicationUserId = user.UserId, Role = role });
+            }
+        }
+        await database.SaveChangesAsync();
+    }, associationSlug);
 
     private static void ApplyCulture(HttpClient client, string? cultureName)
     {

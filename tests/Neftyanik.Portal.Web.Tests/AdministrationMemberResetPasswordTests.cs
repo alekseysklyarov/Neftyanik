@@ -42,6 +42,7 @@ public class AdministrationMemberResetPasswordTests
 
         var createResult = await userManager.CreateAsync(user, "abc123");
         Assert.True(createResult.Succeeded);
+        dbContext.AssociationUserMemberships.Add(new AssociationUserMembership { ApplicationUserId = user.Id, Role = "Member" });
 
         dbContext.Members.Add(new Member
         {

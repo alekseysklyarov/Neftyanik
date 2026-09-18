@@ -115,6 +115,10 @@ public class EditModel : PageModel
         ApplicationUser? user = null;
         if (!string.IsNullOrWhiteSpace(member.ApplicationUserId))
         {
+            if (!await Neftyanik.Portal.Infrastructure.Identity.AssociationAccountAccess.CanManageGlobalAccountAsync(_dbContext, member.ApplicationUserId, cancellationToken))
+            {
+                return Forbid();
+            }
             user = await _dbContext.Users.FirstOrDefaultAsync(item => item.Id == member.ApplicationUserId, cancellationToken);
             if (user is null)
             {
@@ -144,6 +148,7 @@ public class EditModel : PageModel
             return Page();
         }
 
+        var activeStatusChanged = member.IsActive != Input.IsActive;
         member.FullName = Input.FullName;
         member.PhoneNumber = Input.PhoneNumber;
         member.Email = Input.Email;
@@ -166,6 +171,15 @@ public class EditModel : PageModel
             user.LastName = name.LastName;
             user.DisplayName = name.DisplayName;
             user.IsActive = Input.IsActive;
+            var memberships = await _dbContext.AssociationUserMemberships
+                .Where(x => x.ApplicationUserId == user.Id).ToListAsync(cancellationToken);
+            foreach (var membership in memberships)
+            {
+                if (activeStatusChanged)
+                {
+                    membership.IsActive = Input.IsActive;
+                }
+            }
 
             var updateResult = await _userManager.UpdateAsync(user);
             if (!updateResult.Succeeded)

@@ -59,6 +59,15 @@ public class ArchiveModel : PageModel
 
         var willArchive = member.IsActive;
         member.IsActive = !member.IsActive;
+        if (member.ApplicationUserId is not null)
+        {
+            var memberships = await _dbContext.AssociationUserMemberships
+                .Where(x => x.ApplicationUserId == member.ApplicationUserId).ToListAsync(cancellationToken);
+            foreach (var membership in memberships)
+            {
+                membership.IsActive = member.IsActive;
+            }
+        }
         member.UpdatedAtUtc = DateTime.UtcNow;
 
         await _dbContext.SaveChangesAsync(cancellationToken);

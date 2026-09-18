@@ -14,6 +14,11 @@ public sealed class PaymentNotificationBellViewComponent : ViewComponent
 
     public async Task<IViewComponentResult> InvokeAsync()
     {
+        if (!HttpContext.User.IsInRole(Neftyanik.Portal.Domain.Constants.RoleNames.Administrator)
+            && !HttpContext.User.IsInRole(Neftyanik.Portal.Domain.Constants.RoleNames.Accountant))
+        {
+            return Content(string.Empty);
+        }
         var pendingCount = await _paymentNotificationService.GetPendingCountAsync(HttpContext.RequestAborted);
         return View(new PaymentNotificationBellViewModel(pendingCount));
     }

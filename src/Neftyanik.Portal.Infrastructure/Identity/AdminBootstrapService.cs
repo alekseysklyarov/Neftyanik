@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.Extensions.Logging;
 using Neftyanik.Portal.Application.Exceptions;
@@ -6,6 +7,7 @@ using Neftyanik.Portal.Application.Identity;
 using Neftyanik.Portal.Application.Interfaces;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
+using Neftyanik.Portal.Infrastructure.Data;
 
 namespace Neftyanik.Portal.Infrastructure.Identity;
 
@@ -20,15 +22,18 @@ public class AdminBootstrapService : IAdminBootstrapService
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly ILogger<AdminBootstrapService> _logger;
+    private readonly ApplicationDbContext _dbContext;
 
     public AdminBootstrapService(
         UserManager<ApplicationUser> userManager,
         RoleManager<IdentityRole> roleManager,
-        ILogger<AdminBootstrapService> logger)
+        ILogger<AdminBootstrapService> logger,
+        ApplicationDbContext dbContext)
     {
         _userManager = userManager;
         _roleManager = roleManager;
         _logger = logger;
+        _dbContext = dbContext;
     }
 
     public async Task<AdminBootstrapResult> CreateAdministratorAsync(AdminBootstrapRequest request, CancellationToken cancellationToken = default)
@@ -36,6 +41,10 @@ public class AdminBootstrapService : IAdminBootstrapService
         cancellationToken.ThrowIfCancellationRequested();
 
         ValidateRequest(request);
+        if (!_dbContext.IsAssociationResolved)
+        {
+            throw new AdminBootstrapException("Resolve the association before creating an administrator.");
+        }
 
         var email = request.Email!.Trim();
         var password = request.Password!;
@@ -74,7 +83,7 @@ public class AdminBootstrapService : IAdminBootstrapService
             throw CreateException("Failed to create the administrator user.", createResult);
         }
 
-        var addToRoleResult = await _userManager.AddToRoleAsync(user, RoleNames.Administrator);
+        var addToRoleResult = await AssignAdministratorAsync(user);
         if (!addToRoleResult.Succeeded)
         {
             await TryDeleteUserAsync(user);
@@ -87,7 +96,7 @@ public class AdminBootstrapService : IAdminBootstrapService
 
     private async Task<AdminBootstrapResult> HandleExistingUserAsync(ApplicationUser user, bool allowExistingUserRoleAssignment)
     {
-        if (await _userManager.IsInRoleAsync(user, RoleNames.Administrator))
+        if (await IsAdministratorAsync(user))
         {
             _logger.LogInformation("Administrator creation command found that user {Email} already has the {RoleName} role.", user.Email, RoleNames.Administrator);
             return new AdminBootstrapResult(AdminBootstrapOutcome.AlreadyAdministrator, "Administrator account already exists.");
@@ -98,10 +107,10 @@ public class AdminBootstrapService : IAdminBootstrapService
             throw new AdminBootstrapException($"A user with email '{user.Email}' already exists but does not have the '{RoleNames.Administrator}' role. Re-run the command with '--allow-existing-user-role-assignment' to assign that role without changing the password.");
         }
 
-        var addToRoleResult = await _userManager.AddToRoleAsync(user, RoleNames.Administrator);
+        var addToRoleResult = await AssignAdministratorAsync(user);
         if (!addToRoleResult.Succeeded)
         {
-            if (await _userManager.IsInRoleAsync(user, RoleNames.Administrator))
+            if (await IsAdministratorAsync(user))
             {
                 return new AdminBootstrapResult(AdminBootstrapOutcome.AlreadyAdministrator, "Administrator account already exists.");
             }
@@ -111,6 +120,28 @@ public class AdminBootstrapService : IAdminBootstrapService
 
         _logger.LogInformation("Administrator role was assigned to existing user {Email} after explicit confirmation.", user.Email);
         return new AdminBootstrapResult(AdminBootstrapOutcome.RoleAssignedToExistingUser, "Administrator role was assigned to the existing user.");
+    }
+
+    private Task<bool> IsAdministratorAsync(ApplicationUser user) => _dbContext.AssociationUserMemberships
+        .AnyAsync(x => x.ApplicationUserId == user.Id && x.Role == RoleNames.Administrator && x.IsActive);
+
+    private async Task<IdentityResult> AssignAdministratorAsync(ApplicationUser user)
+    {
+        var membership = await _dbContext.AssociationUserMemberships
+            .SingleOrDefaultAsync(x => x.ApplicationUserId == user.Id && x.Role == RoleNames.Administrator);
+        if (membership is null)
+        {
+            _dbContext.AssociationUserMemberships.Add(new AssociationUserMembership
+            {
+                ApplicationUserId = user.Id, Role = RoleNames.Administrator
+            });
+        }
+        else
+        {
+            membership.IsActive = true;
+        }
+        await _dbContext.SaveChangesAsync();
+        return IdentityResult.Success;
     }
 
     private async Task EnsureAdministratorRoleAsync()
