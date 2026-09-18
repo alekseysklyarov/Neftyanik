@@ -40,14 +40,14 @@ jobs:
       - name: Restore solution and test projects
         run: |
           set -Eeuo pipefail
-          dotnet restore Neftyanik.csproj
+          dotnet restore src/Neftyanik.Portal.Web/Neftyanik.Portal.Web.csproj
           dotnet restore tests/Neftyanik.Portal.Web.Tests/Neftyanik.Portal.Web.Tests.csproj
           dotnet restore tests/Neftyanik.Portal.Infrastructure.Tests/Neftyanik.Portal.Infrastructure.Tests.csproj
 
       - name: Build Release
         run: |
           set -Eeuo pipefail
-          dotnet build Neftyanik.csproj -c Release --no-restore
+          dotnet build src/Neftyanik.Portal.Web/Neftyanik.Portal.Web.csproj -c Release --no-restore
           dotnet build tests/Neftyanik.Portal.Web.Tests/Neftyanik.Portal.Web.Tests.csproj -c Release --no-restore
           dotnet build tests/Neftyanik.Portal.Infrastructure.Tests/Neftyanik.Portal.Infrastructure.Tests.csproj -c Release --no-restore
 
