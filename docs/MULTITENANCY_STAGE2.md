@@ -60,6 +60,23 @@ Login and language-switch `returnUrl` values additionally pass `TenantReturnUrls
 
 Identity roles and cookie authentication were not redesigned. The HTTP tests deliberately reuse the same globally authorized identity under both tenant URLs to prove that roles do not bypass data filters.
 
+### Logout cookie-path correction
+
+Stage 2 exposed Identity's default request-dependent cookie path: with no explicit `Cookie.Path`, login under `/neftyanik/` issued `.AspNetCore.Identity.Application` at `/neftyanik`, whereas pre-Stage-2 sessions used `/`. A successful logout POST expired only the tenant-path cookie, leaving the root-path ticket valid. A browser retaining both could therefore remain authenticated; a clean browser session did not have the old root cookie. Real Identity HTTP tests with a path-aware `CookieContainer` reproduced this (7 failures before the correction; the antiforgery rejection test already passed).
+
+`ConfigureApplicationCookie` now explicitly sets `options.Cookie.Path = "/"` for the current root-hosted application. Cookie name, protection, HttpOnly, Secure policy, SameSite, sliding expiration, Identity security-stamp validation, and antiforgery validation are unchanged. This is a global authentication session, not proof of association membership. Future `AssociationUserMembership` authorization must still check the resolved association on the server.
+
+Setting the path alone cannot delete already-issued tenant cookies. `LegacyAuthenticationCookieCleanup` performs idempotent compatibility cleanup on successful sign-in and sign-out: it expires only the configured application cookie at the known `/{slug}` paths, including other and inactive associations, using Identity's cookie manager. No arbitrary cookie-name scan, `Clear-Site-Data`, or deletion of unrelated cookies is used. Deletions run at response start after Identity's root-cookie operation, shortest paths first, because the framework cookie manager can remove pending same-name deletion headers by path prefix. Visible chunks are handled by that manager; deleting the main cookie at another association path makes any unsent chunk fragments unusable.
+
+This is a migration compatibility measure, not a new cookie or tenant authorization scheme. It is safe to repeat and can be retired after legacy tickets have expired and no old application instances can issue or renew them. It covers the current root-hosted deployment and known association slugs; changing the hosting base path or renaming/removing slugs while old tickets remain valid requires retaining their historical paths for cleanup.
+
+Verification after the correction:
+
+- `AuthenticationCookieTests`: 10 passed. Uses real Identity authentication rather than test identity headers, real login/logout POSTs and antiforgery tokens, and a path-aware cookie jar.
+- Covers both `/neftyanik/` and `/second/`, old root sessions, simultaneous legacy cookies, inactive and overlapping slug paths, chunked tickets, consistent secure root-path issuance, no remaining authentication cookie/session after logout, unrelated-cookie preservation, GET logout, and missing-antiforgery rejection.
+- Complete Web suite: 271 passed, 0 failed, 0 skipped. Results: `artifacts/TestResults/logout-web-suite.trx`.
+- No Stage 3 implementation, migration, commit, or deployment.
+
 ## EF filters and model caching
 
 Every model entity implementing `IAssociationOwned` gets the predicate:

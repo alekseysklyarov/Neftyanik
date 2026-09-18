@@ -88,10 +88,13 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.LoginPath = "/Account/Login";
     options.LogoutPath = "/Account/Logout";
     options.AccessDeniedPath = "/Account/AccessDenied";
+    options.Cookie.Path = "/";
     options.Cookie.HttpOnly = true;
     options.Cookie.SecurePolicy = requireSecureCookies ? CookieSecurePolicy.Always : CookieSecurePolicy.SameAsRequest;
     options.Cookie.SameSite = SameSiteMode.Lax;
     options.SlidingExpiration = true;
+    options.Events.OnSigningIn = context => LegacyAuthenticationCookieCleanup.DeleteAsync(context.HttpContext, context.Options);
+    options.Events.OnSigningOut = context => LegacyAuthenticationCookieCleanup.DeleteAsync(context.HttpContext, context.Options);
 });
 
 builder.Services.Configure<CookiePolicyOptions>(options =>
