@@ -1,8 +1,11 @@
 @page
 @model IndexModel
 @using Neftyanik.Portal.Web.Localization
+@using Neftyanik.Portal.Application.Associations
+@inject IAssociationContext AssociationContext
 @{
     ViewData["Title"] = AppLocalizer.Get("Главная", "Головна", "Home");
+    var associationName = AssociationContext.IsResolved ? AssociationContext.Association.Name : "DachaHub";
     var canAccessAdministration = User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.Accountant);
     var isAuthenticated = User.Identity?.IsAuthenticated == true;
     var heroColumnClass = isAuthenticated ? "col-lg-12 portal-hero-copy" : "col-lg-7 portal-hero-copy";
@@ -12,7 +15,7 @@
     <div class="row g-4 align-items-center">
         <div class="@heroColumnClass">
             <span class="portal-kicker">@AppLocalizer.Get("Садовое товарищество", "Садове товариство", "Garden association")</span>
-            <h1 class="portal-hero-title mt-3 mb-3">Нефтяник</h1>
+            <h1 class="portal-hero-title mt-3 mb-3">@associationName</h1>
             <p class="portal-lead mb-3">@AppLocalizer.Get("Единый портал для учета электроэнергии, платежей, членских взносов и информации по участкам.", "Єдиний портал для обліку електроенергії, платежів, членських внесків та інформації про ділянки.", "A single portal for electricity accounting, payments, membership fees, and plot information.")</p>
 
             @if (isAuthenticated)

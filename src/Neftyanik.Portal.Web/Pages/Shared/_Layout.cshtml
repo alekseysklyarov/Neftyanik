@@ -1,10 +1,13 @@
 @using Neftyanik.Portal.Domain.Constants
 @using System.Globalization
 @using Neftyanik.Portal.Web.Localization
+@using Neftyanik.Portal.Application.Associations
 
 @inject UserManager<ApplicationUser> UserManager
+@inject IAssociationContext AssociationContext
 
 @{
+    var associationName = AssociationContext.IsResolved ? AssociationContext.Association.Name : "DachaHub";
     var currentUser = User.Identity?.IsAuthenticated == true ? await UserManager.GetUserAsync(User) : null;
     var userDisplayName = !string.IsNullOrWhiteSpace(currentUser?.DisplayName)
         ? currentUser.DisplayName
@@ -22,7 +25,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - @AppLocalizer.Get("Портал Нефтяник", "Портал Нафтовик", "Neftyanik Portal")</title>
+    <title>@ViewData["Title"] - @associationName</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Neftyanik.Portal.Web.styles.css" asp-append-version="true" />
@@ -33,7 +36,7 @@
             <div class="container">
                 <a class="navbar-brand portal-brand" asp-area="" asp-page="/Index">
                     <span class="portal-brand-line">
-                        <span class="portal-brand-title">Нефтяник</span>
+                        <span class="portal-brand-title">@associationName</span>
                         <span class="portal-brand-subtitle">@AppLocalizer.Get("портал товарищества", "портал товариства", "association portal")</span>
                     </span>
                 </a>
@@ -125,7 +128,7 @@
 
     <footer class="footer portal-footer text-muted">
         <div class="container">
-            &copy; 2026 - Neftyanik Portal
+            &copy; 2026 - @associationName
         </div>
     </footer>
 

@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net;
 using System.Security.Cryptography;
+using System.Text.Encodings.Web;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +13,100 @@ namespace Neftyanik.Portal.Web.Tests;
 
 public class HomePageLoginTests
 {
+    [Theory]
+    [InlineData("neftyanik", "ru-RU", "Главная", "Вход")]
+    [InlineData("demo", "ru-RU", "Главная", "Вход")]
+    [InlineData("neftyanik", "uk-UA", "Головна", "Вхід")]
+    [InlineData("demo", "uk-UA", "Головна", "Вхід")]
+    [InlineData("neftyanik", "en-US", "Home", "Log in")]
+    [InlineData("demo", "en-US", "Home", "Log in")]
+    public async Task GetTenantPages_UsesAssociationNameAndPreservesLocalizedPageTitle(
+        string slug, string culture, string homeTitle, string loginTitle)
+    {
+        using var factory = new PortalWebApplicationFactory();
+        await factory.ExecuteDbContextAsync(async database =>
+        {
+            var neftyanik = await database.Associations.SingleAsync(x => x.Slug == "neftyanik");
+            neftyanik.Name = "Нефтяник — тест";
+            database.Associations.Add(new Association { Slug = "demo", Name = "Demo", IsActive = true });
+            await database.SaveChangesAsync();
+        });
+        using var client = factory.CreateAnonymousClient(cultureName: culture);
+        var name = slug == "demo" ? "Demo" : "Нефтяник — тест";
+
+        foreach (var (path, title) in new[] { ($"/{slug}/", homeTitle), ($"/{slug}/Account/Login", loginTitle) })
+        {
+            using var response = await client.GetAsync(path);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            var html = await response.Content.ReadAsStringAsync();
+            AssertBranding(html, name, title);
+            if (path == $"/{slug}/")
+            {
+                Assert.Matches($"<h1\\b[^>]*class=\"portal-hero-title mt-3 mb-3\"[^>]*>{Regex.Escape(HtmlEncoder.Default.Encode(name))}</h1>", html);
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData("/demo/", "Home")]
+    [InlineData("/demo/Account/Login", "Log in")]
+    public async Task GetTenantPages_EncodesAssociationNameAsText(string path, string title)
+    {
+        const string name = "Demo & <script>alert(\"branding\")</script> 'garden'";
+        using var factory = new PortalWebApplicationFactory();
+        await factory.ExecuteDbContextAsync(async database =>
+        {
+            database.Associations.Add(new Association { Slug = "demo", Name = name, IsActive = true });
+            await database.SaveChangesAsync();
+        });
+        using var client = factory.CreateAnonymousClient(cultureName: "en-US");
+
+        using var response = await client.GetAsync(path);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var html = await response.Content.ReadAsStringAsync();
+        AssertBranding(html, name, title);
+        Assert.DoesNotContain(name, html);
+        Assert.DoesNotContain("<script>alert", html);
+        if (path == "/demo/")
+        {
+            Assert.Matches($"<h1\\b[^>]*class=\"portal-hero-title mt-3 mb-3\"[^>]*>{Regex.Escape(HtmlEncoder.Default.Encode(name))}</h1>", html);
+        }
+    }
+
+    [Fact]
+    public async Task GetError_WithoutResolvedAssociation_UsesNeutralBranding()
+    {
+        using var factory = new PortalWebApplicationFactory();
+        using var client = factory.CreateAnonymousClient();
+
+        using var response = await client.GetAsync("/Error");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        AssertBranding(await response.Content.ReadAsStringAsync(), "DachaHub", "Error");
+    }
+
+    [Fact]
+    public async Task GetRoot_PreservesRedirectToNeftyanik()
+    {
+        using var factory = new PortalWebApplicationFactory();
+        using var client = factory.CreateAnonymousClient();
+
+        using var response = await client.GetAsync("/");
+
+        Assert.Equal(HttpStatusCode.TemporaryRedirect, response.StatusCode);
+        Assert.Equal("/neftyanik/", response.Headers.Location?.OriginalString);
+    }
+
+    private static void AssertBranding(string html, string name, string pageTitle)
+    {
+        var encodedName = HtmlEncoder.Default.Encode(name);
+        Assert.Equal(encodedName, Regex.Match(html, "<span\\b[^>]*class=\"portal-brand-title\"[^>]*>(.*?)</span>").Groups[1].Value);
+        Assert.Equal($"{HtmlEncoder.Default.Encode(pageTitle)} - {encodedName}", Regex.Match(html, "<title>(.*?)</title>").Groups[1].Value);
+        var footer = Regex.Match(html, "<footer\\b[^>]*>(.*?)</footer>", RegexOptions.Singleline).Groups[1].Value;
+        Assert.Contains($"&copy; 2026 - {encodedName}", footer);
+    }
+
     [Fact]
     public async Task GetHome_Anonymous_ShowsLoginFormAndNoHeaderLoginLink()
     {
