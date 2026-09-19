@@ -1,0 +1,14 @@
+@page
+@model Neftyanik.Portal.Web.Pages.Platform.Account.ConfirmEmailModel
+@{
+    ViewData["Title"] = "Подтверждение email";
+}
+<h1 class="h4">@ViewData["Title"]</h1>
+<form method="post" asp-antiforgery="true" data-recovery-form>
+    <div asp-validation-summary="All" class="text-danger" role="alert"></div>
+    <input asp-for="UserId" type="hidden" />
+    <input asp-for="Token" type="hidden" />
+    <button type="submit" class="btn btn-primary">Подтвердить мой email</button>
+</form>
+<noscript>Для безопасной передачи ссылки требуется JavaScript. Включите его и откройте ссылку из письма повторно.</noscript>
+<script src="~/js/platform-recovery.js" asp-append-version="true"></script>

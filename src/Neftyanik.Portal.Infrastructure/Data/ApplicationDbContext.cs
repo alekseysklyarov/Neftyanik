@@ -21,6 +21,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public int CurrentAssociationId => _associationContext.AssociationId;
     public bool IsAssociationResolved => _associationContext.IsResolved;
 
+    public DbSet<PlatformBootstrapState> PlatformBootstrapStates => Set<PlatformBootstrapState>();
+
     public DbSet<Association> Associations => Set<Association>();
 
     public DbSet<AssociationUserMembership> AssociationUserMemberships => Set<AssociationUserMembership>();

@@ -41,7 +41,8 @@ public class AssociationMigrationTests
 
             var before = new Dictionary<string, (string Columns, string OrderBy, string Json)>();
             foreach (var entity in context.Model.GetEntityTypes().Where(x => x.ClrType != typeof(Association)
-                && x.ClrType != typeof(AssociationUserMembership) && x.ClrType != typeof(AssociationLoginEvent)))
+                && x.ClrType != typeof(AssociationUserMembership) && x.ClrType != typeof(AssociationLoginEvent)
+                && x.ClrType != typeof(PlatformBootstrapState)))
             {
                 var table = entity.GetTableName()!;
                 var columns = string.Join(",", entity.GetProperties().Where(x => x.Name != "AssociationId").Select(x => $"[{x.GetColumnName()}]"));

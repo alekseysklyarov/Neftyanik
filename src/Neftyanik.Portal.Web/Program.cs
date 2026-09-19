@@ -1,5 +1,9 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
+using Neftyanik.Portal.Infrastructure.Identity;
 using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
@@ -21,6 +25,15 @@ using Neftyanik.Portal.Web.Security;
 using Neftyanik.Portal.Web.Associations;
 using Neftyanik.Portal.Application.Associations;
 
+var isPlatformBootstrap = args.Length > 0 && string.Equals(args[0], "create-first-platform-admin", StringComparison.OrdinalIgnoreCase);
+var isPlatformLegacyInitialization = args.Length > 0 && string.Equals(args[0], Neftyanik.Portal.Web.Commands.PlatformLegacyInitializationCommand.Name, StringComparison.OrdinalIgnoreCase);
+var isPlatformOperatorCommand = isPlatformBootstrap || isPlatformLegacyInitialization;
+if (isPlatformOperatorCommand && (args.Length != 1 || Console.IsInputRedirected || Console.IsOutputRedirected))
+{
+    Console.Error.WriteLine("Platform bootstrap requires an interactive terminal and accepts no arguments or redirected input.");
+    return 1;
+}
+
 var currentDirectory = Directory.GetCurrentDirectory();
 var repositoryWebRootPath = Path.Combine(currentDirectory, "src", "Neftyanik.Portal.Web", "wwwroot");
 var webRootPath = Directory.Exists(repositoryWebRootPath)
@@ -32,6 +45,12 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
     Args = args,
     WebRootPath = webRootPath
 });
+
+if (isPlatformOperatorCommand)
+{
+    // Bootstrap emits only controlled console messages, never provider diagnostics or secrets.
+    builder.Logging.ClearProviders();
+}
 
 var webProjectPath = Path.Combine(builder.Environment.ContentRootPath, "src", "Neftyanik.Portal.Web");
 if (Directory.Exists(webProjectPath))
@@ -50,8 +69,14 @@ var dataProtectionKeysDirectory = builder.Configuration["DataProtection:KeysDire
 builder.Services.AddRazorPages(options =>
 {
     options.RootDirectory = razorPagesRootDirectory;
-    options.Conventions.AuthorizeFolder("/Platform", PlatformAuthorization.PolicyName);
+    options.Conventions.AddFolderApplicationModelConvention("/Platform", model =>
+        model.Filters.Add(new Microsoft.AspNetCore.Mvc.Authorization.AuthorizeFilter(
+            model.ViewEnginePath == PlatformOnboardingAuthentication.Page
+                ? PlatformOnboardingAuthentication.Policy : PlatformAuthorization.PolicyName)));
     options.Conventions.AllowAnonymousToPage("/Platform/Account/Login");
+    options.Conventions.AllowAnonymousToPage("/Platform/Account/ForgotPassword");
+    options.Conventions.AllowAnonymousToPage("/Platform/Account/ResetPassword");
+    options.Conventions.AllowAnonymousToPage("/Platform/Account/ConfirmEmail");
 });
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
@@ -70,6 +95,10 @@ if (!string.IsNullOrWhiteSpace(dataProtectionKeysDirectory))
 }
 
 builder.Services.AddInfrastructure(builder.Configuration);
+if (isPlatformLegacyInitialization)
+{
+    builder.Services.AddScoped<IPlatformLegacyInitialization, PlatformLegacyInitialization>();
+}
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
@@ -84,6 +113,50 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddPasswordValidator<SimplePasswordValidator>()
 .AddDefaultTokenProviders();
 
+builder.Services.AddTransient<PlatformRecoveryTokenProvider>();
+builder.Services.Configure<IdentityOptions>(options => options.Tokens.ProviderMap[PlatformRecoveryTokenProvider.ProviderName]
+    = new TokenProviderDescriptor(typeof(PlatformRecoveryTokenProvider)));
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("PlatformRecovery", context => HttpMethods.IsPost(context.Request.Method)
+        ? RateLimitPartition.GetFixedWindowLimiter((context.Connection.RemoteIpAddress?.ToString() ?? "unknown") + ":" + context.Request.Path.Value?.TrimEnd('/').ToLowerInvariant(), _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = context.Request.Path.Value?.TrimEnd('/').EndsWith("/ForgotPassword", StringComparison.OrdinalIgnoreCase) == true ? 5 : 20,
+            Window = TimeSpan.FromMinutes(15), QueueLimit = 0
+        })
+        : RateLimitPartition.GetNoLimiter("read"));
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+        PlatformAuthorization.IsPlatformRequest(context.Request) && HttpMethods.IsPost(context.Request.Method)
+            ? RateLimitPartition.GetFixedWindowLimiter("platform-post", _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 100, Window = TimeSpan.FromMinutes(15), QueueLimit = 0
+            }) : RateLimitPartition.GetNoLimiter("other"));
+});
+
+builder.Services.AddAuthentication().AddCookie(PlatformOnboardingAuthentication.Scheme, options =>
+{
+    options.Cookie.Name = "DachaHub.PlatformOnboarding";
+    options.Cookie.Path = "/";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SameSite = SameSiteMode.Strict;
+    options.Cookie.SecurePolicy = IsHttpsRequired(builder.Configuration, builder.Environment)
+        ? CookieSecurePolicy.Always : CookieSecurePolicy.SameAsRequest;
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(10);
+    options.SlidingExpiration = false;
+    options.Events.OnValidatePrincipal = PlatformOnboardingAuthentication.ValidateAsync;
+    options.Events.OnRedirectToLogin = context =>
+    {
+        context.Response.Redirect(context.Request.PathBase + "/Platform/Account/Login");
+        return Task.CompletedTask;
+    };
+    options.Events.OnRedirectToAccessDenied = context =>
+    {
+        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+        return Task.CompletedTask;
+    };
+});
+
 builder.Services.ConfigureApplicationCookie(options =>
 {
     var requireSecureCookies = IsHttpsRequired(builder.Configuration, builder.Environment);
@@ -97,6 +170,21 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.SlidingExpiration = true;
     options.Events.OnSigningIn = context => LegacyAuthenticationCookieCleanup.DeleteAsync(context.HttpContext, context.Options);
     options.Events.OnSigningOut = context => LegacyAuthenticationCookieCleanup.DeleteAsync(context.HttpContext, context.Options);
+    var validatePrincipal = options.Events.OnValidatePrincipal;
+    options.Events.OnValidatePrincipal = async context =>
+    {
+        if (PlatformAuthorization.IsPlatformRequest(context.Request) || context.Principal?.IsInRole(RoleNames.PlatformAdministrator) == true)
+        {
+            var signIn = context.HttpContext.RequestServices.GetRequiredService<SignInManager<ApplicationUser>>();
+            if (context.Principal is null || await signIn.ValidateSecurityStampAsync(context.Principal) is null)
+            {
+                context.RejectPrincipal();
+                await context.HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);
+                return;
+            }
+        }
+        await validatePrincipal(context);
+    };
     var redirectToLogin = options.Events.OnRedirectToLogin;
     options.Events.OnRedirectToLogin = context =>
     {
@@ -141,6 +229,11 @@ builder.Services.AddScoped<PlatformAdministratorAccess>();
 builder.Services.AddScoped<IAuthorizationHandler, PlatformAdministratorHandler>();
 builder.Services.AddAuthorization(options =>
 {
+    options.AddPolicy(PlatformOnboardingAuthentication.Policy, policy => policy
+        .AddAuthenticationSchemes(PlatformOnboardingAuthentication.Scheme)
+        .RequireAuthenticatedUser()
+        .RequireAssertion(context => context.User.Identities.Any(identity =>
+            identity.IsAuthenticated && identity.AuthenticationType == PlatformOnboardingAuthentication.Scheme)));
     options.AddPolicy(PlatformAuthorization.PolicyName, policy => policy
         .AddAuthenticationSchemes(IdentityConstants.ApplicationScheme)
         .RequireAuthenticatedUser()
@@ -156,6 +249,15 @@ builder.Services.AddAuthorization(options =>
 
 var app = builder.Build();
 var requireHttps = IsHttpsRequired(app.Configuration, app.Environment);
+
+if (isPlatformBootstrap)
+{
+    return await Neftyanik.Portal.Web.Commands.PlatformBootstrapCommand.RunAsync(app.Services);
+}
+if (isPlatformLegacyInitialization)
+{
+    return await Neftyanik.Portal.Web.Commands.PlatformLegacyInitializationCommand.RunAsync(app.Services);
+}
 
 if (IsLegacyElectricityImportCommand(args))
 {
@@ -216,6 +318,7 @@ app.UseMiddleware<AssociationRoutingMiddleware>();
 app.UseStaticFiles();
 
 app.UseRouting();
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseMiddleware<AssociationAuthorizationMiddleware>();

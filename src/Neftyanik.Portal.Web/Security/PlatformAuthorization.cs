@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using Neftyanik.Portal.Application.Associations;
 using Neftyanik.Portal.Domain.Constants;
@@ -18,7 +19,7 @@ public sealed class PlatformAdministratorAccess(UserManager<ApplicationUser> use
 {
     public async Task<bool> IsAllowedAsync(ApplicationUser? user)
     {
-        return user is { IsActive: true, MustChangePassword: false }
+        return user is { IsActive: true, MustChangePassword: false, TwoFactorEnabled: false }
             && !await users.IsLockedOutAsync(user)
             && await users.IsInRoleAsync(user, RoleNames.PlatformAdministrator);
     }
@@ -44,7 +45,10 @@ public sealed class PlatformAdministratorHandler(
         }
 
         var user = await users.GetUserAsync(context.User);
-        if (await access.IsAllowedAsync(user))
+        var stamp = context.User.FindFirstValue(users.Options.ClaimsIdentity.SecurityStampClaimType);
+        if (user is not null && !string.IsNullOrEmpty(stamp)
+            && string.Equals(stamp, user.SecurityStamp, StringComparison.Ordinal)
+            && await access.IsAllowedAsync(user))
         {
             context.Succeed(requirement);
         }

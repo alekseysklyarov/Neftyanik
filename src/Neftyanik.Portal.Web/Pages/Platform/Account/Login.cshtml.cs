@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Neftyanik.Portal.Domain.Entities;
+using Neftyanik.Portal.Application.Identity;
 using Neftyanik.Portal.Web.Localization;
 using Neftyanik.Portal.Web.Pages.Account;
 using Neftyanik.Portal.Web.Security;
@@ -12,6 +13,7 @@ namespace Neftyanik.Portal.Web.Pages.Platform.Account;
 public class LoginModel(
     SignInManager<ApplicationUser> signInManager,
     PlatformAdministratorAccess access,
+    IPlatformAdministratorOnboarding onboarding,
     IAuthorizationService authorization) : PageModel
 {
     [BindProperty]
@@ -33,6 +35,16 @@ public class LoginModel(
             var login = Input.Login.Trim();
             var user = await signInManager.UserManager.FindByNameAsync(login)
                 ?? await signInManager.UserManager.FindByEmailAsync(login);
+            if (user is { MustChangePassword: true, TwoFactorEnabled: false }
+                && await onboarding.CanChangePasswordAsync(user.Id, user.SecurityStamp ?? string.Empty, HttpContext.RequestAborted))
+            {
+                var passwordResult = await signInManager.CheckPasswordSignInAsync(user, Input.Password, lockoutOnFailure: true);
+                if (passwordResult.Succeeded)
+                {
+                    await PlatformOnboardingAuthentication.IssueAsync(HttpContext, user, signInManager);
+                    return RedirectToPage(PlatformOnboardingAuthentication.Page);
+                }
+            }
             if (await access.IsAllowedAsync(user))
             {
                 var result = await signInManager.PasswordSignInAsync(user!, Input.Password, Input.RememberMe, lockoutOnFailure: true);

@@ -37,6 +37,11 @@ namespace Neftyanik.Portal.Infrastructure
             // Repositories
             services.AddScoped(typeof(IRepository<>), typeof(GenericRepository<>));
             services.AddScoped<IAdminBootstrapService, AdminBootstrapService>();
+            services.AddScoped<IPlatformAdministratorOnboarding, PlatformAdministratorOnboarding>();
+            services.Configure<PlatformRecoveryOptions>(configuration.GetSection("PlatformRecovery"));
+            services.Configure<PlatformSmtpOptions>(configuration.GetSection("PlatformSmtp"));
+            services.AddScoped<IPlatformEmailSender, SmtpPlatformEmailSender>();
+            services.AddScoped<IPlatformAccountRecovery, PlatformAccountRecovery>();
             services.AddScoped<IAssociationElectricityService, AssociationElectricityService>();
             services.AddScoped<IChargeService, ChargeService>();
             services.AddScoped<IFinancialAuditService, FinancialAuditService>();
