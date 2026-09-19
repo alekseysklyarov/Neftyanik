@@ -1,0 +1,22 @@
+@using System.Globalization
+<!DOCTYPE html>
+<html lang="@CultureInfo.CurrentUICulture.TwoLetterISOLanguageName">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - DachaHub</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <header class="border-bottom mb-4">
+        <nav class="navbar container">
+            <a class="navbar-brand" asp-page="/Platform/Index">DachaHub</a>
+            <span class="navbar-text">@AppLocalizer.Get("Управление платформой", "Керування платформою", "Platform administration")</span>
+        </nav>
+    </header>
+    <main class="container pb-4">
+        @RenderBody()
+    </main>
+</body>
+</html>

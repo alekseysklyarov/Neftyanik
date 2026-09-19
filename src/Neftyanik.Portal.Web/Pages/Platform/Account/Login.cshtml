@@ -1,0 +1,26 @@
+@page
+@model Neftyanik.Portal.Web.Pages.Platform.Account.LoginModel
+@{
+    ViewData["Title"] = AppLocalizer.Get("Вход в управление платформой", "Вхід до керування платформою", "Platform sign-in");
+}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <h1 class="h4 mb-3">@ViewData["Title"]</h1>
+        <form method="post" asp-page="/Platform/Account/Login" asp-antiforgery="true">
+            <div asp-validation-summary="All" class="text-danger" role="alert"></div>
+            <div class="mb-3">
+                <label asp-for="Input.Login" class="form-label">@AppLocalizer.Get("Логин", "Логін", "Login")</label>
+                <input asp-for="Input.Login" class="form-control" autocomplete="username" required />
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.Password" class="form-label">@AppLocalizer.Get("Пароль", "Пароль", "Password")</label>
+                <input asp-for="Input.Password" class="form-control" autocomplete="current-password" required />
+            </div>
+            <div class="form-check mb-3">
+                <input asp-for="Input.RememberMe" class="form-check-input" />
+                <label asp-for="Input.RememberMe" class="form-check-label">@AppLocalizer.Get("Запомнить меня", "Запам'ятати мене", "Remember me")</label>
+            </div>
+            <button type="submit" class="btn btn-primary">@AppLocalizer.Get("Войти", "Увійти", "Sign in")</button>
+        </form>
+    </div>
+</div>

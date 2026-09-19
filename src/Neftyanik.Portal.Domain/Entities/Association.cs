@@ -14,6 +14,10 @@ public class Association
 
     public void ValidateSlug()
     {
+        if (string.Equals(Slug, "platform", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("The platform slug is reserved for platform administration.");
+        }
         if (string.IsNullOrEmpty(Slug) || Slug.Length > 100
             || !System.Text.RegularExpressions.Regex.IsMatch(Slug, "\\A[a-z0-9]+(?:-[a-z0-9]+)*\\z"))
         {

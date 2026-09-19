@@ -50,6 +50,8 @@ var dataProtectionKeysDirectory = builder.Configuration["DataProtection:KeysDire
 builder.Services.AddRazorPages(options =>
 {
     options.RootDirectory = razorPagesRootDirectory;
+    options.Conventions.AuthorizeFolder("/Platform", PlatformAuthorization.PolicyName);
+    options.Conventions.AllowAnonymousToPage("/Platform/Account/Login");
 });
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
@@ -95,6 +97,26 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.SlidingExpiration = true;
     options.Events.OnSigningIn = context => LegacyAuthenticationCookieCleanup.DeleteAsync(context.HttpContext, context.Options);
     options.Events.OnSigningOut = context => LegacyAuthenticationCookieCleanup.DeleteAsync(context.HttpContext, context.Options);
+    var redirectToLogin = options.Events.OnRedirectToLogin;
+    options.Events.OnRedirectToLogin = context =>
+    {
+        if (!PlatformAuthorization.IsPlatformRequest(context.Request))
+        {
+            return redirectToLogin(context);
+        }
+        context.Response.Redirect(context.Request.PathBase + "/Platform/Account/Login");
+        return Task.CompletedTask;
+    };
+    var redirectToAccessDenied = options.Events.OnRedirectToAccessDenied;
+    options.Events.OnRedirectToAccessDenied = context =>
+    {
+        if (!PlatformAuthorization.IsPlatformRequest(context.Request))
+        {
+            return redirectToAccessDenied(context);
+        }
+        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+        return Task.CompletedTask;
+    };
 });
 
 builder.Services.Configure<CookiePolicyOptions>(options =>
@@ -115,8 +137,14 @@ builder.Services.AddAntiforgery(options =>
 
 builder.Services.Configure<ForwardedHeadersOptions>(options => ConfigureForwardedHeaders(options, builder.Configuration));
 
+builder.Services.AddScoped<PlatformAdministratorAccess>();
+builder.Services.AddScoped<IAuthorizationHandler, PlatformAdministratorHandler>();
 builder.Services.AddAuthorization(options =>
 {
+    options.AddPolicy(PlatformAuthorization.PolicyName, policy => policy
+        .AddAuthenticationSchemes(IdentityConstants.ApplicationScheme)
+        .RequireAuthenticatedUser()
+        .AddRequirements(new PlatformAdministratorRequirement()));
     options.DefaultPolicy = new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
         .RequireRole(RoleNames.Administrator, RoleNames.Accountant, RoleNames.Member)

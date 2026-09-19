@@ -2,6 +2,7 @@ namespace Neftyanik.Portal.Domain.Constants;
 
 public static class RoleNames
 {
+    public const string PlatformAdministrator = "PlatformAdministrator";
     public const string Administrator = "Administrator";
     public const string Accountant = "Accountant";
     public const string AdministratorOrAccountant = Administrator + "," + Accountant;

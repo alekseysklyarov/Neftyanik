@@ -17,7 +17,7 @@ public sealed class AssociationRoutingMiddleware
     public async Task InvokeAsync(HttpContext httpContext, ApplicationDbContext database, AssociationContext associationContext, IWebHostEnvironment environment)
     {
         var path = httpContext.Request.Path;
-        if (path == "/health" || path == "/Error")
+        if (path == "/health" || path == "/Error" || path.StartsWithSegments("/Platform", StringComparison.OrdinalIgnoreCase))
         {
             await _next(httpContext);
             return;
@@ -52,6 +52,12 @@ public sealed class AssociationRoutingMiddleware
             var suffix = segments.Length == 3 ? "/" + segments[2] : "/";
             httpContext.Response.Redirect(httpContext.Request.PathBase + "/" + association.Slug + suffix + httpContext.Request.QueryString,
                 permanent: false, preserveMethod: true);
+            return;
+        }
+
+        if (new PathString("/" + segments[2]).StartsWithSegments("/Platform", StringComparison.OrdinalIgnoreCase))
+        {
+            httpContext.Response.StatusCode = StatusCodes.Status404NotFound;
             return;
         }
 

@@ -1,0 +1,10 @@
+@page
+@model Neftyanik.Portal.Web.Pages.Platform.IndexModel
+@{
+    ViewData["Title"] = AppLocalizer.Get("Управление платформой", "Керування платформою", "Platform administration");
+}
+<h1 class="h3">@ViewData["Title"]</h1>
+<p>@AppLocalizer.Get("Платформенный доступ подтверждён. Создание товариществ пока недоступно.", "Платформний доступ підтверджено. Створення товариств поки недоступне.", "Platform access verified. Association creation is not available yet.")</p>
+<form method="post" asp-page="/Platform/Index" asp-page-handler="Logout" asp-antiforgery="true">
+    <button type="submit" class="btn btn-outline-secondary">@AppLocalizer.Get("Выход", "Вийти", "Log out")</button>
+</form>
