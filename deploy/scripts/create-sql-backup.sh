@@ -59,10 +59,9 @@ run_sql() {
             SQLCMD=/opt/mssql-tools/bin/sqlcmd
         fi
 
-        "$SQLCMD" \
+        SQLCMDPASSWORD="$MSSQL_SA_PASSWORD" "$SQLCMD" \
             -S 127.0.0.1 \
             -U sa \
-            -P "$MSSQL_SA_PASSWORD" \
             -C \
             -b \
             -Q "$1"
