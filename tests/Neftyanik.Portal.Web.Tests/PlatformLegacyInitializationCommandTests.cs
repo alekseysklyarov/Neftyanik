@@ -21,6 +21,28 @@ public sealed class PlatformLegacyInitializationCommandTests
     private static string Secret() => Convert.ToHexString(RandomNumberGenerator.GetBytes(24)) + "aA1!";
 
     [Theory]
+    [InlineData("CREATE FIRST PLATFORMADMINISTRATOR", true)]
+    [InlineData(null, false)]
+    [InlineData("", false)]
+    [InlineData("REVIEWED", false)]
+    [InlineData("YES", false)]
+    [InlineData("create first platformadministrator", false)]
+    [InlineData(" CREATE FIRST PLATFORMADMINISTRATOR", false)]
+    [InlineData("CREATE FIRST PLATFORMADMINISTRATOR ", false)]
+    public void OwnerConfirmation_RequiresExactExplicitDeclaration(string? answer, bool expected)
+    {
+        using var input = new StringReader(answer is null ? string.Empty : answer + Environment.NewLine);
+        using var output = new StringWriter();
+        Assert.Equal(expected, PlatformLegacyInitializationCommand.ConfirmOwnerDecision(input, output));
+        Assert.Contains("I am the project owner", output.ToString());
+        Assert.Contains("first PlatformAdministrator account", output.ToString());
+        Assert.Contains("I authorize its creation", output.ToString());
+        Assert.DoesNotContain("REVIEWED", output.ToString());
+        Assert.DoesNotContain("Approval/change reference", output.ToString());
+        Assert.DoesNotContain("Independent", output.ToString());
+    }
+
+    [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public async Task LegacyCli_RedirectedInputAndExtraArguments_StopBeforeHostStartup(bool extraArgument)
@@ -71,7 +93,7 @@ public sealed class PlatformLegacyInitializationCommandTests
         var services = scope.ServiceProvider;
         var initializer = new PlatformLegacyInitialization(services.GetRequiredService<ApplicationDbContext>(),
             services.GetRequiredService<UserManager<ApplicationUser>>(), services.GetRequiredService<RoleManager<IdentityRole>>(), TimeProvider.System);
-        Assert.Equal(PlatformBootstrapResult.Failed, await initializer.InitializeAsync("operator", "operator@example.test", Secret(), "operator", "CHANGE-1"));
+        Assert.Equal(PlatformBootstrapResult.Failed, await initializer.InitializeAsync("operator", "operator@example.test", Secret(), "operator", ownerConfirmed: true));
     }
 
     [Fact]
@@ -98,7 +120,11 @@ public sealed class PlatformLegacyInitializationCommandTests
         await database.SaveChangesAsync();
         var initializer = new PlatformLegacyInitialization(database, users, services.GetRequiredService<RoleManager<IdentityRole>>(), TimeProvider.System);
         var password = Secret();
-        Assert.Equal(PlatformBootstrapResult.Created, await initializer.InitializeAsync("operator", "operator@example.test", password, "operator", "CHANGE-1"));
+        Assert.Equal(PlatformBootstrapResult.Created, await initializer.InitializeAsync("operator", "operator@example.test", password, "operator", ownerConfirmed: true));
+        var marker = await database.PlatformBootstrapStates.SingleAsync();
+        Assert.Equal("Owner attestation: first PlatformAdministrator; creation authorized", marker.Reason);
+        Assert.Equal("operator", marker.OperatorIdentity);
+        Assert.Null(marker.ApprovalReference);
         using var output = new StringWriter();
         var recovery = services.GetRequiredService<IPlatformAccountRecovery>();
         await PlatformLegacyInitializationCommand.CompleteAsync(output);
@@ -107,7 +133,7 @@ public sealed class PlatformLegacyInitializationCommandTests
         Assert.Equal(1, sender.Attempts);
         Assert.Contains("creation committed", output.ToString());
         Assert.DoesNotContain(password, output.ToString());
-        Assert.Equal(PlatformBootstrapResult.AlreadyProvisioned, await initializer.InitializeAsync("replacement", "replacement@example.test", Secret(), "operator", "CHANGE-2"));
+        Assert.Equal(PlatformBootstrapResult.AlreadyProvisioned, await initializer.InitializeAsync("replacement", "replacement@example.test", Secret(), "operator", ownerConfirmed: true));
         await recovery.RequestAsync("operator@example.test", confirmEmail: true);
         Assert.Equal(2, sender.Attempts);
         var user = (await users.FindByNameAsync("operator"))!;

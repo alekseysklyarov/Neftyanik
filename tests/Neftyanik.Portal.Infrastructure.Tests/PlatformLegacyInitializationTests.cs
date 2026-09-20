@@ -24,7 +24,7 @@ public sealed class PlatformLegacyInitializationTests
     private static string Secret() => Convert.ToHexString(RandomNumberGenerator.GetBytes(24)) + "aA1!";
 
     [Fact]
-    public async Task Initialize_ReviewedTenantInstallation_CreatesOnePendingUserAndPreservesEveryExistingTableRow()
+    public async Task Initialize_OwnerConfirmedTenantInstallation_CreatesOnePendingUserAndPreservesEveryExistingTableRow()
     {
         await using var fixture = await Fixture.CreateAsync();
         await fixture.AddSecondAssociationAsync();
@@ -54,7 +54,8 @@ public sealed class PlatformLegacyInitializationTests
             var marker = await database.PlatformBootstrapStates.SingleAsync();
             Assert.Equal(PlatformBootstrapDisposition.Consumed, marker.Disposition);
             Assert.Equal("test-operator", marker.OperatorIdentity);
-            Assert.Equal("CHANGE-123", marker.ApprovalReference);
+            Assert.Equal("Owner attestation: first PlatformAdministrator; creation authorized", marker.Reason);
+            Assert.Null(marker.ApprovalReference);
             Assert.Equal(user.Id, marker.InitializedUserId);
             Assert.NotNull(marker.InitializedAtUtc);
             Assert.Equal(PlatformPasswordChangeResult.Succeeded,
@@ -168,12 +169,21 @@ public sealed class PlatformLegacyInitializationTests
     [InlineData("")]
     [InlineData(" ")]
     [InlineData("contains\nnewline")]
-    public async Task Initialize_InvalidApproval_IsRefused(string approval)
+    public async Task Initialize_InvalidOperatorIdentity_IsRefused(string operatorIdentity)
     {
         await using var fixture = await Fixture.CreateAsync();
-        Assert.Equal(PlatformBootstrapResult.InvalidInput, await fixture.InitializeAsync(approval: approval));
-        Assert.Equal(PlatformBootstrapResult.InvalidInput, await fixture.InitializeAsync(approval: new string('a', 101)));
+        Assert.Equal(PlatformBootstrapResult.InvalidInput, await fixture.InitializeAsync(operatorIdentity: operatorIdentity));
         Assert.Equal(PlatformBootstrapResult.InvalidInput, await fixture.InitializeAsync(operatorIdentity: new string('o', 257)));
+    }
+
+    [Fact]
+    public async Task Initialize_WithoutOwnerConfirmation_IsRefusedWithoutWrites()
+    {
+        await using var fixture = await Fixture.CreateAsync();
+        var before = await fixture.SnapshotAsync(includeMarker: true);
+        Assert.Equal(PlatformBootstrapResult.InvalidInput, await fixture.InitializeAsync(ownerConfirmed: false));
+        var after = await fixture.SnapshotAsync(includeMarker: true);
+        foreach (var table in before.Keys) Assert.Equal(before[table], after[table]);
     }
 
     [Fact]
@@ -237,7 +247,7 @@ public sealed class PlatformLegacyInitializationTests
             var options = new DbContextOptionsBuilder<ApplicationDbContext>().UseSqlServer(database.Database.GetConnectionString()).Options;
             await using var tenant = new ApplicationDbContext(options, TestAssociations.Neftyanik);
             var initializer = new PlatformLegacyInitialization(tenant, services.GetRequiredService<UserManager<ApplicationUser>>(), services.GetRequiredService<RoleManager<IdentityRole>>(), TimeProvider.System);
-            Assert.Equal(PlatformBootstrapResult.Failed, await initializer.InitializeAsync("operator", "operator@example.test", Secret(), "operator", "CHANGE-1"));
+            Assert.Equal(PlatformBootstrapResult.Failed, await initializer.InitializeAsync("operator", "operator@example.test", Secret(), "operator", ownerConfirmed: true));
         });
         var after = await fixture.SnapshotAsync(includeMarker: true);
         foreach (var table in before.Keys) Assert.Equal(before[table], after[table]);
@@ -291,10 +301,10 @@ public sealed class PlatformLegacyInitializationTests
             return fixture;
         }
 
-        public async Task<PlatformBootstrapResult> InitializeAsync(string login = "operator", string email = "operator@example.test", string approval = "CHANGE-123", string operatorIdentity = "test-operator")
+        public async Task<PlatformBootstrapResult> InitializeAsync(string login = "operator", string email = "operator@example.test", bool ownerConfirmed = true, string operatorIdentity = "test-operator")
         {
             await using var scope = _services.CreateAsyncScope();
-            return await scope.ServiceProvider.GetRequiredService<IPlatformLegacyInitialization>().InitializeAsync(login, email, Password, operatorIdentity, approval);
+            return await scope.ServiceProvider.GetRequiredService<IPlatformLegacyInitialization>().InitializeAsync(login, email, Password, operatorIdentity, ownerConfirmed);
         }
 
         public async Task ScopeAsync(Func<IServiceProvider, Task> action)

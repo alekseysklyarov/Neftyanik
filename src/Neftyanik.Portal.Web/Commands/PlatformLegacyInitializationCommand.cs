@@ -33,11 +33,8 @@ public static class PlatformLegacyInitializationCommand
             if (!string.Equals(Console.ReadLine(), server, StringComparison.Ordinal)) return 1;
             Console.Write("Type the exact database name: ");
             if (!string.Equals(Console.ReadLine(), databaseName, StringComparison.Ordinal)) return 1;
-            Console.WriteLine("Absence of current platform accounts does not prove historical eligibility. Independent historical review, backup, rehearsal and approval are required.");
-            Console.Write("Type REVIEWED to attest that the approved historical review established this is the first platform administrator: ");
-            if (!string.Equals(Console.ReadLine(), "REVIEWED", StringComparison.Ordinal)) return 1;
-            Console.Write("Approval/change reference (max 100 characters; no secrets): ");
-            var approval = Console.ReadLine() ?? string.Empty;
+            var ownerConfirmed = ConfirmOwnerDecision(Console.In, Console.Out);
+            if (!ownerConfirmed) return 1;
             Console.Write("New dedicated login (not an existing tenant account): ");
             var login = Console.ReadLine() ?? string.Empty;
             Console.Write("Administrator email (mailbox ownership must be confirmed): ");
@@ -52,7 +49,7 @@ public static class PlatformLegacyInitializationCommand
             }
             var operatorIdentity = Environment.UserDomainName + "\\" + Environment.UserName;
             var result = await scope.ServiceProvider.GetRequiredService<IPlatformLegacyInitialization>()
-                .InitializeAsync(login, email, password, operatorIdentity, approval);
+                .InitializeAsync(login, email, password, operatorIdentity, ownerConfirmed);
             if (result != PlatformBootstrapResult.Created)
             {
                 Console.Error.WriteLine(result switch
@@ -72,6 +69,14 @@ public static class PlatformLegacyInitializationCommand
             Console.Error.WriteLine("Initialization could not be completed or confirmed. Inspect provisioning state before retrying; do not remove the marker.");
             return 1;
         }
+    }
+
+    public static bool ConfirmOwnerDecision(TextReader input, TextWriter output)
+    {
+        output.WriteLine("Absence of current platform accounts does not prove historical eligibility. Verify the installation history before confirming.");
+        output.WriteLine("Owner declaration: I am the project owner. This is the first PlatformAdministrator account, and I authorize its creation.");
+        output.Write("Type CREATE FIRST PLATFORMADMINISTRATOR to confirm this declaration: ");
+        return string.Equals(input.ReadLine(), "CREATE FIRST PLATFORMADMINISTRATOR", StringComparison.Ordinal);
     }
 
     public static async Task CompleteAsync(TextWriter output)

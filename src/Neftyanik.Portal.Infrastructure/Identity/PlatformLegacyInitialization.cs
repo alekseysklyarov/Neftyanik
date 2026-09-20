@@ -15,10 +15,10 @@ public sealed class PlatformLegacyInitialization(
     TimeProvider clock) : IPlatformLegacyInitialization
 {
     public async Task<PlatformBootstrapResult> InitializeAsync(string login, string email, string temporaryPassword,
-        string operatorIdentity, string approvalReference, CancellationToken cancellationToken = default)
+        string operatorIdentity, bool ownerConfirmed, CancellationToken cancellationToken = default)
     {
-        if (!PlatformAdministratorProvisioning.IsValid(login, email, temporaryPassword)
-            || !ValidAuditValue(operatorIdentity, 256) || !ValidAuditValue(approvalReference, 100))
+        if (!ownerConfirmed || !PlatformAdministratorProvisioning.IsValid(login, email, temporaryPassword)
+            || !ValidAuditValue(operatorIdentity, 256))
             return PlatformBootstrapResult.InvalidInput;
         if (!database.Database.IsSqlServer() || database.IsAssociationResolved) return PlatformBootstrapResult.Failed;
         try
@@ -49,9 +49,9 @@ public sealed class PlatformLegacyInitialization(
             if (creation.Result != PlatformBootstrapResult.Created) return creation.Result;
             marker.Disposition = PlatformBootstrapDisposition.Consumed;
             marker.ConsumedAtUtc = clock.GetUtcNow();
-            marker.Reason = "Reviewed legacy first administrator initialized";
+            marker.Reason = "Owner attestation: first PlatformAdministrator; creation authorized";
             marker.OperatorIdentity = operatorIdentity.Trim();
-            marker.ApprovalReference = approvalReference.Trim();
+            marker.ApprovalReference = null;
             marker.InitializedAtUtc = clock.GetUtcNow();
             marker.InitializedUserId = creation.User!.Id;
             await database.SaveChangesAsync(cancellationToken);
