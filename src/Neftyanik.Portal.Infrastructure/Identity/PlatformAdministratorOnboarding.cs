@@ -19,6 +19,7 @@ public sealed class PlatformAdministratorOnboarding(
     public const string BootstrapMarker = "dachahub:first-platform-administrator-provisioned";
     public const string TokenProvider = "DachaHub.PlatformOnboarding";
     public const string ExpiryToken = "TemporaryPasswordExpiresUtc";
+    public const string CliAuthorizationStamp = "CliOnboardingSecurityStamp";
 
     public async Task<PlatformBootstrapResult> BootstrapAsync(string login, string email, string temporaryPassword, CancellationToken cancellationToken = default)
     {
@@ -86,10 +87,10 @@ public sealed class PlatformAdministratorOnboarding(
     public async Task<bool> CanChangePasswordAsync(string userId, string securityStamp, CancellationToken cancellationToken = default)
     {
         var user = await database.Users.AsNoTracking().SingleOrDefaultAsync(x => x.Id == userId, cancellationToken);
-        return await IsPendingAsync(user, securityStamp);
+        return await IsPendingAsync(user, securityStamp, cancellationToken);
     }
 
-    private async Task<bool> IsPendingAsync(ApplicationUser? user, string securityStamp)
+    private async Task<bool> IsPendingAsync(ApplicationUser? user, string securityStamp, CancellationToken cancellationToken)
     {
         if (user is not { IsActive: true, MustChangePassword: true, TwoFactorEnabled: false }
             || string.IsNullOrEmpty(securityStamp) || user.SecurityStamp != securityStamp
@@ -98,8 +99,12 @@ public sealed class PlatformAdministratorOnboarding(
             return false;
         }
         var expiry = await users.GetAuthenticationTokenAsync(user, TokenProvider, ExpiryToken);
+        var cliStamp = await users.GetAuthenticationTokenAsync(user, TokenProvider, CliAuthorizationStamp);
+        var approvedCliAccount = cliStamp == securityStamp
+            || (cliStamp is null && await database.PlatformBootstrapStates.AsNoTracking().AnyAsync(x =>
+                x.Id == 1 && x.Disposition == PlatformBootstrapDisposition.Consumed && x.InitializedUserId == user.Id, cancellationToken));
         return DateTimeOffset.TryParseExact(expiry, "O", CultureInfo.InvariantCulture, DateTimeStyles.None, out var expiresAt)
-            && expiresAt > clock.GetUtcNow();
+            && expiresAt > clock.GetUtcNow() && approvedCliAccount;
     }
 
     public async Task<PlatformPasswordChangeResult> ChangePasswordAsync(string userId, string securityStamp, string currentPassword, string newPassword, CancellationToken cancellationToken = default)
@@ -113,14 +118,15 @@ public sealed class PlatformAdministratorOnboarding(
         {
             await using var transaction = await database.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
             var user = await database.Users.SingleOrDefaultAsync(x => x.Id == userId, cancellationToken);
-            if (!await IsPendingAsync(user, securityStamp)) return PlatformPasswordChangeResult.Denied;
+            if (!await IsPendingAsync(user, securityStamp, cancellationToken)) return PlatformPasswordChangeResult.Denied;
             if (!(await users.ChangePasswordAsync(user!, currentPassword, newPassword)).Succeeded)
             {
                 return PlatformPasswordChangeResult.InvalidPassword;
             }
             user!.MustChangePassword = false;
             if (!(await users.UpdateAsync(user)).Succeeded
-                || !(await users.RemoveAuthenticationTokenAsync(user, TokenProvider, ExpiryToken)).Succeeded)
+                || !(await users.RemoveAuthenticationTokenAsync(user, TokenProvider, ExpiryToken)).Succeeded
+                || !(await users.RemoveAuthenticationTokenAsync(user, TokenProvider, CliAuthorizationStamp)).Succeeded)
             {
                 return PlatformPasswordChangeResult.Failed;
             }

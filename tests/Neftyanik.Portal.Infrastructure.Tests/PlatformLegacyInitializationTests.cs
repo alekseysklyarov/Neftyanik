@@ -2,6 +2,7 @@ using System.Data.Common;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -265,13 +266,15 @@ public sealed class PlatformLegacyInitializationTests
             var connection = database.Database.GetConnectionString();
             var services = new ServiceCollection();
             services.AddLogging();
+            services.AddDataProtection().UseEphemeralDataProtectionProvider();
             services.AddSingleton(TimeProvider.System);
             services.AddDbContext<ApplicationDbContext>(options =>
             {
                 options.UseSqlServer(connection);
                 if (interceptor is not null) options.AddInterceptors(interceptor);
             });
-            services.AddIdentityCore<ApplicationUser>().AddRoles<IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>();
+            services.AddIdentityCore<ApplicationUser>().AddRoles<IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();
+            services.AddScoped<IPlatformAdministratorPasswordRecovery, PlatformAdministratorPasswordRecovery>();
             services.AddScoped<IPlatformAdministratorOnboarding, PlatformAdministratorOnboarding>();
             services.AddScoped<IPlatformLegacyInitialization, PlatformLegacyInitialization>();
             fixture._services = services.BuildServiceProvider();

@@ -64,7 +64,7 @@ public static class PlatformLegacyInitializationCommand
                 });
                 return 1;
             }
-            await CompleteAsync(scope.ServiceProvider.GetRequiredService<IPlatformAccountRecovery>(), email, Console.Out);
+            await CompleteAsync(Console.Out);
             return 0;
         }
         catch
@@ -74,11 +74,9 @@ public static class PlatformLegacyInitializationCommand
         }
     }
 
-    public static async Task CompleteAsync(IPlatformAccountRecovery recovery, string email, TextWriter output)
+    public static async Task CompleteAsync(TextWriter output)
     {
-        await output.WriteLineAsync("Administrator creation committed; bootstrap is permanently consumed. Never repeat initialization to repair delivery.");
-        try { await recovery.RequestAsync(email, confirmEmail: true); }
-        catch { await output.WriteLineAsync("Email confirmation could not be requested. No provisioning changes were reversed."); }
-        await output.WriteLineAsync("Check the confirmation email, or configure SMTP and resend confirmation from /Platform/Account/ForgotPassword. Sign in at /Platform/Account/Login within 24 hours to change the temporary password, or use confirmed-email recovery afterwards. No tenant membership was assigned.");
+        await output.WriteLineAsync("Administrator creation committed; bootstrap is permanently consumed. SMTP is not required and no email was sent.");
+        await output.WriteLineAsync("Sign in at /Platform/Account/Login within 24 hours and change the temporary password. Email remains unconfirmed; optional confirmation can be requested later from /Platform/Account/ForgotPassword. For forgotten or expired passwords use reset-platform-admin-password; never repeat initialization. No tenant membership was assigned.");
     }
 }

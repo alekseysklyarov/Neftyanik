@@ -57,7 +57,9 @@ internal static class PlatformAdministratorProvisioning
         if (!(await roles.CreateAsync(new IdentityRole(RoleNames.PlatformAdministrator))).Succeeded
             || !(await users.AddToRoleAsync(user, RoleNames.PlatformAdministrator)).Succeeded
             || !(await users.SetAuthenticationTokenAsync(user, PlatformAdministratorOnboarding.TokenProvider,
-                PlatformAdministratorOnboarding.ExpiryToken, clock.GetUtcNow().AddHours(24).ToString("O", CultureInfo.InvariantCulture))).Succeeded)
+                PlatformAdministratorOnboarding.ExpiryToken, clock.GetUtcNow().AddHours(24).ToString("O", CultureInfo.InvariantCulture))).Succeeded
+            || !(await users.SetAuthenticationTokenAsync(user, PlatformAdministratorOnboarding.TokenProvider,
+                PlatformAdministratorOnboarding.CliAuthorizationStamp, user.SecurityStamp!)).Succeeded)
             return (PlatformBootstrapResult.Failed, null);
         return (PlatformBootstrapResult.Created, user);
     }

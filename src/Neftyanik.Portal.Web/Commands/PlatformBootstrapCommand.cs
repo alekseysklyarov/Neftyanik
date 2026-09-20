@@ -46,8 +46,7 @@ public static class PlatformBootstrapCommand
                 .BootstrapAsync(login, email, password);
             if (result == PlatformBootstrapResult.Created)
             {
-                await scope.ServiceProvider.GetRequiredService<IPlatformAccountRecovery>().RequestAsync(email, confirmEmail: true);
-                Console.WriteLine("Email confirmation requested. If delivery is unavailable, configure SMTP and request confirmation from the platform recovery page. Do not repeat bootstrap.");
+                Console.WriteLine("CLI onboarding is ready without SMTP. Email remains unconfirmed; optional confirmation can be requested later from /Platform/Account/ForgotPassword. Do not repeat bootstrap.");
             }
             Console.WriteLine(result switch
             {

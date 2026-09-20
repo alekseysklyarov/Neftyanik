@@ -101,7 +101,9 @@ public sealed class PlatformLegacyInitializationCommandTests
         Assert.Equal(PlatformBootstrapResult.Created, await initializer.InitializeAsync("operator", "operator@example.test", password, "operator", "CHANGE-1"));
         using var output = new StringWriter();
         var recovery = services.GetRequiredService<IPlatformAccountRecovery>();
-        await PlatformLegacyInitializationCommand.CompleteAsync(recovery, "operator@example.test", output);
+        await PlatformLegacyInitializationCommand.CompleteAsync(output);
+        Assert.Equal(0, sender.Attempts);
+        await recovery.RequestAsync("operator@example.test", confirmEmail: true);
         Assert.Equal(1, sender.Attempts);
         Assert.Contains("creation committed", output.ToString());
         Assert.DoesNotContain(password, output.ToString());

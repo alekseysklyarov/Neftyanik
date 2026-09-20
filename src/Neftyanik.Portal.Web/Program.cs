@@ -27,7 +27,8 @@ using Neftyanik.Portal.Application.Associations;
 
 var isPlatformBootstrap = args.Length > 0 && string.Equals(args[0], "create-first-platform-admin", StringComparison.OrdinalIgnoreCase);
 var isPlatformLegacyInitialization = args.Length > 0 && string.Equals(args[0], Neftyanik.Portal.Web.Commands.PlatformLegacyInitializationCommand.Name, StringComparison.OrdinalIgnoreCase);
-var isPlatformOperatorCommand = isPlatformBootstrap || isPlatformLegacyInitialization;
+var isPlatformPasswordRecovery = args.Length > 0 && string.Equals(args[0], Neftyanik.Portal.Web.Commands.PlatformPasswordRecoveryCommand.Name, StringComparison.OrdinalIgnoreCase);
+var isPlatformOperatorCommand = isPlatformBootstrap || isPlatformLegacyInitialization || isPlatformPasswordRecovery;
 if (isPlatformOperatorCommand && (args.Length != 1 || Console.IsInputRedirected || Console.IsOutputRedirected))
 {
     Console.Error.WriteLine("Platform bootstrap requires an interactive terminal and accepts no arguments or redirected input.");
@@ -98,6 +99,10 @@ builder.Services.AddInfrastructure(builder.Configuration);
 if (isPlatformLegacyInitialization)
 {
     builder.Services.AddScoped<IPlatformLegacyInitialization, PlatformLegacyInitialization>();
+}
+if (isPlatformPasswordRecovery)
+{
+    builder.Services.AddScoped<IPlatformAdministratorPasswordRecovery, PlatformAdministratorPasswordRecovery>();
 }
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
@@ -173,15 +178,12 @@ builder.Services.ConfigureApplicationCookie(options =>
     var validatePrincipal = options.Events.OnValidatePrincipal;
     options.Events.OnValidatePrincipal = async context =>
     {
-        if (PlatformAuthorization.IsPlatformRequest(context.Request) || context.Principal?.IsInRole(RoleNames.PlatformAdministrator) == true)
+        var signIn = context.HttpContext.RequestServices.GetRequiredService<SignInManager<ApplicationUser>>();
+        if (context.Principal is null || await signIn.ValidateSecurityStampAsync(context.Principal) is null)
         {
-            var signIn = context.HttpContext.RequestServices.GetRequiredService<SignInManager<ApplicationUser>>();
-            if (context.Principal is null || await signIn.ValidateSecurityStampAsync(context.Principal) is null)
-            {
-                context.RejectPrincipal();
-                await context.HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);
-                return;
-            }
+            context.RejectPrincipal();
+            await context.HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);
+            return;
         }
         await validatePrincipal(context);
     };
@@ -257,6 +259,10 @@ if (isPlatformBootstrap)
 if (isPlatformLegacyInitialization)
 {
     return await Neftyanik.Portal.Web.Commands.PlatformLegacyInitializationCommand.RunAsync(app.Services);
+}
+if (isPlatformPasswordRecovery)
+{
+    return await Neftyanik.Portal.Web.Commands.PlatformPasswordRecoveryCommand.RunAsync(app.Services);
 }
 
 if (IsLegacyElectricityImportCommand(args))

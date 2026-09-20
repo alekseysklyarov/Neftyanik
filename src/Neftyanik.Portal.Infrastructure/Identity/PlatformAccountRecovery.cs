@@ -78,7 +78,8 @@ public sealed class PlatformAccountRecovery(
             // Mailbox proof plus a newly chosen password completes initial-password onboarding.
             user.MustChangePassword = false;
             if (!(await users.UpdateAsync(user)).Succeeded
-                || !(await users.RemoveAuthenticationTokenAsync(user, PlatformAdministratorOnboarding.TokenProvider, PlatformAdministratorOnboarding.ExpiryToken)).Succeeded) return false;
+                || !(await users.RemoveAuthenticationTokenAsync(user, PlatformAdministratorOnboarding.TokenProvider, PlatformAdministratorOnboarding.ExpiryToken)).Succeeded
+                || !(await users.RemoveAuthenticationTokenAsync(user, PlatformAdministratorOnboarding.TokenProvider, PlatformAdministratorOnboarding.CliAuthorizationStamp)).Succeeded) return false;
             await transaction.CommitAsync(cancellationToken);
             return true;
         }

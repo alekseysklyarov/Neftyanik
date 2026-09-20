@@ -2,11 +2,25 @@
 
 This is an explicit operator-only operation, not a Web endpoint or a startup seed. Do not run it against production without deployment approval. The running local smoke host is not updated or restarted by the onboarding implementation.
 
+**SMTP is optional.** Approved CLI provisioning and SSH password recovery require neither email delivery nor confirmed email. The account must still complete the restricted web password-change flow before platform access. Email addresses remain unconfirmed unless mailbox ownership is proven through the optional confirmation flow.
+
+## Production command summary (after separate approval)
+
+Connect to the approved VPS through SSH under an authorized operator account and change to the reviewed published Web directory with its trusted environment loaded. Do not copy production credentials into these examples.
+
+| Situation | Exact command |
+| --- | --- |
+| First administrator on the existing tenant-only installation, after historical review | `dotnet ./Neftyanik.Portal.Web.dll initialize-first-platform-admin-for-existing-installation` |
+| First administrator on a genuinely pristine installation | `dotnet ./Neftyanik.Portal.Web.dll create-first-platform-admin` |
+| Forgotten password or expired temporary password for an existing active platform administrator | `dotnet ./Neftyanik.Portal.Web.dll reset-platform-admin-password` |
+
+After creation or reset, open `/Platform/Account/Login` over HTTPS, enter the exact login and temporary password, and complete `/Platform/Account/ChangeInitialPassword` within 24 hours. Only then can the administrator access `/Platform`. No email is sent by these CLI commands. Never rerun first provisioning to recover a password.
+
 ## Before running
 
 - Use a reviewed build and an interactive terminal under an authorized deployment/OS account. Access to this executable plus its database credentials is the operator trust boundary; an association Administrator is not an operator.
 - Configure the intended database through the existing secure environment configuration. For local verification use a newly isolated database, never the ordinary development or production database. Do not put database secrets or passwords in command-line arguments or tracked files.
-- The EF schema, including `20260919185049_AddPermanentPlatformBootstrapState`, must already be installed through a separately approved deployment. This command neither applies migrations nor starts the Web server. Never start the application in `Development` against an existing database merely to check configuration: normal Development startup automatically applies migrations.
+- The EF schema, including `20260919185049_AddPermanentPlatformBootstrapState` and `20260920163502_AddPlatformPasswordRecoveryAudit`, must already be installed through a separately approved deployment. These commands neither apply migrations nor start the Web server. Never start the application in `Development` against an existing database merely to check configuration: normal Development startup automatically applies migrations.
 - Run from the Web content directory (local source Web directory, or the deployed/published release directory), so the displayed connection target is the one intended.
 - Verify the server and database printed by the command. It performs a read-only identity query first and requires the operator to type the exact database name before any provisioning write.
 
@@ -39,7 +53,7 @@ The command creates a **new dedicated account only**, with `MustChangePassword=t
 
 At the administrator-email prompt enter `alsklyr@gmail.com` for the intended first administrator. This is a recipient/mailbox identity, **not an SMTP sending account**. Identity stores the email and its normalized lookup value with `EmailConfirmed=false`. Protect the Identity database, backups and operator access as personal data; the email is not application-layer encrypted.
 
-After the transaction commits, the command requests a confirmation email. Delivery is not part of the database transaction. Missing configuration or delivery failure does not undo the permanent marker, confirm the mailbox, clear `MustChangePassword`, or change the password. The controlled console message says that delivery was requested, not that it succeeded. Configure delivery and use the confirmation-resend button; never rerun bootstrap to repair email delivery.
+After the transaction commits, the command prints web onboarding instructions and does **not** attempt SMTP. Missing SMTP configuration or a failed optional confirmation email cannot prevent CLI-authorized onboarding. It does not confirm the mailbox, clear `MustChangePassword`, or undo the permanent marker. If email functionality is wanted later, configure delivery and request confirmation from the recovery page; never rerun bootstrap to repair email delivery.
 
 ## One-time semantics
 
@@ -68,7 +82,7 @@ The dedicated command is `initialize-first-platform-admin-for-existing-installat
 1. Independently verify the intended installation using deployment history, old release versions, audit/change records and protected historical backups. **Absence of current platform accounts, roles or claims does not prove that an administrator never existed.** `LegacyReviewRequired` only records a need for review, not successful review or permission to create an account.
 2. Require an independent authorized approver to confirm the conclusion that this installation has never had a platform administrator. Record the evidence and approval/change reference outside the application. If evidence is incomplete, contradictory, or shows previous provisioning, stop and use the emergency-review process below; do not supply a reference merely to bypass the check.
 3. Take a protected backup through the approved operations procedure. Rehearse the reviewed release and migration against an **isolated restored copy**, using fake email delivery or otherwise isolated credentials so the rehearsal cannot send to real users. Verify before/after tenant-user, membership and financial snapshots, including other associations. Keep production secrets and restored personal data within the approved access boundary.
-4. Schedule an approved maintenance window. Disable old operator binaries/commands and concurrent administrative maintenance. Apply the approved schema separately; neither initialization command migrates the database or starts the Web listener. Configure production SMTP, trusted HTTPS origin and persistent Data Protection keys as described below.
+4. Schedule an approved maintenance window. Disable old operator binaries/commands and concurrent administrative maintenance. Apply the approved schema separately; neither initialization command migrates the database or starts the Web listener. Configure HTTPS and persistent Data Protection keys as described below. SMTP and the recovery-link origin are needed only if enabling optional email functionality.
 
 ### Operator execution, only after separate deployment approval
 
@@ -95,9 +109,9 @@ No association membership or financial data is changed. Successful provisioning 
 
 ### Email and first login after initialization
 
-Email delivery is attempted **after commit**. A delivery failure does not unconfirm/confirm the mailbox, change passwords, undo the consumed marker, or create another user. The command reports that creation committed and instructs the operator not to repeat initialization for delivery repair. Configure SMTP and resend confirmation from `/Platform/Account/ForgotPassword`; do not rerun the initializer. Email contents and transport exceptions are not printed.
+No email delivery is attempted by initialization. The command reports that creation committed and directs the operator to web password change without SMTP. Optional confirmation can later be requested from `/Platform/Account/ForgotPassword`. Delivery failure cannot unconfirm/confirm the mailbox, change passwords, undo the consumed marker, or create another user. Do not rerun the initializer. Email contents and transport exceptions are not printed.
 
-The account reuses the existing email-confirmation and first-login flows below. Confirm ownership before email recovery can work. Sign in and replace the temporary password within 24 hours, using only the restricted onboarding cookie; if that password expires, confirm the email and use the existing 15-minute reset flow. Neither initialization nor recovery grants tenant memberships.
+Sign in and replace the temporary password within 24 hours using only the restricted onboarding cookie. If it expires, use the SSH reset command below; optional verified-email recovery remains available if configured. Email ownership must be proven before email-based recovery can work, but is not a prerequisite for CLI onboarding. Neither initialization nor password recovery grants tenant memberships.
 
 ## First sign-in
 
@@ -105,12 +119,35 @@ The account reuses the existing email-confirmation and first-login flows below. 
 2. Enter the temporary credentials within 24 hours of bootstrap.
 3. Identity checks the password, account state and lockout. Only a separate, nonpersistent onboarding cookie is issued; any old application session is signed out.
 4. This ticket expires after ten minutes, is not renewed, and grants only `/Platform/Account/ChangeInitialPassword`. It cannot authenticate to the ordinary Identity application scheme or tenant pages.
-5. Each request rechecks the database role, active/lockout state, required-change flag, security stamp and temporary-password expiry.
+5. Each request rechecks the database role, active/lockout state, required-change flag, security stamp and temporary-password expiry. It also requires CLI onboarding authorization bound to the current stamp (`AspNetUserTokens`, provider `DachaHub.PlatformOnboarding`, name `CliOnboardingSecurityStamp`). For pending accounts created by the previous CLI release, the permanent consumed marker's `InitializedUserId` supplies backward-compatible provenance when this token is absent. An unrelated account with a role and `MustChangePassword` alone cannot enter this path. CLI reset can explicitly authorize an existing eligible platform account; it never grants the role.
 6. Submit the current temporary password, a different new password and confirmation. Antiforgery is enforced. Password rules use the existing Identity validators. Incorrect current passwords count toward lockout.
-7. Identity password change, clearing `MustChangePassword`, and removal of the expiry token commit atomically. Identity changes the security stamp; replaying an old onboarding ticket fails.
+7. Identity password change, clearing `MustChangePassword`, and removal of both the expiry and CLI-authorization tokens commit atomically. Identity changes the security stamp; replaying an old onboarding ticket fails. Email-confirmation status is preserved.
 8. The onboarding ticket and old application session are cleared. Normal Identity password sign-in with the new password issues a fresh, nonpersistent application session, after platform access is rechecked. If that final sign-in cannot succeed, the user is sent to platform login without being promoted.
 
 On validation/persistence failure, no unrestricted session is issued. The original flag/password remain if the transaction did not commit. A completed password change with a failed final sign-in is recovered by signing in normally with the new password.
+
+## SSH password recovery
+
+`reset-platform-admin-password` is registered only in its CLI process, not in the Web host. It is a narrowly scoped credential-recovery operation, **not** a means to create accounts, promote tenant users, unlock disabled accounts, restore roles, or reopen bootstrap. Interactive prompts and a change reference are not authorization: restrict SSH/OS execution and database credentials to approved operators. The service requires SQL Server and refuses a tenant-resolved context.
+
+1. Obtain operator approval and confirm the intended existing account through the approved out-of-band process. Retain a protected backup and follow the change-management procedure. Enter from the reviewed published directory; do not run a second Web host or apply migrations through this command.
+2. Run `dotnet ./Neftyanik.Portal.Web.dll reset-platform-admin-password` with **no extra arguments**. Redirected input/output is rejected before application startup. Type the exact SQL Server instance and database names returned by the actual connection, after comparing them to the approved inventory.
+3. Enter the **exact, case-sensitive existing username**, not an email alias. A username that itself is an email is accepted only as that exact username. Missing users, ordinary tenant accounts, login/email ambiguity, inactive or locked accounts, revoked platform roles, and unsupported 2FA-enabled accounts are refused. An expired temporary password does not disqualify an otherwise eligible account.
+4. Enter a non-secret approval/change reference (maximum 100 characters). The command records the executing OS domain/user, not an Identity user selected from a form. The external approval record must identify the human operator if execution uses a service account.
+5. Enter and confirm a strong new temporary password using hidden terminal input. It must satisfy the existing Identity validators. No password is read from arguments, configuration, environment variables, pipes or files, and no password/reset token is printed or audited.
+6. The service takes a serializable transaction and the shared transaction-owned exclusive `DachaHub.FirstPlatformAdministrator` SQL Server lock. It rechecks the exact account, current platform role, active/lockout state and stamp captured before password entry. Concurrent attempts prepared against the same stamp cannot both commit: a stale attempt reports a conflict. A later separately reviewed attempt may prepare against the new state. Do not automatically retry a conflict with a refreshed stamp.
+7. Identity generates and consumes an internal password-reset token in the CLI process. Identity rotates the security stamp; the service sets `MustChangePassword=true`, a fresh 24-hour temporary-password expiry and current-stamp CLI onboarding authorization. The same transaction inserts `PlatformPasswordRecoveryAudits` with target user ID, OS operator, approval reference and UTC timestamp. Passwords, reset tokens and security stamps are not audit fields. It leaves email confirmation, role assignments, lockout counters, active state, bootstrap marker and tenant/financial data unchanged.
+8. Audit/token/password persistence failure rolls the entire transaction back. An uncertain commit acknowledgement requires operator inspection of audit/account state before another attempt; never delete the bootstrap marker. Audit records have no cascading user foreign key and survive account deletion. There is no HTTP recovery endpoint for this operation.
+9. All application cookies now have their security stamp validated against Identity on **every request**, not just platform requests or periodically. This includes tickets predating a platform-role claim. Onboarding cookies retain their separate per-request validation. Old tickets fail on their next request and remain invalid after the new mandatory password change is completed. Already-running requests cannot be recalled. This adds a database validation per authenticated cookie request.
+10. Sign in with the temporary password at `/Platform/Account/Login` and complete mandatory password change within 24 hours. SMTP, mailbox access and email confirmation are not required for this CLI-authorized path. Email remains unconfirmed unless the owner separately completes mailbox verification.
+
+### Temporary-password handling
+
+Use a strong randomly generated temporary password and a trusted terminal with input recording disabled. Hidden input prevents echo, not observation by compromised terminals, SSH session-recording software, OS administrators or debuggers. Do not put the password in shell history, a script, an environment variable, a ticket, chat, email or a screenshot. If another person must receive it, use the organization's approved confidential out-of-band channel, then have them immediately choose a different password in the web flow. Clear clipboard/password-manager temporary entries according to policy after use. Secrets necessarily exist briefly in process memory; no secure-erasure claim is made for managed strings. If disclosure is suspected, perform a newly approved CLI reset and treat the old temporary password as compromised.
+
+### Additive recovery-audit migration
+
+`20260920163502_AddPlatformPasswordRecoveryAudit` adds only the global `PlatformPasswordRecoveryAudits` table and an index on `(UserId, OccurredAtUtc)`. It does not modify the committed bootstrap migration, existing accounts, bootstrap dispositions or tenant records. Its `Down` refuses destructive audit-history removal. CLI authorization uses existing Identity token storage and requires no user-column migration. Apply the additive migration only through separately approved deployment; this implementation was verified only in disposable test databases.
 
 ## 2FA and other limits
 
@@ -122,12 +159,12 @@ CLI logging providers are disabled and only controlled status/error messages are
 
 ## Email verification
 
-1. Open the bootstrap confirmation email, or visit `/Platform/Account/ForgotPassword`, enter the administrator email, and select **Повторить подтверждение email**.
+1. If optional SMTP is configured, visit `/Platform/Account/ForgotPassword`, enter the administrator email, and select **Повторить подтверждение email**. CLI provisioning itself no longer sends an email.
 2. Open the HTTPS link in a trusted browser with JavaScript enabled. Press **Подтвердить мой email**. GET does not confirm anything; the modifying POST requires antiforgery.
 3. Identity validates its email-confirmation token. Only a currently active, unlocked platform-role holder with a unique email can confirm. The confirmation changes only `EmailConfirmed`; it does not sign in, grant roles, or clear the initial-password requirement.
 4. The page redirects to password recovery. After confirmation, either finish the normal temporary-password flow or request a password-reset email. Email confirmation uses the existing Identity email provider (default lifetime one day), separate from the 15-minute recovery provider.
 
-If SMTP is unavailable, normal temporary-password onboarding still works within its 24-hour window; email recovery stays unavailable until mailbox ownership has been proven. Legacy accounts with no email need approved operator-assisted email enrollment; this feature does not silently attach the intended Gmail address to an existing account.
+If SMTP is unavailable, CLI temporary-password onboarding still works within its 24-hour window; expired or forgotten passwords can be recovered through SSH. Email recovery stays unavailable until mailbox ownership has actually been proven. Legacy accounts with no email need approved operator-assisted email enrollment if email recovery is wanted; this feature does not silently attach the intended Gmail address to an existing account.
 
 ## Password recovery
 
@@ -147,20 +184,20 @@ On success, the browser's application/onboarding cookies are cleared and it redi
 - Configure reverse proxies, APM, SMTP diagnostics and client telemetry **not to capture request bodies, form values, email bodies or full email links**. Do not enable EF sensitive-data logging or verbose Identity/MVC model-binding diagnostics in production. Never log raw transport exceptions; they may contain secrets.
 - Fragments still exist in the original email and briefly in browser memory/history before the script runs. JavaScript failure, extensions, mailbox access, browser sync or endpoint compromise are outside this protection. No promise of secure deletion from those systems is made. Disable email link tracking/rewriting for these messages where possible; verify that the chosen delivery provider preserves fragments.
 
-## Required production configuration
+## Production configuration and optional email
 
-Use environment variables or a deployment secret store, never tracked `appsettings.json`, command-line passwords or the administrator's personal Gmail password. Set the following in the Web service **and** in the separately approved interactive bootstrap process:
+Use environment variables or a deployment secret store for service configuration, never tracked secrets or the administrator's personal Gmail password. These configuration variables are **not** accepted as sources of administrator passwords. Set the database/HTTPS/key configuration for the Web service and approved CLI process. Leave all `PlatformSmtp` settings unset if email delivery is not wanted; provisioning and SSH reset still work. `PlatformRecovery__BaseUrl` and all SMTP entries below are required **only for optional email functionality**:
 
 | Environment variable | Required value / purpose |
 | --- | --- |
 | `ASPNETCORE_ENVIRONMENT` | `Production` (no automatic database migration) |
 | `ConnectionStrings__DefaultConnection` | Approved SQL Server connection from the existing secret store |
-| `PlatformRecovery__BaseUrl` | Actual public HTTPS origin, e.g. `https://portal.example.org` (replace the example; no path/query/fragment) |
-| `PlatformSmtp__Host` | Your transactional email provider's authenticated STARTTLS SMTP hostname |
-| `PlatformSmtp__Port` | Normally `587`; use the provider's STARTTLS port, not implicit-TLS port 465 |
-| `PlatformSmtp__UserName` | Provider-issued sending credential / SMTP username |
-| `PlatformSmtp__Password` | Provider-issued SMTP secret, injected securely; never the recipient's Gmail password |
-| `PlatformSmtp__From` | A sender address authorized and verified by that provider |
+| `PlatformRecovery__BaseUrl` | Email-only: actual public HTTPS origin, e.g. `https://portal.example.org` (replace the example; no path/query/fragment) |
+| `PlatformSmtp__Host` | Email-only: transactional provider's authenticated STARTTLS SMTP hostname |
+| `PlatformSmtp__Port` | Email-only: normally `587`, not implicit-TLS port 465 |
+| `PlatformSmtp__UserName` | Email-only: provider-issued SMTP username |
+| `PlatformSmtp__Password` | Email-only: provider-issued SMTP secret, injected securely; never the recipient's Gmail password |
+| `PlatformSmtp__From` | Email-only: sender address authorized and verified by that provider |
 | `DataProtection__KeysDirectory` | Stable absolute path to the protected, persistent key ring, outside release directories |
 | `Security__RequireHttps` | `true` |
 | `AllowedHosts` | The actual public host name(s), not `*` |
@@ -182,13 +219,13 @@ Missing/mismatched/lost keys make previously issued links and cookies unusable. 
 - Limits are in-memory, reset on restart, and are not a distributed anti-abuse system. Configure ingress/provider-wide limits for multiple instances and monitor abuse. Shared-IP users may share a quota.
 - Generic responses prevent direct account enumeration, but synchronous SMTP work is not constant-time; eligible requests can take longer. Edge throttling helps but does not eliminate timing inference. A durable asynchronous delivery/outbox design would require separate scope/review.
 - If a token is expired, invalid, already used, or predates a password/stamp change, request a new link. Keep the 15-minute recovery lifetime unchanged, verify UTC clock synchronization and key-ring consistency, and use the latest email after any account change. Requesting another token alone does not revoke earlier unused tokens; successful password reset does.
-- If the initial password expired, first confirm the email, then use recovery. No temporary-password login is required for this path.
+- If the initial password expired, use the SSH reset command. Alternatively, if optional email is configured and ownership can be confirmed, use email recovery. Neither path requires the old temporary password.
 - If a link displays an empty/invalid form, enable JavaScript and reopen the original email link. Check whether mail software stripped the fragment. Do not append the token to an HTTP query string.
 - If no email arrives, check sender configuration, provider delivery dashboards and safe generic application warnings. Do not troubleshoot by printing credentials, tokens or message bodies. Resolve duplicate emails, revoked roles, disabled/locked accounts or legacy missing-email enrollment through the authorized operator process, not through public recovery.
 
 ## Emergency recovery: operator-controlled, no second bootstrap
 
-There is **no emergency-recovery command** in this change. Reviewed legacy initialization is only for a historically verified first administrator and cannot be used to repair or replace a previous one. Public recovery cannot solve a lost mailbox, deleted account/role, or intentional access revocation. If historical eligibility cannot be established, stop and obtain independent incident review and evidence preservation; an approval reference alone does not justify initialization. Do not remove `PlatformBootstrapStates`, edit old claims, change `Consumed` to `LegacyReviewRequired`, rerun either provisioning command, silently create a replacement administrator, or restore a whole production database merely to reset one account.
+The approved `reset-platform-admin-password` command recovers credentials for an existing eligible platform account even when email is unavailable. It is **not** a general identity/role-restoration command. Reviewed legacy initialization is only for a historically verified first administrator and cannot be used to repair or replace a previous one. Deleted accounts/roles, intentional access revocation or disabled/locked accounts require separate incident review; this reset command will not bypass those states. If historical eligibility cannot be established, stop and preserve evidence; an approval reference alone does not justify initialization. Do not remove `PlatformBootstrapStates`, edit old claims, change `Consumed` to `LegacyReviewRequired`, rerun either provisioning command, silently create a replacement administrator, or restore a whole production database merely to reset one account.
 
 1. Open an audited incident/change request. Independently verify the operator and administrator through an approved out-of-band channel; require a second authorized approver. Explicitly distinguish accidental loss from intentional disabling/revocation, which must remain in force unless separately reversed by its authority.
 2. Preserve a protected backup and audit evidence. Identify the exact existing Identity user ID, current global roles, email/confirmation state, bootstrap marker, and relevant history. Use an isolated restored copy for planning; no modification based only on a claimed email address or tenant-administrator permission.
@@ -202,6 +239,6 @@ There is **no emergency-recovery command** in this change. Reviewed legacy initi
 
 Use `dotnet test tests/Neftyanik.Portal.Infrastructure.Tests` and `dotnet test tests/Neftyanik.Portal.Web.Tests`; fixtures use unique disposable LocalDB databases or in-memory SQLite. Use `node --test tests/browser/platform-recovery.test.cjs` for the fragment-handling unit tests. These script tests execute the real JavaScript in an isolated DOM/history fixture; they do not constitute a live-browser or SMTP-provider acceptance test.
 
-Build `Neftyanik.Portal.sln` in Release with `--artifacts-path artifacts/legacy-release`, run the EF pending-model-change check using the design-time factory with an inert connection configuration, and run `git diff --check`. Do not run `database update`, normal Development startup, bootstrap, or legacy initialization against an existing development/production database as a verification step. Preserve the separate smoke host. Regression coverage includes all-table snapshots for two associations, concurrent SQL commands, multiple/inconsistent markers, transaction failure injection, post-commit SMTP failure with a fake sender, no Web-service registration or endpoint, and replay after Identity deletion.
+Build `Neftyanik.Portal.sln` in Release with `--artifacts-path artifacts/ssh-release`, run the EF pending-model-change check using the design-time factory with an inert connection configuration, and run `git diff --check`. Do not run `database update`, normal Development startup, bootstrap, legacy initialization or password reset against an existing development/production database as a verification step. Preserve the separate smoke host. Regression coverage includes tenant/marker snapshots, concurrent SQL resets, audit/token failure rollback, no-SMTP web onboarding, immediate old-cookie rejection even after onboarding completes, exact-login ambiguity, disabled/locked/revoked accounts, and existing optional email confirmation/recovery.
 
-Before deployment approval: review the fail-closed migration effect on the target's existing bootstrap history, back up, approve the irreversible migration, provision SMTP and persistent keys, configure HTTPS/ingress limits, drain old binaries, and approve a real delivery/browser acceptance test. Passing automated tests alone does not authorize deployment.
+Before deployment approval: review target bootstrap history, back up, approve the additive audit migration (and the bootstrap migration if not yet applied), provision persistent keys, configure HTTPS/ingress limits, drain old binaries, and approve an operator/browser acceptance test. SMTP and a real delivery test are needed only if enabling optional email recovery. Passing automated tests alone does not authorize deployment.
