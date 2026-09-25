@@ -134,10 +134,11 @@ public class AssociationFoundationTests : IClassFixture<AssociationDatabaseFixtu
         var initialId = await context.Associations.Where(x => x.Slug == "neftyanik").Select(x => x.Id).SingleAsync();
         var other = new Association { Name = "Other", Slug = "other" };
         var user = new ApplicationUser { Id = Guid.NewGuid().ToString(), FirstName = "Test", LastName = "User" };
-        context.AddRange(other, user);
+        var otherUser = new ApplicationUser { FirstName = "Other", LastName = "User" };
+        context.AddRange(other, user, otherUser);
         await context.SaveChangesAsync();
         var first = CreateBusinessGraph(initialId, user.Id);
-        var second = CreateBusinessGraph(other.Id, user.Id);
+        var second = CreateBusinessGraph(other.Id, otherUser.Id);
         context.AddRange(first);
         await context.SaveChangesAsync();
         await using var otherContext = await ForAssociationAsync(context, other.Id, other.Slug);

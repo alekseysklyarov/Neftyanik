@@ -208,16 +208,20 @@ public class PlatformOnboardingTests
     }
 
     [Fact]
-    public async Task OnboardingCookie_DoesNotUseExistingTenantMembership_OrAcceptApplicationCookie()
+    public async Task OnboardingCookie_DoesNotUseSeparateTenantAccount_OrAcceptApplicationCookie()
     {
         await using var fixture = await Fixture.CreateAsync();
         await fixture.ScopeAsync(async services =>
         {
             var db = services.GetRequiredService<ApplicationDbContext>();
             services.GetRequiredService<AssociationContext>().Resolve(await db.Associations.SingleAsync(x => x.Slug == "neftyanik"));
-            var user = await db.Users.SingleAsync();
+            var platformUser = await db.Users.SingleAsync();
+            var user = new ApplicationUser { UserName = "separate-tenant", Email = platformUser.Email };
+            Assert.True((await services.GetRequiredService<UserManager<ApplicationUser>>().CreateAsync(user, Secret())).Succeeded);
             db.AssociationUserMemberships.Add(new AssociationUserMembership { ApplicationUserId = user.Id, Role = RoleNames.Administrator });
             await db.SaveChangesAsync();
+            Assert.False(await db.AssociationAccountBindings.AnyAsync(x => x.ApplicationUserId == platformUser.Id));
+            Assert.False(await db.AssociationUserMemberships.AnyAsync(x => x.ApplicationUserId == platformUser.Id));
         });
         using var client = fixture.Browser();
         using var login = await fixture.LoginAsync(client);

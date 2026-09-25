@@ -30,7 +30,8 @@ public class AssociationMembershipSecurityTests
     [InlineData("second-admin", "neftyanik", "/Administration/Members/Create", false)]
     [InlineData("dual", "neftyanik", "/Administration/Members/Create", true)]
     [InlineData("dual", "second", "/Administration/Members/Create", false)]
-    [InlineData("dual", "second", "/Member", true)]
+    [InlineData("dual", "second", "/Member", false)]
+    [InlineData("second-dual", "second", "/Member", true)]
     [InlineData("none", "neftyanik", "/Administration/Members/Create", false)]
     [InlineData("none", "neftyanik", "/Account/ChangeInitialPassword", false)]
     [InlineData("inactive", "neftyanik", "/Member", false)]
@@ -74,14 +75,17 @@ public class AssociationMembershipSecurityTests
         using var revoked = await client.GetAsync("/neftyanik/Administration/Members/Create");
         AssertDenied(revoked, "neftyanik");
         using var other = await client.GetAsync("/second/Member");
-        Assert.Equal(HttpStatusCode.OK, other.StatusCode);
+        AssertDenied(other, "second");
+        using var secondClient = await fixture.ExistingCookieClientAsync("second-dual");
+        using var independent = await secondClient.GetAsync("/second/Member");
+        Assert.Equal(HttpStatusCode.OK, independent.StatusCode);
         Assert.Equal(originalValue, cookies.GetCookies(new Uri("https://localhost"))[fixture.CookieOptions.Cookie.Name!]!.Value);
         await fixture.ExecuteAsync("second", async database =>
         {
-            database.AssociationUserMemberships.Remove(await database.AssociationUserMemberships.SingleAsync(x => x.ApplicationUserId == "dual"));
+            database.AssociationUserMemberships.Remove(await database.AssociationUserMemberships.SingleAsync(x => x.ApplicationUserId == "second-dual"));
             await database.SaveChangesAsync();
         });
-        using var deleted = await client.GetAsync("/second/Member");
+        using var deleted = await secondClient.GetAsync("/second/Member");
         AssertDenied(deleted, "second");
         var token = await AuthenticationCookieTests.TokenAsync(client, "/second/Privacy");
         using var logout = await client.PostAsync("/second/Account/Logout", Form(token));
@@ -144,7 +148,7 @@ public class AssociationMembershipSecurityTests
     }
 
     [Fact]
-    public async Task SharedAccount_ResetAndProfileEditAreDeniedButLocalRoleAndLockDoNotAffectOtherTenant()
+    public async Task SeparateAccounts_ResetProfileRoleAndLockDoNotAffectOtherTenant()
     {
         await using var fixture = await SecurityFixture.CreateAsync();
         using var client = await fixture.ExistingCookieClientAsync("admin");
@@ -152,10 +156,10 @@ public class AssociationMembershipSecurityTests
         var id = fixture.Members[("neftyanik", "dual")];
         using var reset = await client.PostAsync($"/neftyanik/Administration/Members/{id}/Account/ResetPassword", Form(token,
             ("Input.NewTemporaryPassword", "New123!"), ("Input.ConfirmPassword", "New123!")));
-        Assert.Equal(HttpStatusCode.NotFound, reset.StatusCode);
+        Assert.Equal(HttpStatusCode.Found, reset.StatusCode);
         using var edit = await client.PostAsync($"/neftyanik/Administration/Members/Edit/{id}", Form(token,
             ("Input.FullName", "Forged"), ("Input.Login", "forged"), ("Input.IsActive", "true")));
-        AssertDenied(edit, "neftyanik");
+        Assert.Equal(HttpStatusCode.Found, edit.StatusCode);
         using var roles = await client.PostAsync($"/neftyanik/Administration/Members/{id}/Account/Roles", Form(token,
             ("Input.IsAccountant", "true"), ("AssociationId", fixture.AssociationIds["second"].ToString()),
             ("Input.AssociationId", fixture.AssociationIds["second"].ToString())));
@@ -165,18 +169,21 @@ public class AssociationMembershipSecurityTests
         using var dual = await fixture.ExistingCookieClientAsync("dual");
         using var denied = await dual.GetAsync("/neftyanik/Administration/Members/Create");
         AssertDenied(denied, "neftyanik");
-        using var second = await dual.GetAsync("/second/Member");
+        using var wrongTenant = await dual.GetAsync("/second/Member");
+        AssertDenied(wrongTenant, "second");
+        using var independentClient = await fixture.ExistingCookieClientAsync("second-dual");
+        using var second = await independentClient.GetAsync("/second/Member");
         Assert.Equal(HttpStatusCode.OK, second.StatusCode);
         await fixture.ExecuteAsync("second", async database =>
         {
-            var membership = await database.AssociationUserMemberships.SingleAsync(x => x.ApplicationUserId == "dual");
+            var membership = await database.AssociationUserMemberships.SingleAsync(x => x.ApplicationUserId == "second-dual");
             Assert.Equal(RoleNames.Member, membership.Role);
             Assert.True(membership.IsActive);
-            var user = await database.Users.SingleAsync(x => x.Id == "dual");
+            var user = await database.Users.SingleAsync(x => x.Id == "second-dual");
             Assert.True(user.IsActive);
             Assert.Null(user.LockoutEnd);
-            Assert.Equal(fixture.PasswordHashes["dual"], user.PasswordHash);
-            Assert.Equal("dual", user.UserName);
+            Assert.Equal(fixture.PasswordHashes["second-dual"], user.PasswordHash);
+            Assert.Equal("second-dual", user.UserName);
         });
     }
 
@@ -229,7 +236,7 @@ public class AssociationMembershipSecurityTests
     {
         await using var fixture = await SecurityFixture.CreateAsync();
         using var client = AuthenticationCookieTests.CreateBrowser(fixture.App, new CookieContainer());
-        using var login = await fixture.LoginAsync(client, "dual", "second");
+        using var login = await fixture.LoginAsync(client, "second-dual", "second");
         Assert.Equal(HttpStatusCode.Found, login.StatusCode);
         foreach (var slug in new[] { "neftyanik", "second" })
         {
@@ -237,7 +244,8 @@ public class AssociationMembershipSecurityTests
             var database = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             scope.ServiceProvider.GetRequiredService<AssociationContext>().Resolve(await database.Associations.SingleAsync(x => x.Slug == slug));
             var activity = await scope.ServiceProvider.GetRequiredService<IUserActivityService>().GetUserActivityAsync();
-            Assert.Equal(slug == "second" ? 1 : 0, activity.Single(x => x.UserId == "dual").TotalSuccessfulLogins);
+            Assert.Equal(slug == "second" ? 1 : 0, activity.Single(x => x.UserId == (slug == "second" ? "second-dual" : "dual")).TotalSuccessfulLogins);
+            Assert.DoesNotContain(activity, x => x.UserId == (slug == "second" ? "dual" : "second-dual"));
             Assert.DoesNotContain(activity, x => x.UserId == (slug == "second" ? "admin" : "foreign"));
         }
     }
@@ -260,9 +268,9 @@ public class AssociationMembershipSecurityTests
     }
 
     [Theory]
-    [InlineData("member", false)]
-    [InlineData("dual", true)]
-    public async Task LegacyGlobalLockout_CanOnlyBeClearedForExclusiveAssociationAccount(string userId, bool shared)
+    [InlineData("member")]
+    [InlineData("dual")]
+    public async Task LegacyGlobalLockout_CanBeClearedOnlyByOwningAssociation(string userId)
     {
         await using var fixture = await SecurityFixture.CreateAsync();
         var lockoutEnd = DateTimeOffset.UtcNow.AddYears(1);
@@ -276,30 +284,23 @@ public class AssociationMembershipSecurityTests
         using var client = await fixture.ExistingCookieClientAsync("admin");
         var token = await AuthenticationCookieTests.TokenAsync(client, "/neftyanik/Privacy");
         using var response = await client.PostAsync($"/neftyanik/Administration/Members/{fixture.Members[("neftyanik", userId)]}/Account/Lock", Form(token));
-        if (shared) AssertDenied(response, "neftyanik");
-        else
-        {
-            Assert.Equal(HttpStatusCode.Found, response.StatusCode);
-            Assert.Contains("/Administration/Members/Details/", response.Headers.Location!.OriginalString);
-        }
+        Assert.Equal(HttpStatusCode.Found, response.StatusCode);
+        Assert.Contains("/Administration/Members/Details/", response.Headers.Location!.OriginalString);
         await fixture.ExecuteAsync("neftyanik", async database =>
         {
             var user = await database.Users.SingleAsync(x => x.Id == userId);
-            Assert.Equal(shared ? lockoutEnd : (DateTimeOffset?)null, user.LockoutEnd);
+            Assert.Null(user.LockoutEnd);
             Assert.True(user.LockoutEnabled);
             Assert.True((await database.AssociationUserMemberships.SingleAsync(x => x.ApplicationUserId == userId)).IsActive);
         });
-        if (shared)
-        {
-            await fixture.ExecuteAsync("second", async database =>
-                Assert.True((await database.AssociationUserMemberships.SingleAsync(x => x.ApplicationUserId == userId)).IsActive));
-        }
-        else
-        {
-            using var browser = AuthenticationCookieTests.CreateBrowser(fixture.App, new CookieContainer());
-            using var login = await fixture.LoginAsync(browser, userId, "neftyanik");
-            Assert.Equal(HttpStatusCode.Found, login.StatusCode);
-        }
+        using var foreignAdmin = await fixture.ExistingCookieClientAsync("second-admin");
+        var foreignToken = await AuthenticationCookieTests.TokenAsync(foreignAdmin, "/second/Privacy");
+        using var foreignAttempt = await foreignAdmin.PostAsync($"/second/Administration/Members/{fixture.Members[("neftyanik", userId)]}/Account/Lock", Form(foreignToken));
+        Assert.Equal(HttpStatusCode.NotFound, foreignAttempt.StatusCode);
+        using var browser = AuthenticationCookieTests.CreateBrowser(fixture.App, new CookieContainer());
+        using var login = await fixture.LoginAsync(browser, userId, "neftyanik");
+        Assert.Equal(HttpStatusCode.Found, login.StatusCode);
+        await fixture.AssertForeignUnchangedAsync();
     }
 
     [Theory]
@@ -406,7 +407,7 @@ public class AssociationMembershipSecurityTests
                 database.Associations.Add(new Association { Slug = "second", Name = "Second" });
                 await database.SaveChangesAsync();
                 var manager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-                foreach (var id in new[] { "admin", "accountant", "member", "second-admin", "dual", "none", "inactive", "foreign" })
+                foreach (var id in new[] { "admin", "accountant", "member", "second-admin", "dual", "second-dual", "none", "inactive", "foreign" })
                 {
                     var user = new ApplicationUser { Id = id, UserName = id, FirstName = id, LastName = "Test", IsActive = true };
                     Assert.True((await manager.CreateAsync(user, "Cookie123!")).Succeeded);
@@ -421,9 +422,9 @@ public class AssociationMembershipSecurityTests
                     fixture.AssociationIds[slug] = database.CurrentAssociationId;
                     var assignments = slug == "neftyanik"
                         ? new[] { ("admin", RoleNames.Administrator), ("accountant", RoleNames.Accountant), ("member", RoleNames.Member), ("dual", RoleNames.Administrator), ("inactive", RoleNames.Member) }
-                        : new[] { ("second-admin", RoleNames.Administrator), ("dual", RoleNames.Member), ("foreign", RoleNames.Member) };
+                        : new[] { ("second-admin", RoleNames.Administrator), ("second-dual", RoleNames.Member), ("foreign", RoleNames.Member) };
                     database.AssociationUserMemberships.AddRange(assignments.Select(x => new AssociationUserMembership { ApplicationUserId = x.Item1, Role = x.Item2, IsActive = x.Item1 != "inactive" }));
-                    foreach (var id in slug == "neftyanik" ? new[] { "member", "dual" } : new[] { "foreign", "dual" })
+                    foreach (var id in slug == "neftyanik" ? new[] { "member", "dual" } : new[] { "foreign", "second-dual" })
                     {
                         var member = new Member { FullName = $"member-{slug}-{id}", ApplicationUserId = id };
                         database.Members.Add(member);

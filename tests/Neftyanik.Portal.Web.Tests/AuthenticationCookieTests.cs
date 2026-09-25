@@ -188,7 +188,13 @@ public class AuthenticationCookieTests
             var tenantDatabase = tenantScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             var association = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.SingleAsync(tenantDatabase.Associations, x => x.Slug == slug);
             tenantScope.ServiceProvider.GetRequiredService<Neftyanik.Portal.Application.Associations.AssociationContext>().Resolve(association);
-            tenantDatabase.AssociationUserMemberships.Add(new AssociationUserMembership { ApplicationUserId = user!.Id, Role = "Member" });
+            var tenantUser = user!;
+            if (slug == "second")
+            {
+                tenantUser = new ApplicationUser { UserName = "second-" + Login, Email = Login, FirstName = "Second", LastName = "Cookie" };
+                Assert.True((await tenantScope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>().CreateAsync(tenantUser, Password)).Succeeded);
+            }
+            tenantDatabase.AssociationUserMemberships.Add(new AssociationUserMembership { ApplicationUserId = tenantUser.Id, Role = "Member" });
             await tenantDatabase.SaveChangesAsync();
         }
     }
@@ -227,7 +233,7 @@ public class AuthenticationCookieTests
         return await client.PostAsync($"/{slug}/Account/Login", new FormUrlEncodedContent(new Dictionary<string, string>
         {
             ["__RequestVerificationToken"] = token,
-            ["Input.Login"] = Login,
+            ["Input.Login"] = slug == "second" ? "second-" + Login : Login,
             ["Input.Password"] = Password,
             ["Input.RememberMe"] = "true"
         }));

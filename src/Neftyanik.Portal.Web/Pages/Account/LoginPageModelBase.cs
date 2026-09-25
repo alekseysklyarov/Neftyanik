@@ -52,8 +52,7 @@ public abstract class LoginPageModelBase : PageModel
         }
 
         var login = Input.Login.Trim();
-        var user = await _signInManager.UserManager.FindByNameAsync(login)
-            ?? await _signInManager.UserManager.FindByEmailAsync(login);
+        var user = await _signInManager.UserManager.FindByNameAsync(login);
         var userName = user?.UserName ?? login;
 
         var signInResult = user is null ? Microsoft.AspNetCore.Identity.SignInResult.Failed

@@ -56,5 +56,8 @@ public class MemberConfiguration : IEntityTypeConfiguration<Member>
             .WithMany(x => x.Members)
             .HasForeignKey(x => x.ApplicationUserId)
             .OnDelete(DeleteBehavior.SetNull);
+        builder.HasOne<AssociationAccountBinding>().WithMany()
+            .HasForeignKey(x => new { x.ApplicationUserId, x.AssociationId })
+            .HasPrincipalKey(x => new { x.ApplicationUserId, x.AssociationId }).OnDelete(DeleteBehavior.Restrict);
     }
 }

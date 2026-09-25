@@ -23,7 +23,7 @@ public sealed class PlatformBootstrapMigrationTests
     [InlineData("assignment")]
     public async Task Migration_PreservesConsumedState_AndFailsClosedForAmbiguousLegacyState(string state)
     {
-        await using var database = new ApplicationDbContext(AssociationDatabaseFixture.CreateOptions());
+        await using var database = PrePlatformManagementDbContext.Create(AssociationDatabaseFixture.CreateOptions());
         try
         {
             await database.GetService<IMigrator>().MigrateAsync("20260918151504_AddAssociationMemberships");

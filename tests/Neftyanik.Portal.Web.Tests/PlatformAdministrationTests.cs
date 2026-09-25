@@ -241,7 +241,7 @@ public class PlatformAdministrationTests
     }
 
     [Fact]
-    public async Task TenantAdministrator_CannotResetPlatformAccountEvenWithSoleLocalMembership()
+    public async Task TenantAdministrator_CannotLinkOrResetPlatformAccountUsingForgedFields()
     {
         await using var fixture = await Fixture.CreateAsync("tenant-admin");
         var memberId = 0;
@@ -260,6 +260,12 @@ public class PlatformAdministrationTests
             database.AssociationUserMemberships.Add(new AssociationUserMembership { ApplicationUserId = user.Id, Role = RoleNames.Member });
             var member = new Member { ApplicationUserId = user.Id, FullName = "Protected operator" };
             database.Members.Add(member);
+            await Assert.ThrowsAsync<AssociationIsolationException>(() => database.SaveChangesAsync());
+            database.ChangeTracker.Clear();
+            Assert.False(await database.AssociationAccountBindings.AnyAsync(x => x.ApplicationUserId == user.Id));
+            Assert.False(await database.AssociationUserMemberships.IgnoreQueryFilters().AnyAsync(x => x.ApplicationUserId == user.Id));
+            member = new Member { FullName = "Unlinked tenant member" };
+            database.Members.Add(member);
             await database.SaveChangesAsync();
             memberId = member.Id;
             Assert.False(await AssociationAccountAccess.CanManageGlobalAccountAsync(database, user.Id, CancellationToken.None));
@@ -267,10 +273,18 @@ public class PlatformAdministrationTests
         using var client = await fixture.ExistingSessionAsync();
         var token = await AuthenticationCookieTests.TokenAsync(client, "/neftyanik/Privacy");
         using var reset = await client.PostAsync($"/neftyanik/Administration/Members/{memberId}/Account/ResetPassword", Form(token,
-            ("Input.NewTemporaryPassword", "Replaced123!"), ("Input.ConfirmPassword", "Replaced123!")));
-        Assert.Equal(HttpStatusCode.NotFound, reset.StatusCode);
+            ("Input.NewTemporaryPassword", "Replaced123!"), ("Input.ConfirmPassword", "Replaced123!"),
+            ("ApplicationUserId", "protected-platform"), ("Input.ApplicationUserId", "protected-platform")));
+        Assert.Equal(HttpStatusCode.Found, reset.StatusCode);
+        Assert.Equal($"/neftyanik/Administration/Members/Details/{memberId}", reset.Headers.Location!.OriginalString);
+        using var details = await client.GetAsync(reset.Headers.Location);
+        Assert.Contains("An account has not been created for this member yet.", await details.ReadDecodedHtmlAsync());
         await fixture.WithDatabaseAsync(async database =>
-            Assert.Equal(originalPasswordHash, (await database.Users.SingleAsync(x => x.Id == "protected-platform")).PasswordHash));
+        {
+            Assert.Equal(originalPasswordHash, (await database.Users.SingleAsync(x => x.Id == "protected-platform")).PasswordHash);
+            Assert.False(await database.AssociationAccountBindings.AnyAsync(x => x.ApplicationUserId == "protected-platform"));
+            Assert.Null((await database.Members.IgnoreQueryFilters().SingleAsync(x => x.Id == memberId)).ApplicationUserId);
+        });
     }
 
     private static FormUrlEncodedContent Form(string token, params (string Key, string Value)[] fields) =>

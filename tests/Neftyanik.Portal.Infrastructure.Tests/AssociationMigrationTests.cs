@@ -20,7 +20,7 @@ public class AssociationMigrationTests
     [InlineData(true)]
     public async Task Migration_PreservesEveryExistingColumnAndBackfillsAllTenantTables(bool useIdempotentScript)
     {
-        await using var context = new ApplicationDbContext(AssociationDatabaseFixture.CreateOptions());
+        await using var context = PrePlatformManagementDbContext.Create(AssociationDatabaseFixture.CreateOptions());
         try
         {
             var migrator = context.GetService<IMigrator>();

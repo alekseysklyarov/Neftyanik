@@ -19,12 +19,13 @@ public class TenantIsolationTests : IClassFixture<AssociationDatabaseFixture>
         await using var transaction = await first.Database.BeginTransactionAsync();
         var other = new Association { Name = "Second", Slug = "second" };
         var user = new ApplicationUser { Id = Guid.NewGuid().ToString(), FirstName = "Shared", LastName = "Identity" };
-        first.AddRange(other, user);
+        var otherUser = new ApplicationUser { FirstName = "Other", LastName = "Identity" };
+        first.AddRange(other, user, otherUser);
         await first.SaveChangesAsync();
         first.AddRange(AssociationFoundationTests.CreateBusinessGraph(first.CurrentAssociationId, user.Id));
         await first.SaveChangesAsync();
         await using var second = await AssociationFoundationTests.ForAssociationAsync(first, other.Id, other.Slug);
-        var otherGraph = AssociationFoundationTests.CreateBusinessGraph(other.Id, user.Id);
+        var otherGraph = AssociationFoundationTests.CreateBusinessGraph(other.Id, otherUser.Id);
         otherGraph.OfType<Charge>().Single().Amount = 350m;
         second.AddRange(otherGraph);
         await second.SaveChangesAsync();

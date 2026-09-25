@@ -23,8 +23,11 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<PlatformBootstrapState> PlatformBootstrapStates => Set<PlatformBootstrapState>();
     public DbSet<PlatformPasswordRecoveryAudit> PlatformPasswordRecoveryAudits => Set<PlatformPasswordRecoveryAudit>();
+    public DbSet<PlatformAuditLog> PlatformAuditLogs => Set<PlatformAuditLog>();
 
     public DbSet<Association> Associations => Set<Association>();
+
+    public DbSet<AssociationAccountBinding> AssociationAccountBindings => Set<AssociationAccountBinding>();
 
     public DbSet<AssociationUserMembership> AssociationUserMemberships => Set<AssociationUserMembership>();
     public DbSet<AssociationLoginEvent> AssociationLoginEvents => Set<AssociationLoginEvent>();
@@ -77,7 +80,8 @@ public DbSet<UserLoginHistory> UserLoginHistories => Set<UserLoginHistory>();
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
-        if (ChangeTracker.Entries<IAssociationOwned>().Any(x => x.State is EntityState.Added or EntityState.Modified or EntityState.Deleted))
+        if (ChangeTracker.Entries().Any(x => (x.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
+            && (x.Entity is IAssociationOwned or AssociationAccountBinding or IdentityUserRole<string>)))
         {
             throw new AssociationIsolationException("Use SaveChangesAsync for association-owned writes so stored ownership can be verified.");
         }
@@ -109,11 +113,98 @@ public DbSet<UserLoginHistory> UserLoginHistories => Set<UserLoginHistory>();
             {
                 entry.Entity.ValidateSlug();
             }
-            return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+            var assignmentUserIds = GetAssignmentUserIds();
+            await using var bindingTransaction = Database.IsSqlServer() && assignmentUserIds.Length != 0
+                && Database.CurrentTransaction is null
+                ? await Database.BeginTransactionAsync(cancellationToken) : null;
+            if (Database.IsSqlServer())
+                await LockAccountAssignmentsAsync(assignmentUserIds, cancellationToken);
+            await EnforceAccountBindingsAsync(cancellationToken);
+            ChangeTracker.DetectChanges();
+            var result = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+            if (bindingTransaction is not null) await bindingTransaction.CommitAsync(cancellationToken);
+            return result;
         }
         finally
         {
             ChangeTracker.AutoDetectChangesEnabled = autoDetectChanges;
+        }
+    }
+
+    private string[] GetAssignmentUserIds()
+    {
+        if (Model.FindEntityType(typeof(AssociationAccountBinding)) is null) return [];
+        return ChangeTracker.Entries().Where(x => x.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
+            .Select(x => x.Entity switch
+            {
+                AssociationAccountBinding binding => binding.ApplicationUserId,
+                AssociationUserMembership membership => membership.ApplicationUserId,
+                Member member => member.ApplicationUserId,
+                IdentityUserRole<string> role => role.UserId,
+                _ => null
+            }).OfType<string>().Distinct().OrderBy(x => x, StringComparer.Ordinal).ToArray();
+    }
+
+    private async Task LockAccountAssignmentsAsync(string[] userIds, CancellationToken cancellationToken)
+    {
+        // Both Identity role writes and tenant bindings use this transaction-owned lock.
+        // It must be acquired before reading the competing assignment and held through commit.
+        foreach (var userId in userIds)
+        {
+            var resource = "DachaHub.AccountAssignment:" + Convert.ToHexString(
+                System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(userId)));
+            await Database.ExecuteSqlInterpolatedAsync($"""
+                DECLARE @result int;
+                EXEC @result = sys.sp_getapplock @Resource = {resource}, @LockMode = 'Exclusive',
+                    @LockOwner = 'Transaction', @LockTimeout = 15000;
+                IF @result < 0 THROW 51022, 'Account assignment lock could not be acquired.', 1;
+                """, cancellationToken);
+        }
+    }
+
+    private async Task EnforceAccountBindingsAsync(CancellationToken cancellationToken)
+    {
+        if (Model.FindEntityType(typeof(AssociationAccountBinding)) is null) return;
+        if (!ChangeTracker.Entries().Any(x => (x.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
+            && (x.Entity is AssociationUserMembership or Member or AssociationAccountBinding or IdentityUserRole<string>))) return;
+        if (ChangeTracker.Entries<AssociationAccountBinding>().Any(x => x.State is EntityState.Modified or EntityState.Deleted))
+            throw new AssociationIsolationException("An account's association binding is permanent.");
+
+        var platformRoleIds = await Roles.AsNoTracking()
+            .Where(x => x.NormalizedName == "PLATFORMADMINISTRATOR").Select(x => x.Id).ToListAsync(cancellationToken);
+        platformRoleIds.AddRange(ChangeTracker.Entries<IdentityRole>()
+            .Where(x => x.Entity.NormalizedName == "PLATFORMADMINISTRATOR").Select(x => x.Entity.Id));
+        var pendingPlatformUsers = ChangeTracker.Entries<IdentityUserRole<string>>()
+            .Where(x => x.State is EntityState.Added or EntityState.Modified && platformRoleIds.Contains(x.Entity.RoleId))
+            .Select(x => x.Entity.UserId).ToHashSet();
+        var targets = ChangeTracker.Entries<AssociationUserMembership>()
+            .Where(x => x.State is EntityState.Added or EntityState.Modified)
+            .Select(x => (UserId: x.Entity.ApplicationUserId, x.Entity.AssociationId))
+            .Concat(ChangeTracker.Entries<Member>().Where(x => x.State is EntityState.Added or EntityState.Modified
+                && x.Entity.ApplicationUserId != null).Select(x => (x.Entity.ApplicationUserId!, x.Entity.AssociationId)))
+            .Concat(ChangeTracker.Entries<AssociationAccountBinding>().Where(x => x.State == EntityState.Added)
+                .Select(x => (x.Entity.ApplicationUserId, x.Entity.AssociationId))).Distinct().ToArray();
+        foreach (var (userId, associationId) in targets)
+        {
+            if (!IsAssociationResolved || associationId != CurrentAssociationId
+                || pendingPlatformUsers.Contains(userId)
+                || await UserRoles.AsNoTracking().AnyAsync(x => x.UserId == userId && platformRoleIds.Contains(x.RoleId), cancellationToken))
+                throw new AssociationIsolationException("A platform account cannot become a tenant account.");
+
+            var binding = AssociationAccountBindings.Local.SingleOrDefault(x => x.ApplicationUserId == userId)
+                ?? await AssociationAccountBindings.AsNoTracking().SingleOrDefaultAsync(x => x.ApplicationUserId == userId, cancellationToken);
+            if ((binding is not null && binding.AssociationId != associationId)
+                || await AssociationUserMemberships.IgnoreQueryFilters().AsNoTracking().AnyAsync(x => x.ApplicationUserId == userId && x.AssociationId != associationId, cancellationToken)
+                || await Members.IgnoreQueryFilters().AsNoTracking().AnyAsync(x => x.ApplicationUserId == userId && x.AssociationId != associationId, cancellationToken))
+                throw new AssociationIsolationException("The account already belongs to another association, including inactive memberships.");
+            if (binding is null)
+                AssociationAccountBindings.Add(new AssociationAccountBinding { ApplicationUserId = userId, AssociationId = associationId });
+        }
+        foreach (var userId in pendingPlatformUsers)
+        {
+            if (AssociationAccountBindings.Local.Any(x => x.ApplicationUserId == userId)
+                || await AssociationAccountBindings.AsNoTracking().AnyAsync(x => x.ApplicationUserId == userId, cancellationToken))
+                throw new AssociationIsolationException("A tenant account cannot become a platform account.");
         }
     }
 

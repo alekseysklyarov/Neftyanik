@@ -13,6 +13,8 @@ public class TenantHttpIsolationTests
 {
     private const string UserId = "stage2-global-user";
     private static readonly TestAuthenticatedUser Administrator = new(UserId, RoleNames.Administrator, RoleNames.Accountant, RoleNames.Member);
+    private static TestAuthenticatedUser AdministratorFor(string slug) => slug == "neftyanik" ? Administrator
+        : new TestAuthenticatedUser(UserId + "-second", Administrator.Roles);
 
     [Theory]
     [InlineData("neftyanik")]
@@ -23,7 +25,7 @@ public class TenantHttpIsolationTests
         var data = await SeedAsync(factory);
         var own = data[slug];
         var foreignSlug = slug == "neftyanik" ? "second" : "neftyanik";
-        using var client = factory.CreateAuthenticatedClient(Administrator);
+        using var client = factory.CreateAuthenticatedClient(AdministratorFor(slug), associationSlug: slug);
         foreach (var path in new[]
         {
             "/Administration/Members", "/Administration/Plots",
@@ -48,7 +50,7 @@ public class TenantHttpIsolationTests
         using var factory = new PortalWebApplicationFactory();
         var data = await SeedAsync(factory);
         var foreign = data[slug == "neftyanik" ? "second" : "neftyanik"];
-        using var client = factory.CreateAuthenticatedClient(Administrator);
+        using var client = factory.CreateAuthenticatedClient(AdministratorFor(slug), associationSlug: slug);
         foreach (var path in new[]
         {
             $"/Administration/Plots/Details/{foreign.PlotId}",
@@ -71,7 +73,7 @@ public class TenantHttpIsolationTests
         using var factory = new PortalWebApplicationFactory();
         var data = await SeedAsync(factory);
         var other = data[slug == "neftyanik" ? "second" : "neftyanik"];
-        using var client = factory.CreateAuthenticatedClient(Administrator);
+        using var client = factory.CreateAuthenticatedClient(AdministratorFor(slug), associationSlug: slug);
         var token = await TokenAsync(client, $"/{slug}/Administration/Plots/Create");
         using var response = await client.PostAsync($"/{slug}/Administration/Plots/Create?AssociationId={other.AssociationId}", Form(token,
             ("Input.Number", "20"), ("Input.IsActive", "true"),
@@ -97,7 +99,7 @@ public class TenantHttpIsolationTests
         using var factory = new PortalWebApplicationFactory();
         var data = await SeedAsync(factory);
         var other = data[slug == "neftyanik" ? "second" : "neftyanik"];
-        using var client = factory.CreateAuthenticatedClient(Administrator);
+        using var client = factory.CreateAuthenticatedClient(AdministratorFor(slug), associationSlug: slug);
         var token = await TokenAsync(client, $"/{slug}/Administration/Plots/Create");
         using var response = await client.PostAsync($"/{slug}/Administration/Plots/{operation}/{other.PlotId}", Form(token,
             ("id", other.PlotId.ToString()), ("Input.Number", "stolen"), ("Input.IsActive", "false"),
@@ -121,7 +123,7 @@ public class TenantHttpIsolationTests
         var data = await SeedAsync(factory);
         var own = data[slug];
         var other = data[slug == "neftyanik" ? "second" : "neftyanik"];
-        using var client = factory.CreateAuthenticatedClient(Administrator);
+        using var client = factory.CreateAuthenticatedClient(AdministratorFor(slug), associationSlug: slug);
         var token = await TokenAsync(client, $"/{slug}/Administration/Members/Finance/{own.MemberId}/Charges/{own.ChargeId}/Cancel");
         foreach (var memberId in new[] { own.MemberId, other.MemberId })
         {
@@ -227,7 +229,7 @@ public class TenantHttpIsolationTests
             context.Members.AddRange(Enumerable.Range(1, 60).Select(index => new Member { FullName = $"pagination-member-{index}" }));
             await context.SaveChangesAsync();
         }, slug);
-        using var client = factory.CreateAuthenticatedClient(Administrator);
+        using var client = factory.CreateAuthenticatedClient(AdministratorFor(slug), associationSlug: slug);
         using var response = await client.GetAsync($"/{slug}/Administration/Members");
         var html = await response.ReadDecodedHtmlAsync();
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -272,7 +274,7 @@ public class TenantHttpIsolationTests
         Assert.Equal(HttpStatusCode.Found, login.StatusCode);
         Assert.Equal("/neftyanik/Administration", login.Headers.Location?.OriginalString);
 
-        using var authenticated = factory.CreateAuthenticatedClient(Administrator);
+        using var authenticated = factory.CreateAuthenticatedClient(AdministratorFor("second"), associationSlug: "second");
         token = await TokenAsync(authenticated, "/second/Administration/Plots/Create");
         using var logout = await authenticated.PostAsync("/second/Account/Logout", Form(token));
         Assert.Equal(HttpStatusCode.Found, logout.StatusCode);
@@ -285,6 +287,7 @@ public class TenantHttpIsolationTests
         {
             context.Associations.AddRange(new Association { Name = "Second", Slug = "second" }, new Association { Name = "Inactive", Slug = "inactive", IsActive = false });
             context.Users.Add(new ApplicationUser { Id = UserId, UserName = "stage2-user", NormalizedUserName = "STAGE2-USER", FirstName = "Global", LastName = "User" });
+            context.Users.Add(new ApplicationUser { Id = UserId + "-second", UserName = "stage2-second", NormalizedUserName = "STAGE2-SECOND", FirstName = "Second", LastName = "User" });
             await context.SaveChangesAsync();
         });
         var result = new Dictionary<string, TenantData>();
@@ -292,8 +295,9 @@ public class TenantHttpIsolationTests
         {
             await factory.ExecuteDbContextAsync(async context =>
             {
-                context.AssociationUserMemberships.AddRange(Administrator.Roles.Select(role => new AssociationUserMembership { ApplicationUserId = UserId, Role = role }));
-                var member = new Member { FullName = $"member-marker-{slug}", ApplicationUserId = UserId };
+                var user = AdministratorFor(slug);
+                context.AssociationUserMemberships.AddRange(user.Roles.Select(role => new AssociationUserMembership { ApplicationUserId = user.UserId, Role = role }));
+                var member = new Member { FullName = $"member-marker-{slug}", ApplicationUserId = user.UserId };
                 var plot = new Plot { Number = "10", Address = $"plot-marker-{slug}" };
                 var chargeType = new ChargeType { Name = "Test charge", Code = "TEST" };
                 var charge = new Charge { Plot = plot, ChargeType = chargeType, Amount = slug == "neftyanik" ? 100m : 350m, ChargeDate = new DateOnly(2026, 1, 1), Description = $"charge-marker-{slug}" };

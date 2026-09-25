@@ -1,0 +1,34 @@
+@page
+@model Neftyanik.Portal.Web.Pages.Platform.Associations.EditModel
+@{
+    ViewData["Title"] = AppLocalizer.Get("Редактирование товарищества", "Редагування товариства", "Edit association");
+}
+<h1 class="h3">@ViewData["Title"]</h1>
+<p>Slug: <code>@Model.Association.Slug</code></p>
+<form method="post" asp-route-id="@Model.Association.Id" asp-antiforgery="true" class="col-lg-8">
+    <div asp-validation-summary="All" class="text-danger" role="alert"></div>
+    <input asp-for="Input.Revision" type="hidden" />
+    <div class="mb-3">
+        <label asp-for="Input.Name" class="form-label">@AppLocalizer.Get("Название", "Назва", "Name")</label>
+        <input asp-for="Input.Name" class="form-control" maxlength="@Neftyanik.Portal.Domain.Constants.AssociationMetadataLimits.Name" />
+        <span asp-validation-for="Input.Name" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Input.ContactEmail" class="form-label">@AppLocalizer.Get("Контактный email", "Контактний email", "Contact email")</label>
+        <input asp-for="Input.ContactEmail" type="email" class="form-control" maxlength="@Neftyanik.Portal.Domain.Constants.AssociationMetadataLimits.ContactEmail" />
+        <span asp-validation-for="Input.ContactEmail" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Input.ContactPhone" class="form-label">@AppLocalizer.Get("Контактный телефон", "Контактний телефон", "Contact phone")</label>
+        <input asp-for="Input.ContactPhone" type="tel" class="form-control" maxlength="@Neftyanik.Portal.Domain.Constants.AssociationMetadataLimits.ContactPhone" />
+        <span asp-validation-for="Input.ContactPhone" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Input.PostalAddress" class="form-label">@AppLocalizer.Get("Почтовый адрес", "Поштова адреса", "Postal address")</label>
+        <textarea asp-for="Input.PostalAddress" class="form-control" rows="3" maxlength="@Neftyanik.Portal.Domain.Constants.AssociationMetadataLimits.PostalAddress"></textarea>
+        <span asp-validation-for="Input.PostalAddress" class="text-danger"></span>
+    </div>
+    <button type="submit" class="btn btn-primary">@AppLocalizer.Get("Сохранить", "Зберегти", "Save")</button>
+    <a asp-page="Details" asp-route-id="@Model.Association.Id" class="btn btn-outline-secondary">@AppLocalizer.Get("Отмена", "Скасувати", "Cancel")</a>
+    <a asp-page="Edit" asp-route-id="@Model.Association.Id" class="btn btn-link">@AppLocalizer.Get("Обновить страницу", "Оновити сторінку", "Reload page")</a>
+</form>

@@ -24,7 +24,7 @@ public class AssociationMembershipMigrationTests
     public async Task Migration_PreservesEveryLegacyColumnAndBackfillsExactPermissions(bool script)
     {
         var associationContext = new AssociationContext();
-        await using var database = new ApplicationDbContext(AssociationDatabaseFixture.CreateOptions(), associationContext);
+        await using var database = PrePlatformManagementDbContext.Create(AssociationDatabaseFixture.CreateOptions(), associationContext);
         try
         {
             var migrator = database.GetService<IMigrator>();
@@ -123,7 +123,7 @@ public class AssociationMembershipMigrationTests
     public async Task Migration_AmbiguousLegacyDataAbortsWithoutChangingData(string scenario, int errorNumber)
     {
         var associationContext = new AssociationContext();
-        await using var database = new ApplicationDbContext(AssociationDatabaseFixture.CreateOptions(), associationContext);
+        await using var database = PrePlatformManagementDbContext.Create(AssociationDatabaseFixture.CreateOptions(), associationContext);
         try
         {
             var migrator = database.GetService<IMigrator>();

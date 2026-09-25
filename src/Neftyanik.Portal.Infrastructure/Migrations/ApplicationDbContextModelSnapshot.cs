@@ -283,6 +283,14 @@ namespace Neftyanik.Portal.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("ContactEmail")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("ContactPhone")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("datetimeoffset");
 
@@ -293,6 +301,14 @@ namespace Neftyanik.Portal.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("PostalAddress")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid>("Revision")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Slug")
                         .IsRequired()
@@ -314,8 +330,25 @@ namespace Neftyanik.Portal.Infrastructure.Migrations
                             CreatedAtUtc = new DateTimeOffset(new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             IsActive = true,
                             Name = "Нефтяник",
+                            Revision = new Guid("00000000-0000-0000-0000-000000000000"),
                             Slug = "neftyanik"
                         });
+                });
+
+            modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.AssociationAccountBinding", b =>
+                {
+                    b.Property<string>("ApplicationUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("AssociationId")
+                        .HasColumnType("int");
+
+                    b.HasKey("ApplicationUserId");
+
+                    b.HasIndex("AssociationId");
+
+                    b.ToTable("AssociationAccountBindings", (string)null);
                 });
 
             modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.AssociationDocument", b =>
@@ -578,7 +611,7 @@ namespace Neftyanik.Portal.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ApplicationUserId");
+                    b.HasIndex("ApplicationUserId", "AssociationId");
 
                     b.HasIndex("AssociationId", "ApplicationUserId", "Role")
                         .IsUnique();
@@ -1088,7 +1121,7 @@ namespace Neftyanik.Portal.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ApplicationUserId");
+                    b.HasIndex("ApplicationUserId", "AssociationId");
 
                     b.HasIndex("AssociationId", "Email");
 
@@ -1559,6 +1592,49 @@ namespace Neftyanik.Portal.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.PlatformAuditLog", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<int>("AssociationId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("NewValuesJson")
+                        .IsRequired()
+                        .HasMaxLength(10000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("OccurredAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("OldValuesJson")
+                        .IsRequired()
+                        .HasMaxLength(10000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OperatorUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OperatorUserId");
+
+                    b.HasIndex("AssociationId", "OccurredAtUtc");
+
+                    b.ToTable("PlatformAuditLogs", (string)null);
+                });
+
             modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.PlatformBootstrapState", b =>
                 {
                     b.Property<int>("Id")
@@ -1909,6 +1985,21 @@ namespace Neftyanik.Portal.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.AssociationAccountBinding", b =>
+                {
+                    b.HasOne("Neftyanik.Portal.Domain.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Neftyanik.Portal.Domain.Entities.Association", null)
+                        .WithMany()
+                        .HasForeignKey("AssociationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.AssociationDocument", b =>
                 {
                     b.HasOne("Neftyanik.Portal.Domain.Entities.Association", "Association")
@@ -1994,6 +2085,13 @@ namespace Neftyanik.Portal.Infrastructure.Migrations
                     b.HasOne("Neftyanik.Portal.Domain.Entities.Association", "Association")
                         .WithMany()
                         .HasForeignKey("AssociationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Neftyanik.Portal.Domain.Entities.AssociationAccountBinding", null)
+                        .WithMany()
+                        .HasForeignKey("ApplicationUserId", "AssociationId")
+                        .HasPrincipalKey("ApplicationUserId", "AssociationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -2136,6 +2234,12 @@ namespace Neftyanik.Portal.Infrastructure.Migrations
                         .HasForeignKey("AssociationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("Neftyanik.Portal.Domain.Entities.AssociationAccountBinding", null)
+                        .WithMany()
+                        .HasForeignKey("ApplicationUserId", "AssociationId")
+                        .HasPrincipalKey("ApplicationUserId", "AssociationId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("ApplicationUser");
 
@@ -2357,6 +2461,21 @@ namespace Neftyanik.Portal.Infrastructure.Migrations
                     b.Navigation("Payment");
 
                     b.Navigation("ReviewedByUser");
+                });
+
+            modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.PlatformAuditLog", b =>
+                {
+                    b.HasOne("Neftyanik.Portal.Domain.Entities.Association", null)
+                        .WithMany()
+                        .HasForeignKey("AssociationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Neftyanik.Portal.Domain.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("OperatorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.Plot", b =>

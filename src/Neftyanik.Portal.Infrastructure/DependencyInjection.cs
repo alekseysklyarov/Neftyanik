@@ -29,6 +29,10 @@ namespace Neftyanik.Portal.Infrastructure
             services.AddScoped<AssociationContext>();
             services.AddScoped<IAssociationContext>(provider => provider.GetRequiredService<AssociationContext>());
             services.AddScoped<IAssociationMembershipService, AssociationMembershipService>();
+            services.AddScoped<IPlatformAssociationReader, PlatformAssociationReader>();
+            services.AddScoped<IPlatformAssociationWriter, PlatformAssociationWriter>();
+            services.AddScoped<IPlatformAssociationCreator, PlatformAssociationCreator>();
+            services.AddScoped<AssociationCreationOperation>();
 
             services.AddSingleton(TimeProvider.System);
 

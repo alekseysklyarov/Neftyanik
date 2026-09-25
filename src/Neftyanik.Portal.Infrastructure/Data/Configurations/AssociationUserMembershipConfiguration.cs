@@ -18,5 +18,8 @@ public sealed class AssociationUserMembershipConfiguration : IEntityTypeConfigur
         builder.HasIndex(x => new { x.AssociationId, x.ApplicationUserId, x.Role }).IsUnique();
         builder.HasOne(x => x.ApplicationUser).WithMany()
             .HasForeignKey(x => x.ApplicationUserId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<AssociationAccountBinding>().WithMany()
+            .HasForeignKey(x => new { x.ApplicationUserId, x.AssociationId })
+            .HasPrincipalKey(x => new { x.ApplicationUserId, x.AssociationId }).OnDelete(DeleteBehavior.Restrict);
     }
 }

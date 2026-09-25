@@ -1,0 +1,75 @@
+@page
+@model Neftyanik.Portal.Web.Pages.Platform.Associations.IndexModel
+@{
+    ViewData["Title"] = AppLocalizer.Get("Товарищества", "Товариства", "Associations");
+}
+
+<h1 class="h3 mb-4">@ViewData["Title"]</h1>
+<p><a class="btn btn-primary" asp-page="Create">@AppLocalizer.Get("Создать товарищество", "Створити товариство", "Create association")</a></p>
+<form method="get" class="row g-3 align-items-end mb-4">
+    <div class="col-md-6">
+        <label asp-for="Search" class="form-label">@AppLocalizer.Get("Название или slug", "Назва або slug", "Name or slug")</label>
+        <input asp-for="Search" class="form-control" maxlength="200" />
+    </div>
+    <div class="col-md-3">
+        <label asp-for="IsActive" class="form-label">@AppLocalizer.Get("Статус", "Статус", "Status")</label>
+        <select asp-for="IsActive" class="form-select">
+            <option value="">@AppLocalizer.Get("Все", "Усі", "All")</option>
+            <option value="true">@AppLocalizer.Get("Активные", "Активні", "Active")</option>
+            <option value="false">@AppLocalizer.Get("Неактивные", "Неактивні", "Inactive")</option>
+        </select>
+    </div>
+    <div class="col-md-3 d-flex gap-2">
+        <button type="submit" class="btn btn-primary">@AppLocalizer.Get("Найти", "Знайти", "Search")</button>
+        <a asp-page="Index" class="btn btn-outline-secondary">@AppLocalizer.Get("Сбросить", "Скинути", "Reset")</a>
+    </div>
+</form>
+
+<p class="text-muted">@AppLocalizer.Get("Количество записей", "Кількість записів", "Record count"): @Model.Associations.TotalCount</p>
+@if (Model.Associations.Items.Count == 0)
+{
+    <p class="alert alert-info">@AppLocalizer.Get("Товарищества не найдены.", "Товариства не знайдено.", "No associations found.")</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead>
+                <tr>
+                    <th scope="col">@AppLocalizer.Get("Название", "Назва", "Name")</th>
+                    <th scope="col">Slug</th>
+                    <th scope="col">@AppLocalizer.Get("Статус", "Статус", "Status")</th>
+                    <th scope="col">@AppLocalizer.Get("Участники", "Учасники", "Members")</th>
+                    <th scope="col">@AppLocalizer.Get("Назначенные администраторы", "Призначені адміністратори", "Assigned administrators")</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var association in Model.Associations.Items)
+                {
+                    <tr data-association-id="@association.Id">
+                        <td><a asp-page="Details" asp-route-id="@association.Id">@association.Name</a></td>
+                        <td>@association.Slug</td>
+                        <td>@(association.IsActive ? AppLocalizer.Get("Активно", "Активне", "Active") : AppLocalizer.Get("Неактивно", "Неактивне", "Inactive"))</td>
+                        <td data-member-count="@association.MemberCount">@association.MemberCount</td>
+                        <td data-administrator-count="@association.AdministratorCount">@association.AdministratorCount</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@if (Model.Associations.TotalPages > 1)
+{
+    <nav class="d-flex align-items-center gap-3" aria-label="@AppLocalizer.Get("Страницы товариществ", "Сторінки товариств", "Association pages")">
+        @if (Model.PageNumber > 1)
+        {
+            <a class="btn btn-outline-secondary" asp-page="Index" asp-route-search="@Model.Search" asp-route-isActive="@Model.IsActive" asp-route-pageNumber="@(Model.PageNumber - 1)">@AppLocalizer.Get("Назад", "Назад", "Previous")</a>
+        }
+        <span aria-current="page">@AppLocalizer.Get("Страница", "Сторінка", "Page") @Model.PageNumber / @Model.Associations.TotalPages</span>
+        @if (Model.PageNumber < Model.Associations.TotalPages)
+        {
+            <a class="btn btn-outline-secondary" asp-page="Index" asp-route-search="@Model.Search" asp-route-isActive="@Model.IsActive" asp-route-pageNumber="@(Model.PageNumber + 1)">@AppLocalizer.Get("Далее", "Далі", "Next")</a>
+        }
+    </nav>
+}

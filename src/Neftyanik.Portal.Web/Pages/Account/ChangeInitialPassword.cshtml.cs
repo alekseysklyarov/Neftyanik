@@ -76,16 +76,21 @@ public class ChangeInitialPasswordModel : PageModel
             return Page();
         }
 
+        var destination = RedirectToMemberDashboardOrHome();
         await _signInManager.RefreshSignInAsync(user);
         TempData["SuccessMessage"] = AppLocalizer.Get(
             "Пароль успешно изменен.",
             "Пароль успішно змінено.",
             "The password has been changed successfully.");
-        return RedirectToPage("/Member/Index");
+        return destination;
     }
 
     private void ValidateInput()
     {
+        if (Input.NewPassword == Input.CurrentPassword && !string.IsNullOrEmpty(Input.NewPassword))
+            ModelState.AddModelError("Input.NewPassword", AppLocalizer.Get(
+                "Новый пароль должен отличаться от временного.", "Новий пароль має відрізнятися від тимчасового.", "The new password must differ from the temporary password."));
+
         if (string.IsNullOrWhiteSpace(Input.CurrentPassword))
         {
             ModelState.AddModelError($"{nameof(Input)}.{nameof(InputModel.CurrentPassword)}", AppLocalizer.Get(
@@ -123,7 +128,11 @@ public class ChangeInitialPasswordModel : PageModel
 
     private IActionResult RedirectToMemberDashboardOrHome()
     {
-        if (User.IsInRole(RoleNames.Member) || User.IsInRole(RoleNames.Administrator))
+        if (User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.Accountant))
+        {
+            return RedirectToPage("/Administration/Index");
+        }
+        if (User.IsInRole(RoleNames.Member))
         {
             return RedirectToPage("/Member/Index");
         }

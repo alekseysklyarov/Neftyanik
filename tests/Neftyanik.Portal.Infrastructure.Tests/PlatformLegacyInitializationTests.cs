@@ -133,7 +133,12 @@ public sealed class PlatformLegacyInitializationTests
             {
                 var role = new IdentityRole(RoleNames.PlatformAdministrator) { NormalizedName = "PLATFORMADMINISTRATOR" };
                 database.Roles.Add(role);
-                if (evidence == "assignment") database.UserRoles.Add(new IdentityUserRole<string> { UserId = user.Id, RoleId = role.Id });
+                if (evidence == "assignment")
+                {
+                    var platformUser = new ApplicationUser { UserName = "prior-platform", FirstName = "Prior", LastName = "Operator" };
+                    database.Users.Add(platformUser);
+                    database.UserRoles.Add(new IdentityUserRole<string> { UserId = platformUser.Id, RoleId = role.Id });
+                }
             }
             if (evidence == "role-claim") database.RoleClaims.Add(new IdentityRoleClaim<string> { RoleId = (await database.Roles.FirstAsync()).Id, ClaimType = PlatformAdministratorOnboarding.BootstrapMarker, ClaimValue = "deleted-user" });
             if (evidence is "user-marker" or "user-role-claim") database.UserClaims.Add(new IdentityUserClaim<string>
@@ -292,7 +297,8 @@ public sealed class PlatformLegacyInitializationTests
             {
                 var user = new ApplicationUser { UserName = "tenant", Email = "tenant@example.test", EmailConfirmed = true, FirstName = "Tenant", LastName = "User", IsActive = true };
                 await fixture.ScopeAsync(async provider => Assert.True((await provider.GetRequiredService<UserManager<ApplicationUser>>().CreateAsync(user, Secret())).Succeeded));
-                await using var context = fixture._database.CreateContext();
+                await using var context = PrePlatformManagementDbContext.Create(
+                    new DbContextOptionsBuilder<ApplicationDbContext>().UseSqlServer(connection).Options, TestAssociations.Neftyanik);
                 context.AddRange(AssociationFoundationTests.CreateBusinessGraph(1, user.Id).Cast<object>());
                 context.AssociationUserMemberships.Add(new AssociationUserMembership { ApplicationUserId = user.Id, Role = RoleNames.Administrator });
                 await context.SaveChangesAsync();

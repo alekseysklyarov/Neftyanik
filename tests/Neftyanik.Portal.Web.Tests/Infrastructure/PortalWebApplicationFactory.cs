@@ -74,6 +74,8 @@ public sealed class PortalWebApplicationFactory : WebApplicationFactory<Program>
                     options.UseSqlite(_connection));
             }
 
+            services.AddDbContext<ApplicationDbContext>(options => options.AddInterceptors(new TestAccountModelInterceptor()));
+
             services.AddAuthentication(options =>
                 {
                     options.DefaultAuthenticateScheme = TestAuthenticationHandler.SchemeName;

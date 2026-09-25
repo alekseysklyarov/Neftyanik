@@ -1,0 +1,75 @@
+@page
+@model Neftyanik.Portal.Web.Pages.Platform.Associations.DetailsModel
+@{
+    ViewData["Title"] = Model.Association.Name;
+}
+
+<h1 class="h3 mb-4">@Model.Association.Name</h1>
+@if (TempData["SuccessMessage"] is string successMessage)
+{
+    <div class="alert alert-success" role="status">@successMessage</div>
+}
+@if (TempData["SetupMessage"] is string setupMessage)
+{
+    <div class="alert alert-warning" role="status">@setupMessage</div>
+}
+<div class="d-flex gap-2 mb-3">
+    <a class="btn btn-primary" asp-page="Edit" asp-route-id="@Model.Association.Id">@AppLocalizer.Get("Редактировать", "Редагувати", "Edit")</a>
+    @if (!Model.Association.IsActive || !string.Equals(Model.Association.Slug, "neftyanik", StringComparison.OrdinalIgnoreCase))
+    {
+        <a class="btn btn-outline-warning" asp-page="Status" asp-route-id="@Model.Association.Id" asp-route-activate="@(!Model.Association.IsActive)">@(Model.Association.IsActive ? AppLocalizer.Get("Деактивировать", "Деактивувати", "Deactivate") : AppLocalizer.Get("Активировать", "Активувати", "Activate"))</a>
+    }
+</div>
+<dl class="row">
+    <dt class="col-sm-4">@AppLocalizer.Get("Контактный email", "Контактний email", "Contact email")</dt>
+    <dd class="col-sm-8">@(Model.Association.ContactEmail ?? "—")</dd>
+    <dt class="col-sm-4">@AppLocalizer.Get("Контактный телефон", "Контактний телефон", "Contact phone")</dt>
+    <dd class="col-sm-8">@(Model.Association.ContactPhone ?? "—")</dd>
+    <dt class="col-sm-4">@AppLocalizer.Get("Почтовый адрес", "Поштова адреса", "Postal address")</dt>
+    <dd class="col-sm-8">@(Model.Association.PostalAddress ?? "—")</dd>
+    <dt class="col-sm-4">Slug</dt>
+    <dd class="col-sm-8">@Model.Association.Slug</dd>
+    <dt class="col-sm-4">@AppLocalizer.Get("Статус", "Статус", "Status")</dt>
+    <dd class="col-sm-8">@(Model.Association.IsActive ? AppLocalizer.Get("Активно", "Активне", "Active") : AppLocalizer.Get("Неактивно", "Неактивне", "Inactive"))</dd>
+    <dt class="col-sm-4">@AppLocalizer.Get("Дата создания (UTC)", "Дата створення (UTC)", "Created (UTC)")</dt>
+    <dd class="col-sm-8">@Model.Association.CreatedAtUtc.UtcDateTime.ToString("dd.MM.yyyy HH:mm")</dd>
+    <dt class="col-sm-4">@AppLocalizer.Get("Количество участников", "Кількість учасників", "Member count")</dt>
+    <dd class="col-sm-8" data-member-count="@Model.Association.MemberCount">@Model.Association.MemberCount</dd>
+</dl>
+
+<h2 class="h5 mt-4">@AppLocalizer.Get("Назначения администраторов", "Призначення адміністраторів", "Administrator assignments")</h2>
+@if (Model.Association.Administrators.Count == 0)
+{
+    <p class="text-muted">@AppLocalizer.Get("Администраторы не назначены.", "Адміністраторів не призначено.", "No administrators assigned.")</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead>
+                <tr>
+                    <th scope="col">@AppLocalizer.Get("Логин", "Логін", "Username")</th>
+                    <th scope="col">@AppLocalizer.Get("Глобальная учетная запись", "Глобальний обліковий запис", "Global account")</th>
+                    <th scope="col">@AppLocalizer.Get("Локальное назначение", "Локальне призначення", "Local assignment")</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var administrator in Model.Association.Administrators)
+                {
+                    <tr>
+                        <td>@(administrator.UserName ?? "—")</td>
+                        <td>
+                            @(administrator.IsAccountActive ? AppLocalizer.Get("Активна", "Активний", "Active") : AppLocalizer.Get("Неактивна", "Неактивний", "Inactive"))
+                            @if (administrator.IsAccountLocked)
+                            {
+                                <span class="badge text-bg-warning">@AppLocalizer.Get("Заблокирована", "Заблокований", "Locked")</span>
+                            }
+                        </td>
+                        <td>@(administrator.IsAssignmentActive ? AppLocalizer.Get("Активно", "Активне", "Active") : AppLocalizer.Get("Отключено", "Вимкнене", "Disabled"))</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+<a class="btn btn-outline-secondary" asp-page="Index">@AppLocalizer.Get("К списку товариществ", "До списку товариств", "Back to associations")</a>

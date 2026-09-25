@@ -1,0 +1,27 @@
+@page
+@model Neftyanik.Portal.Web.Pages.Platform.Associations.StatusModel
+@{
+    ViewData["Title"] = InputTitle();
+    string InputTitle() => Model.Input.IsActive == true
+        ? AppLocalizer.Get("Активация товарищества", "Активація товариства", "Activate association")
+        : AppLocalizer.Get("Деактивация товарищества", "Деактивація товариства", "Deactivate association");
+}
+<h1 class="h3">@ViewData["Title"]</h1>
+<p class="fw-semibold">@Model.Association.Name (<code>@Model.Association.Slug</code>)</p>
+<div asp-validation-summary="All" class="text-danger" role="alert"></div>
+@if (Model.Input.IsActive != true && !Model.Association.CanDeactivate)
+{
+    <p class="alert alert-warning">@AppLocalizer.Get("Деактивация neftyanik запрещена.", "Деактивацію neftyanik заборонено.", "Deactivation of neftyanik is prohibited.")</p>
+}
+else
+{
+    <p class="alert alert-warning">@(Model.Input.IsActive == true
+        ? AppLocalizer.Get("Доступ будет восстановлен согласно сохраненным назначениям. Отключенные назначения останутся отключенными.", "Доступ буде відновлено відповідно до збережених призначень. Вимкнені призначення залишаться вимкненими.", "Access will resume according to existing assignments. Disabled assignments remain disabled.")
+        : AppLocalizer.Get("Доступ к этому товариществу будет прекращен. Учетные записи, роли и данные сохранятся. Доступ к другим товариществам не изменится.", "Доступ до цього товариства буде припинено. Облікові записи, ролі та дані збережуться. Доступ до інших товариств не зміниться.", "Access to this association will stop. Accounts, roles and data will be preserved. Access to other associations will not change."))</p>
+    <form method="post" asp-route-id="@Model.Association.Id" asp-antiforgery="true" class="mb-3">
+        <input asp-for="Input.Revision" type="hidden" />
+        <input asp-for="Input.IsActive" type="hidden" />
+        <button type="submit" class="btn @(Model.Input.IsActive == true ? "btn-primary" : "btn-danger")">@AppLocalizer.Get("Подтвердить", "Підтвердити", "Confirm")</button>
+    </form>
+}
+<a asp-page="Details" asp-route-id="@Model.Association.Id" class="btn btn-outline-secondary">@AppLocalizer.Get("Отмена", "Скасувати", "Cancel")</a>

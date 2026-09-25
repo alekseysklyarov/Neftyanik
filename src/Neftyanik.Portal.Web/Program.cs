@@ -229,6 +229,9 @@ builder.Services.Configure<ForwardedHeadersOptions>(options => ConfigureForwarde
 
 builder.Services.AddScoped<PlatformAdministratorAccess>();
 builder.Services.AddScoped<IAuthorizationHandler, PlatformAdministratorHandler>();
+builder.Services.AddScoped<IPlatformAssociationReadAccess, PlatformAssociationReadAccess>();
+builder.Services.AddScoped<IPlatformAssociationWriteAccess, PlatformAssociationReadAccess>();
+builder.Services.AddScoped<IAssociationSlugReservations, AssociationSlugReservations>();
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy(PlatformOnboardingAuthentication.Policy, policy => policy

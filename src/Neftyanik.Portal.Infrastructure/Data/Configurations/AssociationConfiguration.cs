@@ -10,8 +10,12 @@ public class AssociationConfiguration : IEntityTypeConfiguration<Association>
     {
         builder.ToTable("Associations");
         builder.HasKey(x => x.Id);
-        builder.Property(x => x.Name).IsRequired().HasMaxLength(200);
+        builder.Property(x => x.Name).IsRequired().HasMaxLength(Neftyanik.Portal.Domain.Constants.AssociationMetadataLimits.Name);
         builder.Property(x => x.Slug).IsRequired().HasMaxLength(100).IsUnicode(false);
+        builder.Property(x => x.ContactEmail).HasMaxLength(Neftyanik.Portal.Domain.Constants.AssociationMetadataLimits.ContactEmail);
+        builder.Property(x => x.ContactPhone).HasMaxLength(Neftyanik.Portal.Domain.Constants.AssociationMetadataLimits.ContactPhone);
+        builder.Property(x => x.PostalAddress).HasMaxLength(Neftyanik.Portal.Domain.Constants.AssociationMetadataLimits.PostalAddress);
+        builder.Property(x => x.Revision).IsConcurrencyToken();
         builder.Property(x => x.CreatedAtUtc).IsRequired();
         builder.HasIndex(x => x.Slug).IsUnique();
 

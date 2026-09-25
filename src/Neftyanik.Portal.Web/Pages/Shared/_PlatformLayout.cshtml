@@ -12,6 +12,10 @@
     <header class="border-bottom mb-4">
         <nav class="navbar container">
             <a class="navbar-brand" asp-page="/Platform/Index">DachaHub</a>
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <a class="nav-link" asp-page="/Platform/Associations/Index">@AppLocalizer.Get("Товарищества", "Товариства", "Associations")</a>
+            }
             <span class="navbar-text">@AppLocalizer.Get("Управление платформой", "Керування платформою", "Platform administration")</span>
         </nav>
     </header>

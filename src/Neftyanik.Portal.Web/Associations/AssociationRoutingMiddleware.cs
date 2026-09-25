@@ -7,10 +7,8 @@ namespace Neftyanik.Portal.Web.Associations;
 public sealed class AssociationRoutingMiddleware
 {
     private readonly RequestDelegate _next;
-    private static readonly HashSet<string> LegacyPageRoots = new(StringComparer.Ordinal)
-    {
-        "Account", "Administration", "Member", "Payments", "Localization", "Privacy", "Index"
-    };
+    private static readonly HashSet<string> LegacyPageRoots = new(
+        Neftyanik.Portal.Domain.Constants.AssociationSlugRules.LegacyPageRoots, StringComparer.Ordinal);
 
     public AssociationRoutingMiddleware(RequestDelegate next) => _next = next;
 

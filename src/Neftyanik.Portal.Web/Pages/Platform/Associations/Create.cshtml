@@ -1,0 +1,80 @@
+@page
+@model Neftyanik.Portal.Web.Pages.Platform.Associations.CreateModel
+@{
+    ViewData["Title"] = AppLocalizer.Get("Создание товарищества", "Створення товариства", "Create association");
+}
+<h1 class="h3">@ViewData["Title"]</h1>
+<p class="alert alert-info">@Neftyanik.Portal.Web.Pages.Platform.Associations.CreateModel.SetupMessage</p>
+<div asp-validation-summary="All" class="text-danger" role="alert"></div>
+@if (!Model.HasPreview)
+{
+    <form method="post" asp-page-handler="Preview" asp-antiforgery="true" class="col-lg-8">
+        <div class="mb-3">
+            <label asp-for="Input.Name" class="form-label">@AppLocalizer.Get("Название", "Назва", "Name")</label>
+            <input asp-for="Input.Name" class="form-control" maxlength="200" />
+        </div>
+        <div class="mb-3">
+            <label asp-for="Input.Slug" class="form-label">Slug</label>
+            <input asp-for="Input.Slug" class="form-control" maxlength="100" aria-describedby="slug-help" />
+            <div id="slug-help" class="form-text">@AppLocalizer.Get("Строчные латинские буквы, цифры и одиночные дефисы. После создания изменить нельзя.", "Малі латинські літери, цифри та одиночні дефіси. Після створення змінити не можна.", "Lowercase ASCII letters, digits and single hyphens. Immutable after creation.")</div>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Input.ContactEmail" class="form-label">@AppLocalizer.Get("Контактный email", "Контактний email", "Contact email")</label>
+            <input asp-for="Input.ContactEmail" type="email" class="form-control" maxlength="256" />
+        </div>
+        <div class="mb-3">
+            <label asp-for="Input.ContactPhone" class="form-label">@AppLocalizer.Get("Контактный телефон", "Контактний телефон", "Contact phone")</label>
+            <input asp-for="Input.ContactPhone" type="tel" class="form-control" maxlength="50" />
+        </div>
+        <div class="mb-3">
+            <label asp-for="Input.PostalAddress" class="form-label">@AppLocalizer.Get("Почтовый адрес", "Поштова адреса", "Postal address")</label>
+            <textarea asp-for="Input.PostalAddress" class="form-control" maxlength="500" rows="3"></textarea>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Input.AdministratorUserName" class="form-label">@AppLocalizer.Get("Новый логин администратора", "Новий логін адміністратора", "New administrator username")</label>
+            <input asp-for="Input.AdministratorUserName" class="form-control" maxlength="256" autocomplete="off" />
+        </div>
+        <div class="mb-3">
+            <label asp-for="Input.AdministratorEmail" class="form-label">Email</label>
+            <input asp-for="Input.AdministratorEmail" type="email" class="form-control" maxlength="256" />
+        </div>
+        <div class="mb-3">
+            <label asp-for="Input.AdministratorDisplayName" class="form-label">@AppLocalizer.Get("Отображаемое имя", "Відображуване ім’я", "Display name")</label>
+            <input asp-for="Input.AdministratorDisplayName" class="form-control" maxlength="200" />
+        </div>
+        <button type="submit" class="btn btn-primary">@AppLocalizer.Get("Проверить создание", "Перевірити створення", "Review creation")</button>
+    </form>
+}
+else
+{
+    <div class="card mb-3"><div class="card-body">
+        <h2 class="h5">@AppLocalizer.Get("Подтверждение назначения", "Підтвердження призначення", "Confirm assignment")</h2>
+        <dl>
+            <dt>@AppLocalizer.Get("Товарищество", "Товариство", "Association")</dt><dd>@Model.Input.Name (<code>@Model.Input.Slug</code>)</dd>
+            <dt>@AppLocalizer.Get("Контактные данные", "Контактні дані", "Contact details")</dt><dd>@string.Join(" / ", new[] { Model.Input.ContactEmail, Model.Input.ContactPhone, Model.Input.PostalAddress }.Where(x => !string.IsNullOrWhiteSpace(x)))</dd>
+            <dt>@AppLocalizer.Get("Логин администратора", "Логін адміністратора", "Administrator username")</dt><dd>@Model.Input.AdministratorUserName</dd>
+            <dt>Email</dt><dd>@Model.Input.AdministratorEmail</dd>
+            <dt>@AppLocalizer.Get("Отображаемое имя", "Відображуване ім’я", "Display name")</dt><dd>@Model.Input.AdministratorDisplayName</dd>
+        </dl>
+        <p>@AppLocalizer.Get("Будет создана новая отдельная учётная запись администратора только этого товарищества.", "Буде створено новий окремий обліковий запис адміністратора лише цього товариства.", "A new separate administrator account will be created for this association only.")</p>
+        <form method="post" asp-page-handler="Confirm" asp-antiforgery="true">
+            <input asp-for="ConfirmationToken" type="hidden" />
+            <div class="mb-3">
+                <label asp-for="Password.TemporaryPassword" class="form-label">@AppLocalizer.Get("Временный пароль", "Тимчасовий пароль", "Temporary password")</label>
+                <input asp-for="Password.TemporaryPassword" class="form-control" autocomplete="new-password" maxlength="128" value="" />
+            </div>
+            <div class="mb-3">
+                <label asp-for="Password.ConfirmPassword" class="form-label">@AppLocalizer.Get("Подтвердите пароль", "Підтвердіть пароль", "Confirm password")</label>
+                <input asp-for="Password.ConfirmPassword" class="form-control" autocomplete="new-password" maxlength="128" value="" />
+            </div>
+            <p class="form-text">@AppLocalizer.Get("Передайте временный пароль администратору по защищённому каналу. При первом входе он обязан его сменить.", "Передайте тимчасовий пароль адміністратору захищеним каналом. Під час першого входу він зобов’язаний його змінити.", "Deliver the temporary password through a secure channel. It must be changed at first sign-in.")</p>
+            <div class="form-check mb-3">
+                <input asp-for="ConfirmAdministrator" class="form-check-input" />
+                <label asp-for="ConfirmAdministrator" class="form-check-label">@AppLocalizer.Get("Подтверждаю создание и назначение указанного пользователя.", "Підтверджую створення та призначення зазначеного користувача.", "I confirm creation and assignment of this user.")</label>
+            </div>
+            <button type="submit" class="btn btn-primary">@AppLocalizer.Get("Создать товарищество", "Створити товариство", "Create association")</button>
+            <a asp-page="Create" class="btn btn-outline-secondary">@AppLocalizer.Get("Начать заново", "Почати знову", "Start over")</a>
+        </form>
+    </div></div>
+}
+<a class="btn btn-link mt-3" asp-page="Index">@AppLocalizer.Get("К списку товариществ", "До списку товариств", "Back to associations")</a>

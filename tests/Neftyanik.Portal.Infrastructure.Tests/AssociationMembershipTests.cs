@@ -56,10 +56,11 @@ public class AssociationMembershipTests : IClassFixture<AssociationDatabaseFixtu
         {
             ApplicationUserId = user.Id, Role = RoleNames.Member
         });
-        await associationB.SaveChangesAsync();
+        await Assert.ThrowsAsync<AssociationIsolationException>(() => associationB.SaveChangesAsync());
+        associationB.ChangeTracker.Clear();
 
         Assert.NotNull(associationA.Model.FindEntityType(typeof(AssociationUserMembership))!.GetQueryFilter());
-        Assert.Equal(removeMembershipFilter ? 2 : 1,
+        Assert.Equal(removeMembershipFilter ? 1 : 0,
             await associationB.AssociationUserMemberships.CountAsync(x => x.ApplicationUserId == user.Id));
         if (removeMembershipFilter)
         {
@@ -68,7 +69,7 @@ public class AssociationMembershipTests : IClassFixture<AssociationDatabaseFixtu
 
         Assert.Equal(new[] { RoleNames.Administrator }, await new AssociationMembershipService(associationA).GetRolesAsync(user.Id));
         var rolesInB = await new AssociationMembershipService(associationB).GetRolesAsync(user.Id);
-        Assert.Equal(new[] { RoleNames.Member }, rolesInB);
+        Assert.Empty(rolesInB);
         Assert.DoesNotContain(RoleNames.Administrator, rolesInB);
 
         await using ApplicationDbContext unresolved = removeMembershipFilter

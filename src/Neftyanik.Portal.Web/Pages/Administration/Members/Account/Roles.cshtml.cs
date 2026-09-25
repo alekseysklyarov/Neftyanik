@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data;
+using Neftyanik.Portal.Infrastructure.Identity;
 using Neftyanik.Portal.Web.Localization;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Members.Account;
@@ -74,7 +75,7 @@ public class RolesModel : MemberAccountPageModelBase
             }
             else
             {
-                DbContext.AssociationUserMemberships.Remove(membership);
+                membership.IsActive = false;
             }
         }
         await DbContext.SaveChangesAsync(cancellationToken);
