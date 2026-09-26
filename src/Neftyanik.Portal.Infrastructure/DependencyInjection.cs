@@ -33,6 +33,7 @@ namespace Neftyanik.Portal.Infrastructure
             services.AddScoped<IPlatformAssociationWriter, PlatformAssociationWriter>();
             services.AddScoped<IPlatformAssociationCreator, PlatformAssociationCreator>();
             services.AddScoped<AssociationCreationOperation>();
+            services.AddScoped<IAssociationReadinessService, AssociationReadinessService>();
 
             services.AddSingleton(TimeProvider.System);
 
