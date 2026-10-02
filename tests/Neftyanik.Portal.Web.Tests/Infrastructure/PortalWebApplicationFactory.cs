@@ -71,7 +71,8 @@ public sealed class PortalWebApplicationFactory : WebApplicationFactory<Program>
                 _connection.Open();
 
                 services.AddDbContext<ApplicationDbContext>(options =>
-                    options.UseSqlite(_connection));
+                    options.UseSqlite(_connection)
+                        .ReplaceService<Microsoft.EntityFrameworkCore.Infrastructure.IModelCustomizer, AuditTimestampModelCustomizer>());
             }
 
             services.AddDbContext<ApplicationDbContext>(options => options.AddInterceptors(new TestAccountModelInterceptor()));
@@ -229,5 +230,20 @@ public sealed class PortalWebApplicationFactory : WebApplicationFactory<Program>
         }
 
         throw new InvalidOperationException("Unable to locate the repository root containing 'src/Neftyanik.Portal.Web'.");
+    }
+
+    // SQLite cannot ORDER BY DateTimeOffset. Only in SQLite tests, store this audit
+    // timestamp as INTEGER UTC ticks (100 ns): instants/precision survive, offsets do not.
+    // SQL Server keeps its unconverted datetimeoffset mapping. History pagination tests
+    // run on both providers and explicitly verify this difference and instant ordering.
+    public sealed class AuditTimestampModelCustomizer(Microsoft.EntityFrameworkCore.Infrastructure.ModelCustomizerDependencies dependencies)
+        : Microsoft.EntityFrameworkCore.Infrastructure.ModelCustomizer(dependencies)
+    {
+        public override void Customize(ModelBuilder modelBuilder, DbContext context)
+        {
+            base.Customize(modelBuilder, context);
+            modelBuilder.Entity<PlatformAuditLog>().Property(x => x.OccurredAtUtc)
+                .HasConversion(value => value.UtcTicks, value => new DateTimeOffset(value, TimeSpan.Zero));
+        }
     }
 }

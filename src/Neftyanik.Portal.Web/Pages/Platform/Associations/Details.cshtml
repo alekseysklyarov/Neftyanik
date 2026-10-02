@@ -1,5 +1,6 @@
 @page
 @model Neftyanik.Portal.Web.Pages.Platform.Associations.DetailsModel
+@using Neftyanik.Portal.Web.Pages.Platform.Associations
 @{
     ViewData["Title"] = Model.Association.Name;
 }
@@ -72,4 +73,67 @@ else
         </table>
     </div>
 }
+<section class="my-4" aria-labelledby="association-history">
+    <h2 class="h5" id="association-history">@AppLocalizer.Get("История изменений", "Історія змін", "Change history")</h2>
+    @if (Model.History.Items.Count == 0)
+    {
+        <p class="alert alert-info">@AppLocalizer.Get("История изменений товарищества пока пуста.", "Історія змін товариства поки порожня.", "This association has no change history yet.")</p>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th scope="col">@AppLocalizer.Get("Дата (UTC)", "Дата (UTC)", "Date (UTC)")</th>
+                        <th scope="col">@AppLocalizer.Get("Исполнитель", "Виконавець", "Performed by")</th>
+                        <th scope="col">@AppLocalizer.Get("Действие", "Дія", "Action")</th>
+                        <th scope="col">@AppLocalizer.Get("Подробности", "Подробиці", "Details")</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var entry in Model.History.Items)
+                    {
+                        <tr data-history-id="@entry.Id">
+                            <td class="text-nowrap">@entry.OccurredAtUtc.UtcDateTime.ToString("dd.MM.yyyy HH:mm:ss")</td>
+                            <td class="text-break">@(entry.OperatorUserName ?? entry.OperatorUserId)</td>
+                            <td>@AssociationHistoryText.Action(entry.Action)</td>
+                            <td class="text-break">
+                                @if (entry.Changes.Count == 0)
+                                {
+                                    <span class="text-muted">@AppLocalizer.Get("Подробности недоступны.", "Подробиці недоступні.", "Details unavailable.")</span>
+                                }
+                                else
+                                {
+                                    <ul class="list-unstyled mb-0">
+                                        @foreach (var change in entry.Changes)
+                                        {
+                                            <li><strong>@AssociationHistoryText.Field(change.Field):</strong>
+                                                @AssociationHistoryText.Value(change.Field, change.OldValue)
+                                                → @AssociationHistoryText.Value(change.Field, change.NewValue)</li>
+                                        }
+                                    </ul>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    @if (Model.History.TotalPages > 1)
+    {
+        <nav class="d-flex align-items-center gap-3" aria-label="@AppLocalizer.Get("Страницы истории", "Сторінки історії", "History pages")">
+            @if (Model.HistoryPage > 1)
+            {
+                <a class="btn btn-outline-secondary" asp-page="Details" asp-route-id="@Model.Association.Id" asp-route-historyPage="@(Model.HistoryPage - 1)" asp-fragment="association-history">@AppLocalizer.Get("Назад", "Назад", "Previous")</a>
+            }
+            <span aria-current="page">@AppLocalizer.Get("Страница", "Сторінка", "Page") @Model.HistoryPage / @Model.History.TotalPages</span>
+            @if (Model.HistoryPage < Model.History.TotalPages)
+            {
+                <a class="btn btn-outline-secondary" asp-page="Details" asp-route-id="@Model.Association.Id" asp-route-historyPage="@(Model.HistoryPage + 1)" asp-fragment="association-history">@AppLocalizer.Get("Далее", "Далі", "Next")</a>
+            }
+        </nav>
+    }
+</section>
 <a class="btn btn-outline-secondary" asp-page="Index">@AppLocalizer.Get("К списку товариществ", "До списку товариств", "Back to associations")</a>

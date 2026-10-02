@@ -166,6 +166,8 @@ public class PlatformAssociationReadTests
         using var forged = await fixture.ClientAsync("tenant-admin", forgePlatformClaim: true);
         using var denied = await forged.GetAsync("/Platform/Associations");
         Assert.Equal(HttpStatusCode.Forbidden, denied.StatusCode);
+        using var deniedHistory = await forged.GetAsync($"/Platform/Associations/Details?id={fixture.SleepingId}&historyPage=2");
+        Assert.Equal(HttpStatusCode.Forbidden, deniedHistory.StatusCode);
         using var client = await fixture.ClientAsync("operator");
         await using (var scope = fixture.App.Services.CreateAsyncScope())
         {
@@ -174,6 +176,8 @@ public class PlatformAssociationReadTests
         }
         using var revoked = await client.GetAsync("/Platform/Associations");
         Assert.Equal(HttpStatusCode.Forbidden, revoked.StatusCode);
+        using var revokedHistory = await client.GetAsync($"/Platform/Associations/Details?id={fixture.SleepingId}&historyPage=2");
+        Assert.Equal(HttpStatusCode.Forbidden, revokedHistory.StatusCode);
     }
 
     [Theory]
@@ -192,6 +196,7 @@ public class PlatformAssociationReadTests
             var reader = scope.ServiceProvider.GetRequiredService<IPlatformAssociationReader>();
             await Assert.ThrowsAsync<UnauthorizedAccessException>(() => reader.GetPageAsync());
             await Assert.ThrowsAsync<UnauthorizedAccessException>(() => reader.GetDetailsAsync(fixture.SleepingId));
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => reader.GetHistoryAsync(fixture.SleepingId));
         }
         finally { accessor.HttpContext = null; }
     }
@@ -219,27 +224,170 @@ public class PlatformAssociationReadTests
             Assert.Empty(await database.Charges.ToListAsync());
             accessor.HttpContext.Request.Path = "/neftyanik/Administration";
             await Assert.ThrowsAsync<UnauthorizedAccessException>(() => reader.GetPageAsync());
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => reader.GetHistoryAsync(fixture.SleepingId));
             accessor.HttpContext.Request.Path = "/Platform/Associations";
             scope.ServiceProvider.GetRequiredService<AssociationContext>().Resolve(await database.Associations.SingleAsync(x => x.Slug == "neftyanik"));
             await Assert.ThrowsAsync<UnauthorizedAccessException>(() => reader.GetDetailsAsync(fixture.SleepingId));
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => reader.GetHistoryAsync(fixture.SleepingId));
         }
         finally { accessor.HttpContext = null; }
     }
 
-    private sealed class Fixture : IAsyncDisposable
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task History_OnlySelectedAssociationHasStablePagesAndReadDoesNotWrite(bool useSqlite)
     {
-        private readonly PortalWebApplicationFactory factory = new();
+        await using var fixture = await Fixture.CreateAsync(useSqlite);
+        var entries = new List<PlatformAuditLog>();
+        await using (var scope = fixture.App.Services.CreateAsyncScope())
+        {
+            var database = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            Assert.Equal(useSqlite, database.Database.IsSqlite());
+            Assert.Equal(!useSqlite, database.Database.IsSqlServer());
+            var timestamp = database.Model.FindEntityType(typeof(PlatformAuditLog))!
+                .FindProperty(nameof(PlatformAuditLog.OccurredAtUtc))!;
+            if (useSqlite)
+            {
+                Assert.Equal(typeof(long), timestamp.GetValueConverter()!.ProviderClrType);
+                Assert.Equal("INTEGER", timestamp.GetColumnType());
+            }
+            else
+            {
+                Assert.Null(timestamp.GetValueConverter());
+                Assert.Equal("datetimeoffset", timestamp.GetColumnType());
+            }
+            for (var i = 0; i < 43; i++)
+            {
+                entries.Add(new PlatformAuditLog
+                {
+                    AssociationId = fixture.SleepingId, OperatorUserId = "operator",
+                    // Equal instants with different offsets, plus 100 ns differences.
+                    OccurredAtUtc = new DateTimeOffset(2026, 9, 26, 12, i % 3, 0, TimeSpan.Zero)
+                        .AddTicks(i % 2).ToOffset(TimeSpan.FromHours(i % 5 - 2)),
+                    Action = PlatformAuditActions.AssociationEdited,
+                    OldValuesJson = "{\"Name\":\"Old name\"}", NewValuesJson = $"{{\"Name\":\"History {i}\"}}"
+                });
+            }
+            database.PlatformAuditLogs.AddRange(entries);
+            database.PlatformAuditLogs.Add(new PlatformAuditLog
+            {
+                AssociationId = fixture.SummerId, OperatorUserId = "operator", OccurredAtUtc = DateTimeOffset.UtcNow.AddYears(1),
+                Action = PlatformAuditActions.AssociationCreated, OldValuesJson = "{}", NewValuesJson = "{\"Name\":\"FOREIGN-HISTORY\"}"
+            });
+            await database.SaveChangesAsync();
+            var stored = await database.PlatformAuditLogs.AsNoTracking().Where(x => x.AssociationId == fixture.SleepingId)
+                .Select(x => new { x.Id, x.OccurredAtUtc }).ToListAsync();
+            Assert.All(stored, row =>
+            {
+                var original = entries.Single(x => x.Id == row.Id).OccurredAtUtc;
+                Assert.Equal(original.UtcTicks, row.OccurredAtUtc.UtcTicks);
+                // SQLite deliberately normalizes offsets; SQL Server must preserve them.
+                Assert.Equal(useSqlite ? TimeSpan.Zero : original.Offset, row.OccurredAtUtc.Offset);
+            });
+        }
+        var before = await fixture.SnapshotAsync();
+        var expected = entries.OrderByDescending(x => x.OccurredAtUtc).ThenByDescending(x => x.Id).Select(x => x.Id).ToArray();
+        using var client = await fixture.ClientAsync("operator");
+        foreach (var (requested, page) in new[] { (int.MinValue, 1), (-1, 1), (0, 1), (1, 1), (2, 2), (3, 3), (int.MaxValue, 3), (1, 1) })
+        {
+            using var response = await client.GetAsync($"/Platform/Associations/Details?id={fixture.SleepingId}&historyPage={requested}");
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            var html = await response.ReadDecodedHtmlAsync();
+            var actual = Regex.Matches(html, "data-history-id=\"(\\d+)\"").Select(x => long.Parse(x.Groups[1].Value));
+            Assert.Equal(expected.Skip((page - 1) * 20).Take(20), actual);
+            Assert.DoesNotContain("FOREIGN-HISTORY", html);
+            Assert.Contains("operator", html);
+            Assert.Contains("26.09.2026 12:", html);
+            var links = Regex.Matches(html, "href=\"([^\"]+#association-history)\"").Select(x => x.Groups[1].Value).ToArray();
+            Assert.NotEmpty(links);
+            Assert.All(links, link => Assert.Contains($"id={fixture.SleepingId}&historyPage=", link));
+            Assert.Contains($"historyPage={(page == 1 ? 2 : page - 1)}#association-history", html);
+        }
+        foreach (var invalidPage in new[] { "invalid", "2147483648", "-2147483649", "1.5" })
+        {
+            using var invalid = await client.GetAsync($"/Platform/Associations/Details?id={fixture.SleepingId}&historyPage={invalidPage}");
+            Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
+        }
+        Assert.Equal(before, await fixture.SnapshotAsync());
+    }
+
+    [Theory]
+    [InlineData("ru-RU", "История изменений", "Товарищество создано", "Реквизиты изменены", "Товарищество активировано", "Товарищество деактивировано", "Администратор назначен", "Подробности недоступны.")]
+    [InlineData("uk-UA", "Історія змін", "Товариство створено", "Реквізити змінено", "Товариство активовано", "Товариство деактивовано", "Адміністратора призначено", "Подробиці недоступні.")]
+    [InlineData("en-US", "Change history", "Association created", "Details updated", "Association activated", "Association deactivated", "Administrator assigned", "Details unavailable.")]
+    public async Task History_LocalizesKnownDetailsAndNeverRendersRawOrSecretPayloads(
+        string culture, string title, string created, string edited, string activated, string deactivated, string assigned, string unavailable)
+    {
+        await using var fixture = await Fixture.CreateAsync();
+        await using (var scope = fixture.App.Services.CreateAsyncScope())
+        {
+            var database = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var payloads = new[]
+            {
+                (PlatformAuditActions.AssociationCreated, "{}", "{\"Name\":\"Created garden\",\"Slug\":\"created-garden\",\"AdministratorUserName\":\"new-admin\",\"Role\":\"Administrator\",\"Password\":\"SECRET-PASSWORD\",\"Token\":\"SECRET-TOKEN\"}"),
+                (PlatformAuditActions.AssociationEdited, "{\"Name\":\"Old garden\",\"ContactPhone\":\"123\",\"PasswordHash\":\"SECRET-HASH\"}", "{\"Name\":\"<script>alert(1)</script>\",\"ContactPhone\":null,\"ContactEmail\":\"mail@example.invalid\",\"PostalAddress\":\"Garden road\",\"SecurityStamp\":\"SECRET-STAMP\"}"),
+                (PlatformAuditActions.AssociationActivated, "{\"IsActive\":false}", "{\"IsActive\":true}"),
+                (PlatformAuditActions.AssociationDeactivated, "{\"IsActive\":true}", "{\"IsActive\":false}"),
+                (PlatformAuditActions.AdministratorAssigned, "{}", "{\"AdministratorUserId\":\"historical-admin-id\",\"Role\":\"Administrator\"}"),
+                (PlatformAuditActions.AssociationEdited, "{}", "broken SECRET-JSON"),
+                (PlatformAuditActions.AssociationEdited, "{}", "{\"Name\":{\"Token\":\"SECRET-NESTED\"}}"),
+                ("SECRET-UNKNOWN-ACTION", "{}", "{\"Name\":\"SECRET-UNKNOWN-PAYLOAD\"}")
+            };
+            database.PlatformAuditLogs.AddRange(payloads.Select(x => new PlatformAuditLog
+            {
+                AssociationId = fixture.SleepingId, OperatorUserId = "operator", OccurredAtUtc = DateTimeOffset.UtcNow,
+                Action = x.Item1, OldValuesJson = x.Item2, NewValuesJson = x.Item3
+            }));
+            await database.SaveChangesAsync();
+        }
+        using var client = await fixture.ClientAsync("operator");
+        client.DefaultRequestHeaders.AcceptLanguage.ParseAdd(culture);
+        using var response = await client.GetAsync($"/Platform/Associations/Details?id={fixture.SleepingId}");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var rawHtml = await response.Content.ReadAsStringAsync();
+        var html = WebUtility.HtmlDecode(rawHtml);
+        foreach (var text in new[] { title, created, edited, activated, deactivated, assigned, unavailable,
+            "Created garden", "created-garden", "new-admin", "Old garden", "123", "mail@example.invalid", "Garden road", "historical-admin-id" })
+            Assert.Contains(text, html);
+        Assert.Contains("&lt;script&gt;", rawHtml);
+        Assert.DoesNotContain("<script>alert(1)</script>", rawHtml);
+        Assert.DoesNotContain("SECRET-", html);
+        Assert.DoesNotContain("OldValuesJson", html);
+        Assert.DoesNotContain("PasswordHash", html);
+    }
+
+    [Theory]
+    [InlineData("ru-RU", "История изменений товарищества пока пуста.")]
+    [InlineData("uk-UA", "Історія змін товариства поки порожня.")]
+    [InlineData("en-US", "This association has no change history yet.")]
+    public async Task History_EmptyStateIsLocalized(string culture, string message)
+    {
+        await using var fixture = await Fixture.CreateAsync();
+        using var client = await fixture.ClientAsync("operator");
+        client.DefaultRequestHeaders.AcceptLanguage.ParseAdd(culture);
+        using var response = await client.GetAsync($"/Platform/Associations/Details?id={fixture.SummerId}");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var html = await response.ReadDecodedHtmlAsync();
+        Assert.Contains(message, html);
+        Assert.DoesNotContain("data-history-id=", html);
+    }
+
+    private sealed class Fixture(bool useSqlite) : IAsyncDisposable
+    {
+        private readonly PortalWebApplicationFactory factory = new(useSqlite: useSqlite);
         public WebApplicationFactory<Program> App { get; private set; } = null!;
         public int SleepingId { get; private set; }
         public int SummerId { get; private set; }
 
-        public static async Task<Fixture> CreateAsync()
+        public static async Task<Fixture> CreateAsync(bool useSqlite = true)
         {
-            var fixture = new Fixture();
+            var fixture = new Fixture(useSqlite);
             fixture.App = AuthenticationCookieTests.CreateCookieApplication(fixture.factory);
             await using (var scope = fixture.App.Services.CreateAsyncScope())
             {
                 var database = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                if (!useSqlite) await database.Database.MigrateAsync();
                 var sleeping = new Association { Name = "Спляче товариство", Slug = "sleeping" };
                 var summer = new Association { Name = "Літній сад", Slug = "summer" };
                 database.Associations.AddRange(sleeping, summer);
@@ -340,7 +488,8 @@ public class PlatformAssociationReadTests
                 Memberships = await database.AssociationUserMemberships.IgnoreQueryFilters().AsNoTracking().OrderBy(x => x.Id)
                     .Select(x => new { x.Id, x.AssociationId, x.ApplicationUserId, x.Role, x.IsActive, x.CreatedAtUtc }).ToListAsync(),
                 Roles = await database.UserRoles.AsNoTracking().OrderBy(x => x.UserId).ThenBy(x => x.RoleId).ToListAsync(),
-                Bootstrap = await database.PlatformBootstrapStates.AsNoTracking().ToListAsync()
+                Bootstrap = await database.PlatformBootstrapStates.AsNoTracking().ToListAsync(),
+                History = await database.PlatformAuditLogs.AsNoTracking().OrderBy(x => x.Id).ToListAsync()
             });
             return Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(snapshot));
         }

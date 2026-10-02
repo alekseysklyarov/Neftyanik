@@ -7,6 +7,10 @@ namespace Neftyanik.Portal.Web.Pages.Platform.Associations;
 public class DetailsModel(IPlatformAssociationReader associations) : PageModel
 {
     public PlatformAssociationDetails Association { get; private set; } = null!;
+    public PlatformAssociationHistoryPage History { get; private set; } = null!;
+
+    [BindProperty(SupportsGet = true)]
+    public int HistoryPage { get; set; } = 1;
 
     public async Task<IActionResult> OnGetAsync(int id, CancellationToken cancellationToken)
     {
@@ -22,6 +26,8 @@ public class DetailsModel(IPlatformAssociationReader associations) : PageModel
         }
 
         Association = association;
+        History = await associations.GetHistoryAsync(id, HistoryPage, cancellationToken);
+        HistoryPage = History.PageNumber;
         return Page();
     }
 }

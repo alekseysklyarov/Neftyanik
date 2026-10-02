@@ -66,9 +66,64 @@ public class PlatformAssociationReaderTests(AssociationDatabaseFixture fixture) 
         var reader = new PlatformAssociationReader(database, access, TimeProvider.System);
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => reader.GetPageAsync());
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => reader.GetDetailsAsync(int.MaxValue));
-        Assert.Equal(2, access.Calls);
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => reader.GetHistoryAsync(int.MaxValue));
+        Assert.Equal(3, access.Calls);
         Assert.Empty(database.ChangeTracker.Entries());
     }
+
+    [Fact]
+    public async Task History_FiltersSortsAndPaginatesOnSqlServerWithoutTrackingOrWriting()
+    {
+        await using var seed = fixture.CreateContext();
+        await using var transaction = await seed.Database.BeginTransactionAsync();
+        var user = new ApplicationUser { Id = Guid.NewGuid().ToString(), UserName = "history-operator" };
+        var other = new Association { Name = "Other history", Slug = "other-history" };
+        seed.AddRange(user, other);
+        await seed.SaveChangesAsync();
+        var date = new DateTimeOffset(2026, 9, 26, 12, 0, 0, TimeSpan.Zero);
+        var entries = Enumerable.Range(0, 43).Select(i => new PlatformAuditLog
+        {
+            AssociationId = seed.CurrentAssociationId, OperatorUserId = user.Id,
+            OccurredAtUtc = date.AddMinutes(i % 3), Action = PlatformAuditActions.AssociationEdited,
+            OldValuesJson = "{\"Name\":\"Before\"}", NewValuesJson = "{\"Name\":\"After\"}"
+        }).ToArray();
+        seed.PlatformAuditLogs.AddRange(entries);
+        seed.PlatformAuditLogs.Add(new PlatformAuditLog
+        {
+            AssociationId = other.Id, OperatorUserId = user.Id, OccurredAtUtc = date.AddYears(1),
+            Action = PlatformAuditActions.AssociationCreated, OldValuesJson = "{}", NewValuesJson = "{\"Name\":\"Foreign\"}"
+        });
+        await seed.SaveChangesAsync();
+        var before = await SnapshotAsync(seed);
+        var options = new DbContextOptionsBuilder<Neftyanik.Portal.Infrastructure.Data.ApplicationDbContext>()
+            .UseSqlServer(seed.Database.GetDbConnection()).Options;
+        await using var database = new Neftyanik.Portal.Infrastructure.Data.ApplicationDbContext(options);
+        await database.Database.UseTransactionAsync(Microsoft.EntityFrameworkCore.Storage.DbContextTransactionExtensions.GetDbTransaction(transaction));
+        var reader = new PlatformAssociationReader(database, new ReadAccess(), TimeProvider.System);
+        var expected = entries.OrderByDescending(x => x.OccurredAtUtc).ThenByDescending(x => x.Id).Select(x => x.Id).ToArray();
+        var first = await reader.GetHistoryAsync(seed.CurrentAssociationId, -1);
+        var second = await reader.GetHistoryAsync(seed.CurrentAssociationId, 2);
+        var last = await reader.GetHistoryAsync(seed.CurrentAssociationId, int.MaxValue);
+        Assert.Equal(43, first.TotalCount);
+        Assert.Equal(3, first.TotalPages);
+        Assert.Equal(1, first.PageNumber);
+        Assert.Equal(3, last.PageNumber);
+        Assert.Equal(expected.Take(20), first.Items.Select(x => x.Id));
+        Assert.Equal(expected.Skip(20).Take(20), second.Items.Select(x => x.Id));
+        Assert.Equal(expected.Skip(40), last.Items.Select(x => x.Id));
+        Assert.All(first.Items, x => Assert.Equal("history-operator", x.OperatorUserName));
+        Assert.Equal(first.Items.Select(x => x.Id), (await reader.GetHistoryAsync(seed.CurrentAssociationId)).Items.Select(x => x.Id));
+        var empty = await reader.GetHistoryAsync(int.MaxValue);
+        Assert.Empty(empty.Items);
+        Assert.Equal(0, empty.TotalCount);
+        Assert.Equal(1, empty.TotalPages);
+        Assert.Empty(database.ChangeTracker.Entries());
+        Assert.False(database.IsAssociationResolved);
+        Assert.Equal(before, await SnapshotAsync(seed));
+    }
+
+    private static async Task<string> SnapshotAsync(Neftyanik.Portal.Infrastructure.Data.ApplicationDbContext database) =>
+        System.Text.Json.JsonSerializer.Serialize(await database.PlatformAuditLogs.AsNoTracking().OrderBy(x => x.Id).ToListAsync());
 
     private sealed class ReadAccess : IPlatformAssociationReadAccess
     {

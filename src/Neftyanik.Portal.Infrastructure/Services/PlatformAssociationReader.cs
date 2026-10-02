@@ -12,6 +12,30 @@ public sealed class PlatformAssociationReader(
 {
     private const int PageSize = 20;
 
+    public async Task<PlatformAssociationHistoryPage> GetHistoryAsync(int associationId, int pageNumber = 1,
+        CancellationToken cancellationToken = default)
+    {
+        await access.EnsureAllowedAsync(cancellationToken);
+        var history = database.PlatformAuditLogs.AsNoTracking().Where(x => x.AssociationId == associationId);
+        var totalCount = await history.CountAsync(cancellationToken);
+        var totalPages = Math.Max(1, totalCount / PageSize + (totalCount % PageSize == 0 ? 0 : 1));
+        pageNumber = Math.Clamp(pageNumber, 1, totalPages);
+        var rows = await history.OrderByDescending(x => x.OccurredAtUtc).ThenByDescending(x => x.Id)
+            .Skip((pageNumber - 1) * PageSize).Take(PageSize)
+            .Select(x => new
+            {
+                x.Id, x.OccurredAtUtc, x.OperatorUserId,
+                OperatorUserName = database.Users.Where(user => user.Id == x.OperatorUserId)
+                    .Select(user => user.UserName).FirstOrDefault(),
+                x.Action, x.OldValuesJson, x.NewValuesJson
+            }).ToListAsync(cancellationToken);
+
+        var items = rows.Select(x => new PlatformAssociationHistoryEntry(x.Id, x.OccurredAtUtc,
+            x.OperatorUserId, x.OperatorUserName, x.Action,
+            PlatformAssociationHistoryValues.Read(x.Action, x.OldValuesJson, x.NewValuesJson))).ToArray();
+        return new(items, totalCount, pageNumber, totalPages);
+    }
+
     public async Task<PlatformAssociationPage> GetPageAsync(string? search = null, bool? isActive = null,
         int pageNumber = 1, CancellationToken cancellationToken = default)
     {
