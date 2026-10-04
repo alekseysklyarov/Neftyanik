@@ -58,6 +58,14 @@ public class IndexModel : PageModel
 
     public IReadOnlyList<PaymentItemViewModel> Payments { get; private set; } = [];
 
+    public ElectricityFinanceSummary? ElectricitySummary { get; private set; }
+
+    public IReadOnlyDictionary<long, ElectricityChargeDetail> ElectricityCharges { get; private set; }
+        = new Dictionary<long, ElectricityChargeDetail>();
+
+    public IReadOnlyDictionary<long, IReadOnlyList<ElectricityPaymentDetail>> ElectricityPayments { get; private set; }
+        = new Dictionary<long, IReadOnlyList<ElectricityPaymentDetail>>();
+
     public IReadOnlyList<MemberElectricityMeterItemViewModel> ElectricityMeters { get; private set; } = [];
 
     public IReadOnlyList<PaymentNotificationListItem> RecentPaymentNotifications { get; private set; } = [];
@@ -551,6 +559,13 @@ public class IndexModel : PageModel
         RecentPaymentNotifications = await _paymentNotificationService.GetRecentForMemberAsync(member.MemberId, 5, cancellationToken);
 
         await LoadElectricityStateAsync(member.MemberId, cancellationToken);
+
+        if (IsElectricityFeatureAvailable)
+        {
+            ElectricitySummary = await ElectricityFinanceViewData.LoadSummaryAsync(_dbContext, member.MemberId, plotIds, DateOnly.FromDateTime(DateTime.Today), cancellationToken);
+            ElectricityCharges = await ElectricityFinanceViewData.LoadChargesAsync(_dbContext, plotIds, Charges.Select(c => c.ChargeId).ToArray(), cancellationToken);
+            ElectricityPayments = await ElectricityFinanceViewData.LoadPaymentsAsync(_dbContext, member.MemberId, Payments.Select(p => p.PaymentId).ToArray(), cancellationToken);
+        }
 
         Dashboard = new MemberDashboardViewModel
         {

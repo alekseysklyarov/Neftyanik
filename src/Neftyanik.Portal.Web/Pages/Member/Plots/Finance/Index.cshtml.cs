@@ -37,6 +37,12 @@ public class IndexModel : PageModel
 
     public IReadOnlyList<PaymentItemViewModel> Payments { get; private set; } = [];
 
+    public IReadOnlyDictionary<long, ElectricityChargeDetail> ElectricityCharges { get; private set; }
+        = new Dictionary<long, ElectricityChargeDetail>();
+
+    public IReadOnlyDictionary<long, IReadOnlyList<ElectricityPaymentDetail>> ElectricityPayments { get; private set; }
+        = new Dictionary<long, IReadOnlyList<ElectricityPaymentDetail>>();
+
     public int ChargeTotalPages { get; private set; } = 1;
 
     public int PaymentTotalPages { get; private set; } = 1;
@@ -208,6 +214,9 @@ public class IndexModel : PageModel
                     CancellationReason = payment.CancellationReason
                 })
                 .ToList();
+
+        ElectricityPayments = await ElectricityFinanceViewData.LoadPaymentsAsync(_dbContext, memberId.Value, Payments.Select(p => p.PaymentId).ToArray(), cancellationToken);
+        ElectricityCharges = await ElectricityFinanceViewData.LoadChargesAsync(_dbContext, [plotId], Charges.Select(c => c.ChargeId).ToArray(), cancellationToken);
 
         return Page();
     }

@@ -1,0 +1,13 @@
+@model System.Collections.Generic.IReadOnlyList<Neftyanik.Portal.Web.Pages.Finance.ElectricityPaymentDetail>
+@foreach (var item in Model)
+{
+    <div class="mt-2">
+        <div class="fw-semibold">@AppLocalizer.Get("Электроэнергия", "Електроенергія", "Electricity") · @AppLocalizer.Get("Начисление от", "Нарахування від", "Charge dated") @item.ChargeDate.ToString("dd.MM.yyyy") · @item.Allocated.ToString("0.00") ₴</div>
+        <div>@AppLocalizer.Get("Участок", "Ділянка", "Plot") @item.PlotNumber @if (item.MeterName != null) { <span>· @item.MeterName</span> }</div>
+        @if (item.IsChargeCancelled)
+        {
+            <div class="text-warning-emphasis">@AppLocalizer.Get("Начисление отменено", "Нарахування скасовано", "Charge cancelled")</div>
+        }
+        <partial name="_ElectricityChargeReadings" model="@(new Neftyanik.Portal.Web.Pages.Finance.ElectricityChargeDetail(item.ChargeDate, item.MeterName, item.Previous, item.Current))" />
+    </div>
+}

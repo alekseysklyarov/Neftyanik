@@ -81,6 +81,10 @@
                                 <td>@(charge.DueDate.HasValue ? charge.DueDate.Value.ToString("dd.MM.yyyy") : "—")</td>
                                  <td>
                                      <div>@(string.IsNullOrWhiteSpace(charge.Description) ? "—" : charge.Description)</div>
+                                     @if (Model.ElectricityCharges.TryGetValue(charge.ChargeId, out var chargeReadings))
+                                     {
+                                         <partial name="_ElectricityChargeReadings" model="chargeReadings" />
+                                     }
                                     @if (charge.IsCancelled)
                                     {
                                         @if (charge.CancelledAtUtc.HasValue)
@@ -172,6 +176,10 @@
                                 <td>@(string.IsNullOrWhiteSpace(payment.ReferenceNumber) ? "—" : payment.ReferenceNumber)</td>
                                  <td>
                                      <div>@(string.IsNullOrWhiteSpace(payment.Description) ? "—" : payment.Description)</div>
+                                     @if (Model.ElectricityPayments.TryGetValue(payment.PaymentId, out var electricityDetails))
+                                     {
+                                         <partial name="_ElectricityPaymentDetails" model="electricityDetails" />
+                                     }
                                     @if (payment.IsCancelled)
                                     {
                                          @if (payment.CancelledAtUtc.HasValue)

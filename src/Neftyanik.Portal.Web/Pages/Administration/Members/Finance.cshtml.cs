@@ -59,6 +59,14 @@ public class FinanceModel : PageModel
 
     public IReadOnlyList<PaymentItemViewModel> Payments { get; private set; } = [];
 
+    public ElectricityFinanceSummary? ElectricitySummary { get; private set; }
+
+    public IReadOnlyDictionary<long, ElectricityChargeDetail> ElectricityCharges { get; private set; }
+        = new Dictionary<long, ElectricityChargeDetail>();
+
+    public IReadOnlyDictionary<long, IReadOnlyList<ElectricityPaymentDetail>> ElectricityPayments { get; private set; }
+        = new Dictionary<long, IReadOnlyList<ElectricityPaymentDetail>>();
+
     public IReadOnlyList<MemberElectricityMeterItemViewModel> ElectricityMeters { get; private set; } = [];
 
     public IReadOnlyList<SelectListItem> ReadingMeterOptions { get; private set; } = [];
@@ -503,6 +511,13 @@ public class FinanceModel : PageModel
         }
 
         await LoadElectricityStateAsync(id, cancellationToken);
+
+        if (IsElectricityFeatureAvailable)
+        {
+            ElectricitySummary = await ElectricityFinanceViewData.LoadSummaryAsync(_dbContext, id, plotIds, currentDate, cancellationToken);
+            ElectricityCharges = await ElectricityFinanceViewData.LoadChargesAsync(_dbContext, plotIds, Charges.Select(c => c.ChargeId).ToArray(), cancellationToken);
+            ElectricityPayments = await ElectricityFinanceViewData.LoadPaymentsAsync(_dbContext, id, Payments.Select(p => p.PaymentId).ToArray(), cancellationToken);
+        }
 
         return true;
     }

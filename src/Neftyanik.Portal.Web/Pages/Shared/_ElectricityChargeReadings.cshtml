@@ -1,0 +1,24 @@
+@model Neftyanik.Portal.Web.Pages.Finance.ElectricityChargeDetail
+@if (Model.Current is { } current)
+{
+    <div>@AppLocalizer.Get("Предыдущие показания:", "Попередні показання:", "Previous readings:")
+        @if (Model.Previous is { } previous)
+        {
+            <partial name="_ElectricityMeterValue" model="previous" />
+        }
+        else
+        {
+            <span>@AppLocalizer.Get("Нет данных", "Немає даних", "No data")</span>
+        }
+    </div>
+    <div>
+        @(Model.ChargeDate == DateOnly.FromDateTime(DateTime.Today)
+            ? AppLocalizer.Get("Показания на текущую дату:", "Показання на поточну дату:", "Readings as of today:")
+            : AppLocalizer.Get("Показания на дату начисления:", "Показання на дату нарахування:", "Readings at charge date:"))
+        <partial name="_ElectricityMeterValue" model="current" />
+    </div>
+}
+else
+{
+    <div>@AppLocalizer.Get("Показания не привязаны к начислению", "Показання не прив’язані до нарахування", "No readings linked to this charge")</div>
+}

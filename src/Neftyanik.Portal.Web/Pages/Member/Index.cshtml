@@ -90,6 +90,11 @@
             </div>
         </div>
 
+        @if (Model.ElectricitySummary is { } electricitySummary)
+        {
+            <partial name="_ElectricityFinanceSummary" model="electricitySummary" />
+        }
+
         <div class="member-dashboard-tabs mb-4">
             <div class="nav member-dashboard-tab-list" id="memberDashboardTabs" role="tablist" aria-label="@AppLocalizer.Get("Разделы личного кабинета", "Розділи особистого кабінету", "Member dashboard sections")">
                 <button class="nav-link member-dashboard-tab-button active" id="member-dashboard-overview-tab" data-bs-toggle="tab" data-bs-target="#member-dashboard-overview-pane" type="button" role="tab" aria-controls="member-dashboard-overview-pane" aria-selected="true" data-member-dashboard-tab="true">@AppLocalizer.Get("Обзор", "Огляд", "Overview")</button>
@@ -268,13 +273,17 @@
                                                          </td>
                                                         <td>@(charge.DueDate.HasValue ? charge.DueDate.Value.ToString("dd.MM.yyyy") : "—")</td>
                                                     </tr>
-                                                     @if (!string.IsNullOrWhiteSpace(charge.Description) || !string.IsNullOrWhiteSpace(charge.CancellationReason) || charge.CancelledAtUtc.HasValue)
+                                                     @if (!string.IsNullOrWhiteSpace(charge.Description) || !string.IsNullOrWhiteSpace(charge.CancellationReason) || charge.CancelledAtUtc.HasValue || Model.ElectricityCharges.ContainsKey(charge.ChargeId))
                                                     {
                                                         <tr class="member-dashboard-table-note-row">
                                                              <td colspan="5" class="small text-muted">
                                                                 @if (!string.IsNullOrWhiteSpace(charge.Description))
                                                                 {
                                                                     <div><strong>@AppLocalizer.Get("Описание:", "Опис:", "Description:")</strong> @charge.Description</div>
+                                                                }
+                                                                @if (Model.ElectricityCharges.TryGetValue(charge.ChargeId, out var chargeReadings))
+                                                                {
+                                                                    <partial name="_ElectricityChargeReadings" model="chargeReadings" />
                                                                 }
                                                                 @if (charge.CancelledAtUtc.HasValue)
                                                                 {
@@ -361,13 +370,17 @@
                                                                asp-route-paymentId="@payment.PaymentId">@AppLocalizer.Get("Платёжка", "Платіжка", "Receipt")</a>
                                                         </td>
                                                     </tr>
-                                                     @if (!string.IsNullOrWhiteSpace(payment.Description) || !string.IsNullOrWhiteSpace(payment.CancellationReason) || payment.CancelledAtUtc.HasValue)
+                                                     @if (!string.IsNullOrWhiteSpace(payment.Description) || !string.IsNullOrWhiteSpace(payment.CancellationReason) || payment.CancelledAtUtc.HasValue || Model.ElectricityPayments.ContainsKey(payment.PaymentId))
                                                     {
                                                         <tr class="member-dashboard-table-note-row">
                                                              <td colspan="6" class="small text-muted">
                                                                 @if (!string.IsNullOrWhiteSpace(payment.Description))
                                                                 {
                                                                     <div><strong>@AppLocalizer.Get("Описание:", "Опис:", "Description:")</strong> @payment.Description</div>
+                                                                }
+                                                                @if (Model.ElectricityPayments.TryGetValue(payment.PaymentId, out var electricityDetails))
+                                                                {
+                                                                    <partial name="_ElectricityPaymentDetails" model="electricityDetails" />
                                                                 }
                                                                 @if (payment.CancelledAtUtc.HasValue)
                                                                 {

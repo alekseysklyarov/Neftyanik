@@ -1,0 +1,6 @@
+@model Neftyanik.Portal.Web.Pages.Finance.ElectricityMeterReading
+<span>@Model.Date.ToString("dd.MM.yyyy") — @(Model.Night.HasValue ? "Т1 " : "")@Model.Day.ToString("0.###") @AppLocalizer.Get("кВт·ч", "кВт·год", "kWh")</span>
+@if (Model.Night.HasValue)
+{
+    <span class="ms-2">Т2 @Model.Night.Value.ToString("0.###") @AppLocalizer.Get("кВт·ч", "кВт·год", "kWh")</span>
+}

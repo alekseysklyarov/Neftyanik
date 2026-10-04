@@ -1,0 +1,60 @@
+@model Neftyanik.Portal.Web.Pages.Finance.ElectricityFinanceSummary
+<section class="card shadow-sm mb-4" aria-label="@AppLocalizer.Get("Электроэнергия", "Електроенергія", "Electricity")">
+    <div class="card-body">
+        <h2 class="h5 mb-3">@AppLocalizer.Get("Электроэнергия", "Електроенергія", "Electricity")</h2>
+        <div class="row g-3">
+            <div class="col-lg-6">
+                <h3 class="h6 text-muted">@AppLocalizer.Get("Показания счётчиков", "Показання лічильників", "Meter readings")</h3>
+                @if (Model.Meters.Count == 0)
+                {
+                    <p class="text-muted mb-0">@AppLocalizer.Get("Нет показаний или активных счётчиков", "Немає показань або активних лічильників", "No readings or active meters")</p>
+                }
+                @foreach (var meter in Model.Meters)
+                {
+                    <div class="mb-2">
+                        <div class="small text-muted">@meter.Name · @AppLocalizer.Get("Участок", "Ділянка", "Plot") @meter.PlotNumber</div>
+                        @if (meter.LatestReading is { } latest)
+                        {
+                            <div>@AppLocalizer.Get("Последние показания:", "Останні показання:", "Latest readings:") <partial name="_ElectricityMeterValue" model="latest" /></div>
+                        }
+                        @if (meter.HasCurrentMonthReading)
+                        {
+                            <div class="text-success">@AppLocalizer.Get("Показания за текущий месяц переданы", "Показання за поточний місяць передані", "This month's readings submitted")</div>
+                        }
+                        else
+                        {
+                            <div class="text-warning-emphasis">@AppLocalizer.Get("Показания за текущий месяц не переданы", "Показання за поточний місяць не передані", "This month's readings not submitted")</div>
+                        }
+                        <div class="small text-muted mt-1">
+                            @AppLocalizer.Get("Показания за предыдущий месяц", "Показання за попередній місяць", "Previous month's readings") (@Model.Month.ToString("MMMM yyyy")):
+                            @if (meter.Reading is { } reading)
+                            {
+                                <partial name="_ElectricityMeterValue" model="reading" />
+                            }
+                            else
+                            {
+                                <span>@AppLocalizer.Get("Нет данных", "Немає даних", "No data")</span>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <h3 class="h6 text-muted">@AppLocalizer.Get("Оплата начислений за предыдущий месяц", "Оплата нарахувань за попередній місяць", "Payment of previous month's charges") · @Model.Month.ToString("MMMM yyyy")</h3>
+                <p class="h5 @Model.StatusClass">@Model.StatusText</p>
+                @if (Model.ChargeCount > 0)
+                {
+                    <div class="small">@AppLocalizer.Get("Начислено:", "Нараховано:", "Charged:") @Model.Charged.ToString("0.00") ₴</div>
+                    <div class="small">@AppLocalizer.Get("Оплачено:", "Сплачено:", "Paid:") @Model.Paid.ToString("0.00") ₴</div>
+                    <div class="small">@AppLocalizer.Get("Осталось оплатить:", "Залишилося сплатити:", "Remaining:") @Model.Outstanding.ToString("0.00") ₴</div>
+                }
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <h3 class="h6 text-muted">@AppLocalizer.Get("Всего к оплате за электричество", "Усього до сплати за електроенергію", "Total electricity outstanding")</h3>
+                <p class="h4 @(Model.TotalOutstanding > 0 ? "text-danger" : "text-success")">@Model.TotalOutstanding.ToString("0.00") ₴</p>
+                <div class="small text-muted">@AppLocalizer.Get("По всем неоплаченным начислениям, включая прошлые месяцы.", "За всіма несплаченими нарахуваннями, включно з минулими місяцями.", "All unpaid charges, including earlier months.")</div>
+            </div>
+        </div>
+        <p class="small text-muted mt-3 mb-0">@AppLocalizer.Get("Оплата учитывается после её распределения на начисления за электроэнергию.", "Оплата враховується після її розподілу на нарахування за електроенергію.", "Payments count after they are allocated to electricity charges.")</p>
+    </div>
+</section>
