@@ -21,7 +21,8 @@ namespace Neftyanik.Portal.Web.Pages.Administration.Members;
 [Authorize(Roles = RoleNames.AdministratorOrAccountant)]
 public class FinanceModel : PageModel
 {
-    private const int PageSize = 10;
+    private const int InitialHistoryCount = 3;
+    private const int HistoryBatchSize = 15;
     private readonly ApplicationDbContext _dbContext;
     private readonly IMemberElectricityService _memberElectricityService;
     private readonly UserManager<ApplicationUser> _userManager;
@@ -80,6 +81,14 @@ public class FinanceModel : PageModel
     public int ChargeTotalPages { get; private set; } = 1;
 
     public int PaymentTotalPages { get; private set; } = 1;
+
+    public int ChargeCount { get; private set; }
+
+    public int PaymentCount { get; private set; }
+
+    public int NextChargeCount => Math.Min(HistoryBatchSize, ChargeCount - Charges.Count);
+
+    public int NextPaymentCount => Math.Min(HistoryBatchSize, PaymentCount - Payments.Count);
 
     public bool HasChargePreviousPage => ChargePage > 1;
 
@@ -444,16 +453,15 @@ public class FinanceModel : PageModel
                 .OrderByDescending(charge => charge.ChargeDate)
                 .ThenByDescending(charge => charge.Id);
 
-            var chargeCount = await chargesQuery.CountAsync(cancellationToken);
-            ChargeTotalPages = chargeCount == 0 ? 1 : (int)Math.Ceiling(chargeCount / (double)PageSize);
+            ChargeCount = await chargesQuery.CountAsync(cancellationToken);
+            ChargeTotalPages = 1 + (int)Math.Ceiling(Math.Max(0, ChargeCount - InitialHistoryCount) / (double)HistoryBatchSize);
             if (ChargePage > ChargeTotalPages)
             {
                 ChargePage = ChargeTotalPages;
             }
 
             Charges = await chargesQuery
-                .Skip((ChargePage - 1) * PageSize)
-                .Take(PageSize)
+                .Take((int)Math.Min(ChargeCount, InitialHistoryCount + (long)(ChargePage - 1) * HistoryBatchSize))
                 .Select(charge => new ChargeItemViewModel
                 {
                     ChargeId = charge.Id,
@@ -477,16 +485,15 @@ public class FinanceModel : PageModel
                 .OrderByDescending(payment => payment.PaymentDate)
                 .ThenByDescending(payment => payment.Id);
 
-            var paymentCount = await paymentsQuery.CountAsync(cancellationToken);
-            PaymentTotalPages = paymentCount == 0 ? 1 : (int)Math.Ceiling(paymentCount / (double)PageSize);
+            PaymentCount = await paymentsQuery.CountAsync(cancellationToken);
+            PaymentTotalPages = 1 + (int)Math.Ceiling(Math.Max(0, PaymentCount - InitialHistoryCount) / (double)HistoryBatchSize);
             if (PaymentPage > PaymentTotalPages)
             {
                 PaymentPage = PaymentTotalPages;
             }
 
             Payments = await paymentsQuery
-                .Skip((PaymentPage - 1) * PageSize)
-                .Take(PageSize)
+                .Take((int)Math.Min(PaymentCount, InitialHistoryCount + (long)(PaymentPage - 1) * HistoryBatchSize))
                 .Select(payment => new PaymentItemViewModel
                 {
                     PaymentId = payment.Id,

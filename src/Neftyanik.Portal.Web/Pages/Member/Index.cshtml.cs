@@ -78,6 +78,14 @@ public class IndexModel : PageModel
 
     public int PaymentTotalPages { get; private set; } = 1;
 
+    private const int InitialHistoryCount = 5;
+    private const int HistoryBatchSize = 15;
+
+    public int ChargeCount { get; private set; }
+    public int PaymentCount { get; private set; }
+    public int NextChargeCount => Math.Min(HistoryBatchSize, ChargeCount - Charges.Count);
+    public int NextPaymentCount => Math.Min(HistoryBatchSize, PaymentCount - Payments.Count);
+
     public bool HasChargePreviousPage => ChargePage > 1;
 
     public bool HasChargeNextPage => ChargePage < ChargeTotalPages;
@@ -497,16 +505,15 @@ public class IndexModel : PageModel
             .OrderByDescending(charge => charge.ChargeDate)
             .ThenByDescending(charge => charge.Id);
 
-        var chargeCount = await chargesQuery.CountAsync(cancellationToken);
-        ChargeTotalPages = chargeCount == 0 ? 1 : (int)Math.Ceiling(chargeCount / 10d);
+        ChargeCount = await chargesQuery.CountAsync(cancellationToken);
+        ChargeTotalPages = 1 + (int)Math.Ceiling(Math.Max(0, ChargeCount - InitialHistoryCount) / (double)HistoryBatchSize);
         if (ChargePage > ChargeTotalPages)
         {
             ChargePage = ChargeTotalPages;
         }
 
         Charges = await chargesQuery
-            .Skip((ChargePage - 1) * 10)
-            .Take(10)
+            .Take((int)Math.Min(ChargeCount, InitialHistoryCount + (long)(ChargePage - 1) * HistoryBatchSize))
             .Select(charge => new ChargeItemViewModel
             {
                 ChargeId = charge.Id,
@@ -530,16 +537,15 @@ public class IndexModel : PageModel
             .OrderByDescending(payment => payment.PaymentDate)
             .ThenByDescending(payment => payment.Id);
 
-        var paymentCount = await paymentsQuery.CountAsync(cancellationToken);
-        PaymentTotalPages = paymentCount == 0 ? 1 : (int)Math.Ceiling(paymentCount / 10d);
+        PaymentCount = await paymentsQuery.CountAsync(cancellationToken);
+        PaymentTotalPages = 1 + (int)Math.Ceiling(Math.Max(0, PaymentCount - InitialHistoryCount) / (double)HistoryBatchSize);
         if (PaymentPage > PaymentTotalPages)
         {
             PaymentPage = PaymentTotalPages;
         }
 
         Payments = await paymentsQuery
-            .Skip((PaymentPage - 1) * 10)
-            .Take(10)
+            .Take((int)Math.Min(PaymentCount, InitialHistoryCount + (long)(PaymentPage - 1) * HistoryBatchSize))
             .Select(payment => new PaymentItemViewModel
             {
                 PaymentId = payment.Id,

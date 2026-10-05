@@ -123,7 +123,7 @@
 
 <div class="row g-4">
     <div class="col-xl-6">
-        <div class="card shadow-sm h-100">
+        <div class="card shadow-sm h-100" id="charge-history" data-finance-history data-page="@Model.ChargePage" data-page-parameter="chargePage">
             <div class="card-header bg-white">
                 <h2 class="h5 mb-0">Начисления</h2>
             </div>
@@ -201,31 +201,20 @@
                     </div>
                 }
             </div>
-            @if (Model.ChargeTotalPages > 1)
+            @if (Model.HasChargeNextPage)
             {
-                <div class="card-footer bg-white">
-                    <nav aria-label="Навигация по начислениям">
-                        <ul class="pagination justify-content-center mb-0 flex-wrap">
-                            <li class="page-item @(Model.HasChargePreviousPage ? string.Empty : "disabled")">
-                                <a class="page-link" asp-page="/Administration/Members/Finance" asp-route-id="@Model.Member.Id" asp-route-chargePage="@(Model.ChargePage - 1)" asp-route-paymentPage="@Model.PaymentPage">Назад</a>
-                            </li>
-                            @for (var pageIndex = 1; pageIndex <= Model.ChargeTotalPages; pageIndex++)
-                            {
-                                <li class="page-item @(pageIndex == Model.ChargePage ? "active" : string.Empty)">
-                                    <a class="page-link" asp-page="/Administration/Members/Finance" asp-route-id="@Model.Member.Id" asp-route-chargePage="@pageIndex" asp-route-paymentPage="@Model.PaymentPage">@pageIndex</a>
-                                </li>
-                            }
-                            <li class="page-item @(Model.HasChargeNextPage ? string.Empty : "disabled")">
-                                <a class="page-link" asp-page="/Administration/Members/Finance" asp-route-id="@Model.Member.Id" asp-route-chargePage="@(Model.ChargePage + 1)" asp-route-paymentPage="@Model.PaymentPage">Вперёд</a>
-                            </li>
-                        </ul>
-                    </nav>
+                <div class="card-footer bg-white text-center">
+                    <a class="btn btn-outline-primary btn-sm" data-history-more aria-controls="charge-history"
+                       asp-page="/Administration/Members/Finance" asp-route-id="@Model.Member.Id" asp-route-chargePage="@(Model.ChargePage + 1)" asp-route-paymentPage="@Model.PaymentPage" asp-fragment="charge-history">
+                        @AppLocalizer.Get($"Развернуть (ещё {Model.NextChargeCount})", $"Розгорнути (ще {Model.NextChargeCount})", $"Show more ({Model.NextChargeCount})")
+                    </a>
+                    <div class="small text-danger mt-2" data-history-error role="status" hidden>@AppLocalizer.Get("Не удалось загрузить записи. Повторите попытку.", "Не вдалося завантажити записи. Спробуйте ще раз.", "Could not load records. Please try again.")</div>
                 </div>
             }
         </div>
     </div>
     <div class="col-xl-6">
-        <div class="card shadow-sm h-100">
+        <div class="card shadow-sm h-100" id="payment-history" data-finance-history data-page="@Model.PaymentPage" data-page-parameter="paymentPage">
             <div class="card-header bg-white">
                 <h2 class="h5 mb-0">Платежи</h2>
             </div>
@@ -302,25 +291,14 @@
                     </div>
                 }
             </div>
-            @if (Model.PaymentTotalPages > 1)
+            @if (Model.HasPaymentNextPage)
             {
-                <div class="card-footer bg-white">
-                    <nav aria-label="Навигация по платежам">
-                        <ul class="pagination justify-content-center mb-0 flex-wrap">
-                            <li class="page-item @(Model.HasPaymentPreviousPage ? string.Empty : "disabled")">
-                                <a class="page-link" asp-page="/Administration/Members/Finance" asp-route-id="@Model.Member.Id" asp-route-chargePage="@Model.ChargePage" asp-route-paymentPage="@(Model.PaymentPage - 1)">Назад</a>
-                            </li>
-                            @for (var pageIndex = 1; pageIndex <= Model.PaymentTotalPages; pageIndex++)
-                            {
-                                <li class="page-item @(pageIndex == Model.PaymentPage ? "active" : string.Empty)">
-                                    <a class="page-link" asp-page="/Administration/Members/Finance" asp-route-id="@Model.Member.Id" asp-route-chargePage="@Model.ChargePage" asp-route-paymentPage="@pageIndex">@pageIndex</a>
-                                </li>
-                            }
-                            <li class="page-item @(Model.HasPaymentNextPage ? string.Empty : "disabled")">
-                                <a class="page-link" asp-page="/Administration/Members/Finance" asp-route-id="@Model.Member.Id" asp-route-chargePage="@Model.ChargePage" asp-route-paymentPage="@(Model.PaymentPage + 1)">Вперёд</a>
-                            </li>
-                        </ul>
-                    </nav>
+                <div class="card-footer bg-white text-center">
+                    <a class="btn btn-outline-primary btn-sm" data-history-more aria-controls="payment-history"
+                       asp-page="/Administration/Members/Finance" asp-route-id="@Model.Member.Id" asp-route-chargePage="@Model.ChargePage" asp-route-paymentPage="@(Model.PaymentPage + 1)" asp-fragment="payment-history">
+                        @AppLocalizer.Get($"Развернуть (ещё {Model.NextPaymentCount})", $"Розгорнути (ще {Model.NextPaymentCount})", $"Show more ({Model.NextPaymentCount})")
+                    </a>
+                    <div class="small text-danger mt-2" data-history-error role="status" hidden>@AppLocalizer.Get("Не удалось загрузить записи. Повторите попытку.", "Не вдалося завантажити записи. Спробуйте ще раз.", "Could not load records. Please try again.")</div>
                 </div>
             }
         </div>
@@ -646,6 +624,7 @@ else
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/finance-history.js" asp-append-version="true"></script>
     <script>
         (() => {
             const setupModalElement = document.getElementById('electricitySetupModal');
