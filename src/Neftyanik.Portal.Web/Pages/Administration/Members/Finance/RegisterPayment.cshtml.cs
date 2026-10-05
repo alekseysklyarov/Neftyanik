@@ -38,6 +38,8 @@ public class RegisterPaymentModel : PageModel
 
     public IReadOnlyList<SelectListItem> PaymentMethodOptions { get; private set; } = [];
 
+    public IReadOnlyList<SelectListItem> PaymentPriorityOptions { get; private set; } = [];
+
     public decimal CurrentCashAmount { get; private set; }
 
     public bool HasSinglePlot => PlotOptions.Count == 1;
@@ -61,6 +63,7 @@ public class RegisterPaymentModel : PageModel
             ? plotId.Value
             : HasSinglePlot ? int.Parse(PlotOptions[0].Value) : null;
         Input.PaymentDate = DateOnly.FromDateTime(DateTime.Today);
+        Input.PriorityChargeTypeId = PaymentPriorityOptions.Count > 0 ? int.Parse(PaymentPriorityOptions[0].Value) : null;
 
         return Page();
     }
@@ -80,6 +83,17 @@ public class RegisterPaymentModel : PageModel
         if (!Input.PlotId.HasValue && PlotOptions.Count > 0)
         {
             Input.PlotId = int.Parse(PlotOptions[0].Value);
+        }
+
+        if (!Input.PriorityChargeTypeId.HasValue && PaymentPriorityOptions.Count == 1)
+        {
+            Input.PriorityChargeTypeId = int.Parse(PaymentPriorityOptions[0].Value);
+        }
+
+        if ((Input.PriorityChargeTypeId.HasValue && !PaymentPriorityOptions.Any(option => option.Value == Input.PriorityChargeTypeId.Value.ToString()))
+            || (!Input.PriorityChargeTypeId.HasValue && PaymentPriorityOptions.Count > 0))
+        {
+            ModelState.AddModelError("Input.PriorityChargeTypeId", InvalidPriorityMessage);
         }
 
         if (!ModelState.IsValid)
@@ -111,15 +125,22 @@ public class RegisterPaymentModel : PageModel
                 Input.PaymentMethod!.Value,
                 Normalize(Input.ReferenceNumber),
                 Normalize(Input.Description),
-                currentUser?.Id),
+                currentUser?.Id,
+                PriorityChargeTypeId: Input.PriorityChargeTypeId),
             cancellationToken);
 
         if (!paymentResult.Succeeded)
         {
+            if (paymentResult.Code == CreateMemberPaymentResultCode.InvalidPaymentPriority)
+            {
+                PaymentPriorityOptions = await LoadPaymentPriorityOptionsAsync(id, Input.PaymentDate!.Value, cancellationToken);
+            }
             ModelState.AddModelError(
-                paymentResult.Code == CreateMemberPaymentResultCode.PaymentPlotNotOwnedByMember ? nameof(Input.PlotId) : string.Empty,
+                paymentResult.Code == CreateMemberPaymentResultCode.InvalidPaymentPriority ? "Input.PriorityChargeTypeId"
+                    : paymentResult.Code == CreateMemberPaymentResultCode.PaymentPlotNotOwnedByMember ? nameof(Input.PlotId) : string.Empty,
                 paymentResult.Code switch
                 {
+                    CreateMemberPaymentResultCode.InvalidPaymentPriority => InvalidPriorityMessage,
                     CreateMemberPaymentResultCode.PaymentPlotNotOwnedByMember => AppLocalizer.Get(
                         "На дату платежа выбранный участок не принадлежит этому члену товарищества.",
                         "На дату платежу вибрана ділянка не належить цьому члену товариства.",
@@ -204,11 +225,38 @@ public class RegisterPaymentModel : PageModel
             })
             .ToList();
 
+        PaymentPriorityOptions = await LoadPaymentPriorityOptionsAsync(memberId, Input.PaymentDate ?? currentDate, cancellationToken);
+
         var cashSnapshot = await FinanceCashCalculator.CalculateAsync(_dbContext, DateTime.Today.Year, cancellationToken);
         CurrentCashAmount = cashSnapshot.CurrentCashAmount;
 
         return true;
     }
+
+    public async Task<IActionResult> OnGetPrioritiesAsync(int id, DateOnly? paymentDate, CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid || !paymentDate.HasValue) return BadRequest();
+        if (!await _dbContext.Members.AnyAsync(m => m.Id == id, cancellationToken)) return NotFound();
+        var options = await LoadPaymentPriorityOptionsAsync(id, paymentDate.Value, cancellationToken);
+        return new JsonResult(options.Select(o => new { value = o.Value, text = o.Text }));
+    }
+
+    private async Task<IReadOnlyList<SelectListItem>> LoadPaymentPriorityOptionsAsync(int memberId, DateOnly paymentDate, CancellationToken cancellationToken)
+    {
+        var plotIds = await _dbContext.PlotOwnerships.AsNoTracking()
+            .WhereCurrentForMember(memberId, paymentDate).Select(o => o.PlotId).Distinct().ToArrayAsync(cancellationToken);
+        var charges = await _dbContext.LoadOutstandingPaymentChargesAsync(plotIds, cancellationToken);
+        return charges.GroupBy(c => c.ChargeTypeId).Select(group => new SelectListItem
+        {
+            Value = group.Key.ToString(),
+            Text = $"{group.First().ChargeTypeName} — {group.Sum(c => c.OutstandingAmount):0.00} ₴"
+        }).ToList();
+    }
+
+    private static string InvalidPriorityMessage => AppLocalizer.Get(
+        "Выберите приоритет из типов с непогашенными начислениями. Если долг уже погашен, обновите выбор.",
+        "Оберіть пріоритет із типів з непогашеними нарахуваннями. Якщо борг уже погашено, оновіть вибір.",
+        "Select a priority with outstanding charges. If the debt has been paid, update the selection.");
 
     private static string? Normalize(string? value)
     {

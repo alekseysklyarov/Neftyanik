@@ -17,7 +17,8 @@ public sealed record CreateMemberPaymentRequest(
     string? ReferenceNumber,
     string? Description,
     string? CreatedByUserId,
-    long? SourcePaymentNotificationId = null);
+    long? SourcePaymentNotificationId = null,
+    int? PriorityChargeTypeId = null);
 
 public enum CreateMemberPaymentResultCode
 {
@@ -25,7 +26,8 @@ public enum CreateMemberPaymentResultCode
     InvalidAmount,
     InvalidPaymentMethod,
     NoEligiblePlots,
-    PaymentPlotNotOwnedByMember
+    PaymentPlotNotOwnedByMember,
+    InvalidPaymentPriority
 }
 
 public sealed record CreateMemberPaymentResult(

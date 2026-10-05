@@ -188,7 +188,18 @@ public class FinancialIsolationTests
             Assert.True(result.Succeeded);
             Assert.Equal(PaymentNotificationStatus.Confirmed, (await database.PaymentNotifications.SingleAsync(x => x.Id == own.NotificationId)).Status);
             var allocations = await database.PaymentAllocations.Where(x => x.PaymentId == result.PaymentId).Include(x => x.Charge).ToListAsync();
-            Assert.NotEmpty(allocations);
+            if (own.Factor == 1)
+            {
+                Assert.NotEmpty(allocations);
+            }
+            else
+            {
+                // This association's advance already paid its later electricity charge.
+                Assert.Empty(allocations);
+                var advanceAllocations = await database.PaymentAllocations
+                    .Where(x => x.PaymentId == own.PaymentId && x.ChargeId != own.ChargeId).ToListAsync();
+                Assert.Equal(150m, Assert.Single(advanceAllocations).Amount);
+            }
             Assert.All(allocations, x => Assert.Equal(own.AssociationId, x.Charge!.AssociationId));
             Assert.True((await services.GetRequiredService<IPaymentService>().CancelPaymentAsync(new(result.PaymentId!.Value, "local cancellation"))).Succeeded);
             Assert.True((await services.GetRequiredService<IChargeService>().CancelChargeAsync(new(own.ChargeId, "local cancellation"))).Succeeded);

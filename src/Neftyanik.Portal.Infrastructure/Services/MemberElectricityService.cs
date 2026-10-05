@@ -207,6 +207,7 @@ public sealed class MemberElectricityService : IMemberElectricityService
 
             if (openingDebtCharge is not null)
             {
+                await AdvancePaymentAllocator.LockAsync(_dbContext, cancellationToken);
                 _dbContext.Charges.Add(openingDebtCharge);
             }
 
@@ -216,6 +217,7 @@ public sealed class MemberElectricityService : IMemberElectricityService
 
             if (openingDebtCharge is not null)
             {
+                await AdvancePaymentAllocator.ApplyAsync(_dbContext, _financialAuditService, [openingDebtCharge.Id], cancellationToken);
                 _financialAuditService.Add(
                     FinancialAuditLogActions.Created,
                     nameof(Charge),
@@ -413,6 +415,7 @@ public sealed class MemberElectricityService : IMemberElectricityService
 
             if (openingDebtCharge is not null)
             {
+                await AdvancePaymentAllocator.LockAsync(_dbContext, cancellationToken);
                 _dbContext.Charges.Add(openingDebtCharge);
             }
 
@@ -422,6 +425,7 @@ public sealed class MemberElectricityService : IMemberElectricityService
 
             if (openingDebtCharge is not null)
             {
+                await AdvancePaymentAllocator.ApplyAsync(_dbContext, _financialAuditService, [openingDebtCharge.Id], cancellationToken);
                 _financialAuditService.Add(
                     FinancialAuditLogActions.Created,
                     nameof(Charge),
@@ -890,10 +894,12 @@ public sealed class MemberElectricityService : IMemberElectricityService
 
         try
         {
+            await AdvancePaymentAllocator.LockAsync(_dbContext, cancellationToken);
             _dbContext.MemberElectricityReadings.Add(reading);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
             AddCreatedReadingAudit(reading, request.MeterId, consumption, charge.Id);
+            await AdvancePaymentAllocator.ApplyAsync(_dbContext, _financialAuditService, [charge.Id], cancellationToken);
 
             _financialAuditService.Add(
                 FinancialAuditLogActions.Created,

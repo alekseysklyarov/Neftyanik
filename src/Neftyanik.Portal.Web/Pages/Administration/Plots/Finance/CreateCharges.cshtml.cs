@@ -211,10 +211,12 @@ public class CreateChargesModel : PageModel
 
         try
         {
+            await AdvancePaymentAllocator.LockAsync(_dbContext, cancellationToken);
             _dbContext.Charges.AddRange(charges);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
             var auditService = CreateFinancialAuditService();
+            await AdvancePaymentAllocator.ApplyAsync(_dbContext, auditService, charges.Select(c => c.Id), cancellationToken);
             foreach (var charge in charges)
             {
                 auditService.Add(

@@ -41,7 +41,7 @@
         <form method="post" id="registerPaymentForm">
             <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
             <div class="row g-3">
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <label asp-for="Input.PlotId" class="form-label"></label>
                     @if (Model.HasSinglePlot)
                     {
@@ -56,10 +56,27 @@
                     }
                     <span asp-validation-for="Input.PlotId" class="text-danger"></span>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <label asp-for="Input.PaymentMethod" class="form-label">@AppLocalizer.Get("Способ оплаты", "Спосіб оплати", "Payment method")</label>
                     <select asp-for="Input.PaymentMethod" asp-items="Model.PaymentMethodOptions" class="form-select"></select>
                     <span asp-validation-for="Input.PaymentMethod" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Input.PriorityChargeTypeId" class="form-label">@AppLocalizer.Get("Приоритет платежей", "Пріоритет платежів", "Payment priority")</label>
+                    <select asp-for="Input.PriorityChargeTypeId" asp-items="Model.PaymentPriorityOptions" class="form-select"
+                            disabled="@(Model.PaymentPriorityOptions.Count == 0)" required aria-describedby="paymentPriorityHelp paymentPriorityStatus">
+                        @if (Model.PaymentPriorityOptions.Count == 0)
+                        {
+                            <option value="">@AppLocalizer.Get("Нет задолженности — аванс", "Немає заборгованості — аванс", "No debt — advance payment")</option>
+                        }
+                    </select>
+                    <span asp-validation-for="Input.PriorityChargeTypeId" class="text-danger"></span>
+                    <div id="paymentPriorityStatus" class="small text-danger" role="status"></div>
+                </div>
+                <div class="col-12 small text-muted" id="paymentPriorityHelp">
+                    @AppLocalizer.Get("Сначала погашается выбранный тип начислений, затем остальные долги — от старых к новым. Остаток сверх всех долгов учитывается как аванс.",
+                        "Спочатку погашається вибраний тип нарахувань, потім решта боргів — від старих до нових. Залишок понад усі борги враховується як аванс.",
+                        "The selected charge type is paid first, then other debts from oldest to newest. Any amount exceeding all debts is recorded as an advance.")
                 </div>
                 <div class="col-md-4">
                     <label asp-for="Input.Amount" class="form-label"></label>
@@ -99,6 +116,7 @@
             </div>
             <div class="modal-body">
                 <p class="mb-2" id="registerPaymentConfirmationMessage"></p>
+                <p class="mb-2" id="registerPaymentPriorityMessage"></p>
                 <p class="mb-0 text-muted" id="registerPaymentCashChangeMessage"></p>
             </div>
             <div class="modal-footer">
@@ -119,6 +137,10 @@
             const modalElement = document.getElementById('registerPaymentConfirmationModal');
             const amountInput = document.getElementById('Input_Amount');
             const paymentMethodSelect = document.getElementById('Input_PaymentMethod');
+            const prioritySelect = document.getElementById('Input_PriorityChargeTypeId');
+            const paymentDateInput = document.getElementById('Input_PaymentDate');
+            const priorityStatus = document.getElementById('paymentPriorityStatus');
+            const priorityMessage = document.getElementById('registerPaymentPriorityMessage');
             const currentCashElement = document.getElementById('currentCashAmount');
             const confirmationMessage = document.getElementById('registerPaymentConfirmationMessage');
             const cashChangeMessage = document.getElementById('registerPaymentCashChangeMessage');
@@ -128,6 +150,44 @@
             }
 
             const modal = window.bootstrap.Modal.getOrCreateInstance(modalElement);
+
+            const prioritiesUrl = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Url.Page("/Administration/Members/Finance/RegisterPayment", "Priorities", new { id = Model.Member.Id })));
+            const noDebtText = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(AppLocalizer.Get("Нет задолженности — аванс", "Немає заборгованості — аванс", "No debt — advance payment")));
+            const priorityLabel = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(AppLocalizer.Get("Приоритет платежей:", "Пріоритет платежів:", "Payment priority:")));
+            const priorityError = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(AppLocalizer.Get("Не удалось обновить приоритеты. Проверьте соединение и повторно выберите дату.", "Не вдалося оновити пріоритети. Перевірте з’єднання та повторно оберіть дату.", "Could not refresh priorities. Check the connection and select the date again.")));
+            let priorityRequest = 0;
+            let prioritiesReady = true;
+            paymentDateInput.addEventListener('change', async () => {
+                const request = ++priorityRequest;
+                const selected = prioritySelect.value;
+                prioritiesReady = false;
+                prioritySelect.disabled = true;
+                openButton.disabled = true;
+                priorityStatus.textContent = '';
+                if (!paymentDateInput.value) return;
+                try {
+                    const url = new URL(prioritiesUrl, window.location.origin);
+                    url.searchParams.set('paymentDate', paymentDateInput.value);
+                    const response = await fetch(url, { headers: { Accept: 'application/json' } });
+                    if (!response.ok) throw new Error('Priority request failed');
+                    const options = await response.json();
+                    if (request !== priorityRequest) return;
+                    prioritySelect.replaceChildren();
+                    for (const option of options) {
+                        prioritySelect.add(new Option(option.text, option.value));
+                    }
+                    if (options.length === 0) prioritySelect.add(new Option(noDebtText, ''));
+                    if (options.some(option => option.value === selected)) prioritySelect.value = selected;
+                    prioritySelect.disabled = options.length === 0;
+                    prioritiesReady = true;
+                    openButton.disabled = false;
+                } catch {
+                    if (request === priorityRequest) priorityStatus.textContent = priorityError;
+                }
+            });
+            form.addEventListener('submit', event => {
+                if (!prioritiesReady) event.preventDefault();
+            });
 
             const formatAmount = value => `${value.toFixed(2)} грн`;
 
@@ -143,6 +203,7 @@
                     : currentCash;
 
                 confirmationMessage.textContent = `Подтвердите регистрацию платежа на сумму ${Number.isFinite(paymentAmount) ? formatAmount(paymentAmount) : '0.00 грн'}.`;
+                priorityMessage.textContent = `${priorityLabel} ${prioritySelect.selectedOptions[0]?.text ?? noDebtText}`;
                 cashChangeMessage.textContent = `Сейчас в кассе должно быть ${formatAmount(currentCash)}. После сохранения будет ${formatAmount(nextCash)}.`;
 
                 modal.show();

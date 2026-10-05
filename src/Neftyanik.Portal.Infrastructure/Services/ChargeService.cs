@@ -27,6 +27,10 @@ public sealed class ChargeService : IChargeService
             return CancelChargeResult.Failure(CancelChargeResultCode.InvalidCancellationReason);
         }
 
+        await using var transaction = _dbContext.Database.IsRelational() && _dbContext.Database.CurrentTransaction is null
+            ? await _dbContext.Database.BeginTransactionAsync(cancellationToken) : null;
+        await AdvancePaymentAllocator.LockAsync(_dbContext, cancellationToken);
+
         var charge = await _dbContext.Charges
             .Include(item => item.PaymentAllocations)
             .Include(item => item.MemberElectricityReading)
@@ -58,6 +62,7 @@ public sealed class ChargeService : IChargeService
             newValues);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        if (transaction is not null) await transaction.CommitAsync(cancellationToken);
         return CancelChargeResult.Success();
     }
 

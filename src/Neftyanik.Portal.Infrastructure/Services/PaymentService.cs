@@ -64,6 +64,14 @@ public sealed class PaymentService : IPaymentService
 
         try
         {
+            await AdvancePaymentAllocator.LockAsync(_dbContext, cancellationToken);
+            var outstandingCharges = await _dbContext.LoadOutstandingPaymentChargesAsync(memberPlotIds, cancellationToken);
+            if (request.PriorityChargeTypeId.HasValue
+                && !outstandingCharges.Any(c => c.ChargeTypeId == request.PriorityChargeTypeId.Value))
+            {
+                return CreateMemberPaymentResult.Failure(CreateMemberPaymentResultCode.InvalidPaymentPriority);
+            }
+
             var balanceBeforePayment = await _dbContext.CalculateActiveBalanceAsync(request.MemberId, memberPlotIds, cancellationToken);
 
             var payment = new Payment
@@ -83,11 +91,12 @@ public sealed class PaymentService : IPaymentService
             _dbContext.Payments.Add(payment);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            var outstandingCharges = await LoadOutstandingChargesAsync(memberPlotIds, cancellationToken);
             var remainingPaymentAmount = payment.Amount;
             var allocations = new List<PaymentAllocation>();
 
-            foreach (var charge in outstandingCharges)
+            foreach (var charge in outstandingCharges
+                .OrderByDescending(c => request.PriorityChargeTypeId.HasValue && c.ChargeTypeId == request.PriorityChargeTypeId.Value)
+                .ThenBy(c => c.ChargeDate).ThenBy(c => c.Id))
             {
                 if (remainingPaymentAmount <= 0m)
                 {
@@ -138,6 +147,7 @@ public sealed class PaymentService : IPaymentService
                     payment.ReferenceNumber,
                     payment.Description,
                     request.SourcePaymentNotificationId,
+                    request.PriorityChargeTypeId,
                     Allocations = allocations.Select(allocation => new
                     {
                         allocation.ChargeId,
@@ -181,6 +191,10 @@ public sealed class PaymentService : IPaymentService
             return CancelPaymentResult.Failure(CancelPaymentResultCode.InvalidCancellationReason);
         }
 
+        await using var transaction = _dbContext.Database.IsRelational() && _dbContext.Database.CurrentTransaction is null
+            ? await _dbContext.Database.BeginTransactionAsync(cancellationToken) : null;
+        await AdvancePaymentAllocator.LockAsync(_dbContext, cancellationToken);
+
         var payment = await _dbContext.Payments
             .Include(item => item.PaymentAllocations)
             .Include(item => item.PaymentNotification)
@@ -212,56 +226,8 @@ public sealed class PaymentService : IPaymentService
             newValues);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        if (transaction is not null) await transaction.CommitAsync(cancellationToken);
         return CancelPaymentResult.Success();
-    }
-
-    private async Task<IReadOnlyList<OutstandingChargeViewModel>> LoadOutstandingChargesAsync(int[] plotIds, CancellationToken cancellationToken)
-    {
-        if (plotIds.Length == 0)
-        {
-            return [];
-        }
-
-        var charges = await _dbContext.Charges
-            .AsNoTracking()
-            .Where(charge => charge.CancelledAtUtc == null
-                && charge.PlotId.HasValue
-                && plotIds.Contains(charge.PlotId.Value))
-            .OrderBy(charge => charge.ChargeDate)
-            .ThenBy(charge => charge.Id)
-            .Select(charge => new OutstandingChargeViewModel
-            {
-                Id = charge.Id,
-                Amount = charge.Amount
-            })
-            .ToListAsync(cancellationToken);
-
-        if (charges.Count == 0)
-        {
-            return charges;
-        }
-
-        var chargeIds = charges.Select(charge => charge.Id).ToArray();
-        var allocatedAmountsByCharge = (await _dbContext.PaymentAllocations
-            .AsNoTracking()
-            .Where(allocation => chargeIds.Contains(allocation.ChargeId)
-                && allocation.Payment != null
-                && allocation.Payment.CancelledAtUtc == null)
-            .Select(allocation => new
-            {
-                allocation.ChargeId,
-                allocation.Amount
-            })
-            .ToListAsync(cancellationToken))
-            .GroupBy(allocation => allocation.ChargeId)
-            .ToDictionary(group => group.Key, group => group.Sum(allocation => allocation.Amount));
-
-        return charges
-            .Select(charge => charge with
-            {
-                AllocatedAmount = allocatedAmountsByCharge.GetValueOrDefault(charge.Id)
-            })
-            .ToList();
     }
 
     private static string? Normalize(string? value)
@@ -299,12 +265,4 @@ public sealed class PaymentService : IPaymentService
         };
     }
 
-    private sealed record OutstandingChargeViewModel
-    {
-        public long Id { get; init; }
-
-        public decimal Amount { get; init; }
-
-        public decimal AllocatedAmount { get; init; }
-    }
 }

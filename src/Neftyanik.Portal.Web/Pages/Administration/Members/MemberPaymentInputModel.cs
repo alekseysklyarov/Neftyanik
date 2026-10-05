@@ -21,6 +21,9 @@ public class MemberPaymentInputModel : IValidatableObject
     [Display(Name = "Способ оплаты")]
     public PaymentMethod? PaymentMethod { get; set; }
 
+    [Display(Name = "Приоритет платежей")]
+    public int? PriorityChargeTypeId { get; set; }
+
     [StringLength(200)]
     [Display(Name = "Номер документа / квитанции")]
     public string? ReferenceNumber { get; set; }
