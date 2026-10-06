@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -22,6 +23,34 @@ namespace Neftyanik.Portal.Infrastructure.Tests;
 public sealed class PlatformLegacyInitializationTests
 {
     private static string Secret() => Convert.ToHexString(RandomNumberGenerator.GetBytes(24)) + "aA1!";
+
+    [Fact]
+    public async Task Fixture_SetupFailure_DeletesItsTemporaryDatabase()
+    {
+        var failure = new FailWrite("INSERT INTO [AspNetUsers]");
+        var exception = await Assert.ThrowsAnyAsync<Exception>(() => Fixture.CreateAsync(interceptor: failure));
+        Assert.Equal("Injected provisioning persistence failure.", exception.GetBaseException().Message);
+        var databaseName = Assert.IsType<string>(failure.DatabaseName);
+        Assert.StartsWith("NeftyanikAssociationTests_", databaseName);
+        await using var connection = new SqlConnection("Server=(localdb)\\mssqllocaldb;Database=master;Trusted_Connection=True;TrustServerCertificate=True");
+        await connection.OpenAsync();
+        await using var command = connection.CreateCommand();
+        command.CommandText = "SELECT DB_ID(@databaseName)";
+        command.Parameters.AddWithValue("@databaseName", databaseName);
+        try
+        {
+            Assert.Equal(DBNull.Value, await command.ExecuteScalarAsync());
+        }
+        finally
+        {
+            // Keep this regression test clean even when the cleanup assertion fails.
+            var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+                .UseSqlServer(new SqlConnectionStringBuilder(connection.ConnectionString) { InitialCatalog = databaseName }.ConnectionString)
+                .Options;
+            await using var database = new ApplicationDbContext(options);
+            await database.Database.EnsureDeletedAsync();
+        }
+    }
 
     [Fact]
     public async Task Initialize_OwnerConfirmedTenantInstallation_CreatesOnePendingUserAndPreservesEveryExistingTableRow()
@@ -260,9 +289,15 @@ public sealed class PlatformLegacyInitializationTests
 
     private sealed class FailWrite(string fragment) : DbCommandInterceptor
     {
+        public string? DatabaseName { get; private set; }
+
         public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(DbCommand command, CommandEventData eventData, InterceptionResult<DbDataReader> result, CancellationToken cancellationToken = default)
         {
-            if (command.CommandText.Contains(fragment, StringComparison.Ordinal)) throw new InvalidOperationException("Injected provisioning persistence failure.");
+            if (command.CommandText.Contains(fragment, StringComparison.Ordinal))
+            {
+                DatabaseName = command.Connection!.Database;
+                throw new InvalidOperationException("Injected provisioning persistence failure.");
+            }
             return base.ReaderExecutingAsync(command, eventData, result, cancellationToken);
         }
     }
@@ -276,6 +311,19 @@ public sealed class PlatformLegacyInitializationTests
         public static async Task<Fixture> CreateAsync(bool tenant = true, DbCommandInterceptor? interceptor = null)
         {
             var fixture = new Fixture();
+            try
+            {
+                return await CreateCoreAsync(fixture, tenant, interceptor);
+            }
+            catch
+            {
+                await fixture.DisposeAsync();
+                throw;
+            }
+        }
+
+        private static async Task<Fixture> CreateCoreAsync(Fixture fixture, bool tenant, DbCommandInterceptor? interceptor)
+        {
             await using var database = fixture._database.CreateUnresolvedContext();
             await database.GetService<IMigrator>().MigrateAsync("20260918151504_AddAssociationMemberships");
             var connection = database.Database.GetConnectionString();
@@ -368,6 +416,16 @@ public sealed class PlatformLegacyInitializationTests
             return result;
         }
 
-        public async ValueTask DisposeAsync() { await _services.DisposeAsync(); await _database.DisposeAsync(); }
+        public async ValueTask DisposeAsync()
+        {
+            try
+            {
+                if (_services is not null) await _services.DisposeAsync();
+            }
+            finally
+            {
+                await _database.DisposeAsync();
+            }
+        }
     }
 }
