@@ -1,0 +1,42 @@
+@model Neftyanik.Portal.Web.Pages.Platform.Associations.DetailsModel
+@{
+    var setup = Model.Setup;
+    var loginPath = Url.Content($"~/{Model.Association.Slug}/Account/Login");
+    var checks = new[]
+    {
+        ("Contact", setup.HasContact, AppLocalizer.Get("Контакт для связи", "Контакт для зв’язку", "Contact details"), AppLocalizer.Get("Укажите email или телефон в реквизитах товарищества.", "Укажіть email або телефон у реквізитах товариства.", "Add an email address or phone number to the association details.")),
+        ("Administrator", setup.AvailableAdministrators > 0, AppLocalizer.Get("Доступный администратор", "Доступний адміністратор", "Available administrator"), AppLocalizer.Get("Нужен активный незаблокированный аккаунт с действующим назначением.", "Потрібен активний незаблокований акаунт із чинним призначенням.", "An active, unlocked account with an active administrator assignment is needed.")),
+        ("Password", setup.OnboardedAdministrators > 0, AppLocalizer.Get("Временный пароль сменён", "Тимчасовий пароль змінено", "Temporary password changed"), AppLocalizer.Get("Хотя бы один доступный администратор должен сменить временный пароль при входе.", "Хоча б один доступний адміністратор має змінити тимчасовий пароль під час входу.", "At least one available administrator must change the temporary password at sign-in.")),
+        ("Members", setup.Members > 0, AppLocalizer.Get("Активные участники", "Активні учасники", "Active members"), AppLocalizer.Get("Администратор добавляет участников в разделе «Участники».", "Адміністратор додає учасників у розділі «Учасники».", "The administrator adds members in the Members section.")),
+        ("Plots", setup.Plots > 0, AppLocalizer.Get("Участки", "Ділянки", "Plots"), AppLocalizer.Get("Добавьте участки в товарищество.", "Додайте ділянки до товариства.", "Add plots to the association.")),
+        ("Ownerships", setup.CurrentOwnerships > 0, AppLocalizer.Get("Действующие связи владения", "Чинні зв’язки володіння", "Current ownerships"), AppLocalizer.Get("Свяжите участников с участками и укажите период владения.", "Пов’яжіть учасників із ділянками та вкажіть період володіння.", "Link members to plots and specify ownership dates.")),
+        ("ChargeTypes", setup.HasChargeTypes, AppLocalizer.Get("Виды начислений", "Види нарахувань", "Charge types"), AppLocalizer.Get("Создайте активные виды начислений в настройках финансов.", "Створіть активні види нарахувань у налаштуваннях фінансів.", "Create active charge types in finance settings.")),
+        ("MemberTariff", setup.HasMemberTariff, AppLocalizer.Get("Тариф для участников", "Тариф для учасників", "Member electricity tariff"), AppLocalizer.Get("Если ведёте учёт электроэнергии, задайте тариф с действующей датой.", "Якщо ведете облік електроенергії, задайте тариф із чинною датою.", "If electricity is used, set a tariff effective today or earlier.")),
+        ("SupplierTariff", setup.HasSupplierTariff, AppLocalizer.Get("Тариф поставщика", "Тариф постачальника", "Supplier electricity tariff"), AppLocalizer.Get("Для общего счётчика задайте действующий тариф поставщика.", "Для загального лічильника задайте чинний тариф постачальника.", "For the association meter, set an applicable supplier tariff."))
+    };
+}
+<section class="card my-4" aria-labelledby="setup-title">
+    <div class="card-body">
+        <h2 class="h4" id="setup-title">@AppLocalizer.Get("Подготовка товарищества к работе", "Підготовка товариства до роботи", "Association setup")</h2>
+        @if (!Model.Association.IsActive)
+        {
+            <p class="alert alert-warning">@AppLocalizer.Get("Товарищество отключено. Вход станет доступен после активации.", "Товариство вимкнено. Вхід стане доступним після активації.", "The association is inactive. Sign-in becomes available after activation.")</p>
+        }
+        <label for="association-login-address" class="form-label">@AppLocalizer.Get("Адрес входа для администратора и участников", "Адреса входу для адміністратора й учасників", "Sign-in address for administrators and members")</label>
+        <input id="association-login-address" class="form-control mb-2" readonly value="@loginPath" />
+        <p class="text-muted">@AppLocalizer.Get("Передайте этот путь на текущем сайте вместе с логином. Временный пароль передавайте отдельно по защищённому каналу.", "Передайте цей шлях на поточному сайті разом із логіном. Тимчасовий пароль передавайте окремо захищеним каналом.", "Share this path on the current site with the username. Deliver the temporary password separately through a secure channel.")</p>
+        <ul class="list-group list-group-flush">
+            @foreach (var (key, done, title, guidance) in checks)
+            {
+                <li class="list-group-item px-0" data-setup-check="@key" data-complete="@done.ToString().ToLowerInvariant()">
+                    <div class="d-flex flex-wrap justify-content-between gap-2">
+                        <strong>@title</strong>
+                        <span class="badge @(done ? "text-bg-success" : "text-bg-secondary")">@(done ? AppLocalizer.Get("Есть", "Є", "Present") : AppLocalizer.Get("Не настроено", "Не налаштовано", "Not configured"))</span>
+                    </div>
+                    @if (!done) { <p class="text-muted mb-0 mt-1">@guidance</p> }
+                </li>
+            }
+        </ul>
+        <p class="text-muted mt-3 mb-0">@AppLocalizer.Get("Это проверка начальной настройки. Наличие записей не гарантирует готовность всех расчётов: администратору нужно проверить начальные показания, ночные тарифы, категории расходов и остатки в разделе «Финансы → Настройки». Ставки членских взносов пока не подключены к расчётам.", "Це перевірка початкового налаштування. Наявність записів не гарантує готовність усіх розрахунків: адміністратору потрібно перевірити початкові показання, нічні тарифи, категорії витрат і залишки в розділі «Фінанси → Налаштування». Ставки членських внесків поки не підключено до розрахунків.", "This checks initial setup. Existing records do not guarantee readiness for every calculation: the administrator should review initial readings, night tariffs, expense categories and balances under Finance → Settings. Membership fee rates are not yet integrated into calculations.")</p>
+    </div>
+</section>

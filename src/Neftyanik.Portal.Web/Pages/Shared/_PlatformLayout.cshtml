@@ -14,7 +14,11 @@
             <a class="navbar-brand" asp-page="/Platform/Index">DachaHub</a>
             @if (User.Identity?.IsAuthenticated == true)
             {
+                <a class="nav-link" asp-page="/Platform/Index">@AppLocalizer.Get("Обзор", "Огляд", "Overview")</a>
                 <a class="nav-link" asp-page="/Platform/Associations/Index">@AppLocalizer.Get("Товарищества", "Товариства", "Associations")</a>
+                <form method="post" asp-page="/Platform/Index" asp-page-handler="Logout" asp-antiforgery="true">
+                    <button type="submit" class="btn btn-outline-secondary btn-sm">@AppLocalizer.Get("Выход", "Вийти", "Log out")</button>
+                </form>
             }
             <span class="navbar-text">@AppLocalizer.Get("Управление платформой", "Керування платформою", "Platform administration")</span>
         </nav>
@@ -22,5 +26,6 @@
     <main class="container pb-4">
         @RenderBody()
     </main>
+    @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

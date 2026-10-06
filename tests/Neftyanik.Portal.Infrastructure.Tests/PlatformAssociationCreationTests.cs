@@ -20,6 +20,82 @@ namespace Neftyanik.Portal.Infrastructure.Tests;
 public class PlatformAssociationCreationTests
 {
     [Fact]
+    public async Task AddAdministrator_CreatesIsolatedAccountAndAuditWithoutChangingOtherAssociation()
+    {
+        await using var fixture = await Fixture.CreateAsync();
+        var before = await fixture.ExistingDataAsync();
+        await using var scope = fixture.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var association = new Association { Name = "Additional garden", Slug = "additional" };
+        db.Associations.Add(association);
+        await db.SaveChangesAsync();
+        var creator = scope.ServiceProvider.GetRequiredService<IPlatformAssociationAdministratorCreator>();
+        var request = new AssociationAdministratorRequest("additional-admin", "shared-email@example.invalid", "New administrator", Request("unused").TemporaryPassword, true);
+        Assert.Equal(AdministratorCreationOutcome.Created, await creator.CreateAsync(association.Id, request));
+        Assert.False(db.IsAssociationResolved);
+        var user = await db.Users.SingleAsync(x => x.UserName == request.UserName);
+        Assert.True(user.MustChangePassword);
+        Assert.True(await scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>().CheckPasswordAsync(user, request.TemporaryPassword));
+        Assert.Equal(association.Id, (await db.AssociationAccountBindings.SingleAsync(x => x.ApplicationUserId == user.Id)).AssociationId);
+        var assignment = Assert.Single(await db.AssociationUserMemberships.IgnoreQueryFilters().Where(x => x.ApplicationUserId == user.Id).ToListAsync());
+        Assert.Equal(RoleNames.Administrator, assignment.Role);
+        Assert.Empty(await db.UserRoles.Where(x => x.UserId == user.Id).ToListAsync());
+        var audit = Assert.Single(await db.PlatformAuditLogs.ToListAsync());
+        Assert.Equal(association.Id, audit.AssociationId);
+        Assert.Equal("operator", audit.OperatorUserId);
+        Assert.Equal(PlatformAuditActions.AdministratorAssigned, audit.Action);
+        Assert.DoesNotContain(request.TemporaryPassword, audit.NewValuesJson);
+        Assert.Equal(before, await fixture.ExistingDataAsync(request.UserName));
+        Assert.Equal(AdministratorCreationOutcome.UsernameExists, await creator.CreateAsync(association.Id, request));
+        Assert.Equal(1, await db.PlatformAuditLogs.CountAsync());
+    }
+
+    [Theory]
+    [InlineData("AspNetUsers")]
+    [InlineData("AssociationAccountBindings")]
+    [InlineData("AssociationUserMemberships")]
+    [InlineData("PlatformAuditLogs")]
+    public async Task AddAdministrator_FailedWriteRollsBackAccountBindingAssignmentAndAudit(string table)
+    {
+        var failure = new CreationInterceptor { FailTable = table };
+        await using var fixture = await Fixture.CreateAsync(failure);
+        var before = await fixture.ExistingDataAsync();
+        failure.Enabled = true;
+        await using var scope = fixture.Services.CreateAsyncScope();
+        var result = await scope.ServiceProvider.GetRequiredService<IPlatformAssociationAdministratorCreator>()
+            .CreateAsync(fixture.InitialId, new("rollback-admin", "test@example.invalid", null, Request("unused").TemporaryPassword, true));
+        Assert.Equal(AdministratorCreationOutcome.Failed, result);
+        Assert.True(failure.WasTriggered);
+        Assert.Equal(before, await fixture.ExistingDataAsync());
+        Assert.Empty(await scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().PlatformAuditLogs.ToListAsync());
+    }
+
+    [Fact]
+    public async Task AddAdministrator_RejectsUnauthorizedInvalidAndInactiveRequestsWithoutWrites()
+    {
+        await using var fixture = await Fixture.CreateAsync();
+        await using var scope = fixture.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var inactive = new Association { Name = "Inactive", Slug = "inactive-admin", IsActive = false };
+        db.Associations.Add(inactive);
+        await db.SaveChangesAsync();
+        var creator = scope.ServiceProvider.GetRequiredService<IPlatformAssociationAdministratorCreator>();
+        var request = new AssociationAdministratorRequest("new-admin", "test@example.invalid", null, Request("unused").TemporaryPassword, true);
+        var before = await fixture.ExistingDataAsync();
+        fixture.Access.Denied = true;
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => creator.CreateAsync(int.MaxValue, request));
+        fixture.Access.Denied = false;
+        Assert.Equal(AdministratorCreationOutcome.NotFound, await creator.CreateAsync(int.MaxValue, request));
+        Assert.Equal(AdministratorCreationOutcome.InactiveAssociation, await creator.CreateAsync(inactive.Id, request));
+        Assert.Equal(AdministratorCreationOutcome.ConfirmationRequired, await creator.CreateAsync(fixture.InitialId, request with { ConfirmAssignment = false }));
+        Assert.Equal(AdministratorCreationOutcome.InvalidInput, await creator.CreateAsync(fixture.InitialId, request with { Email = "invalid" }));
+        Assert.Equal(AdministratorCreationOutcome.IdentityRejected, await creator.CreateAsync(fixture.InitialId, request with { TemporaryPassword = "weak" }));
+        Assert.Equal(AdministratorCreationOutcome.UsernameExists, await creator.CreateAsync(fixture.InitialId, request with { UserName = "EXISTING-ADMIN" }));
+        Assert.Equal(before, await fixture.ExistingDataAsync());
+        Assert.Empty(await db.PlatformAuditLogs.ToListAsync());
+    }
+
+    [Fact]
     public async Task CreateAsync_CommitsLocalAdministratorInitializationAndAuditWithoutChangingExistingData()
     {
         var writes = new CreationInterceptor();

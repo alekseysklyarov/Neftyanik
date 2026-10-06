@@ -136,20 +136,87 @@ public class PlatformAssociationCreationHttpTests
     [InlineData("css")]
     [InlineData("account")]
     [InlineData("custom-assets")]
-    public async Task Create_RejectsServiceAndActualStaticDirectorySlugs(string slug)
+    public async Task Preview_RejectsServiceAndActualStaticDirectorySlugsBeforePasswordEntry(string slug)
     {
         await using var fixture = await Fixture.CreateAsync();
         var environment = fixture.App.Services.GetRequiredService<IWebHostEnvironment>();
         environment.WebRootFileProvider = new ExtraDirectoryProvider(environment.WebRootFileProvider);
         using var client = await fixture.ClientAsync("operator");
         var preview = await PreviewAsync(client, slug);
-        using var response = await ConfirmAsync(client, preview);
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains("Slug неприпустимий або зарезервований", await response.ReadDecodedHtmlAsync());
+        Assert.Contains("Цю адресу зарезервовано", SlugError(preview));
+        Assert.Empty(Hidden(preview, "ConfirmationToken"));
+        Assert.DoesNotContain("name=\"Password.TemporaryPassword\"", preview);
         await using var scope = fixture.App.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         Assert.False(await db.Associations.AnyAsync(x => x.Slug == slug));
         Assert.Empty(await db.PlatformAuditLogs.ToListAsync());
+    }
+
+    [Theory]
+    [InlineData("Test1")]
+    [InlineData("two--parts")]
+    [InlineData("-start")]
+    [InlineData("end-")]
+    [InlineData("тест")]
+    [InlineData("two words")]
+    public async Task Preview_InvalidSlug_ReturnsFieldErrorWithoutIssuingConfirmationOrWritingData(string slug)
+    {
+        await using var fixture = await Fixture.CreateAsync();
+        var before = await fixture.AccountSnapshotAsync();
+        using var client = await fixture.ClientAsync("operator");
+        var html = await PreviewAsync(client, slug);
+        Assert.Contains("Використовуйте лише малі латинські літери", SlugError(html));
+        Assert.Empty(Hidden(html, "ConfirmationToken"));
+        Assert.DoesNotContain("name=\"Password.TemporaryPassword\"", html);
+        Assert.Contains("value=\"new-admin\"", html);
+        Assert.Equal(before, await fixture.AccountSnapshotAsync());
+        await using var scope = fixture.App.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        Assert.Equal(1, await db.Associations.CountAsync());
+        Assert.Empty(await db.PlatformAuditLogs.ToListAsync());
+    }
+
+    [Theory]
+    [InlineData("ru-RU", "Используйте только маленькие латинские буквы")]
+    [InlineData("uk-UA", "Використовуйте лише малі латинські літери")]
+    [InlineData("en-US", "Use only lowercase letters")]
+    public async Task Form_EnablesLocalizedClientValidationForSlugAndPasswordConfirmation(string culture, string message)
+    {
+        await using var fixture = await Fixture.CreateAsync();
+        using var client = await fixture.ClientAsync("operator");
+        client.DefaultRequestHeaders.AcceptLanguage.ParseAdd(culture);
+        using var get = await client.GetAsync(Page);
+        var html = await get.ReadDecodedHtmlAsync();
+        Assert.Contains("data-val-regex=\"" + message, html);
+        Assert.Contains("data-val-regex-pattern=\"[a-z0-9]+(?:-[a-z0-9]+)*\"", html);
+        Assert.Contains("data-valmsg-for=\"Input.Slug\"", html);
+        Assert.Contains("aria-describedby=\"slug-help slug-error\"", html);
+        var jquery = html.IndexOf("/lib/jquery/dist/jquery.min.js", StringComparison.Ordinal);
+        var validation = html.IndexOf("/lib/jquery-validation/dist/jquery.validate.min.js", StringComparison.Ordinal);
+        var adapters = html.IndexOf("/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js", StringComparison.Ordinal);
+        Assert.True(jquery >= 0 && validation > jquery && adapters > validation);
+        var preview = await PreviewAsync(client, "valid-garden-2");
+        Assert.NotEmpty(Hidden(preview, "ConfirmationToken"));
+        Assert.Contains("data-val-equalto-other=\"*.TemporaryPassword\"", preview);
+        Assert.Contains("data-valmsg-for=\"Password.ConfirmPassword\"", preview);
+    }
+
+    [Fact]
+    public async Task Confirmation_MismatchedPasswords_ReturnsFieldErrorWithoutEchoingPasswords()
+    {
+        await using var fixture = await Fixture.CreateAsync();
+        using var client = await fixture.ClientAsync("operator");
+        var preview = await PreviewAsync(client, "password-mismatch");
+        using var response = await client.PostAsync(Page + "?handler=Confirm", Form(Hidden(preview, "__RequestVerificationToken"),
+            ("ConfirmationToken", Hidden(preview, "ConfirmationToken")), ("ConfirmAdministrator", "true"),
+            ("Password.TemporaryPassword", TemporaryPassword), ("Password.ConfirmPassword", TemporaryPassword + "different")));
+        var html = await response.ReadDecodedHtmlAsync();
+        Assert.Contains("data-valmsg-for=\"Password.ConfirmPassword\"", html);
+        Assert.Contains("Введіть і підтвердіть тимчасовий пароль", html);
+        Assert.DoesNotContain(TemporaryPassword, html);
+        Assert.Equal(Hidden(preview, "ConfirmationToken"), Hidden(html, "ConfirmationToken"));
+        await using var scope = fixture.App.Services.CreateAsyncScope();
+        Assert.False(await scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().Associations.AnyAsync(x => x.Slug == "password-mismatch"));
     }
 
     [Fact]
@@ -312,6 +379,8 @@ public class PlatformAssociationCreationHttpTests
         new(fields.Select(x => new KeyValuePair<string, string>(x.Key, x.Value)).Prepend(new("__RequestVerificationToken", token)));
     private static string Hidden(string html, string name) => WebUtility.HtmlDecode(
         Regex.Match(html, $"name=\"{Regex.Escape(name)}\"[^>]*value=\"([^\"]*)\"").Groups[1].Value);
+    private static string SlugError(string html) => WebUtility.HtmlDecode(
+        Regex.Match(html, "<span[^>]*data-valmsg-for=\"Input.Slug\"[^>]*>(.*?)</span>").Groups[1].Value);
 
     private sealed class ExtraDirectoryProvider(IFileProvider original) : IFileProvider
     {

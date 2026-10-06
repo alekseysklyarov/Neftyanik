@@ -244,6 +244,10 @@ public sealed class PortalWebApplicationFactory : WebApplicationFactory<Program>
             base.Customize(modelBuilder, context);
             modelBuilder.Entity<PlatformAuditLog>().Property(x => x.OccurredAtUtc)
                 .HasConversion(value => value.UtcTicks, value => new DateTimeOffset(value, TimeSpan.Zero));
+            // SQLite cannot compare DateTimeOffset directly. Match SQL Server instant comparisons for lockouts.
+            modelBuilder.Entity<ApplicationUser>().Property(x => x.LockoutEnd)
+                .HasConversion(new Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<DateTimeOffset, long>(
+                    value => value.UtcTicks, value => new DateTimeOffset(value, TimeSpan.Zero)));
         }
     }
 }

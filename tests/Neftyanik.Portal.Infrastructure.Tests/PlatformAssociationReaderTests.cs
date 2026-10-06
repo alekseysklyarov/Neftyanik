@@ -10,6 +10,48 @@ namespace Neftyanik.Portal.Infrastructure.Tests;
 public class PlatformAssociationReaderTests(AssociationDatabaseFixture fixture) : IClassFixture<AssociationDatabaseFixture>
 {
     [Fact]
+    public async Task Setup_UsesOnlySelectedAssociationAndCurrentDatesWithoutTrackingOrResolvingTenant()
+    {
+        await using var tenant = fixture.CreateContext();
+        await using var transaction = await tenant.Database.BeginTransactionAsync();
+        var today = DateOnly.FromDateTime(DateTime.Now);
+        var member = new Member { FullName = "Private name" };
+        var plot = new Plot { Number = "123" };
+        tenant.AddRange(member, plot,
+            new PlotOwnership { Member = member, Plot = plot, ValidFrom = today.AddDays(1) },
+            new MemberElectricityTariff { EffectiveFrom = today.AddDays(1), Rate = 5m },
+            new AssociationElectricityTariff { EffectiveFrom = today, DayRate = 5m, NightRate = 3m },
+            new ChargeType { Name = "Inactive", Code = "INACTIVE", IsActive = false });
+        var empty = new Association { Name = "Empty", Slug = "empty-setup" };
+        tenant.Associations.Add(empty);
+        await tenant.SaveChangesAsync();
+        var options = new DbContextOptionsBuilder<Neftyanik.Portal.Infrastructure.Data.ApplicationDbContext>()
+            .UseSqlServer(tenant.Database.GetDbConnection()).Options;
+        await using var database = new Neftyanik.Portal.Infrastructure.Data.ApplicationDbContext(options);
+        await database.Database.UseTransactionAsync(Microsoft.EntityFrameworkCore.Storage.DbContextTransactionExtensions.GetDbTransaction(transaction));
+        var reader = new PlatformOverviewReader(database, new ReadAccess(), TimeProvider.System);
+        var setup = await reader.GetSetupAsync(tenant.CurrentAssociationId);
+        Assert.NotNull(setup);
+        Assert.Equal(1, setup.Members);
+        Assert.Equal(1, setup.Plots);
+        Assert.Equal(0, setup.CurrentOwnerships);
+        Assert.False(setup.HasMemberTariff);
+        Assert.True(setup.HasSupplierTariff);
+        Assert.False(setup.HasChargeTypes);
+        var other = await reader.GetSetupAsync(empty.Id);
+        Assert.NotNull(other);
+        Assert.Equal(0, other.Members);
+        Assert.Equal(0, other.Plots);
+        Assert.False(other.HasSupplierTariff);
+        Assert.Null(await reader.GetSetupAsync(int.MaxValue));
+        Assert.Empty(database.ChangeTracker.Entries());
+        Assert.False(database.IsAssociationResolved);
+        var denied = new PlatformOverviewReader(database, new ReadAccess { Denied = true }, TimeProvider.System);
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => denied.GetAsync());
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => denied.GetSetupAsync(int.MaxValue));
+    }
+
+    [Fact]
     public async Task ReadAsync_ProjectsCrossTenantMetadataOnSqlServerWithoutResolvingOrTrackingTenantData()
     {
         await using var tenant = fixture.CreateContext();

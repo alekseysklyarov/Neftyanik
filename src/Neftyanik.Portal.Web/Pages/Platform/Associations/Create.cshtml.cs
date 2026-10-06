@@ -11,7 +11,7 @@ using Neftyanik.Portal.Web.Localization;
 namespace Neftyanik.Portal.Web.Pages.Platform.Associations;
 
 public class CreateModel(IPlatformAssociationCreator creator, IPlatformAssociationWriteAccess access,
-    IDataProtectionProvider protection) : PageModel
+    IDataProtectionProvider protection, IAssociationSlugReservations reservations) : PageModel
 {
     private readonly ITimeLimitedDataProtector protector = protection.CreateProtector("DachaHub.AssociationCreation.Confirmation.v3").ToTimeLimitedDataProtector();
 
@@ -29,6 +29,8 @@ public class CreateModel(IPlatformAssociationCreator creator, IPlatformAssociati
         ClearPassword();
         ConfirmationToken = null;
         ModelState.Remove(nameof(ConfirmationToken));
+        if (ModelState.IsValid && reservations.IsReserved(Input.Slug))
+            ModelState.AddModelError("Input.Slug", SlugReservedMessage);
         if (!ModelState.IsValid) return Page();
         ConfirmationToken = protector.Protect(JsonSerializer.Serialize(new Confirmation(Input, actor)), TimeSpan.FromMinutes(15));
         HasPreview = true;
@@ -61,7 +63,12 @@ public class CreateModel(IPlatformAssociationCreator creator, IPlatformAssociati
         // Only non-secret fields come from the protected preview. The password is supplied on this POST.
         ModelState.Clear();
         HasPreview = true;
-        if (!TryValidateModel(Input, nameof(Input))) return Page();
+        if (!TryValidateModel(Input, nameof(Input)))
+        {
+            HasPreview = false;
+            ConfirmationToken = null;
+            return Page();
+        }
         if (!ConfirmAdministrator)
         {
             HasPreview = true;
@@ -72,7 +79,7 @@ public class CreateModel(IPlatformAssociationCreator creator, IPlatformAssociati
         if (string.IsNullOrWhiteSpace(temporaryPassword) || temporaryPassword.Length > 128
             || temporaryPassword != repeatedPassword)
         {
-            ModelState.AddModelError(string.Empty, AppLocalizer.Get("Введите и подтвердите временный пароль.", "Введіть і підтвердіть тимчасовий пароль.", "Enter and confirm the temporary password."));
+            ModelState.AddModelError("Password.ConfirmPassword", AppLocalizer.Get("Введите и подтвердите временный пароль.", "Введіть і підтвердіть тимчасовий пароль.", "Enter and confirm the temporary password."));
             return Page();
         }
         var request = new AssociationCreationRequest(Input.Name, Input.Slug, Input.ContactEmail, Input.ContactPhone,
@@ -87,7 +94,13 @@ public class CreateModel(IPlatformAssociationCreator creator, IPlatformAssociati
         }
         ConfirmationToken = null;
         HasPreview = false;
-        ModelState.AddModelError(string.Empty, result.Outcome switch
+        var field = result.Outcome switch
+        {
+            AssociationCreationOutcome.SlugExists or AssociationCreationOutcome.InvalidSlug => "Input.Slug",
+            AssociationCreationOutcome.UsernameExists => "Input.AdministratorUserName",
+            _ => string.Empty
+        };
+        ModelState.AddModelError(field, result.Outcome switch
         {
             AssociationCreationOutcome.SlugExists => AppLocalizer.Get("Такой slug уже используется.", "Такий slug уже використовується.", "This slug is already in use."),
             AssociationCreationOutcome.InvalidSlug => AppLocalizer.Get("Slug недопустим или зарезервирован.", "Slug неприпустимий або зарезервований.", "The slug is invalid or reserved."),
@@ -109,15 +122,33 @@ public class CreateModel(IPlatformAssociationCreator creator, IPlatformAssociati
         Password = new();
         foreach (var key in ModelState.Keys.Where(x => x.StartsWith("Password.", StringComparison.OrdinalIgnoreCase)).ToArray())
             ModelState.Remove(key);
+        // The first step has no Password fields, so model binding can use an empty prefix.
+        ModelState.Remove(nameof(PasswordInputModel.TemporaryPassword));
+        ModelState.Remove(nameof(PasswordInputModel.ConfirmPassword));
         Response.Headers.CacheControl = "no-store";
     }
 
     public sealed record Confirmation(InputModel Input, string OperatorId);
 
+    public static string SlugFormatMessage => AppLocalizer.Get(
+        "Используйте только маленькие латинские буквы a–z, цифры и одиночные дефисы между ними. Например: test-garden.",
+        "Використовуйте лише малі латинські літери a–z, цифри та одиночні дефіси між ними. Наприклад: test-garden.",
+        "Use only lowercase letters a–z, digits and single hyphens between them. For example: test-garden.");
+    public static string SlugReservedMessage => AppLocalizer.Get(
+        "Этот адрес зарезервирован для страниц сайта. Выберите другой slug.",
+        "Цю адресу зарезервовано для сторінок сайту. Виберіть інший slug.",
+        "This address is reserved for site pages. Choose another slug.");
+    public static string RequiredFieldMessage => AppLocalizer.Get("Заполните это поле.", "Заповніть це поле.", "Fill in this field.");
+    public static string SlugLengthMessage => AppLocalizer.Get("Slug должен содержать не более {1} символов.", "Slug має містити не більше {1} символів.", "The slug must contain no more than {1} characters.");
+    public static string PasswordMatchMessage => AppLocalizer.Get("Пароли не совпадают.", "Паролі не збігаються.", "Passwords do not match.");
+
     public sealed class InputModel
     {
         [Required, StringLength(AssociationMetadataLimits.Name)] public string Name { get; set; } = string.Empty;
-        [Required, StringLength(100)] public string Slug { get; set; } = string.Empty;
+        [Required(ErrorMessageResourceType = typeof(CreateModel), ErrorMessageResourceName = nameof(RequiredFieldMessage))]
+        [StringLength(100, ErrorMessageResourceType = typeof(CreateModel), ErrorMessageResourceName = nameof(SlugLengthMessage))]
+        [RegularExpression("[a-z0-9]+(?:-[a-z0-9]+)*", ErrorMessageResourceType = typeof(CreateModel), ErrorMessageResourceName = nameof(SlugFormatMessage))]
+        public string Slug { get; set; } = string.Empty;
         [EmailAddress, StringLength(AssociationMetadataLimits.ContactEmail)] public string? ContactEmail { get; set; }
         [StringLength(AssociationMetadataLimits.ContactPhone)] public string? ContactPhone { get; set; }
         [StringLength(AssociationMetadataLimits.PostalAddress)] public string? PostalAddress { get; set; }
@@ -128,7 +159,10 @@ public class CreateModel(IPlatformAssociationCreator creator, IPlatformAssociati
 
     public sealed class PasswordInputModel
     {
+        [Required(ErrorMessageResourceType = typeof(CreateModel), ErrorMessageResourceName = nameof(RequiredFieldMessage))]
         [DataType(DataType.Password)] public string TemporaryPassword { get; set; } = string.Empty;
+        [Required(ErrorMessageResourceType = typeof(CreateModel), ErrorMessageResourceName = nameof(RequiredFieldMessage))]
+        [Compare(nameof(TemporaryPassword), ErrorMessageResourceType = typeof(CreateModel), ErrorMessageResourceName = nameof(PasswordMatchMessage))]
         [DataType(DataType.Password)] public string ConfirmPassword { get; set; } = string.Empty;
     }
 }

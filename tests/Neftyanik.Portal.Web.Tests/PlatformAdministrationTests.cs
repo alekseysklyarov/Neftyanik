@@ -83,7 +83,7 @@ public class PlatformAdministrationTests
         Assert.True(cookie.Secure);
         using var landing = await client.GetAsync("/Platform/");
         Assert.Equal(HttpStatusCode.OK, landing.StatusCode);
-        Assert.Contains("Platform access verified", await landing.ReadDecodedHtmlAsync());
+        Assert.Contains("data-platform-overview", await landing.ReadDecodedHtmlAsync());
         await fixture.WithDatabaseAsync(async database =>
         {
             Assert.Empty(await database.AssociationUserMemberships.IgnoreQueryFilters().ToListAsync());

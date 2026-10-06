@@ -94,7 +94,9 @@ public class TenantInitialPasswordHttpTests
             Assert.Null(rejected.Headers.Location);
         }
         using var accepted = await fresh.PostAsync("/onboarding/Account/Login", Form(token, ("Input.Login", "initial-user"), ("Input.Password", replacement)));
-        Assert.Equal("/onboarding" + dashboard, accepted.Headers.Location!.OriginalString.TrimEnd('/'));
+        // Ordinary sign-in opens the member register for administrators and accountants.
+        var signInDestination = role == RoleNames.Member ? "/Member" : "/Administration/Members";
+        Assert.Equal("/onboarding" + signInDestination, accepted.Headers.Location!.OriginalString.TrimEnd('/'));
     }
 
     private static FormUrlEncodedContent Form(string token, params (string Key, string Value)[] fields) =>

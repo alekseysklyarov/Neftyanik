@@ -29,7 +29,7 @@ public class PlatformAssociationReadTests
     {
         await using var fixture = await Fixture.CreateAsync();
         using var client = await fixture.ClientAsync(user);
-        foreach (var path in new[] { "/Platform/Associations", $"/Platform/Associations/Details?id={fixture.SleepingId}" })
+        foreach (var path in new[] { "/Platform", "/Platform/Associations", $"/Platform/Associations/Details?id={fixture.SleepingId}", $"/Platform/Associations/AddAdministrator/{fixture.SummerId}" })
         {
             using var response = await client.GetAsync(path);
             Assert.Equal(expected, response.StatusCode);
@@ -37,6 +37,17 @@ public class PlatformAssociationReadTests
             {
                 Assert.Equal("/Platform/Account/Login", response.Headers.Location?.OriginalString);
             }
+        }
+        if (user != "operator")
+        {
+            var token = await AuthenticationCookieTests.TokenAsync(client, "/neftyanik/Privacy");
+            using var post = await client.PostAsync($"/Platform/Associations/AddAdministrator/{fixture.SummerId}",
+                new FormUrlEncodedContent(new Dictionary<string, string>
+                {
+                    ["__RequestVerificationToken"] = token, ["Input.UserName"] = "forged-admin", ["Input.Email"] = "test@example.invalid",
+                    ["Input.TemporaryPassword"] = "Temporary123!", ["Input.ConfirmPassword"] = "Temporary123!", ["Input.ConfirmAssignment"] = "true"
+                }));
+            Assert.Equal(expected, post.StatusCode);
         }
     }
 
@@ -197,6 +208,12 @@ public class PlatformAssociationReadTests
             await Assert.ThrowsAsync<UnauthorizedAccessException>(() => reader.GetPageAsync());
             await Assert.ThrowsAsync<UnauthorizedAccessException>(() => reader.GetDetailsAsync(fixture.SleepingId));
             await Assert.ThrowsAsync<UnauthorizedAccessException>(() => reader.GetHistoryAsync(fixture.SleepingId));
+            var overview = scope.ServiceProvider.GetRequiredService<IPlatformOverviewReader>();
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => overview.GetAsync());
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => overview.GetSetupAsync(fixture.SleepingId));
+            var creator = scope.ServiceProvider.GetRequiredService<IPlatformAssociationAdministratorCreator>();
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => creator.CreateAsync(fixture.SummerId,
+                new("denied", "test@example.invalid", null, "Temporary123!", true)));
         }
         finally { accessor.HttpContext = null; }
     }
@@ -216,6 +233,9 @@ public class PlatformAssociationReadTests
             Assert.Equal(3, page.TotalCount);
             Assert.Equal(2, page.Items.Single(x => x.Id == fixture.SleepingId).AdministratorCount);
             Assert.NotNull(await reader.GetDetailsAsync(fixture.SleepingId));
+            var overview = scope.ServiceProvider.GetRequiredService<IPlatformOverviewReader>();
+            Assert.Equal(3, (await overview.GetAsync()).TotalCount);
+            Assert.NotNull(await overview.GetSetupAsync(fixture.SleepingId));
             Assert.False(database.IsAssociationResolved);
             Assert.Empty(database.ChangeTracker.Entries<IAssociationOwned>());
             Assert.All(database.ChangeTracker.Entries(), entry => Assert.Equal(EntityState.Unchanged, entry.State));
@@ -310,6 +330,109 @@ public class PlatformAssociationReadTests
             Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
         }
         Assert.Equal(before, await fixture.SnapshotAsync());
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task OverviewAndSetup_ReportRealAccessAndIsolatedSetupFacts(bool useSqlite)
+    {
+        await using var fixture = await Fixture.CreateAsync(useSqlite);
+        using var client = await fixture.ClientAsync("operator");
+        client.DefaultRequestHeaders.AcceptLanguage.ParseAdd("en-US");
+        var before = await fixture.SnapshotAsync();
+        using var dashboard = await client.GetAsync("/Platform");
+        Assert.Equal(HttpStatusCode.OK, dashboard.StatusCode);
+        var html = await dashboard.ReadDecodedHtmlAsync();
+        Assert.Contains("data-total-count=\"3\"", html);
+        Assert.Contains("data-active-count=\"2\"", html);
+        Assert.Contains("data-without-administrator=\"1\"", html);
+        Assert.Contains($"data-attention-id=\"{fixture.SummerId}\"", html);
+        Assert.DoesNotContain($"data-attention-id=\"{fixture.SleepingId}\"", html);
+        Assert.DoesNotContain("private-personal-value", html);
+        using var details = await client.GetAsync($"/Platform/Associations/Details?id={fixture.SleepingId}");
+        Assert.Equal(HttpStatusCode.OK, details.StatusCode);
+        var setup = await details.ReadDecodedHtmlAsync();
+        Assert.Contains("/sleeping/Account/Login", setup);
+        Assert.Contains("data-setup-check=\"Members\" data-complete=\"true\"", setup);
+        Assert.Contains("data-setup-check=\"ChargeTypes\" data-complete=\"false\"", setup);
+        using var empty = await client.GetAsync($"/Platform/Associations/Details?id={fixture.SummerId}");
+        Assert.Contains("data-setup-check=\"Members\" data-complete=\"false\"", await empty.ReadDecodedHtmlAsync());
+        Assert.Equal(before, await fixture.SnapshotAsync());
+
+        await using (var scope = fixture.App.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var sleeping = await db.Associations.SingleAsync(x => x.Id == fixture.SleepingId);
+            sleeping.IsActive = true;
+            var admin = await db.Users.SingleAsync(x => x.Id == "sleeping-admin");
+            admin.MustChangePassword = true;
+            await db.SaveChangesAsync();
+        }
+        using var awaiting = await client.GetAsync("/Platform");
+        Assert.Contains("data-awaiting-administrator=\"1\"", await awaiting.ReadDecodedHtmlAsync());
+        await using (var scope = fixture.App.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var admin = await db.Users.SingleAsync(x => x.Id == "sleeping-admin");
+            admin.LockoutEnd = DateTimeOffset.UtcNow.AddHours(1);
+            await db.SaveChangesAsync();
+        }
+        using var locked = await client.GetAsync("/Platform");
+        var lockedHtml = await locked.ReadDecodedHtmlAsync();
+        Assert.Contains("data-without-administrator=\"2\"", lockedHtml);
+        Assert.Contains("data-awaiting-administrator=\"0\"", lockedHtml);
+    }
+
+    [Fact]
+    public async Task AddAdministrator_HttpRequiresCsrfConfirmationAndNewAccountThenForcesPasswordChange()
+    {
+        await using var fixture = await Fixture.CreateAsync();
+        using var client = await fixture.ClientAsync("operator");
+        client.DefaultRequestHeaders.AcceptLanguage.ParseAdd("en-US");
+        var path = $"/Platform/Associations/AddAdministrator/{fixture.SummerId}";
+        var password = "Temporary-Admin-567!";
+        var token = await AuthenticationCookieTests.TokenAsync(client, path);
+        var fields = new Dictionary<string, string>
+        {
+            ["__RequestVerificationToken"] = token, ["Input.UserName"] = "new-summer-admin", ["Input.Email"] = "admin@example.invalid",
+            ["Input.TemporaryPassword"] = password, ["Input.ConfirmPassword"] = password,
+            ["Input.ConfirmAssignment"] = "true", ["Input.Role"] = RoleNames.PlatformAdministrator
+        };
+        using var csrf = await client.PostAsync(path, new FormUrlEncodedContent(fields.Where(x => x.Key != "__RequestVerificationToken")));
+        Assert.Equal(HttpStatusCode.BadRequest, csrf.StatusCode);
+        using var unconfirmed = await client.PostAsync(path, new FormUrlEncodedContent(fields.Where(x => x.Key != "Input.ConfirmAssignment")));
+        Assert.Equal(HttpStatusCode.OK, unconfirmed.StatusCode);
+        Assert.Contains("Confirm the administrator assignment", await unconfirmed.ReadDecodedHtmlAsync());
+        Assert.DoesNotContain(password, await unconfirmed.Content.ReadAsStringAsync());
+        using var mismatch = await client.PostAsync(path, new FormUrlEncodedContent(fields.Select(x => x.Key == "Input.ConfirmPassword" ? new KeyValuePair<string, string>(x.Key, "different") : x)));
+        Assert.Equal(HttpStatusCode.OK, mismatch.StatusCode);
+        using var created = await client.PostAsync(path, new FormUrlEncodedContent(fields));
+        Assert.Equal(HttpStatusCode.Found, created.StatusCode);
+        Assert.Contains($"id={fixture.SummerId}", created.Headers.Location!.OriginalString);
+        using var repeat = await client.PostAsync(path, new FormUrlEncodedContent(fields));
+        Assert.Contains("This username is already taken", await repeat.ReadDecodedHtmlAsync());
+        await using (var scope = fixture.App.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var user = await db.Users.SingleAsync(x => x.UserName == "new-summer-admin");
+            Assert.True(user.MustChangePassword);
+            var membership = Assert.Single(await db.AssociationUserMemberships.IgnoreQueryFilters().Where(x => x.ApplicationUserId == user.Id).ToListAsync());
+            Assert.Equal(fixture.SummerId, membership.AssociationId);
+            Assert.Equal(RoleNames.Administrator, membership.Role);
+            Assert.Empty(await db.UserRoles.Where(x => x.UserId == user.Id).ToListAsync());
+            var audit = Assert.Single(await db.PlatformAuditLogs.ToListAsync());
+            Assert.Equal(PlatformAuditActions.AdministratorAssigned, audit.Action);
+            Assert.DoesNotContain(password, audit.NewValuesJson);
+        }
+        using var fresh = await fixture.ClientAsync(null);
+        var loginToken = await AuthenticationCookieTests.TokenAsync(fresh, "/summer/Account/Login");
+        using var login = await fresh.PostAsync("/summer/Account/Login", new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["__RequestVerificationToken"] = loginToken, ["Input.Login"] = "new-summer-admin", ["Input.Password"] = password
+        }));
+        Assert.Equal(HttpStatusCode.Found, login.StatusCode);
+        Assert.Equal("/summer/Account/ChangeInitialPassword", login.Headers.Location!.OriginalString);
     }
 
     [Theory]

@@ -3,9 +3,65 @@
 @{
     ViewData["Title"] = AppLocalizer.Get("Управление платформой", "Керування платформою", "Platform administration");
 }
-<h1 class="h3">@ViewData["Title"]</h1>
-<p>@AppLocalizer.Get("Платформенный доступ подтверждён.", "Платформний доступ підтверджено.", "Platform access verified.")</p>
-<p><a class="btn btn-primary" asp-page="/Platform/Associations/Index">@AppLocalizer.Get("Товарищества", "Товариства", "Associations")</a></p>
-<form method="post" asp-page="/Platform/Index" asp-page-handler="Logout" asp-antiforgery="true">
-    <button type="submit" class="btn btn-outline-secondary">@AppLocalizer.Get("Выход", "Вийти", "Log out")</button>
-</form>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <h1 class="h3">@ViewData["Title"]</h1>
+        <p class="text-muted mb-0">@AppLocalizer.Get("Товарищества, доступ администраторов и подготовка к работе.", "Товариства, доступ адміністраторів і підготовка до роботи.", "Associations, administrator access and initial setup.")</p>
+    </div>
+    <a class="btn btn-primary" asp-page="/Platform/Associations/Create">@AppLocalizer.Get("Создать товарищество", "Створити товариство", "Create association")</a>
+</div>
+<div class="row g-3 mb-4" data-platform-overview>
+    <div class="col-sm-6 col-xl-3"><div class="card h-100"><div class="card-body">
+        <h2 class="h6">@AppLocalizer.Get("Всего товариществ", "Усього товариств", "All associations")</h2>
+        <p class="display-6" data-total-count="@Model.Overview.TotalCount">@Model.Overview.TotalCount</p>
+        <a asp-page="/Platform/Associations/Index">@AppLocalizer.Get("Открыть реестр", "Відкрити реєстр", "Open directory")</a>
+    </div></div></div>
+    <div class="col-sm-6 col-xl-3"><div class="card h-100"><div class="card-body">
+        <h2 class="h6">@AppLocalizer.Get("Активные", "Активні", "Active")</h2>
+        <p class="display-6" data-active-count="@Model.Overview.ActiveCount">@Model.Overview.ActiveCount</p>
+        <a asp-page="/Platform/Associations/Index" asp-route-isActive="false">@AppLocalizer.Get("Неактивные", "Неактивні", "Inactive"): @(Model.Overview.TotalCount - Model.Overview.ActiveCount)</a>
+    </div></div></div>
+    <div class="col-sm-6 col-xl-3"><div class="card h-100"><div class="card-body">
+        <h2 class="h6">@AppLocalizer.Get("Без доступного администратора", "Без доступного адміністратора", "No available administrator")</h2>
+        <p class="display-6" data-without-administrator="@Model.Overview.WithoutAdministratorCount">@Model.Overview.WithoutAdministratorCount</p>
+        <p class="text-muted mb-0">@AppLocalizer.Get("Среди активных товариществ", "Серед активних товариств", "Among active associations")</p>
+    </div></div></div>
+    <div class="col-sm-6 col-xl-3"><div class="card h-100"><div class="card-body">
+        <h2 class="h6">@AppLocalizer.Get("Ожидают смены пароля", "Очікують зміни пароля", "Awaiting password change")</h2>
+        <p class="display-6" data-awaiting-administrator="@Model.Overview.AwaitingAdministratorCount">@Model.Overview.AwaitingAdministratorCount</p>
+        <p class="text-muted mb-0">@AppLocalizer.Get("Ни один доступный администратор ещё не сменил временный пароль", "Жоден доступний адміністратор ще не змінив тимчасовий пароль", "No available administrator has changed the temporary password yet")</p>
+    </div></div></div>
+</div>
+<section class="mb-4" aria-labelledby="attention-title">
+    <h2 class="h4" id="attention-title">@AppLocalizer.Get("Требуют внимания", "Потребують уваги", "Needs attention")</h2>
+    @if (Model.Overview.Attention.Count == 0)
+    {
+        <p class="alert alert-info">@(Model.Overview.TotalCount == 0
+            ? AppLocalizer.Get("Начните с создания первого товарищества и его администратора.", "Почніть зі створення першого товариства та його адміністратора.", "Start by creating your first association and its administrator.")
+            : AppLocalizer.Get("Проблем с доступом администраторов активных товариществ не обнаружено.", "Проблем із доступом адміністраторів активних товариств не виявлено.", "No administrator access issues found for active associations."))</p>
+    }
+    else
+    {
+        <p class="text-muted">@AppLocalizer.Get("Показаны первые 10 товариществ; сначала — без доступного администратора.", "Показано перші 10 товариств; спочатку — без доступного адміністратора.", "Showing up to 10 associations, prioritizing those without an available administrator.")</p>
+        <div class="list-group">
+        @foreach (var item in Model.Overview.Attention)
+        {
+            <a class="list-group-item list-group-item-action" asp-page="/Platform/Associations/Details" asp-route-id="@item.Id" data-attention-id="@item.Id">
+                <strong>@item.Name</strong> <span class="text-muted">/@item.Slug</span>
+                <span class="d-block">@(item.HasAvailableAdministrator
+                    ? AppLocalizer.Get("Передайте администратору адрес входа и напомните о смене временного пароля.", "Передайте адміністратору адресу входу й нагадайте про зміну тимчасового пароля.", "Share the sign-in address and remind the administrator to change the temporary password.")
+                    : AppLocalizer.Get("Нет активного незаблокированного администратора. Проверьте назначения в карточке.", "Немає активного незаблокованого адміністратора. Перевірте призначення в картці.", "No active, unlocked administrator. Review assignments in the association details."))</span>
+            </a>
+        }
+        </div>
+    }
+</section>
+<section class="card"><div class="card-body">
+    <h2 class="h4">@AppLocalizer.Get("Как запустить товарищество", "Як запустити товариство", "Launching an association")</h2>
+    <ol class="mb-0">
+        <li>@AppLocalizer.Get("Создайте товарищество: название, постоянный адрес, контакты и отдельный аккаунт администратора.", "Створіть товариство: назва, постійна адреса, контакти й окремий акаунт адміністратора.", "Create the association with a name, permanent address, contacts and a separate administrator account.")</li>
+        <li>@AppLocalizer.Get("Передайте администратору адрес входа и временный пароль по защищённому каналу.", "Передайте адміністратору адресу входу й тимчасовий пароль захищеним каналом.", "Send the administrator the sign-in address and temporary password through a secure channel.")</li>
+        <li>@AppLocalizer.Get("Администратор добавляет участников, участки, владельцев и финансовые настройки в своём товариществе.", "Адміністратор додає учасників, ділянки, власників і фінансові налаштування у своєму товаристві.", "The administrator adds members, plots, ownerships and finance settings within the association.")</li>
+        <li>@AppLocalizer.Get("Проверяйте подготовку и историю изменений в карточке товарищества.", "Перевіряйте підготовку й історію змін у картці товариства.", "Review setup progress and change history in the association details.")</li>
+    </ol>
+</div></section>

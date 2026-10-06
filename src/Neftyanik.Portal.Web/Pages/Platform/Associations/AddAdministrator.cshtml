@@ -1,0 +1,45 @@
+@page "{id:int}"
+@model Neftyanik.Portal.Web.Pages.Platform.Associations.AddAdministratorModel
+@{
+    ViewData["Title"] = AppLocalizer.Get("Добавить администратора", "Додати адміністратора", "Add administrator");
+}
+<h1 class="h3">@ViewData["Title"]</h1>
+<p class="lead">@Model.Association.Name <span class="text-muted">/@Model.Association.Slug</span></p>
+<p>@AppLocalizer.Get("Создайте отдельный аккаунт с полным доступом администратора этого товарищества. При первом входе потребуется смена пароля.", "Створіть окремий акаунт із повним доступом адміністратора цього товариства. Під час першого входу буде потрібна зміна пароля.", "Create a separate account with full administrator access to this association. A password change is required at first sign-in.")</p>
+@if (!Model.Association.IsActive)
+{
+    <p class="alert alert-warning">@AppLocalizer.Get("Для назначения администратора сначала активируйте товарищество.", "Для призначення адміністратора спочатку активуйте товариство.", "Activate the association before assigning an administrator.")</p>
+    <a class="btn btn-primary" asp-page="Status" asp-route-id="@Model.Association.Id" asp-route-activate="true">@AppLocalizer.Get("Активировать товарищество", "Активувати товариство", "Activate association")</a>
+}
+else
+{
+<form method="post" asp-route-id="@Model.Association.Id" asp-antiforgery="true" class="col-lg-8">
+    <div asp-validation-summary="All" class="text-danger" role="alert"></div>
+    <div class="mb-3">
+        <label asp-for="Input.UserName" class="form-label">@AppLocalizer.Get("Новый логин", "Новий логін", "New username")</label>
+        <input asp-for="Input.UserName" class="form-control" maxlength="256" autocomplete="off" />
+    </div>
+    <div class="mb-3">
+        <label asp-for="Input.Email" class="form-label">Email</label>
+        <input asp-for="Input.Email" type="email" class="form-control" maxlength="256" />
+    </div>
+    <div class="mb-3">
+        <label asp-for="Input.DisplayName" class="form-label">@AppLocalizer.Get("Отображаемое имя", "Відображуване ім’я", "Display name")</label>
+        <input asp-for="Input.DisplayName" class="form-control" maxlength="200" />
+    </div>
+    <div class="mb-3">
+        <label asp-for="Input.TemporaryPassword" class="form-label">@AppLocalizer.Get("Временный пароль", "Тимчасовий пароль", "Temporary password")</label>
+        <input asp-for="Input.TemporaryPassword" class="form-control" autocomplete="new-password" maxlength="128" value="" />
+    </div>
+    <div class="mb-3">
+        <label asp-for="Input.ConfirmPassword" class="form-label">@AppLocalizer.Get("Подтвердите пароль", "Підтвердіть пароль", "Confirm password")</label>
+        <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" maxlength="128" value="" />
+    </div>
+    <div class="form-check mb-3">
+        <input asp-for="Input.ConfirmAssignment" class="form-check-input" />
+        <label asp-for="Input.ConfirmAssignment" class="form-check-label">@AppLocalizer.Get("Подтверждаю предоставление прав администратора этого товарищества.", "Підтверджую надання прав адміністратора цього товариства.", "I confirm granting administrator access to this association.")</label>
+    </div>
+    <button type="submit" class="btn btn-primary">@AppLocalizer.Get("Создать и назначить", "Створити й призначити", "Create and assign")</button>
+    <a asp-page="Details" asp-route-id="@Model.Association.Id" class="btn btn-outline-secondary">@AppLocalizer.Get("Отмена", "Скасувати", "Cancel")</a>
+</form>
+}

@@ -38,7 +38,9 @@
     <dd class="col-sm-8" data-member-count="@Model.Association.MemberCount">@Model.Association.MemberCount</dd>
 </dl>
 
+<partial name="_Setup" model="Model" />
 <h2 class="h5 mt-4">@AppLocalizer.Get("Назначения администраторов", "Призначення адміністраторів", "Administrator assignments")</h2>
+<p><a class="btn btn-outline-primary" asp-page="AddAdministrator" asp-route-id="@Model.Association.Id">@AppLocalizer.Get("Добавить администратора", "Додати адміністратора", "Add administrator")</a></p>
 @if (Model.Association.Administrators.Count == 0)
 {
     <p class="text-muted">@AppLocalizer.Get("Администраторы не назначены.", "Адміністраторів не призначено.", "No administrators assigned.")</p>

@@ -4,8 +4,9 @@ using Neftyanik.Portal.Application.Associations;
 
 namespace Neftyanik.Portal.Web.Pages.Platform.Associations;
 
-public class DetailsModel(IPlatformAssociationReader associations) : PageModel
+public class DetailsModel(IPlatformAssociationReader associations, IPlatformOverviewReader overview) : PageModel
 {
+    public PlatformAssociationSetup Setup { get; private set; } = null!;
     public PlatformAssociationDetails Association { get; private set; } = null!;
     public PlatformAssociationHistoryPage History { get; private set; } = null!;
 
@@ -26,6 +27,9 @@ public class DetailsModel(IPlatformAssociationReader associations) : PageModel
         }
 
         Association = association;
+        Setup = (await overview.GetSetupAsync(id, cancellationToken))!;
+        if (Setup is null) return NotFound();
+        Response.Headers.CacheControl = "no-store";
         History = await associations.GetHistoryAsync(id, HistoryPage, cancellationToken);
         HistoryPage = History.PageNumber;
         return Page();
