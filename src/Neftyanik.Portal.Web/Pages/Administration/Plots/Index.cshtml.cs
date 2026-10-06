@@ -9,6 +9,7 @@ using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Domain.Entities;
 using Neftyanik.Portal.Infrastructure.Data;
 using Neftyanik.Portal.Infrastructure.Services;
+using Neftyanik.Portal.Web.Localization;
 using Neftyanik.Portal.Web.Pages.Administration.Plots.Finance;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Plots;
@@ -34,6 +35,9 @@ public class IndexModel : PageModel
 
     [BindProperty(SupportsGet = true)]
     public string Ownership { get; set; } = "all";
+
+    [BindProperty(SupportsGet = true)]
+    public string FinancialStatus { get; set; } = "all";
 
     [BindProperty(SupportsGet = true)]
     public string SortBy { get; set; } = "number";
@@ -257,9 +261,10 @@ public class IndexModel : PageModel
             {
                 search = Search,
                 status = Status,
+                financialStatus = FinancialStatus,
                 ownership = Ownership,
-            sortBy = SortBy,
-            sortDirection = SortDirection,
+                sortBy = SortBy,
+                sortDirection = SortDirection,
                 pageNumber = PageNumber
             });
         }
@@ -370,6 +375,7 @@ public class IndexModel : PageModel
         {
             search = Search,
             status = Status,
+            financialStatus = FinancialStatus,
             ownership = Ownership,
             sortBy = SortBy,
             sortDirection = SortDirection,
@@ -380,6 +386,17 @@ public class IndexModel : PageModel
     private async Task LoadPlotsAsync(CancellationToken cancellationToken)
     {
         var currentDate = DateOnly.FromDateTime(DateTime.Now);
+        var plotIds = await _dbContext.Plots.AsNoTracking().Select(p => p.Id).ToArrayAsync(cancellationToken);
+        var chargesByPlot = (await _dbContext.Charges.AsNoTracking()
+            .Where(c => c.PlotId.HasValue && c.CancelledAtUtc == null && c.ChargeType != null && c.ChargeType.IsYearly)
+            .Select(c => new { PlotId = c.PlotId!.Value, c.Amount }).ToListAsync(cancellationToken))
+            .GroupBy(c => c.PlotId).ToDictionary(g => g.Key, g => g.Sum(c => c.Amount));
+        var paymentsByPlot = (await _dbContext.PaymentAllocations.AsNoTracking()
+            .Where(a => a.Payment != null && a.Payment.CancelledAtUtc == null
+                && a.Charge != null && a.Charge.CancelledAtUtc == null && a.Charge.PlotId.HasValue
+                && a.Charge.ChargeType != null && a.Charge.ChargeType.IsYearly)
+            .Select(a => new { PlotId = a.Charge!.PlotId!.Value, a.Amount }).ToListAsync(cancellationToken))
+            .GroupBy(a => a.PlotId).ToDictionary(g => g.Key, g => g.Sum(a => a.Amount));
 
         IQueryable<PlotListItem> query = _dbContext.Plots
             .AsNoTracking()
@@ -436,6 +453,21 @@ public class IndexModel : PageModel
             _ => query
         };
 
+        if (FinancialStatus != "all")
+        {
+            var matchingPlotIds = plotIds.Where(id =>
+            {
+                var balance = chargesByPlot.GetValueOrDefault(id) - paymentsByPlot.GetValueOrDefault(id);
+                return FinancialStatus switch
+                {
+                    "debt" => balance > 0m,
+                    "overpayment" => balance < 0m,
+                    _ => balance == 0m
+                };
+            }).ToArray();
+            query = query.Where(plot => matchingPlotIds.Contains(plot.Id));
+        }
+
         query = ApplySorting(query);
 
         SelectablePlots = await query
@@ -460,7 +492,13 @@ public class IndexModel : PageModel
             .Take(PageSize)
             .ToListAsync(cancellationToken);
 
-        EmptyStateMessage = TotalCount == 0 && string.IsNullOrWhiteSpace(Search) && Status == "all" && Ownership == "all"
+        foreach (var plot in Plots)
+        {
+            plot.Charges = chargesByPlot.GetValueOrDefault(plot.Id);
+            plot.Payments = paymentsByPlot.GetValueOrDefault(plot.Id);
+        }
+
+        EmptyStateMessage = TotalCount == 0 && string.IsNullOrWhiteSpace(Search) && Status == "all" && Ownership == "all" && FinancialStatus == "all"
             ? "Участки пока не добавлены."
             : "По выбранным условиям участки не найдены.";
     }
@@ -583,6 +621,16 @@ public class IndexModel : PageModel
         public string? OwnerFullName { get; init; }
 
         public bool CanCreateCharge { get; init; }
+
+        public decimal Charges { get; set; }
+        public decimal Payments { get; set; }
+        public decimal Balance => Charges - Payments;
+        public decimal BalanceDisplayAmount => Math.Abs(Balance);
+        public string BalanceCssClass => Balance > 0 ? "text-danger" : Balance < 0 ? "text-primary" : "text-success";
+        public string FinancialStatusText => Balance > 0
+            ? AppLocalizer.Get("Задолженность", "Заборгованість", "Debt")
+            : Balance < 0 ? AppLocalizer.Get("Переплата", "Переплата", "Overpayment")
+            : AppLocalizer.Get("Задолженности нет", "Заборгованості немає", "No debt");
     }
 
     public sealed class SelectablePlotListItem
@@ -640,6 +688,13 @@ public class IndexModel : PageModel
     {
         Status = NormalizeStatus(Status);
         Ownership = NormalizeOwnership(Ownership);
+        FinancialStatus = FinancialStatus?.ToLowerInvariant() switch
+        {
+            "debt" => "debt",
+            "nodebt" => "nodebt",
+            "overpayment" => "overpayment",
+            _ => "all"
+        };
         SortBy = NormalizeSortBy(SortBy);
         SortDirection = NormalizeSortDirection(SortDirection);
         PageNumber = PageNumber < 1 ? 1 : PageNumber;

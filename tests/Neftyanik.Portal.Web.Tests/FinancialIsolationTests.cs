@@ -407,7 +407,7 @@ public class FinancialIsolationTests
                 await AddAsync<MemberElectricityMeter>(); await AddAsync<MemberElectricityReading>(); await AddAsync<MemberElectricityTariff>();
                 await AddAsync<AssociationElectricityReading>(); await AddAsync<AssociationElectricityTariff>();
                 await AddAsync<Plot>(); await AddAsync<PlotOwnership>();
-                result = JsonSerializer.Serialize(new { page.Summary, page.PlotBalances, Tables = tables,
+                result = JsonSerializer.Serialize(new { page.Summary, Tables = tables,
                     Notifications = await services.GetRequiredService<IPaymentNotificationService>().GetForAdministrationAsync(new(null)),
                     NavigationTotals = await database.Plots.SelectFinanceSummary().ToListAsync() });
             });

@@ -159,18 +159,22 @@ public class HomePageLoginTests
         Assert.Equal(returnUrl, response.Headers.Location?.OriginalString);
     }
 
-    [Fact]
-    public async Task PostHome_WithAdministratorCredentials_WithoutReturnUrl_RedirectsToAdministration()
+    [Theory]
+    [InlineData("/neftyanik/", RoleNames.Administrator)]
+    [InlineData("/neftyanik/", RoleNames.Accountant)]
+    [InlineData("/neftyanik/Account/Login", RoleNames.Administrator)]
+    [InlineData("/neftyanik/Account/Login", RoleNames.Accountant)]
+    public async Task PostLogin_WithStaffCredentials_WithoutReturnUrl_RedirectsToMembers(string path, string role)
     {
         using var factory = new PortalWebApplicationFactory();
-        await CreateUserAsync(factory, "admin@example.com", "Pass123!", RoleNames.Administrator);
+        await CreateUserAsync(factory, "admin@example.com", "Pass123!", role);
         using var client = factory.CreateAnonymousClient();
-        var token = await GetAntiforgeryTokenAsync(client, "/neftyanik/");
+        var token = await GetAntiforgeryTokenAsync(client, path);
 
-        using var response = await client.PostAsync("/neftyanik/", CreateLoginContent(token, "admin@example.com", "Pass123!"));
+        using var response = await client.PostAsync(path, CreateLoginContent(token, "admin@example.com", "Pass123!"));
 
         Assert.Equal(HttpStatusCode.Found, response.StatusCode);
-        Assert.Equal("/neftyanik/Administration", response.Headers.Location?.OriginalString);
+        Assert.Equal("/neftyanik/Administration/Members", response.Headers.Location?.OriginalString);
     }
 
     [Fact]
@@ -219,7 +223,7 @@ public class HomePageLoginTests
     }
 
     [Fact]
-    public async Task GetHome_WhenAdministratorIsAuthenticated_RedirectsToAdministration()
+    public async Task GetHome_WhenAdministratorIsAuthenticated_RedirectsToMembers()
     {
         using var factory = new PortalWebApplicationFactory();
         await CreateUserAsync(factory, "admin-get@example.com", "Pass123!", RoleNames.Administrator, "admin-user");
@@ -228,7 +232,7 @@ public class HomePageLoginTests
         using var response = await client.GetAsync("/neftyanik/");
 
         Assert.Equal(HttpStatusCode.Found, response.StatusCode);
-        Assert.Equal("/neftyanik/Administration", response.Headers.Location?.OriginalString);
+        Assert.Equal("/neftyanik/Administration/Members", response.Headers.Location?.OriginalString);
     }
 
     [Fact]

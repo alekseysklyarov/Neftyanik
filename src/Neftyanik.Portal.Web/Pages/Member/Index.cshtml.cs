@@ -52,6 +52,14 @@ public class IndexModel : PageModel
     [BindProperty(SupportsGet = true)]
     public int? ChargeTypeId { get; set; }
 
+    [BindProperty(SupportsGet = true)]
+    public int Year { get; set; } = DateTime.Today.Year;
+
+    public IReadOnlyList<int> AvailableYears { get; private set; } = [];
+    public decimal OpeningBalance { get; private set; }
+    public decimal OpeningDebt => Math.Max(OpeningBalance, 0m);
+    public decimal OpeningCredit => Math.Max(-OpeningBalance, 0m);
+
     public IReadOnlyList<PlotViewModel> Plots { get; private set; } = [];
 
     public IReadOnlyList<ChargeItemViewModel> Charges { get; private set; } = [];
@@ -225,7 +233,7 @@ public class IndexModel : PageModel
             "Основные сведения обновлены.",
             "Основні відомості оновлено.",
             "Profile details have been updated.");
-        return RedirectToPage(new { chargePage = ChargePage, paymentPage = PaymentPage, chargeTypeId = ChargeTypeId });
+        return RedirectToPage(new { year = Year, chargePage = ChargePage, paymentPage = PaymentPage, chargeTypeId = ChargeTypeId });
     }
 
     public async Task<IActionResult> OnPostChangePasswordAsync(CancellationToken cancellationToken)
@@ -267,7 +275,7 @@ public class IndexModel : PageModel
             "Пароль успешно изменен.",
             "Пароль успішно змінено.",
             "The password has been changed successfully.");
-        return RedirectToPage(new { chargePage = ChargePage, paymentPage = PaymentPage, chargeTypeId = ChargeTypeId });
+        return RedirectToPage(new { year = Year, chargePage = ChargePage, paymentPage = PaymentPage, chargeTypeId = ChargeTypeId });
     }
 
     public async Task<IActionResult> OnPostCreatePaymentNotificationAsync(CancellationToken cancellationToken)
@@ -298,7 +306,7 @@ public class IndexModel : PageModel
                 "Учетная запись не связана с карточкой члена товарищества. Обратитесь к администратору.",
                 "Обліковий запис не пов'язаний із карткою члена товариства. Зверніться до адміністратора.",
                 "The account is not linked to a member record. Contact the administrator.");
-            return RedirectToPage(new { chargePage = ChargePage, paymentPage = PaymentPage, chargeTypeId = ChargeTypeId });
+            return RedirectToPage(new { year = Year, chargePage = ChargePage, paymentPage = PaymentPage, chargeTypeId = ChargeTypeId });
         }
 
         PaymentNotification.Description = Normalize(PaymentNotification.Description);
@@ -348,7 +356,7 @@ public class IndexModel : PageModel
             "Повідомлення про платіж надіслано. Платіж очікує підтвердження бухгалтером.",
             "The payment notification has been sent. The payment is now awaiting accountant confirmation.");
 
-        return RedirectToPage(new { chargePage = ChargePage, paymentPage = PaymentPage, chargeTypeId = ChargeTypeId });
+        return RedirectToPage(new { year = Year, chargePage = ChargePage, paymentPage = PaymentPage, chargeTypeId = ChargeTypeId });
     }
 
     private async Task LoadPageStateAsync(
@@ -358,6 +366,13 @@ public class IndexModel : PageModel
         bool preservePaymentNotificationInput = false)
     {
         var currentDate = DateOnly.FromDateTime(DateTime.Now);
+        if (Year < 1900 || Year > 9998)
+        {
+            Year = currentDate.Year;
+            ModelState.Remove(nameof(Year));
+        }
+        var yearStart = new DateOnly(Year, 1, 1);
+        var yearEnd = yearStart.AddYears(1);
         ChargePage = ChargePage < 1 ? 1 : ChargePage;
         PaymentPage = PaymentPage < 1 ? 1 : PaymentPage;
         PaymentMethodOptions = BuildPaymentMethodOptions();
@@ -435,40 +450,49 @@ public class IndexModel : PageModel
             .ToListAsync(cancellationToken);
 
         var plotIds = plots.Select(plot => plot.PlotId).Distinct().ToArray();
-        var chargeTotalsByPlot = plotIds.Length == 0
-            ? new Dictionary<int, decimal>()
-            : (await _dbContext.Charges
+        var memberCharges = await _dbContext.Charges
                 .AsNoTracking()
-                .Where(charge => charge.CancelledAtUtc == null
-                    && charge.PlotId.HasValue
+                .Where(charge => charge.PlotId.HasValue
                     && plotIds.Contains(charge.PlotId.Value))
                 .Select(charge => new
                 {
                     PlotId = charge.PlotId!.Value,
-                    charge.Amount
+                    charge.Amount,
+                    charge.ChargeDate,
+                    charge.CancelledAtUtc
                 })
-                .ToListAsync(cancellationToken))
+                .ToListAsync(cancellationToken);
+        var memberPayments = await _dbContext.Payments.AsNoTracking()
+            .Where(p => p.MemberId == member.MemberId)
+            .Select(p => new { p.PaymentDate, p.Amount, p.CancelledAtUtc }).ToListAsync(cancellationToken);
+        var recordedYears = memberCharges.Select(c => c.ChargeDate.Year).Concat(memberPayments.Select(p => p.PaymentDate.Year))
+            .Where(y => y >= 1900 && y <= 9998).Append(currentDate.Year).Append(Year).ToArray();
+        AvailableYears = Enumerable.Range(recordedYears.Min(), recordedYears.Max() - recordedYears.Min() + 1)
+            .Reverse().ToArray();
+        var chargeTotalsByPlot = memberCharges.Where(c => c.CancelledAtUtc == null && c.ChargeDate >= yearStart && c.ChargeDate < yearEnd)
                 .GroupBy(item => item.PlotId)
                 .ToDictionary(group => group.Key, group => group.Sum(item => item.Amount));
+        var openingChargesByPlot = memberCharges.Where(c => c.CancelledAtUtc == null && c.ChargeDate < yearStart)
+            .GroupBy(c => c.PlotId).ToDictionary(g => g.Key, g => g.Sum(c => c.Amount));
 
-        var paymentTotalsByPlot = await _dbContext.LoadActivePaymentTotalsByPlotAsync(plotIds, member.MemberId, cancellationToken);
+        var closingPaymentsByPlot = await _dbContext.LoadActivePaymentTotalsByPlotAsync(plotIds, member.MemberId, cancellationToken, yearEnd);
+        var openingPaymentsByPlot = await _dbContext.LoadActivePaymentTotalsByPlotAsync(plotIds, member.MemberId, cancellationToken, yearStart);
+        OpeningBalance = openingChargesByPlot.Values.Sum()
+            - memberPayments.Where(p => p.CancelledAtUtc == null && p.PaymentDate < yearStart).Sum(p => p.Amount);
 
         member.Plots = plots
             .Select(plot => plot with
             {
                 ActiveChargesTotal = chargeTotalsByPlot.GetValueOrDefault(plot.PlotId),
-                ActivePaymentsTotal = paymentTotalsByPlot.GetValueOrDefault(plot.PlotId)
+                ActivePaymentsTotal = closingPaymentsByPlot.GetValueOrDefault(plot.PlotId) - openingPaymentsByPlot.GetValueOrDefault(plot.PlotId),
+                OpeningBalance = openingChargesByPlot.GetValueOrDefault(plot.PlotId) - openingPaymentsByPlot.GetValueOrDefault(plot.PlotId)
             })
             .ToList();
 
         Plots = member.Plots;
 
         var totalCharges = Plots.Sum(plot => plot.ActiveChargesTotal);
-        var totalPayments = await _dbContext.Payments
-            .AsNoTracking()
-            .Where(payment => payment.MemberId == member.MemberId && payment.CancelledAtUtc == null)
-            .Select(payment => payment.Amount)
-            .ToListAsync(cancellationToken);
+        var totalPayments = memberPayments.Where(p => p.CancelledAtUtc == null && p.PaymentDate >= yearStart && p.PaymentDate < yearEnd).Sum(p => p.Amount);
 
         ChargeTypeOptions = await _dbContext.Charges
             .AsNoTracking()
@@ -494,7 +518,8 @@ public class IndexModel : PageModel
 
         var chargesQuery = _dbContext.Charges
             .AsNoTracking()
-            .Where(charge => charge.PlotId != null && plotIds.Contains(charge.PlotId.Value));
+            .Where(charge => charge.PlotId != null && plotIds.Contains(charge.PlotId.Value)
+                && charge.ChargeDate >= yearStart && charge.ChargeDate < yearEnd);
 
         if (ChargeTypeId.HasValue)
         {
@@ -533,6 +558,7 @@ public class IndexModel : PageModel
         var paymentsQuery = _dbContext.Payments
             .AsNoTracking()
             .Where(payment => payment.MemberId == member.MemberId
+                && payment.PaymentDate >= yearStart && payment.PaymentDate < yearEnd
                 && payment.PlotId != null)
             .OrderByDescending(payment => payment.PaymentDate)
             .ThenByDescending(payment => payment.Id);
@@ -583,7 +609,8 @@ public class IndexModel : PageModel
             IsActive = true,
             ActivePlotsCount = Plots.Count,
             TotalCharges = totalCharges,
-            TotalPayments = totalPayments.Sum(),
+            TotalPayments = totalPayments,
+            OpeningBalance = OpeningBalance,
             Plots = member.Plots
         };
     }
@@ -915,7 +942,9 @@ public class IndexModel : PageModel
 
         public decimal TotalPayments { get; init; }
 
-        public decimal Balance => TotalCharges - TotalPayments;
+        public decimal OpeningBalance { get; init; }
+
+        public decimal Balance => OpeningBalance + TotalCharges - TotalPayments;
 
         public decimal BalanceDisplayAmount => Math.Abs(Balance);
 
@@ -947,7 +976,9 @@ public class IndexModel : PageModel
 
         public decimal ActivePaymentsTotal { get; init; }
 
-        public decimal Balance => ActiveChargesTotal - ActivePaymentsTotal;
+        public decimal OpeningBalance { get; init; }
+
+        public decimal Balance => OpeningBalance + ActiveChargesTotal - ActivePaymentsTotal;
 
         public decimal BalanceDisplayAmount => Math.Abs(Balance);
 

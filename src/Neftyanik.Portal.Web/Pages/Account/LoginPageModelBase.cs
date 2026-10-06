@@ -129,7 +129,7 @@ public abstract class LoginPageModelBase : PageModel
 
         if (roles.Contains(RoleNames.Administrator) || roles.Contains(RoleNames.Accountant))
         {
-            return RedirectToPage("/Administration/Index");
+            return RedirectToPage("/Administration/Members/Index");
         }
 
         return RedirectToPage("/Member/Index");

@@ -40,6 +40,14 @@ public class FinanceModel : PageModel
     [BindProperty(SupportsGet = true)]
     public int PaymentPage { get; set; } = 1;
 
+    [BindProperty(SupportsGet = true)]
+    public int Year { get; set; } = DateTime.Today.Year;
+
+    public IReadOnlyList<int> AvailableYears { get; private set; } = [];
+    public decimal OpeningBalance { get; private set; }
+    public decimal OpeningDebt => Math.Max(OpeningBalance, 0m);
+    public decimal OpeningCredit => Math.Max(-OpeningBalance, 0m);
+
     [BindProperty]
     [ValidateNever]
     public MemberElectricityReadingInputModel ReadingInput { get; set; } = new();
@@ -203,7 +211,7 @@ public class FinanceModel : PageModel
                 : "Показания сохранены.";
         }
 
-        return RedirectToPage("/Administration/Members/Finance", new { id, chargePage = ChargePage, paymentPage = PaymentPage });
+        return RedirectToPage("/Administration/Members/Finance", new { id, year = Year, chargePage = ChargePage, paymentPage = PaymentPage });
     }
 
     public async Task<IActionResult> OnPostSetupElectricityAsync(int id, CancellationToken cancellationToken)
@@ -282,7 +290,7 @@ public class FinanceModel : PageModel
                 : "Электросчётчик создан и инициализирован.";
         }
 
-        return RedirectToPage("/Administration/Members/Finance", new { id, chargePage = ChargePage, paymentPage = PaymentPage });
+        return RedirectToPage("/Administration/Members/Finance", new { id, year = Year, chargePage = ChargePage, paymentPage = PaymentPage });
     }
 
     public async Task<IActionResult> OnPostInitializeElectricityAsync(int id, CancellationToken cancellationToken)
@@ -350,12 +358,19 @@ public class FinanceModel : PageModel
                 : "Счётчик инициализирован. Начальные показания сохранены.";
         }
 
-        return RedirectToPage("/Administration/Members/Finance", new { id, chargePage = ChargePage, paymentPage = PaymentPage });
+        return RedirectToPage("/Administration/Members/Finance", new { id, year = Year, chargePage = ChargePage, paymentPage = PaymentPage });
     }
 
     private async Task<bool> LoadPageStateAsync(int id, CancellationToken cancellationToken)
     {
         var currentDate = DateOnly.FromDateTime(DateTime.Now);
+        if (Year < 1900 || Year > 9998)
+        {
+            Year = currentDate.Year;
+            ModelState.Remove(nameof(Year));
+        }
+        var yearStart = new DateOnly(Year, 1, 1);
+        var yearEnd = yearStart.AddYears(1);
 
         var member = await _dbContext.Members
             .AsNoTracking()
@@ -385,6 +400,17 @@ public class FinanceModel : PageModel
             .Distinct()
             .ToArrayAsync(cancellationToken);
 
+        var chargeDates = await _dbContext.Charges.AsNoTracking()
+            .Where(c => c.PlotId.HasValue && plotIds.Contains(c.PlotId.Value))
+            .Select(c => c.ChargeDate).ToListAsync(cancellationToken);
+        var memberPayments = await _dbContext.Payments.AsNoTracking()
+            .Where(p => p.MemberId == id)
+            .Select(p => new { p.PaymentDate, p.Amount, p.CancelledAtUtc }).ToListAsync(cancellationToken);
+        var recordedYears = chargeDates.Select(d => d.Year).Concat(memberPayments.Select(p => p.PaymentDate.Year))
+            .Where(y => y >= 1900 && y <= 9998).Append(currentDate.Year).Append(Year).ToArray();
+        AvailableYears = Enumerable.Range(recordedYears.Min(), recordedYears.Max() - recordedYears.Min() + 1)
+            .Reverse().ToArray();
+
         if (plotIds.Length > 0)
         {
             var plots = await _dbContext.Plots
@@ -409,26 +435,28 @@ public class FinanceModel : PageModel
                 })
                 .ToList();
 
-            var chargeTotalsByPlot = (await _dbContext.Charges
+            var activeCharges = await _dbContext.Charges
                 .AsNoTracking()
-                .Where(charge => charge.PlotId != null && plotIds.Contains(charge.PlotId.Value) && charge.CancelledAtUtc == null)
+                .Where(charge => charge.PlotId != null && plotIds.Contains(charge.PlotId.Value) && charge.CancelledAtUtc == null && charge.ChargeDate < yearEnd)
                 .Select(charge => new
                 {
                     PlotId = charge.PlotId!.Value,
-                    charge.Amount
+                    charge.Amount,
+                    charge.ChargeDate
                 })
-                .ToListAsync(cancellationToken))
+                .ToListAsync(cancellationToken);
+            var chargeTotalsByPlot = activeCharges.Where(c => c.ChargeDate >= yearStart)
                 .GroupBy(item => item.PlotId)
                 .ToDictionary(group => group.Key, group => group.Sum(item => item.Amount));
+            var openingChargesByPlot = activeCharges.Where(c => c.ChargeDate < yearStart)
+                .GroupBy(c => c.PlotId).ToDictionary(g => g.Key, g => g.Sum(c => c.Amount));
 
-            var paymentTotalsByPlot = await _dbContext.LoadActivePaymentTotalsByPlotAsync(plotIds, id, cancellationToken);
+            var closingPaymentsByPlot = await _dbContext.LoadActivePaymentTotalsByPlotAsync(plotIds, id, cancellationToken, yearEnd);
+            var openingPaymentsByPlot = await _dbContext.LoadActivePaymentTotalsByPlotAsync(plotIds, id, cancellationToken, yearStart);
 
-            var totalPayments = (await _dbContext.Payments
-                .AsNoTracking()
-                .Where(payment => payment.MemberId == id && payment.CancelledAtUtc == null)
-                .Select(payment => payment.Amount)
-                .ToListAsync(cancellationToken))
-                .Sum();
+            var totalPayments = memberPayments.Where(p => p.CancelledAtUtc == null && p.PaymentDate >= yearStart && p.PaymentDate < yearEnd).Sum(p => p.Amount);
+            OpeningBalance = openingChargesByPlot.Values.Sum()
+                - memberPayments.Where(p => p.CancelledAtUtc == null && p.PaymentDate < yearStart).Sum(p => p.Amount);
 
             Plots = plots
                 .Select(plot => new MemberPlotBalanceViewModel
@@ -437,19 +465,22 @@ public class FinanceModel : PageModel
                     PlotNumber = plot.Number,
                     Address = plot.Address,
                     Charges = chargeTotalsByPlot.GetValueOrDefault(plot.Id),
-                    Payments = paymentTotalsByPlot.GetValueOrDefault(plot.Id)
+                    Payments = closingPaymentsByPlot.GetValueOrDefault(plot.Id) - openingPaymentsByPlot.GetValueOrDefault(plot.Id),
+                    OpeningBalance = openingChargesByPlot.GetValueOrDefault(plot.Id) - openingPaymentsByPlot.GetValueOrDefault(plot.Id)
                 })
                 .ToList();
 
             Member = member with
             {
                 TotalCharges = chargeTotalsByPlot.Values.Sum(),
-                TotalPayments = totalPayments
+                TotalPayments = totalPayments,
+                OpeningBalance = OpeningBalance
             };
 
             var chargesQuery = _dbContext.Charges
                 .AsNoTracking()
-                .Where(charge => charge.PlotId != null && plotIds.Contains(charge.PlotId.Value))
+                .Where(charge => charge.PlotId != null && plotIds.Contains(charge.PlotId.Value)
+                    && charge.ChargeDate >= yearStart && charge.ChargeDate < yearEnd)
                 .OrderByDescending(charge => charge.ChargeDate)
                 .ThenByDescending(charge => charge.Id);
 
@@ -481,6 +512,7 @@ public class FinanceModel : PageModel
             var paymentsQuery = _dbContext.Payments
                 .AsNoTracking()
                 .Where(payment => payment.MemberId == id
+                    && payment.PaymentDate >= yearStart && payment.PaymentDate < yearEnd
                     && payment.PlotId != null)
                 .OrderByDescending(payment => payment.PaymentDate)
                 .ThenByDescending(payment => payment.Id);
@@ -802,7 +834,9 @@ public class FinanceModel : PageModel
 
         public decimal TotalPayments { get; init; }
 
-        public decimal Balance => TotalCharges - TotalPayments;
+        public decimal OpeningBalance { get; init; }
+
+        public decimal Balance => OpeningBalance + TotalCharges - TotalPayments;
 
         public decimal BalanceDisplayAmount => Math.Abs(Balance);
 
@@ -830,7 +864,9 @@ public class FinanceModel : PageModel
 
         public decimal Payments { get; init; }
 
-        public decimal Balance => Charges - Payments;
+        public decimal OpeningBalance { get; init; }
+
+        public decimal Balance => OpeningBalance + Charges - Payments;
 
         public decimal BalanceDisplayAmount => Math.Abs(Balance);
 

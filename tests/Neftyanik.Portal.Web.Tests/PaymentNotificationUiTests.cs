@@ -168,12 +168,13 @@ public sealed class PaymentNotificationUiTests
                 ["PaymentNotification.Amount"] = "123,45",
                 ["PaymentNotification.PaymentMethod"] = "Card",
                 ["PaymentNotification.Description"] = "Оплата через банк",
+                ["Year"] = "2025",
                 ["ChargePage"] = "1",
                 ["PaymentPage"] = "1"
             }));
 
         Assert.Equal(HttpStatusCode.Found, response.StatusCode);
-        Assert.Equal("/neftyanik/Member?chargePage=1&paymentPage=1", response.Headers.Location?.OriginalString);
+        Assert.Equal("/neftyanik/Member?year=2025&chargePage=1&paymentPage=1", response.Headers.Location?.OriginalString);
 
         var redirectedResponse = await client.GetAsync(response.Headers.Location);
         var redirectedHtml = await redirectedResponse.ReadDecodedHtmlAsync();

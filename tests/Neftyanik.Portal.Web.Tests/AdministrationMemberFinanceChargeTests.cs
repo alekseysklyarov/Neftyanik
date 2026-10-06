@@ -348,8 +348,8 @@ public class AdministrationMemberFinanceChargeTests
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var chargesSection = ExtractSection(html, "<h2 class=\"h5 mb-0\">Начисления</h2>", "<h2 class=\"h5 mb-0\">Платежи</h2>");
-        var paymentsSection = ExtractSection(html, "<h2 class=\"h5 mb-0\">Платежи</h2>", "<h2 class=\"h5 mb-0\">Электросчётчики</h2>");
+        var chargesSection = ExtractSection(html, "id=\"charge-history\"", "id=\"payment-history\"");
+        var paymentsSection = ExtractSection(html, "id=\"payment-history\"", "<h2 class=\"h5 mb-0\">Электросчётчики</h2>");
 
         Assert.DoesNotContain("<th>Статус</th>", chargesSection, StringComparison.Ordinal);
         Assert.DoesNotContain("<th>Статус</th>", paymentsSection, StringComparison.Ordinal);

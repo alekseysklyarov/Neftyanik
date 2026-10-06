@@ -10,6 +10,7 @@
         <p class="text-muted mb-0">@AppLocalizer.Get("Сводная информация по начислениям, платежам, расходам и балансам участков.", "Зведена інформація щодо нарахувань, платежів, витрат і балансів ділянок.", "Summary information on charges, payments, expenses, and plot balances.")</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
+        <a class="btn btn-outline-primary" asp-page="/Administration/Plots/Index">@AppLocalizer.Get("Участки и балансы", "Ділянки та баланси", "Plots and balances")</a>
         <a class="btn btn-outline-primary" asp-page="/Administration/Finance/Expenses/Index">@AppLocalizer.Get("Расходы", "Витрати", "Expenses")</a>
         <a class="btn btn-outline-primary" asp-page="/Administration/Finance/Expenses/Electricity/Index">@AppLocalizer.Get("Расходы электроэнергии", "Витрати на електроенергію", "Electricity expenses")</a>
         <a class="btn btn-outline-primary" asp-page="/Administration/Finance/Settings/Index">@AppLocalizer.Get("Настройки финансов", "Налаштування фінансів", "Finance settings")</a>
@@ -65,90 +66,3 @@
         <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">@AppLocalizer.Get("Участки без задолженности", "Ділянки без заборгованості", "Plots without debt")</h2><p class="display-6 mb-0">@Model.Summary.PlotsWithZeroBalanceCount</p></div></div>
     </div>
 </div>
-
-<div class="card shadow-sm mb-4">
-    <div class="card-body">
-        <form method="get" class="row g-3 align-items-end">
-            <div class="col-md-6">
-                <label asp-for="Search" class="form-label">@AppLocalizer.Get("Поиск", "Пошук", "Search")</label>
-                <input asp-for="Search" class="form-control" placeholder="@AppLocalizer.Get("Номер участка или адрес", "Номер ділянки або адреса", "Plot number or address")" />
-            </div>
-            <div class="col-md-3">
-                <label asp-for="Status" class="form-label">@AppLocalizer.Get("Фильтр", "Фільтр", "Filter")</label>
-                <select asp-for="Status" class="form-select">
-                    <option value="all">@AppLocalizer.Get("Все", "Усі", "All")</option>
-                    <option value="debt">@AppLocalizer.Get("Только задолженность", "Лише заборгованість", "Debt only")</option>
-                    <option value="nodebt">@AppLocalizer.Get("Без задолженности", "Без заборгованості", "No debt")</option>
-                    <option value="overpayment">@AppLocalizer.Get("Только переплата", "Лише переплата", "Overpayment only")</option>
-                </select>
-            </div>
-            <div class="col-md-3 d-flex gap-2">
-                <button type="submit" class="btn btn-outline-primary flex-fill">@AppLocalizer.Get("Применить", "Застосувати", "Apply")</button>
-                <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/Index">@AppLocalizer.Get("Сбросить", "Скинути", "Reset")</a>
-            </div>
-        </form>
-    </div>
-</div>
-
-<div class="card shadow-sm">
-    <div class="card-body p-0">
-        @if (Model.PlotBalances.Count == 0)
-        {
-            <div class="p-4 text-center text-muted">@Model.EmptyStateMessage</div>
-        }
-        else
-        {
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>@AppLocalizer.Get("Участок", "Ділянка", "Plot")</th>
-                            <th>@AppLocalizer.Get("Адрес", "Адреса", "Address")</th>
-                            <th>@AppLocalizer.Get("Начислено", "Нараховано", "Charged")</th>
-                            <th>@AppLocalizer.Get("Оплачено", "Сплачено", "Paid")</th>
-                            <th>@AppLocalizer.Get("Баланс", "Баланс", "Balance")</th>
-                            <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
-                            <th class="text-end">@AppLocalizer.Get("Действия", "Дії", "Actions")</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var item in Model.PlotBalances)
-                        {
-                            <tr>
-                                <td class="fw-semibold">@item.PlotNumber</td>
-                                <td>@(string.IsNullOrWhiteSpace(item.Address) ? "—" : item.Address)</td>
-                                <td>@item.Charges.ToString("0.00")</td>
-                                <td>@item.Payments.ToString("0.00")</td>
-                                <td>@item.BalanceDisplayAmount.ToString("0.00")</td>
-                                <td>@item.Status</td>
-                                <td class="text-end">
-                                    <a class="btn btn-sm btn-outline-primary" asp-page="/Administration/Plots/Details" asp-route-id="@item.PlotId">@AppLocalizer.Get("Карточка участка", "Картка ділянки", "Plot details")</a>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        }
-    </div>
-</div>
-
-@if (Model.TotalPages > 1)
-{
-    <nav aria-label="@AppLocalizer.Get("Навигация по страницам", "Навігація сторінками", "Pagination")" class="mt-4">
-        <ul class="pagination justify-content-center flex-wrap">
-            <li class="page-item @(Model.HasPreviousPage ? string.Empty : "disabled")">
-                <a class="page-link" asp-page="/Administration/Finance/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-pageNumber="@(Model.PageNumber - 1)">@AppLocalizer.Get("Назад", "Назад", "Previous")</a>
-            </li>
-            @for (var pageIndex = 1; pageIndex <= Model.TotalPages; pageIndex++)
-            {
-                <li class="page-item @(pageIndex == Model.PageNumber ? "active" : string.Empty)">
-                    <a class="page-link" asp-page="/Administration/Finance/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-pageNumber="@pageIndex">@pageIndex</a>
-                </li>
-            }
-            <li class="page-item @(Model.HasNextPage ? string.Empty : "disabled")">
-                <a class="page-link" asp-page="/Administration/Finance/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-pageNumber="@(Model.PageNumber + 1)">@AppLocalizer.Get("Вперёд", "Вперед", "Next")</a>
-            </li>
-        </ul>
-    </nav>
-}

@@ -1,6 +1,7 @@
 @page
 @model Neftyanik.Portal.Web.Pages.Administration.Plots.IndexModel
 @{
+    ViewData["WideLayout"] = true;
     ViewData["Title"] = AppLocalizer.Get("Участки", "Ділянки", "Plots");
     var isAdministrator = User.IsInRole(RoleNames.Administrator);
 }
@@ -30,22 +31,22 @@
 
 <div class="card shadow-sm mb-4">
     <div class="card-body">
-        <form method="get" class="row g-3 align-items-end">
+        <form method="get" class="plot-list-filters">
             <input asp-for="SortBy" type="hidden" />
             <input asp-for="SortDirection" type="hidden" />
-            <div class="col-md-6">
+            <div class="col-md-6 col-xl-4">
                 <label asp-for="Search" class="form-label">@AppLocalizer.Get("Поиск", "Пошук", "Search")</label>
                 <input asp-for="Search" class="form-control" placeholder="@AppLocalizer.Get("Номер, адрес, кадастровый номер или владелец", "Номер, адреса, кадастровий номер або власник", "Number, address, cadastral number, or owner")" />
             </div>
-            <div class="col-md-3">
-                <label asp-for="Status" class="form-label">@AppLocalizer.Get("Статус", "Статус", "Status")</label>
+            <div class="col-md-6 col-xl-2">
+                <label asp-for="Status" class="form-label">@AppLocalizer.Get("Статус участка", "Статус ділянки", "Plot status")</label>
                 <select asp-for="Status" class="form-select">
                     <option value="all">@AppLocalizer.Get("Все", "Усі", "All")</option>
                     <option value="active">@AppLocalizer.Get("Только активные", "Лише активні", "Active only")</option>
                     <option value="archived">@AppLocalizer.Get("Только архивные", "Лише архівні", "Archived only")</option>
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-6 col-xl-3">
                 <label asp-for="Ownership" class="form-label">@AppLocalizer.Get("Владельцы", "Власники", "Owners")</label>
                 <select asp-for="Ownership" class="form-select">
                     <option value="all">@AppLocalizer.Get("Все участки", "Усі ділянки", "All plots")</option>
@@ -53,13 +54,24 @@
                     <option value="withoutowners">@AppLocalizer.Get("Только без текущих владельцев", "Лише без поточних власників", "Without current owners only")</option>
                 </select>
             </div>
-            <div class="col-md-12 col-lg-3 d-flex gap-2">
-                <button type="submit" class="btn btn-outline-primary flex-fill">@AppLocalizer.Get("Найти", "Знайти", "Search")</button>
+            <div class="col-md-6 col-xl-3">
+                <label asp-for="FinancialStatus" class="form-label">@AppLocalizer.Get("Финансовый статус", "Фінансовий статус", "Financial status") *</label>
+                <select asp-for="FinancialStatus" class="form-select">
+                    <option value="all">@AppLocalizer.Get("Все", "Усі", "All")</option>
+                    <option value="debt">@AppLocalizer.Get("С задолженностью", "Із заборгованістю", "With debt")</option>
+                    <option value="nodebt">@AppLocalizer.Get("С нулевым балансом", "З нульовим балансом", "Zero balance")</option>
+                    <option value="overpayment">@AppLocalizer.Get("С переплатой", "З переплатою", "With overpayment")</option>
+                </select>
+            </div>
+            <div class="d-flex gap-2 plot-filter-actions">
+                <button type="submit" class="btn btn-outline-primary">@AppLocalizer.Get("Найти", "Знайти", "Search")</button>
                 <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Index">@AppLocalizer.Get("Сбросить", "Скинути", "Reset")</a>
             </div>
         </form>
     </div>
 </div>
+
+<p class="text-muted small">* @AppLocalizer.Get("Только ежегодный платёж, без учёта электроэнергии и других платежей. Оплачено — сумма, зачтённая в ежегодные начисления; нераспределённый аванс не учитывается.", "Лише щорічний платіж, без урахування електроенергії та інших платежів. Сплачено — сума, зарахована в щорічні нарахування; нерозподілений аванс не враховується.", "Annual fees only, excluding electricity and other payments. Paid shows amounts allocated to annual charges; unallocated advances are excluded.")</p>
 
 <div class="card shadow-sm">
     <div class="card-body p-0">
@@ -78,6 +90,7 @@
                 <input asp-for="Search" type="hidden" />
                 <input asp-for="Status" type="hidden" />
                 <input asp-for="Ownership" type="hidden" />
+                <input asp-for="FinancialStatus" type="hidden" />
                 <input asp-for="SortBy" type="hidden" />
                 <input asp-for="SortDirection" type="hidden" />
                 <input asp-for="PageNumber" type="hidden" />
@@ -86,13 +99,13 @@
                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 p-3 border-bottom">
                     <div>
                         <h2 class="h5 mb-1">@AppLocalizer.Get("Список участков", "Список ділянок", "Plot list")</h2>
-                        <p class="text-muted mb-0">@AppLocalizer.Get("Для начисления доступны только активные участки с текущими владельцами.", "Для нарахування доступні лише активні ділянки з поточними власниками.", "Only active plots with current owners are available for charges.")</p>
+                        <p class="small text-muted mb-0">@AppLocalizer.Get("Для начисления доступны только активные участки с текущими владельцами.", "Для нарахування доступні лише активні ділянки з поточними власниками.", "Only active plots with current owners are available for charges.")</p>
                     </div>
                     <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#bulkChargeModal">@AppLocalizer.Get("Начислить выбранным", "Нарахувати вибраним", "Charge selected")</button>
                 </div>
 
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
+                    <table class="table table-hover align-middle mb-0 plot-list-table">
                         <thead class="table-light">
                             <tr>
                                 <th style="width: 1%;">
@@ -101,23 +114,23 @@
                                     </div>
                                 </th>
                                 <th>
-                                    <a class="text-decoration-none link-dark" asp-page="/Administration/Plots/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-ownership="@Model.Ownership" asp-route-sortBy="number" asp-route-sortDirection="@Model.GetNextSortDirection("number")">@AppLocalizer.Get("Номер", "Номер", "Number") @Model.GetSortIndicator("number")</a>
+                                    <a class="text-decoration-none link-dark" asp-page="/Administration/Plots/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-ownership="@Model.Ownership" asp-route-financialStatus="@Model.FinancialStatus" asp-route-sortBy="number" asp-route-sortDirection="@Model.GetNextSortDirection("number")">@AppLocalizer.Get("Номер", "Номер", "Number") @Model.GetSortIndicator("number")</a>
                                 </th>
                                 <th>
-                                    <a class="text-decoration-none link-dark" asp-page="/Administration/Plots/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-ownership="@Model.Ownership" asp-route-sortBy="address" asp-route-sortDirection="@Model.GetNextSortDirection("address")">@AppLocalizer.Get("Адрес", "Адреса", "Address") @Model.GetSortIndicator("address")</a>
+                                    <a class="text-decoration-none link-dark" asp-page="/Administration/Plots/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-ownership="@Model.Ownership" asp-route-financialStatus="@Model.FinancialStatus" asp-route-sortBy="address" asp-route-sortDirection="@Model.GetNextSortDirection("address")">@AppLocalizer.Get("Адрес", "Адреса", "Address") @Model.GetSortIndicator("address")</a>
+                                    <div class="small mt-1"><a class="text-decoration-none link-secondary" asp-page="/Administration/Plots/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-ownership="@Model.Ownership" asp-route-financialStatus="@Model.FinancialStatus" asp-route-sortBy="cadastral" asp-route-sortDirection="@Model.GetNextSortDirection("cadastral")">@AppLocalizer.Get("Кадастровый номер", "Кадастровий номер", "Cadastral number") @Model.GetSortIndicator("cadastral")</a></div>
                                 </th>
                                 <th>
-                                    <a class="text-decoration-none link-dark" asp-page="/Administration/Plots/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-ownership="@Model.Ownership" asp-route-sortBy="area" asp-route-sortDirection="@Model.GetNextSortDirection("area")">@AppLocalizer.Get("Площадь, соток", "Площа, соток", "Area, соток") @Model.GetSortIndicator("area")</a>
+                                    <a class="text-decoration-none link-dark" asp-page="/Administration/Plots/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-ownership="@Model.Ownership" asp-route-financialStatus="@Model.FinancialStatus" asp-route-sortBy="area" asp-route-sortDirection="@Model.GetNextSortDirection("area")">@AppLocalizer.Get("Площадь, соток", "Площа, соток", "Area, соток") @Model.GetSortIndicator("area")</a>
                                 </th>
                                 <th>
-                                    <a class="text-decoration-none link-dark" asp-page="/Administration/Plots/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-ownership="@Model.Ownership" asp-route-sortBy="cadastral" asp-route-sortDirection="@Model.GetNextSortDirection("cadastral")">@AppLocalizer.Get("Кадастровый номер", "Кадастровий номер", "Cadastral number") @Model.GetSortIndicator("cadastral")</a>
+                                    <a class="text-decoration-none link-dark" asp-page="/Administration/Plots/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-ownership="@Model.Ownership" asp-route-financialStatus="@Model.FinancialStatus" asp-route-sortBy="status" asp-route-sortDirection="@Model.GetNextSortDirection("status")">@AppLocalizer.Get("Статус", "Статус", "Status") @Model.GetSortIndicator("status")</a>
                                 </th>
                                 <th>
-                                    <a class="text-decoration-none link-dark" asp-page="/Administration/Plots/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-ownership="@Model.Ownership" asp-route-sortBy="status" asp-route-sortDirection="@Model.GetNextSortDirection("status")">@AppLocalizer.Get("Статус", "Статус", "Status") @Model.GetSortIndicator("status")</a>
+                                    <a class="text-decoration-none link-dark" asp-page="/Administration/Plots/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-ownership="@Model.Ownership" asp-route-financialStatus="@Model.FinancialStatus" asp-route-sortBy="owner" asp-route-sortDirection="@Model.GetNextSortDirection("owner")">@AppLocalizer.Get("Владелец", "Власник", "Owner") @Model.GetSortIndicator("owner")</a>
                                 </th>
-                                <th>
-                                    <a class="text-decoration-none link-dark" asp-page="/Administration/Plots/Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-ownership="@Model.Ownership" asp-route-sortBy="owner" asp-route-sortDirection="@Model.GetNextSortDirection("owner")">@AppLocalizer.Get("Владелец", "Власник", "Owner") @Model.GetSortIndicator("owner")</a>
-                                </th>
+                                <th class="text-end">@AppLocalizer.Get("Начислено / оплачено", "Нараховано / сплачено", "Charged / paid") *</th>
+                                <th class="text-end">@AppLocalizer.Get("Баланс / финансовый статус", "Баланс / фінансовий статус", "Balance / financial status") *</th>
                                 <th class="text-end">@AppLocalizer.Get("Действия", "Дії", "Actions")</th>
                             </tr>
                         </thead>
@@ -143,13 +156,22 @@
                                         }
                                     </td>
                                     <td class="fw-semibold">@plot.Number</td>
-                                    <td>@(string.IsNullOrWhiteSpace(plot.Address) ? "—" : plot.Address)</td>
+                                    <td>
+                                        <div>@(string.IsNullOrWhiteSpace(plot.Address) ? "—" : plot.Address)</div>
+                                        @if (!string.IsNullOrWhiteSpace(plot.CadastralNumber))
+                                        {
+                                            <div class="small text-muted text-break">@AppLocalizer.Get("Кадастр:", "Кадастр:", "Cadastre:") @plot.CadastralNumber</div>
+                                        }
+                                    </td>
                                     <td>@(plot.AreaSquareMeters.HasValue ? plot.AreaSquareMeters.Value.ToString("0.###") : "—")</td>
-                                    <td>@(string.IsNullOrWhiteSpace(plot.CadastralNumber) ? "—" : plot.CadastralNumber)</td>
                                     <td>
                                         @if (!plot.IsActive)
                                         {
-                                            <span>@AppLocalizer.Get("Аннулировано", "Анульовано", "Cancelled")</span>
+                                            <span class="member-status member-status-archived">@AppLocalizer.Get("Аннулировано", "Анульовано", "Cancelled")</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="member-status member-status-active">@AppLocalizer.Get("Активен", "Активна", "Active")</span>
                                         }
                                     </td>
                                     <td>
@@ -166,13 +188,26 @@
                                             <div class="small text-muted">@AppLocalizer.Get("Начисление недоступно", "Нарахування недоступне", "Charge unavailable")</div>
                                         }
                                     </td>
+                                    <td class="text-nowrap text-end">
+                                        <div><span class="small text-muted">@AppLocalizer.Get("Начислено:", "Нараховано:", "Charged:")</span> @plot.Charges.ToString("0.00") ₴</div>
+                                        <div><span class="small text-muted">@AppLocalizer.Get("Оплачено:", "Сплачено:", "Paid:")</span> @plot.Payments.ToString("0.00") ₴</div>
+                                    </td>
                                     <td class="text-end">
-                                        <div class="btn-group btn-group-sm" role="group">
-                                            <a class="btn btn-outline-secondary" asp-page="/Administration/Plots/Details" asp-route-id="@plot.Id">@AppLocalizer.Get("Подробнее", "Детальніше", "Details")</a>
+                                        <div class="fw-semibold text-nowrap @plot.BalanceCssClass">@plot.BalanceDisplayAmount.ToString("0.00") ₴</div>
+                                        <div class="small @plot.BalanceCssClass">@plot.FinancialStatusText</div>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="member-list-actions">
+                                            <a class="btn btn-sm btn-outline-secondary" asp-page="/Administration/Plots/Details" asp-route-id="@plot.Id">@AppLocalizer.Get("Подробнее", "Детальніше", "Details")</a>
                                             @if (isAdministrator)
                                             {
-                                                <a class="btn btn-outline-primary" asp-page="/Administration/Plots/Edit" asp-route-id="@plot.Id">@AppLocalizer.Get("Редактировать", "Редагувати", "Edit")</a>
-                                                <a class="btn btn-outline-warning" asp-page="/Administration/Plots/Archive" asp-route-id="@plot.Id">@(plot.IsActive ? AppLocalizer.Get("Архивировать", "Архівувати", "Archive") : AppLocalizer.Get("Восстановить", "Відновити", "Restore"))</a>
+                                                <details class="member-more-actions">
+                                                    <summary class="btn btn-sm btn-outline-secondary">@AppLocalizer.Get("Ещё", "Ще", "More")</summary>
+                                                    <div class="member-more-links">
+                                                        <a asp-page="/Administration/Plots/Edit" asp-route-id="@plot.Id">@AppLocalizer.Get("Редактировать", "Редагувати", "Edit")</a>
+                                                        <a asp-page="/Administration/Plots/Archive" asp-route-id="@plot.Id">@(plot.IsActive ? AppLocalizer.Get("Архивировать", "Архівувати", "Archive") : AppLocalizer.Get("Восстановить", "Відновити", "Restore"))</a>
+                                                    </div>
+                                                </details>
                                             }
                                         </div>
                                     </td>
@@ -269,7 +304,7 @@
                    asp-page="/Administration/Plots/Index"
                    asp-route-search="@Model.Search"
                    asp-route-status="@Model.Status"
-                   asp-route-ownership="@Model.Ownership"
+                   asp-route-ownership="@Model.Ownership" asp-route-financialStatus="@Model.FinancialStatus"
                    asp-route-sortBy="@Model.SortBy"
                    asp-route-sortDirection="@Model.SortDirection"
                    asp-route-pageNumber="@(Model.PageNumber - 1)">@AppLocalizer.Get("Назад", "Назад", "Previous")</a>
@@ -281,7 +316,7 @@
                        asp-page="/Administration/Plots/Index"
                        asp-route-search="@Model.Search"
                        asp-route-status="@Model.Status"
-                       asp-route-ownership="@Model.Ownership"
+                       asp-route-ownership="@Model.Ownership" asp-route-financialStatus="@Model.FinancialStatus"
                        asp-route-sortBy="@Model.SortBy"
                        asp-route-sortDirection="@Model.SortDirection"
                        asp-route-pageNumber="@pageIndex">@pageIndex</a>
@@ -292,7 +327,7 @@
                    asp-page="/Administration/Plots/Index"
                    asp-route-search="@Model.Search"
                    asp-route-status="@Model.Status"
-                   asp-route-ownership="@Model.Ownership"
+                   asp-route-ownership="@Model.Ownership" asp-route-financialStatus="@Model.FinancialStatus"
                    asp-route-sortBy="@Model.SortBy"
                    asp-route-sortDirection="@Model.SortDirection"
                    asp-route-pageNumber="@(Model.PageNumber + 1)">@AppLocalizer.Get("Вперёд", "Вперед", "Next")</a>

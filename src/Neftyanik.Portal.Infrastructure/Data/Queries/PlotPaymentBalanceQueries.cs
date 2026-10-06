@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore;
 
 namespace Neftyanik.Portal.Infrastructure.Data.Queries;
 
@@ -17,7 +16,8 @@ public static class PlotPaymentBalanceQueries
         this ApplicationDbContext dbContext,
         IEnumerable<int> plotIds,
         int? memberId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        DateOnly? beforeDate = null)
     {
         var plotIdArray = plotIds.Distinct().ToArray();
         if (plotIdArray.Length == 0)
@@ -28,6 +28,7 @@ public static class PlotPaymentBalanceQueries
         var activePayments = await dbContext.Payments
             .AsNoTracking()
             .Where(payment => payment.CancelledAtUtc == null
+                && (!beforeDate.HasValue || payment.PaymentDate < beforeDate.Value)
                 && payment.PlotId.HasValue
                 && (!memberId.HasValue || payment.MemberId == memberId.Value)
                 && plotIdArray.Contains(payment.PlotId.Value))
@@ -41,9 +42,11 @@ public static class PlotPaymentBalanceQueries
             .AsNoTracking()
             .Where(allocation => allocation.Payment != null
                 && allocation.Payment.CancelledAtUtc == null
+                && (!beforeDate.HasValue || allocation.Payment.PaymentDate < beforeDate.Value)
                 && (!memberId.HasValue || allocation.Payment.MemberId == memberId.Value)
                 && allocation.Charge != null
                 && allocation.Charge.CancelledAtUtc == null
+                && (!beforeDate.HasValue || allocation.Charge.ChargeDate < beforeDate.Value)
                 && ((allocation.Payment.PlotId.HasValue && plotIdArray.Contains(allocation.Payment.PlotId.Value))
                     || (allocation.Charge.PlotId.HasValue && plotIdArray.Contains(allocation.Charge.PlotId.Value))))
             .Select(allocation => new ActiveAllocationItem(

@@ -2,6 +2,7 @@
 @using Neftyanik.Portal.Web.Pages.Finance
 @model Neftyanik.Portal.Web.Pages.Member.IndexModel
 @{
+    ViewData["WideLayout"] = true;
     ViewData["Title"] = AppLocalizer.Get($"Финансы: {Model.Dashboard.FullName}", $"Фінанси: {Model.Dashboard.FullName}", $"Finance: {Model.Dashboard.FullName}");
     var currentCultureName = System.Globalization.CultureInfo.CurrentCulture.Name;
 }
@@ -54,8 +55,22 @@
     }
     else
     {
-        <div class="row g-4 mb-4">
-            <div class="col-sm-6 col-xl-3">
+        <form method="get" class="d-flex flex-wrap align-items-end gap-2 mb-3">
+            <input type="hidden" asp-for="ChargeTypeId" />
+            <div>
+                <label asp-for="Year" class="form-label">@AppLocalizer.Get("Год расчётов", "Рік розрахунків", "Financial year")</label>
+                <select asp-for="Year" class="form-select">
+                    @foreach (var year in Model.AvailableYears)
+                    {
+                        <option value="@year">@year</option>
+                    }
+                </select>
+            </div>
+            <button type="submit" class="btn btn-outline-primary">@AppLocalizer.Get("Показать", "Показати", "Show")</button>
+            <p class="small text-muted mb-1 ms-md-2">@AppLocalizer.Get("Начисления и платежи — за выбранный год. Баланс включает остаток прошлых лет. Отменённые операции не учитываются.", "Нарахування та платежі — за вибраний рік. Баланс включає залишок минулих років. Скасовані операції не враховуються.", "Charges and payments are for the selected year. Balance includes prior years. Cancelled transactions are excluded.")</p>
+        </form>
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-5 g-3 mb-4">
+            <div class="col">
                 <div class="card h-100 member-dashboard-summary-card">
                     <div class="card-body">
                         <h2 class="member-dashboard-summary-label">@AppLocalizer.Get("Активные участки", "Активні ділянки", "Active plots")</h2>
@@ -63,26 +78,35 @@
                     </div>
                 </div>
             </div>
-            <div class="col-sm-6 col-xl-3">
+            <div class="col">
                 <div class="card h-100 member-dashboard-summary-card">
                     <div class="card-body">
-                        <h2 class="member-dashboard-summary-label">@AppLocalizer.Get("Начислено", "Нараховано", "Charged")</h2>
+                        <h2 class="member-dashboard-summary-label">@(Model.OpeningCredit > 0 ? AppLocalizer.Get("Переплата на начало года", "Переплата на початок року", "Opening credit") : AppLocalizer.Get("Долг на начало года", "Борг на початок року", "Opening debt"))</h2>
+                        <p class="member-dashboard-summary-value mb-1 @(Model.OpeningDebt > 0 ? "text-danger" : Model.OpeningCredit > 0 ? "text-primary" : "text-success")">@Math.Abs(Model.OpeningBalance).ToString("0.00") <span class="member-dashboard-currency">₴</span></p>
+                        <div class="member-dashboard-balance-note text-muted">@AppLocalizer.Get("На", "На", "As of") 01.01.@Model.Year</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 member-dashboard-summary-card">
+                    <div class="card-body">
+                        <h2 class="member-dashboard-summary-label">@AppLocalizer.Get("Начислено", "Нараховано", "Charged") · @Model.Year</h2>
                         <p class="member-dashboard-summary-value mb-0">@Model.Dashboard.TotalCharges.ToString("0.00") <span class="member-dashboard-currency">₴</span></p>
                     </div>
                 </div>
             </div>
-            <div class="col-sm-6 col-xl-3">
+            <div class="col">
                 <div class="card h-100 member-dashboard-summary-card">
                     <div class="card-body">
-                        <h2 class="member-dashboard-summary-label">@AppLocalizer.Get("Оплачено", "Сплачено", "Paid")</h2>
+                        <h2 class="member-dashboard-summary-label">@AppLocalizer.Get("Оплачено", "Сплачено", "Paid") · @Model.Year</h2>
                         <p class="member-dashboard-summary-value mb-0">@Model.Dashboard.TotalPayments.ToString("0.00") <span class="member-dashboard-currency">₴</span></p>
                     </div>
                 </div>
             </div>
-            <div class="col-sm-6 col-xl-3">
+            <div class="col">
                 <div class="card h-100 member-dashboard-summary-card">
                     <div class="card-body">
-                        <h2 class="member-dashboard-summary-label">@AppLocalizer.Get("Баланс", "Баланс", "Balance")</h2>
+                        <h2 class="member-dashboard-summary-label">@AppLocalizer.Get("Баланс", "Баланс", "Balance") · @Model.Year</h2>
                         <p class="member-dashboard-summary-value mb-1 @Model.Dashboard.BalanceStatusClass">@Model.Dashboard.BalanceDisplayAmount.ToString("0.00") <span class="member-dashboard-currency">₴</span></p>
                         <div class="member-dashboard-balance-note @Model.Dashboard.BalanceStatusClass">@Model.Dashboard.BalanceStatusText</div>
                     </div>
@@ -92,13 +116,15 @@
 
         @if (Model.ElectricitySummary is { } electricitySummary)
         {
+            <p class="small text-muted mb-2">@AppLocalizer.Get("Электроэнергия — актуальное состояние на сегодня, независимо от выбранного года.", "Електроенергія — актуальний стан на сьогодні, незалежно від вибраного року.", "Electricity shows the current status, regardless of the selected year.")</p>
             <partial name="_ElectricityFinanceSummary" model="electricitySummary" />
         }
 
         <div class="member-dashboard-tabs mb-4">
             <div class="nav member-dashboard-tab-list" id="memberDashboardTabs" role="tablist" aria-label="@AppLocalizer.Get("Разделы личного кабинета", "Розділи особистого кабінету", "Member dashboard sections")">
                 <button class="nav-link member-dashboard-tab-button active" id="member-dashboard-overview-tab" data-bs-toggle="tab" data-bs-target="#member-dashboard-overview-pane" type="button" role="tab" aria-controls="member-dashboard-overview-pane" aria-selected="true" data-member-dashboard-tab="true">@AppLocalizer.Get("Обзор", "Огляд", "Overview")</button>
-                <button class="nav-link member-dashboard-tab-button" id="member-dashboard-finance-tab" data-bs-toggle="tab" data-bs-target="#member-dashboard-finance-pane" type="button" role="tab" aria-controls="member-dashboard-finance-pane" aria-selected="false" data-member-dashboard-tab="true">@AppLocalizer.Get("Финансы", "Фінанси", "Finance")</button>
+                <button class="nav-link member-dashboard-tab-button" id="member-dashboard-charges-tab" data-bs-toggle="tab" data-bs-target="#member-dashboard-charges-pane" type="button" role="tab" aria-controls="member-dashboard-charges-pane" aria-selected="false" data-member-dashboard-tab="true">@AppLocalizer.Get("Начисления", "Нарахування", "Charges")</button>
+                <button class="nav-link member-dashboard-tab-button" id="member-dashboard-payments-tab" data-bs-toggle="tab" data-bs-target="#member-dashboard-payments-pane" type="button" role="tab" aria-controls="member-dashboard-payments-pane" aria-selected="false" data-member-dashboard-tab="true">@AppLocalizer.Get("Платежи", "Платежі", "Payments")</button>
                 <button class="nav-link member-dashboard-tab-button" id="member-dashboard-electricity-tab" data-bs-toggle="tab" data-bs-target="#member-dashboard-electricity-pane" type="button" role="tab" aria-controls="member-dashboard-electricity-pane" aria-selected="false" data-member-dashboard-tab="true">@AppLocalizer.Get("Электроэнергия", "Електроенергія", "Electricity")</button>
                 <button class="nav-link member-dashboard-tab-button" id="member-dashboard-profile-tab" data-bs-toggle="tab" data-bs-target="#member-dashboard-profile-pane" type="button" role="tab" aria-controls="member-dashboard-profile-pane" aria-selected="false" data-member-dashboard-tab="true">@AppLocalizer.Get("Профиль", "Профіль", "Profile")</button>
             </div>
@@ -108,7 +134,8 @@
             <div class="tab-pane fade show active member-dashboard-tab-pane" id="member-dashboard-overview-pane" role="tabpanel" aria-labelledby="member-dashboard-overview-tab" tabindex="0">
                 <div class="card member-dashboard-section-card mb-4">
                     <div class="card-header bg-white member-dashboard-section-header">
-                        <h2 class="h5 mb-0">@AppLocalizer.Get("Участки", "Ділянки", "Plots")</h2>
+                        <h2 class="h5 mb-0">@AppLocalizer.Get("Участки", "Ділянки", "Plots") · @Model.Year</h2>
+                        <p class="small text-muted mb-0">@AppLocalizer.Get("Расчёты по текущим участкам. Баланс включает остаток на начало года.", "Розрахунки за поточними ділянками. Баланс включає залишок на початок року.", "Figures for your current plots. Balance includes the opening balance.")</p>
                     </div>
                     <div class="card-body p-0">
                         @if (Model.Plots.Count == 0)
@@ -220,21 +247,22 @@
                 </div>
             </div>
 
-            <div class="tab-pane fade member-dashboard-tab-pane" id="member-dashboard-finance-pane" role="tabpanel" aria-labelledby="member-dashboard-finance-tab" tabindex="0">
+            <div class="tab-pane fade member-dashboard-tab-pane" id="member-dashboard-charges-pane" role="tabpanel" aria-labelledby="member-dashboard-charges-tab" tabindex="0">
                 <div class="row g-4">
-                    <div class="col-xl-6">
+                    <div class="col-12">
                         <div class="card member-dashboard-section-card h-100" id="charge-history" data-finance-history data-page="@Model.ChargePage" data-page-parameter="chargePage">
                             <div class="card-header bg-white member-dashboard-section-header">
                                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-                                    <h2 class="h5 mb-0">@AppLocalizer.Get("Начисления", "Нарахування", "Charges")</h2>
+                                    <h2 class="h5 mb-0">@AppLocalizer.Get("Начисления", "Нарахування", "Charges") · @Model.Year</h2>
                                     <form method="get" class="d-flex flex-column flex-sm-row gap-2 align-items-sm-center">
+                                        <input type="hidden" asp-for="Year" />
                                         <input type="hidden" asp-for="PaymentPage" data-history-page-input="paymentPage" />
                                         <select asp-for="ChargeTypeId" asp-items="Model.ChargeTypeOptions" class="form-select form-select-sm">
                                             <option value="">@AppLocalizer.Get("Все типы", "Усі типи", "All types")</option>
                                         </select>
                                         <div class="d-flex gap-2">
                                             <button type="submit" class="btn btn-sm btn-outline-primary">@AppLocalizer.Get("Фильтр", "Фільтр", "Filter")</button>
-                                            <a class="btn btn-sm btn-outline-secondary" data-history-reset asp-page="/Member/Index" asp-route-paymentPage="@Model.PaymentPage">@AppLocalizer.Get("Сбросить", "Скинути", "Reset")</a>
+                                            <a class="btn btn-sm btn-outline-secondary" data-history-reset asp-page="/Member/Index" asp-route-year="@Model.Year" asp-route-paymentPage="@Model.PaymentPage">@AppLocalizer.Get("Сбросить", "Скинути", "Reset")</a>
                                         </div>
                                     </form>
                                 </div>
@@ -306,7 +334,7 @@
                             {
                                 <div class="card-footer bg-white member-dashboard-section-footer text-center">
                                     <a class="btn btn-outline-primary btn-sm" data-history-more aria-controls="charge-history"
-                                       asp-page="/Member/Index" asp-route-chargePage="@(Model.ChargePage + 1)" asp-route-paymentPage="@Model.PaymentPage" asp-route-chargeTypeId="@Model.ChargeTypeId" asp-fragment="charge-history">
+                                       asp-page="/Member/Index" asp-route-year="@Model.Year" asp-route-chargePage="@(Model.ChargePage + 1)" asp-route-paymentPage="@Model.PaymentPage" asp-route-chargeTypeId="@Model.ChargeTypeId" asp-fragment="charge-history">
                                         @AppLocalizer.Get($"Развернуть (ещё {Model.NextChargeCount})", $"Розгорнути (ще {Model.NextChargeCount})", $"Show more ({Model.NextChargeCount})")
                                     </a>
                                     <div class="small text-danger mt-2" data-history-error role="status" hidden>@AppLocalizer.Get("Не удалось загрузить записи. Повторите попытку.", "Не вдалося завантажити записи. Спробуйте ще раз.", "Could not load records. Please try again.")</div>
@@ -314,10 +342,15 @@
                             }
                         </div>
                     </div>
-                    <div class="col-xl-6">
+                </div>
+            </div>
+
+            <div class="tab-pane fade member-dashboard-tab-pane" id="member-dashboard-payments-pane" role="tabpanel" aria-labelledby="member-dashboard-payments-tab" tabindex="0">
+                <div class="row g-4">
+                    <div class="col-12">
                         <div class="card member-dashboard-section-card h-100" id="payment-history" data-finance-history data-page="@Model.PaymentPage" data-page-parameter="paymentPage">
                             <div class="card-header bg-white member-dashboard-section-header">
-                                <h2 class="h5 mb-0">@AppLocalizer.Get("Платежи", "Платежі", "Payments")</h2>
+                                <h2 class="h5 mb-0">@AppLocalizer.Get("Платежи", "Платежі", "Payments") · @Model.Year</h2>
                             </div>
                             <div class="card-body p-0">
                                 @if (Model.Payments.Count == 0)
@@ -392,7 +425,7 @@
                             {
                                 <div class="card-footer bg-white member-dashboard-section-footer text-center">
                                     <a class="btn btn-outline-primary btn-sm" data-history-more aria-controls="payment-history"
-                                       asp-page="/Member/Index" asp-route-chargePage="@Model.ChargePage" asp-route-paymentPage="@(Model.PaymentPage + 1)" asp-route-chargeTypeId="@Model.ChargeTypeId" asp-fragment="payment-history">
+                                       asp-page="/Member/Index" asp-route-year="@Model.Year" asp-route-chargePage="@Model.ChargePage" asp-route-paymentPage="@(Model.PaymentPage + 1)" asp-route-chargeTypeId="@Model.ChargeTypeId" asp-fragment="payment-history">
                                         @AppLocalizer.Get($"Развернуть (ещё {Model.NextPaymentCount})", $"Розгорнути (ще {Model.NextPaymentCount})", $"Show more ({Model.NextPaymentCount})")
                                     </a>
                                     <div class="small text-danger mt-2" data-history-error role="status" hidden>@AppLocalizer.Get("Не удалось загрузить записи. Повторите попытку.", "Не вдалося завантажити записи. Спробуйте ще раз.", "Could not load records. Please try again.")</div>
@@ -563,7 +596,8 @@
                     <div class="modal-body">
                         <input type="hidden" asp-for="ChargeTypeId" />
                         <input type="hidden" asp-for="ChargePage" />
-                        <input type="hidden" asp-for="PaymentPage" />
+                        <input type="hidden" asp-for="Year" />
+                                        <input type="hidden" asp-for="PaymentPage" />
 
                         <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
@@ -605,7 +639,8 @@
                     <div class="modal-body">
                         <input type="hidden" asp-for="ChargeTypeId" />
                         <input type="hidden" asp-for="ChargePage" />
-                        <input type="hidden" asp-for="PaymentPage" />
+                        <input type="hidden" asp-for="Year" />
+                                        <input type="hidden" asp-for="PaymentPage" />
 
                         <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
@@ -647,7 +682,8 @@
                     <div class="modal-body">
                         <input type="hidden" asp-for="ChargeTypeId" />
                         <input type="hidden" asp-for="ChargePage" />
-                        <input type="hidden" asp-for="PaymentPage" />
+                        <input type="hidden" asp-for="Year" />
+                                        <input type="hidden" asp-for="PaymentPage" />
 
                         <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
@@ -815,7 +851,10 @@
             }
 
             const defaultTabId = 'member-dashboard-overview-tab';
-            const storedTabId = window.sessionStorage.getItem(storageKey);
+            const savedTabId = window.sessionStorage.getItem(storageKey);
+            const storedTabId = savedTabId === 'member-dashboard-finance-tab'
+                ? 'member-dashboard-charges-tab'
+                : savedTabId;
             const initialTrigger = tabTriggers.find(trigger => trigger.id === storedTabId)
                 ?? tabTriggers.find(trigger => trigger.id === defaultTabId)
                 ?? tabTriggers[0];

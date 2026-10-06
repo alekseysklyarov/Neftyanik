@@ -1,15 +1,17 @@
 @page "{id:int}/Finance"
 @model Neftyanik.Portal.Web.Pages.Administration.Members.FinanceModel
 @{
+    ViewData["WideLayout"] = true;
+    ViewData["PageClass"] = "member-finance-page";
     ViewData["Title"] = AppLocalizer.Get($"Финансы: {Model.Member.FullName}", $"Фінанси: {Model.Member.FullName}", $"Finance: {Model.Member.FullName}");
 }
 
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
-        <h1 class="h4 mb-1">@AppLocalizer.Get("Финансы члена товарищества", "Фінанси члена товариства", "Member finance")</h1>
-        <p class="h1 text-muted mb-0">@Model.Member.FullName</p>
+        <p class="small text-muted mb-1">@AppLocalizer.Get("Финансы члена товарищества", "Фінанси члена товариства", "Member finance")</p>
+        <h1 class="h2 mb-0">@Model.Member.FullName</h1>
     </div>
-    <div class="d-flex gap-2 flex-wrap">
+    <div class="d-flex gap-2 flex-wrap finance-page-actions">
         @if (Model.Plots.Count > 0)
         {
             <a class="btn btn-primary" asp-page="/Administration/Members/Finance/CreateCharge" asp-route-id="@Model.Member.Id">@AppLocalizer.Get("Добавить начисление", "Додати нарахування", "Add charge")</a>
@@ -34,46 +36,65 @@
     <div class="alert alert-danger" role="alert">@errorMessage</div>
 }
 
-<div class="row g-4 mb-4">
-    <div class="col-sm-6 col-xl-3">
+<form method="get" class="d-flex flex-wrap align-items-end gap-2 mb-3">
+    <div>
+        <label asp-for="Year" class="form-label">@AppLocalizer.Get("Год расчётов", "Рік розрахунків", "Financial year")</label>
+        <select asp-for="Year" class="form-select">
+            @foreach (var year in Model.AvailableYears)
+            {
+                <option value="@year">@year</option>
+            }
+        </select>
+    </div>
+    <button class="btn btn-outline-primary" type="submit">@AppLocalizer.Get("Показать", "Показати", "Show")</button>
+    <p class="small text-muted mb-1 ms-md-2">@AppLocalizer.Get("Начисления и платежи — за выбранный год. Баланс включает остаток прошлых лет. Отменённые операции не учитываются.", "Нарахування та платежі — за вибраний рік. Баланс включає залишок минулих років. Скасовані операції не враховуються.", "Charges and payments are for the selected year. Balance includes prior years. Cancelled transactions are excluded.")</p>
+</form>
+
+<div class="row row-cols-1 row-cols-sm-2 row-cols-xl-5 g-3 mb-3 finance-summary-cards">
+    <div class="col">
         <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">Активные участки</h2><p class="display-6 mb-0">@Model.Member.ActivePlotsCount</p></div></div>
     </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">Начислено</h2><p class="display-6 mb-0">@Model.Member.TotalCharges.ToString("0.00")</p></div></div>
+    <div class="col">
+        <div class="card h-100 shadow-sm"><div class="card-body">
+            <h2 class="h6 text-muted">@(Model.OpeningCredit > 0 ? AppLocalizer.Get("Переплата на начало года", "Переплата на початок року", "Opening credit") : AppLocalizer.Get("Долг на начало года", "Борг на початок року", "Opening debt"))</h2>
+            <p class="display-6 mb-0 @(Model.OpeningDebt > 0 ? "text-danger" : Model.OpeningCredit > 0 ? "text-primary" : "text-success")">@Math.Abs(Model.OpeningBalance).ToString("0.00")</p>
+            <div class="small text-muted">@AppLocalizer.Get("На", "На", "As of") 01.01.@Model.Year</div>
+        </div></div>
     </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">Оплачено</h2><p class="display-6 mb-0">@Model.Member.TotalPayments.ToString("0.00")</p></div></div>
+    <div class="col">
+        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">Начислено · @Model.Year</h2><p class="display-6 mb-0">@Model.Member.TotalCharges.ToString("0.00")</p></div></div>
     </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="card h-100 shadow-sm @Model.Member.BalanceCardClass"><div class="card-body"><h2 class="h6 text-muted">Баланс</h2><p class="display-6 mb-0 @Model.Member.BalanceStatusClass">@Model.Member.BalanceDisplayAmount.ToString("0.00")</p><div class="text-muted">@Model.Member.BalanceStatusText</div></div></div>
+    <div class="col">
+        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">Оплачено · @Model.Year</h2><p class="display-6 mb-0">@Model.Member.TotalPayments.ToString("0.00")</p></div></div>
+    </div>
+    <div class="col">
+        <div class="card h-100 shadow-sm @Model.Member.BalanceCardClass"><div class="card-body"><h2 class="h6 text-muted">Баланс · @Model.Year</h2><p class="display-6 mb-0 @Model.Member.BalanceStatusClass">@Model.Member.BalanceDisplayAmount.ToString("0.00")</p><div class="text-muted">@Model.Member.BalanceStatusText</div></div></div>
     </div>
 </div>
 
 @if (Model.ElectricitySummary is { } electricitySummary)
 {
+    <p class="small text-muted mb-2">@AppLocalizer.Get("Электроэнергия — актуальное состояние на сегодня, независимо от выбранного года.", "Електроенергія — актуальний стан на сьогодні, незалежно від вибраного року.", "Electricity shows the current status, regardless of the selected year.")</p>
     <partial name="_ElectricityFinanceSummary" model="electricitySummary" />
 }
 
-<div class="card shadow-sm mb-4">
-    <div class="card-body">
-        <div class="row g-3">
-            <div class="col-md-4">
+<div class="finance-member-info mb-3">
+            <div>
                 <p class="mb-1"><strong>Телефон:</strong> @(string.IsNullOrWhiteSpace(Model.Member.PhoneNumber) ? "—" : Model.Member.PhoneNumber)</p>
                 <p class="mb-0"><strong>Email:</strong> @(string.IsNullOrWhiteSpace(Model.Member.Email) ? "—" : Model.Member.Email)</p>
             </div>
-            <div class="col-md-4">
+            <div>
                 <p class="mb-0"><strong>Статус:</strong> @(Model.Member.IsActive ? "Активен" : "В архиве")</p>
             </div>
-            <div class="col-md-4">
+            <div>
                 <p class="mb-0"><strong>Финансовый статус:</strong> <span class="@Model.Member.BalanceStatusClass">@Model.Member.BalanceStatusText</span></p>
             </div>
-        </div>
-    </div>
 </div>
 
 <div class="card shadow-sm mb-4">
     <div class="card-header bg-white">
-        <h2 class="h5 mb-0">@AppLocalizer.Get("Участки", "Ділянки", "Plots")</h2>
+        <h2 class="h5 mb-0">@AppLocalizer.Get("Участки", "Ділянки", "Plots") · @Model.Year</h2>
+        <p class="small text-muted mb-0">@AppLocalizer.Get("Расчёты по текущим участкам участника. Баланс включает остаток на начало года.", "Розрахунки за поточними ділянками учасника. Баланс включає залишок на початок року.", "Figures for the member's current plots. Balance includes the opening balance.")</p>
     </div>
     <div class="card-body p-0">
         @if (Model.Plots.Count == 0)
@@ -87,11 +108,9 @@
                     <thead class="table-light">
                         <tr>
                             <th>@AppLocalizer.Get("Участок", "Ділянка", "Plot")</th>
-                            <th>@AppLocalizer.Get("Адрес", "Адреса", "Address")</th>
-                            <th>@AppLocalizer.Get("Начислено", "Нараховано", "Charged")</th>
-                            <th>@AppLocalizer.Get("Оплачено", "Сплачено", "Paid")</th>
-                            <th>@AppLocalizer.Get("Баланс", "Баланс", "Balance")</th>
-                            <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
+                            <th class="text-end">@AppLocalizer.Get("Начислено", "Нараховано", "Charged")</th>
+                            <th class="text-end">@AppLocalizer.Get("Оплачено", "Сплачено", "Paid")</th>
+                            <th class="text-end">@AppLocalizer.Get("Баланс / статус", "Баланс / статус", "Balance / status")</th>
                             <th class="text-end">@AppLocalizer.Get("Действия", "Дії", "Actions")</th>
                         </tr>
                     </thead>
@@ -99,12 +118,19 @@
                         @foreach (var plot in Model.Plots)
                         {
                             <tr>
-                                <td class="fw-semibold">@plot.PlotNumber</td>
-                                <td>@(string.IsNullOrWhiteSpace(plot.Address) ? "—" : plot.Address)</td>
-                                <td>@plot.Charges.ToString("0.00")</td>
-                                <td>@plot.Payments.ToString("0.00")</td>
-                                <td class="@plot.BalanceStatusClass">@plot.BalanceDisplayAmount.ToString("0.00")</td>
-                                <td>@plot.Status</td>
+                                <td>
+                                    <a class="fw-semibold" asp-page="/Administration/Plots/Details" asp-route-id="@plot.PlotId">@plot.PlotNumber</a>
+                                    @if (!string.IsNullOrWhiteSpace(plot.Address))
+                                    {
+                                        <div class="small text-muted">@plot.Address</div>
+                                    }
+                                </td>
+                                <td class="text-end text-nowrap">@plot.Charges.ToString("0.00") ₴</td>
+                                <td class="text-end text-nowrap">@plot.Payments.ToString("0.00") ₴</td>
+                                <td class="text-end @plot.BalanceStatusClass">
+                                    <div class="fw-semibold text-nowrap">@plot.BalanceDisplayAmount.ToString("0.00") ₴</div>
+                                    <div class="small">@plot.Status</div>
+                                </td>
                                 <td class="text-end">
                                     <div class="btn-group btn-group-sm" role="group">
                                         <a class="btn btn-outline-success" asp-page="/Administration/Members/Finance/CreateCharge" asp-route-id="@Model.Member.Id" asp-route-plotId="@plot.PlotId">Начислить</a>
@@ -121,11 +147,11 @@
     </div>
 </div>
 
-<div class="row g-4">
-    <div class="col-xl-6">
-        <div class="card shadow-sm h-100" id="charge-history" data-finance-history data-page="@Model.ChargePage" data-page-parameter="chargePage">
+<div class="row g-3 mb-4">
+    <div class="col-12 finance-history-column">
+        <div class="card shadow-sm" id="charge-history" data-finance-history data-page="@Model.ChargePage" data-page-parameter="chargePage">
             <div class="card-header bg-white">
-                <h2 class="h5 mb-0">Начисления</h2>
+                <h2 class="h5 mb-0">Начисления · @Model.Year</h2>
             </div>
             <div class="card-body p-0">
                 @if (Model.Charges.Count == 0)
@@ -164,7 +190,7 @@
                                         <td class="text-end">
                                             @if (!charge.IsCancelled)
                                             {
-                                                <a class="btn btn-sm btn-outline-warning" asp-page="/Administration/Members/Finance/CancelCharge" asp-route-memberId="@Model.Member.Id" asp-route-chargeId="@charge.ChargeId">Отменить начисление</a>
+                                                <a class="btn btn-sm btn-outline-secondary" title="Отменить начисление" aria-label="Отменить начисление" asp-page="/Administration/Members/Finance/CancelCharge" asp-route-memberId="@Model.Member.Id" asp-route-chargeId="@charge.ChargeId">Отменить</a>
                                             }
                                             else
                                             {
@@ -205,7 +231,7 @@
             {
                 <div class="card-footer bg-white text-center">
                     <a class="btn btn-outline-primary btn-sm" data-history-more aria-controls="charge-history"
-                       asp-page="/Administration/Members/Finance" asp-route-id="@Model.Member.Id" asp-route-chargePage="@(Model.ChargePage + 1)" asp-route-paymentPage="@Model.PaymentPage" asp-fragment="charge-history">
+                       asp-page="/Administration/Members/Finance" asp-route-id="@Model.Member.Id" asp-route-year="@Model.Year" asp-route-chargePage="@(Model.ChargePage + 1)" asp-route-paymentPage="@Model.PaymentPage" asp-fragment="charge-history">
                         @AppLocalizer.Get($"Развернуть (ещё {Model.NextChargeCount})", $"Розгорнути (ще {Model.NextChargeCount})", $"Show more ({Model.NextChargeCount})")
                     </a>
                     <div class="small text-danger mt-2" data-history-error role="status" hidden>@AppLocalizer.Get("Не удалось загрузить записи. Повторите попытку.", "Не вдалося завантажити записи. Спробуйте ще раз.", "Could not load records. Please try again.")</div>
@@ -213,10 +239,10 @@
             }
         </div>
     </div>
-    <div class="col-xl-6">
-        <div class="card shadow-sm h-100" id="payment-history" data-finance-history data-page="@Model.PaymentPage" data-page-parameter="paymentPage">
+    <div class="col-12 finance-history-column">
+        <div class="card shadow-sm" id="payment-history" data-finance-history data-page="@Model.PaymentPage" data-page-parameter="paymentPage">
             <div class="card-header bg-white">
-                <h2 class="h5 mb-0">Платежи</h2>
+                <h2 class="h5 mb-0">Платежи · @Model.Year</h2>
             </div>
             <div class="card-body p-0">
                 @if (Model.Payments.Count == 0)
@@ -257,7 +283,7 @@
                                                 <a class="btn btn-outline-secondary" asp-page="/Payments/Receipt" asp-route-paymentId="@payment.PaymentId" asp-route-memberId="@Model.Member.Id">@AppLocalizer.Get("Платёжка", "Платіжка", "Receipt")</a>
                                                 @if (!payment.IsCancelled)
                                                 {
-                                                    <a class="btn btn-outline-warning" asp-page="/Administration/Members/Finance/CancelPayment" asp-route-memberId="@Model.Member.Id" asp-route-paymentId="@payment.PaymentId">Отменить платеж</a>
+                                                    <a class="btn btn-outline-secondary" title="Отменить платеж" aria-label="Отменить платеж" asp-page="/Administration/Members/Finance/CancelPayment" asp-route-memberId="@Model.Member.Id" asp-route-paymentId="@payment.PaymentId">Отменить</a>
                                                 }
                                             </div>
                                         </td>
@@ -295,7 +321,7 @@
             {
                 <div class="card-footer bg-white text-center">
                     <a class="btn btn-outline-primary btn-sm" data-history-more aria-controls="payment-history"
-                       asp-page="/Administration/Members/Finance" asp-route-id="@Model.Member.Id" asp-route-chargePage="@Model.ChargePage" asp-route-paymentPage="@(Model.PaymentPage + 1)" asp-fragment="payment-history">
+                       asp-page="/Administration/Members/Finance" asp-route-id="@Model.Member.Id" asp-route-year="@Model.Year" asp-route-chargePage="@Model.ChargePage" asp-route-paymentPage="@(Model.PaymentPage + 1)" asp-fragment="payment-history">
                         @AppLocalizer.Get($"Развернуть (ещё {Model.NextPaymentCount})", $"Розгорнути (ще {Model.NextPaymentCount})", $"Show more ({Model.NextPaymentCount})")
                     </a>
                     <div class="small text-danger mt-2" data-history-error role="status" hidden>@AppLocalizer.Get("Не удалось загрузить записи. Повторите попытку.", "Не вдалося завантажити записи. Спробуйте ще раз.", "Could not load records. Please try again.")</div>
@@ -457,6 +483,7 @@ else
     <div class="modal-dialog">
         <div class="modal-content">
             <form method="post" asp-page-handler="CreateElectricityReading" asp-route-id="@Model.Member.Id">
+                <input asp-for="Year" type="hidden" />
                 <input asp-for="ChargePage" type="hidden" />
                 <input asp-for="PaymentPage" type="hidden" />
                 <div class="modal-header">
@@ -511,6 +538,7 @@ else
     <div class="modal-dialog">
         <div class="modal-content">
             <form method="post" asp-page-handler="SetupElectricity" asp-route-id="@Model.Member.Id">
+                <input asp-for="Year" type="hidden" />
                 <input asp-for="ChargePage" type="hidden" />
                 <input asp-for="PaymentPage" type="hidden" />
                 <div class="modal-header">
@@ -573,6 +601,7 @@ else
     <div class="modal-dialog">
         <div class="modal-content">
             <form method="post" asp-page-handler="InitializeElectricity" asp-route-id="@Model.Member.Id">
+                <input asp-for="Year" type="hidden" />
                 <input asp-for="ChargePage" type="hidden" />
                 <input asp-for="PaymentPage" type="hidden" />
                 <div class="modal-header">

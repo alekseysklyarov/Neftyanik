@@ -2,6 +2,7 @@
 @using Neftyanik.Portal.Domain.Enums
 @model Neftyanik.Portal.Web.Pages.Administration.Members.IndexModel
 @{
+    ViewData["WideLayout"] = true;
     ViewData["Title"] = AppLocalizer.Get("Члены товарищества", "Члени товариства", "Members");
     var isAdministrator = User.IsInRole(RoleNames.Administrator);
 }
@@ -21,14 +22,14 @@
 
 <div class="card shadow-sm mb-4">
     <div class="card-body">
-        <form method="get" class="row g-3 align-items-end">
+        <form method="get" class="row g-3 align-items-end member-list-filters">
             <input asp-for="SortBy" type="hidden" />
             <input asp-for="SortDirection" type="hidden" />
-            <div class="col-md-6">
+            <div class="col-12 col-md-6 col-xl-5">
                 <label asp-for="Search" class="form-label">@AppLocalizer.Get("Поиск", "Пошук", "Search")</label>
                 <input asp-for="Search" class="form-control" placeholder="@AppLocalizer.Get("ФИО или телефон", "ПІБ або телефон", "Full name or phone")" />
             </div>
-            <div class="col-md-3">
+            <div class="col-12 col-md-3 col-xl-2">
                 <label asp-for="Status" class="form-label">@AppLocalizer.Get("Статус", "Статус", "Status")</label>
                 <select asp-for="Status" class="form-select">
                     <option value="all">@AppLocalizer.Get("Все", "Усі", "All")</option>
@@ -36,8 +37,8 @@
                     <option value="archived">@AppLocalizer.Get("Только архивные", "Лише архівні", "Archived only")</option>
                 </select>
             </div>
-            <div class="col-md-3 d-flex gap-2">
-                <button type="submit" class="btn btn-outline-primary flex-fill">@AppLocalizer.Get("Найти", "Знайти", "Search")</button>
+            <div class="col-12 col-md-auto d-flex gap-2">
+                <button type="submit" class="btn btn-outline-primary">@AppLocalizer.Get("Найти", "Знайти", "Search")</button>
                 <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Index" asp-route-status="all">@AppLocalizer.Get("Сбросить", "Скинути", "Reset")</a>
             </div>
         </form>
@@ -58,7 +59,7 @@
         else
         {
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0 member-list-table">
                     <thead class="table-light">
                         <tr>
                             <th>
@@ -100,34 +101,39 @@
                                 <td>
                                     @if (member.IsActive)
                                     {
-                                        <span class="badge text-bg-success">Активен</span>
+                                        <span class="member-status member-status-active">@AppLocalizer.Get("Активен", "Активний", "Active")</span>
                                     }
                                     else
                                     {
-                                        <span class="badge text-bg-secondary">@AppLocalizer.Get("В архиве", "В архіві", "Archived")</span>
+                                        <span class="member-status member-status-archived">@AppLocalizer.Get("В архиве", "В архіві", "Archived")</span>
                                     }
                                 </td>
                                 <td>
                                     @if (member.IsElectricityDisconnected)
                                     {
-                                        <span class="text-muted">@AppLocalizer.Get("Да", "Так", "Yes")</span>
+                                        <span class="text-danger">@AppLocalizer.Get("Да", "Так", "Yes")</span>
                                     }
                                     else
                                     {
-                                        <span class="badge text-bg-danger">@AppLocalizer.Get("Нет", "Ні", "No")</span>
+                                        <span class="text-muted">@AppLocalizer.Get("Нет", "Ні", "No")</span>
                                     }
                                 </td>
                                 <td>@member.ActiveOwnershipsCount</td>
                                 <td class="@member.BalanceStatusClass">@member.BalanceDisplayText</td>
                                 <td>@(string.IsNullOrWhiteSpace(member.Login) ? "—" : member.Login)</td>
                                 <td class="text-end">
-                                    <div class="btn-group btn-group-sm" role="group">
-                                        <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Details" asp-route-id="@member.Id">@AppLocalizer.Get("Подробнее", "Детальніше", "Details")</a>
-                                        <a class="btn btn-outline-success" asp-page="/Administration/Members/Finance" asp-route-id="@member.Id">@AppLocalizer.Get("Финансы", "Фінанси", "Finance")</a>
+                                    <div class="member-list-actions">
+                                        <a class="btn btn-sm btn-outline-secondary" asp-page="/Administration/Members/Details" asp-route-id="@member.Id">@AppLocalizer.Get("Подробнее", "Детальніше", "Details")</a>
+                                        <a class="btn btn-sm btn-outline-primary" asp-page="/Administration/Members/Finance" asp-route-id="@member.Id">@AppLocalizer.Get("Финансы", "Фінанси", "Finance")</a>
                                         @if (isAdministrator)
                                         {
-                                            <a class="btn btn-outline-primary" asp-page="/Administration/Members/Edit" asp-route-id="@member.Id">@AppLocalizer.Get("Редактировать", "Редагувати", "Edit")</a>
-                                            <a class="btn btn-outline-warning" asp-page="/Administration/Members/Archive" asp-route-id="@member.Id">@(member.IsActive ? AppLocalizer.Get("Архивировать", "Архівувати", "Archive") : AppLocalizer.Get("Восстановить", "Відновити", "Restore"))</a>
+                                            <details class="member-more-actions">
+                                                <summary class="btn btn-sm btn-outline-secondary">@AppLocalizer.Get("Ещё", "Ще", "More")</summary>
+                                                <div class="member-more-links">
+                                                    <a asp-page="/Administration/Members/Edit" asp-route-id="@member.Id">@AppLocalizer.Get("Редактировать", "Редагувати", "Edit")</a>
+                                                    <a class="text-warning-emphasis" asp-page="/Administration/Members/Archive" asp-route-id="@member.Id">@(member.IsActive ? AppLocalizer.Get("Архивировать", "Архівувати", "Archive") : AppLocalizer.Get("Восстановить", "Відновити", "Restore"))</a>
+                                                </div>
+                                            </details>
                                         }
                                     </div>
                                 </td>

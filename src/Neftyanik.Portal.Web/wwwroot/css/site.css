@@ -359,6 +359,7 @@ tr[data-row-url] {
 
 .portal-navbar-content {
   gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .portal-navbar-primary,
@@ -407,6 +408,275 @@ tr[data-row-url] {
   min-height: 0;
 }
 
+.portal-header-tools {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 0.5rem;
+  order: 2;
+  margin-left: 0.5rem;
+}
+
+.portal-navbar-collapse {
+  order: 1;
+}
+
+#payment-notification-bell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 2.75rem;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border-radius: 0.75rem;
+}
+
+#payment-notification-bell:hover {
+  background: #edf2ff;
+}
+
+.payment-notification-count {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-width: 1.15rem;
+  font-size: 0.65rem;
+  border: 2px solid var(--portal-surface);
+}
+
+.portal-main-wide {
+  max-width: none;
+  padding-inline: clamp(0.75rem, 2vw, 2rem);
+}
+
+.portal-main-wide .table .btn-group {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.25rem;
+  min-width: 7rem;
+  width: 12rem;
+  max-width: 100%;
+  margin-left: auto;
+}
+
+.portal-main-wide .table .btn-group > .btn {
+  flex: 0 1 auto;
+  margin-left: 0;
+  border-radius: var(--bs-border-radius-sm, 0.25rem);
+  white-space: normal;
+}
+
+.member-list-filters {
+  max-width: 74rem;
+}
+
+.member-list-table th,
+.plot-list-table th {
+  font-size: 0.85rem;
+  color: var(--portal-muted);
+  border-bottom-color: var(--portal-border);
+}
+
+.member-list-table td,
+.plot-list-table td {
+  padding-block: 0.75rem;
+}
+
+.plot-list-table td {
+  font-variant-numeric: tabular-nums;
+}
+
+.plot-list-table > tbody {
+  border-top: 1px solid var(--portal-border);
+}
+
+.plot-list-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  align-items: end;
+}
+
+.plot-list-filters > div {
+  width: auto;
+  min-width: 0;
+}
+
+@media (min-width: 768px) {
+  .plot-list-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1400px) {
+  .plot-list-filters {
+    grid-template-columns: minmax(0, 2fr) repeat(3, minmax(0, 1fr)) auto;
+  }
+}
+
+.member-list-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+
+.member-list-actions > .btn,
+.member-more-actions summary {
+  white-space: nowrap;
+}
+
+.member-more-actions summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.member-more-actions summary::-webkit-details-marker {
+  display: none;
+}
+
+.member-more-actions summary::after {
+  content: " ▾";
+}
+
+.member-more-links {
+  display: grid;
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+  text-align: right;
+  font-size: 0.875rem;
+}
+
+.member-more-links a {
+  white-space: nowrap;
+}
+
+.member-status {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.4rem;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.member-status-active {
+  color: #166534;
+  background: #ecfdf3;
+}
+
+.member-status-archived {
+  color: #475569;
+  background: #f1f5f9;
+}
+
+@media (min-width: 1600px) {
+  .finance-history-column {
+    width: 50%;
+  }
+}
+
+.member-finance-page .card {
+  border-radius: 0.85rem;
+}
+
+.member-finance-page .card-header {
+  padding: 0.9rem 1rem;
+  border-radius: 0.85rem 0.85rem 0 0;
+  border-bottom-color: var(--portal-border);
+}
+
+.member-finance-page .card-header h2 {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.finance-summary-cards .display-6 {
+  font-size: clamp(1.6rem, 2vw, 2rem);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.finance-member-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2.5rem;
+  padding: 0.25rem 1rem;
+  color: var(--portal-muted);
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+
+.finance-member-info strong {
+  font-weight: 500;
+}
+
+.member-finance-page .table thead th {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--portal-muted);
+  border-bottom-color: var(--portal-border);
+}
+
+.member-finance-page .table > tbody {
+  border-top: 1px solid var(--portal-border);
+}
+
+.member-finance-page .table td {
+  padding: 0.7rem 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.member-finance-page .table .btn-group {
+  width: auto;
+  min-width: 0;
+  flex-wrap: nowrap;
+}
+
+.member-finance-page .table .btn-group > .btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.member-finance-page .electricity-finance-summary .h6 {
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.member-finance-page .electricity-finance-summary .card-body > p:last-child {
+  border-top: 1px solid var(--portal-border);
+  padding-top: 0.75rem;
+}
+
+@media (min-width: 992px) {
+  .member-finance-page .electricity-finance-summary .row > div + div {
+    border-left: 1px solid var(--portal-border);
+    padding-left: 1.25rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .member-finance-page .finance-history-column {
+    width: 50%;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .finance-page-actions {
+    width: 100%;
+  }
+
+  .finance-page-actions > .btn {
+    flex: 1 1 14rem;
+  }
+
+  .finance-member-info {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
 .portal-footer {
   width: 100%;
   padding: 1.25rem 0 1.75rem;
@@ -417,7 +687,7 @@ tr[data-row-url] {
 
 .portal-navbar .container,
 .portal-footer .container {
-  max-width: var(--portal-layout-width);
+  max-width: none;
   padding-right: 1.5rem;
   padding-left: 1.5rem;
 }
@@ -629,16 +899,19 @@ tr[data-row-url] {
   }
 
   .portal-brand {
-    flex: 1 1 auto;
+    flex: 1 1 0;
     min-width: 0;
     margin-right: 0.75rem;
   }
 
   .portal-brand-line {
     min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 
   .portal-navbar .navbar-collapse {
+    order: 3;
     margin-top: 1rem;
     padding-top: 1rem;
     border-top: 1px solid var(--portal-border);
@@ -655,13 +928,11 @@ tr[data-row-url] {
   }
 
   .portal-navbar-actions .nav-item,
-  .portal-navbar-actions .portal-user-pill,
-  .portal-navbar-actions #payment-notification-bell {
+  .portal-navbar-actions .portal-user-pill {
     width: 100%;
   }
 
   .portal-navbar-actions .portal-nav-link,
-  .portal-navbar-actions #payment-notification-bell,
   .portal-user-pill {
     display: flex;
     align-items: center;
