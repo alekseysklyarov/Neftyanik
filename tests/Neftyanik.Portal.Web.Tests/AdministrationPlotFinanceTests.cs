@@ -82,7 +82,7 @@ public sealed class AdministrationPlotFinanceTests
         var overview = await client.GetAsync("/neftyanik/Administration/Finance");
         Assert.Equal(HttpStatusCode.OK, overview.StatusCode);
         html = await overview.ReadDecodedHtmlAsync();
-        Assert.Contains("Участки и балансы", html);
+        Assert.DoesNotContain("Участки и балансы", html);
         Assert.DoesNotContain("<table", html);
         await factory.ExecuteDbContextAsync(async db =>
         {
