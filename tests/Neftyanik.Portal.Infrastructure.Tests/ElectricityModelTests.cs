@@ -11,6 +11,20 @@ namespace Neftyanik.Portal.Infrastructure.Tests;
 public class ElectricityModelTests
 {
     [Fact]
+    public void TwoMeterFeature_DefaultsToDisabled_AndKeepsBreakdownOptional()
+    {
+        using var context = CreateContext();
+        var memberType = context.Model.FindEntityType(typeof(Member))!;
+        var setting = memberType.FindProperty(nameof(Member.HasTwoElectricityMeters))!;
+        Assert.False((bool)setting.GetDefaultValue()!);
+        Assert.False(setting.IsNullable);
+        var readingType = context.Model.FindEntityType(typeof(MemberElectricityReading))!;
+        var breakdown = readingType.FindProperty(nameof(MemberElectricityReading.PhysicalMeterReadingsJson))!;
+        Assert.True(breakdown.IsNullable);
+        Assert.Equal(1000, breakdown.GetMaxLength());
+    }
+
+    [Fact]
     public void AssociationElectricityReading_HasUniqueIndex_OnAssociationAndReadingDate()
     {
         using var context = CreateContext();

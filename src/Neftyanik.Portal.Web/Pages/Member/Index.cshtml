@@ -528,6 +528,10 @@
                                                                             <div class="d-flex flex-wrap justify-content-between gap-2">
                                                                                 <span class="fw-semibold">@reading.ReadingDate.ToString("dd.MM.yyyy")</span>
                                                                                 <span>@reading.CurrentReading.ToString("0.000") кВт·ч</span>
+                                                                                @if (reading.PhysicalMeterReadingsJson is not null)
+                                                                                {
+                                                                                    <partial name="_PhysicalMeterReadings" model="reading.PhysicalMeterReadingsJson" />
+                                                                                }
                                                                             </div>
                                                                             <div class="d-flex flex-wrap gap-3 text-muted mt-1">
                                                                                 @if (reading.IsInitialReading)

@@ -50,6 +50,10 @@
                             <td>@(item.PreviousReading.HasValue ? item.PreviousReading.Value.ToString("0.000") : "—")</td>
                             <td>
                                 <div>Т1 @item.CurrentReading.ToString("0.000")</div>
+                                @if (item.PhysicalMeterReadingsJson is not null)
+                                {
+                                    <partial name="_PhysicalMeterReadings" model="item.PhysicalMeterReadingsJson" />
+                                }
                                 @if (item.CurrentNightReading.HasValue)
                                 {
                                     <div class="small text-muted">Т2 @item.CurrentNightReading.Value.ToString("0.000")</div>

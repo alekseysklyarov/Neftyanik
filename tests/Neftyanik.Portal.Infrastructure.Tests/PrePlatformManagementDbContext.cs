@@ -17,6 +17,8 @@ internal static class PrePlatformManagementDbContext
         public override void Customize(ModelBuilder builder, DbContext context)
         {
             base.Customize(builder, context);
+            builder.Entity<Member>().Ignore(x => x.HasTwoElectricityMeters);
+            builder.Entity<MemberElectricityReading>().Ignore(x => x.PhysicalMeterReadingsJson);
             builder.Entity<Charge>().Ignore(x => x.Member).Ignore(x => x.MemberId);
             builder.Entity<ChargeType>().Ignore(x => x.IsMembershipFee);
             builder.Entity<Expense>().Ignore(x => x.PaymentMethod).Ignore(x => x.FundingSource);

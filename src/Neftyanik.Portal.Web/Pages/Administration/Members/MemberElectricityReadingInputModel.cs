@@ -21,8 +21,14 @@ public class MemberElectricityReadingInputModel
     [Display(Name = "Ночное показание")]
     public decimal? CurrentNightReading { get; set; }
 
+    public decimal? SecondMeterReading { get; set; }
+
+    public decimal? SecondMeterNightReading { get; set; }
+
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
+        if (SecondMeterReading < 0m || SecondMeterNightReading < 0m)
+            yield return new ValidationResult("Показания второго счётчика не могут быть отрицательными.", [nameof(SecondMeterReading), nameof(SecondMeterNightReading)]);
         if (CurrentReading.HasValue && CurrentReading.Value < 0m)
         {
             yield return new ValidationResult("Показание не может быть отрицательным.", [nameof(CurrentReading)]);

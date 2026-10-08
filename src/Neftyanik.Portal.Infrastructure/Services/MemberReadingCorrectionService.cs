@@ -38,9 +38,12 @@ public sealed class MemberReadingCorrectionService(ApplicationDbContext db, IFin
                 || (readings[i].CurrentNightReading.HasValue && !readings[i].AppliedMemberNightRate.HasValue)))
                 return ElectricityOperationResult.Failure("Недостаточно данных для пересчёта начисления.");
         var oldReadings = affectedIndexes.ToDictionary(i => readings[i].Id, i => new
-            { readings[i].CurrentReading, readings[i].CurrentNightReading, readings[i].Amount, readings[i].ChargeId });
+            { readings[i].CurrentReading, readings[i].CurrentNightReading, readings[i].PhysicalMeterReadingsJson, readings[i].Amount, readings[i].ChargeId });
         target.CurrentReading = day;
         target.CurrentNightReading = night;
+        // A correction of the total cannot retain an obsolete physical breakdown.
+        // The original breakdown remains available in the financial audit.
+        target.PhysicalMeterReadingsJson = null;
         var newCharges = new List<Charge>();
         // Only the latest reading may be corrected; earlier intervals remain unchanged.
         foreach (var i in affectedIndexes)
@@ -76,7 +79,7 @@ public sealed class MemberReadingCorrectionService(ApplicationDbContext db, IFin
             var reading = readings[i];
             audit.Add(FinancialAuditLogActions.Updated, nameof(MemberElectricityReading), reading.Id.ToString(),
                 "Исправлены показания и расчёт: " + reason.Trim(), oldReadings[reading.Id],
-                new { reading.CurrentReading, reading.CurrentNightReading, reading.Amount, reading.ChargeId, CorrectedReadingId = target.Id });
+                new { reading.CurrentReading, reading.CurrentNightReading, reading.PhysicalMeterReadingsJson, reading.Amount, reading.ChargeId, CorrectedReadingId = target.Id });
         }
         foreach (var charge in newCharges)
             audit.Add(FinancialAuditLogActions.Created, nameof(Charge), charge.Id.ToString(), charge.Description,

@@ -92,10 +92,10 @@
                             <th>@AppLocalizer.Get("Сумма", "Сума", "Amount")</th>
                             <th>@AppLocalizer.Get("Получатель", "Отримувач", "Payee")</th>
                             <th>@AppLocalizer.Get("Документ", "Документ", "Document")</th>
-                            <th>@AppLocalizer.Get("Создал", "Створив", "Created by")</th>
-                            <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
                             @if (!isReport)
                             {
+                                <th>@AppLocalizer.Get("Создал", "Створив", "Created by")</th>
+                                <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
                                 <th class="text-end">@AppLocalizer.Get("Действия", "Дії", "Actions")</th>
                             }
                         </tr>
@@ -115,19 +115,19 @@
                                 <td>@item.Amount.ToString("0.00")</td>
                                 <td>@(string.IsNullOrWhiteSpace(item.Payee) ? "—" : item.Payee)</td>
                                 <td>@(string.IsNullOrWhiteSpace(item.DocumentNumber) ? "—" : item.DocumentNumber)</td>
-                                <td>@item.CreatedByName</td>
-                                <td>
-                                    @if (item.IsCancelled)
-                                    {
-                                        <span class="badge bg-secondary text-white">@AppLocalizer.Get("Отменён", "Скасований", "Cancelled")</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-success text-white">@AppLocalizer.Get("Активен", "Активний", "Active")</span>
-                                    }
-                                </td>
                                 @if (!isReport)
                                 {
+                                    <td>@item.CreatedByName</td>
+                                    <td>
+                                        @if (item.IsCancelled)
+                                        {
+                                            <span class="badge bg-secondary text-white">@AppLocalizer.Get("Отменён", "Скасований", "Cancelled")</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success text-white">@AppLocalizer.Get("Активен", "Активний", "Active")</span>
+                                        }
+                                    </td>
                                     <td class="text-end">
                                         <div class="btn-group btn-group-sm" role="group">
                                             <a class="btn btn-outline-secondary" asp-page="/Administration/Finance/Expenses/Details" asp-route-id="@item.Id">@AppLocalizer.Get("Подробнее", "Детальніше", "Details")</a>
@@ -141,7 +141,7 @@
                                 }
                             </tr>
                             <tr class="table-light">
-                                <td colspan="@(isReport ? 7 : 8)" class="small text-muted">
+                                <td colspan="@(isReport ? 5 : 8)" class="small text-muted">
                                     <div><strong>@AppLocalizer.Get("Описание:", "Опис:", "Description:")</strong> @item.Description</div>
                                     @if (item.IsAssociationElectricityExpense)
                                     {

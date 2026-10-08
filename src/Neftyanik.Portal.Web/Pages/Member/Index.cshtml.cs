@@ -881,6 +881,7 @@ public class IndexModel : PageModel
                             Id = reading.Id,
                             ReadingDate = reading.ReadingDate,
                             CurrentReading = reading.CurrentReading,
+                            PhysicalMeterReadingsJson = reading.PhysicalMeterReadingsJson,
                             Amount = reading.Amount,
                             IsInitialReading = reading.IsInitialReading
                         }
@@ -1091,6 +1092,7 @@ public class IndexModel : PageModel
         public DateOnly ReadingDate { get; init; }
 
         public decimal CurrentReading { get; init; }
+        public string? PhysicalMeterReadingsJson { get; init; }
 
         public decimal? Consumption { get; set; }
 

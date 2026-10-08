@@ -1,0 +1,49 @@
+@page "/Administration/Electricity/Meters/{id:int}/Readings/{readingId:long}/Delete"
+@model Neftyanik.Portal.Web.Pages.Administration.Electricity.Meters.Readings.DeleteModel
+@{
+    ViewData["Title"] = AppLocalizer.Get("Удалить последнее показание", "Видалити останній показник", "Delete latest reading");
+    var energyUnit = AppLocalizer.Get("кВт·ч", "кВт·год", "kWh");
+}
+<h1 class="h2 mb-3">@ViewData["Title"]</h1>
+<div class="card card-body">
+    <p>@AppLocalizer.Get("Показание будет удалено из истории счётчика. Связанное начисление будет отменено, внесённые оплаты сохранятся и будут доступны как аванс. Сведения об удалении сохранятся в финансовом аудите.", "Показник буде видалено з історії лічильника. Пов'язане нарахування буде скасовано, внесені оплати збережуться та будуть доступні як аванс. Відомості про видалення збережуться у фінансовому аудиті.", "The reading will be removed from meter history. Its charge will be cancelled; recorded payments will remain available as advance payments. Deletion details will be retained in the financial audit.")</p>
+    <dl class="row">
+        <dt class="col-sm-4">@AppLocalizer.Get("Участник", "Учасник", "Member")</dt>
+        <dd class="col-sm-8">@Model.Reading.MemberName</dd>
+        <dt class="col-sm-4">@AppLocalizer.Get("Счётчик", "Лічильник", "Meter")</dt>
+        <dd class="col-sm-8">@Model.Reading.MeterName</dd>
+        <dt class="col-sm-4">@AppLocalizer.Get("Дата показаний", "Дата показань", "Reading date")</dt>
+        <dd class="col-sm-8">@Model.Reading.Date.ToString("dd.MM.yyyy")</dd>
+        <dt class="col-sm-4">@AppLocalizer.Get("Показание", "Показник", "Reading")</dt>
+        <dd class="col-sm-8">
+            <div>Т1 @Model.Reading.Day.ToString("0.0") @energyUnit</div>
+            @if (Model.Reading.Night.HasValue)
+            {
+                <div>Т2 @Model.Reading.Night.Value.ToString("0.0") @energyUnit</div>
+            }
+            @if (Model.Reading.PhysicalMeterReadingsJson is not null)
+            {
+                <partial name="_PhysicalMeterReadings" model="Model.Reading.PhysicalMeterReadingsJson" />
+            }
+        </dd>
+        @if (Model.Reading.ChargeAmount.HasValue)
+        {
+            <dt class="col-sm-4">@AppLocalizer.Get("Начисление", "Нарахування", "Charge")</dt>
+            <dd class="col-sm-8">@Model.Reading.ChargeAmount.Value.ToString("0.00") @AppLocalizer.Get("грн", "грн", "UAH")</dd>
+        }
+    </dl>
+    @if (Model.Reading.IsInitialReading)
+    {
+        <p class="text-warning">@AppLocalizer.Get("Это начальное показание. После удаления потребуется заново установить начальные показания.", "Це початковий показник. Після видалення потрібно буде знову встановити початкові показання.", "This is the initial reading. Initial readings will need to be set again after deletion.")</p>
+    }
+    <form method="post">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <label asp-for="Input.Reason" class="form-label">@AppLocalizer.Get("Причина удаления", "Причина видалення", "Deletion reason")</label>
+        <textarea asp-for="Input.Reason" class="form-control mb-2" maxlength="500" rows="3" required></textarea>
+        <span asp-validation-for="Input.Reason" class="text-danger d-block mb-3"></span>
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-danger">@AppLocalizer.Get("Удалить последнее показание", "Видалити останній показник", "Delete latest reading")</button>
+            <a asp-page="/Administration/Members/Finance" asp-route-id="@Model.Reading.MemberId" class="btn btn-outline-secondary">@AppLocalizer.Get("Отмена", "Скасувати", "Cancel")</a>
+        </div>
+    </form>
+</div>

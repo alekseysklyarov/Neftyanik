@@ -74,6 +74,13 @@
                 </div>
                 <div class="col-12">
                     <div class="form-check">
+                        <input asp-for="Input.HasTwoElectricityMeters" class="form-check-input" />
+                        <label asp-for="Input.HasTwoElectricityMeters" class="form-check-label">@AppLocalizer.Get("Два электросчётчика", "Два електролічильники", "Two electricity meters")</label>
+                    </div>
+                    <div class="form-text">@AppLocalizer.Get("Включайте для участников, у которых прежние показания уже записаны как сумма двух счётчиков. Участник будет вводить два значения, расчёт продолжит использовать их сумму. При отключении вводится общая сумма одним значением.", "Вмикайте для учасників, чиї попередні показання вже записані як сума двох лічильників. Учасник вводитиме два значення, розрахунок використовуватиме їхню суму. Після вимкнення загальна сума вводиться одним значенням.", "Enable when previous readings already contain the sum of both meters. The member enters two values and billing uses their sum. When disabled, enter the total as one value.")</div>
+                </div>
+                <div class="col-12">
+                    <div class="form-check">
                         <input asp-for="Input.IsElectricityDisconnected" class="form-check-input" />
                         <label asp-for="Input.IsElectricityDisconnected" class="form-check-label">@AppLocalizer.Get("Электрика отключена", "Електрику відключено", "Electricity disconnected")</label>
                     </div>

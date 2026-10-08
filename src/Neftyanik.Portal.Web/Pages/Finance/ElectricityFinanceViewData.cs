@@ -28,7 +28,7 @@ public sealed class ElectricityFinanceSummary
 
 public sealed record ElectricityMeterMonth(string Name, string PlotNumber, ElectricityMeterReading? Reading,
     ElectricityMeterReading? LatestReading, bool HasCurrentMonthReading);
-public sealed record ElectricityMeterReading(DateOnly Date, decimal Day, decimal? Night);
+public sealed record ElectricityMeterReading(DateOnly Date, decimal Day, decimal? Night, string? PhysicalMeterReadingsJson = null);
 public sealed record ElectricityChargeDetail(DateOnly ChargeDate, string? MeterName,
     ElectricityMeterReading? Previous, ElectricityMeterReading? Current);
 public sealed record ElectricityPaymentDetail(
@@ -52,7 +52,7 @@ public static class ElectricityFinanceViewData
         var readings = await db.MemberElectricityReadings.AsNoTracking()
             .Where(r => meterIds.Contains(r.MemberElectricityMeterId) && r.ReadingDate <= today)
             .OrderByDescending(r => r.ReadingDate).ThenByDescending(r => r.Id)
-            .Select(r => new { r.MemberElectricityMeterId, r.ReadingDate, r.CurrentReading, r.CurrentNightReading })
+            .Select(r => new { r.MemberElectricityMeterId, r.ReadingDate, r.CurrentReading, r.CurrentNightReading, r.PhysicalMeterReadingsJson })
             .ToListAsync(cancellationToken);
         var charges = await db.Charges.AsNoTracking()
             .Where(c => c.MemberId == memberId && c.CancelledAtUtc == null && c.PlotId.HasValue && plotIds.Contains(c.PlotId.Value)
@@ -77,8 +77,8 @@ public static class ElectricityFinanceViewData
                     var reading = readings.FirstOrDefault(r => r.MemberElectricityMeterId == m.Id && r.ReadingDate >= start && r.ReadingDate < end);
                     var latest = readings.FirstOrDefault(r => r.MemberElectricityMeterId == m.Id);
                     return new ElectricityMeterMonth(MeterName(m.Name, m.MeterNumber, m.Id), m.PlotNumber,
-                        reading == null ? null : new ElectricityMeterReading(reading.ReadingDate, reading.CurrentReading, reading.CurrentNightReading),
-                        latest == null ? null : new ElectricityMeterReading(latest.ReadingDate, latest.CurrentReading, latest.CurrentNightReading),
+                        reading == null ? null : new ElectricityMeterReading(reading.ReadingDate, reading.CurrentReading, reading.CurrentNightReading, reading.PhysicalMeterReadingsJson),
+                        latest == null ? null : new ElectricityMeterReading(latest.ReadingDate, latest.CurrentReading, latest.CurrentNightReading, latest.PhysicalMeterReadingsJson),
                         latest != null && latest.ReadingDate >= end);
                 }).ToList(),
             ChargeCount = monthCharges.Count,
@@ -139,7 +139,7 @@ public static class ElectricityFinanceViewData
             .Select(r => new
             {
                 r.Id, r.ChargeId, ChargeDate = r.Charge != null ? r.Charge.ChargeDate : r.ReadingDate,
-                r.MemberElectricityMeterId, r.ReadingDate, r.CurrentReading, r.CurrentNightReading, r.IsInitialReading,
+                r.MemberElectricityMeterId, r.ReadingDate, r.CurrentReading, r.CurrentNightReading, r.IsInitialReading, r.PhysicalMeterReadingsJson,
                 Name = r.MemberElectricityMeter != null ? r.MemberElectricityMeter.Name : null,
                 Number = r.MemberElectricityMeter != null ? r.MemberElectricityMeter.MeterNumber : null
             }).ToListAsync(cancellationToken);
@@ -150,7 +150,7 @@ public static class ElectricityFinanceViewData
             ElectricityMeterReading? previous = null;
             foreach (var r in group)
             {
-                var current = new ElectricityMeterReading(r.ReadingDate, r.CurrentReading, r.CurrentNightReading);
+                var current = new ElectricityMeterReading(r.ReadingDate, r.CurrentReading, r.CurrentNightReading, r.PhysicalMeterReadingsJson);
                 if (r.ChargeId.HasValue && requestedChargeIds.Contains(r.ChargeId.Value))
                 {
                     byId[r.ChargeId.Value] = new ElectricityChargeDetail(r.ChargeDate,

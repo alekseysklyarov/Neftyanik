@@ -196,7 +196,9 @@ public class FinanceModel : PageModel
                 ReadingInput.ReadingDate!.Value,
                 ReadingInput.CurrentReading!.Value,
                 ReadingInput.CurrentNightReading,
-                currentUser?.Id),
+                currentUser?.Id,
+                SecondMeterReading: ReadingInput.SecondMeterReading,
+                SecondMeterNightReading: ReadingInput.SecondMeterNightReading),
             cancellationToken);
 
         if (!result.Succeeded)
@@ -384,6 +386,7 @@ public class FinanceModel : PageModel
                 Email = item.Email,
                 PhoneNumber = item.PhoneNumber,
                 ElectricityMeterType = item.ElectricityMeterType,
+                HasTwoElectricityMeters = item.HasTwoElectricityMeters,
                 IsActive = item.IsActive,
                 ActivePlotsCount = item.PlotOwnerships.Count(ownership => (!ownership.ValidFrom.HasValue || ownership.ValidFrom.Value <= currentDate)
                     && (!ownership.ValidTo.HasValue || ownership.ValidTo.Value >= currentDate))
@@ -735,6 +738,7 @@ public class FinanceModel : PageModel
                             Id = reading.Id,
                             ReadingDate = reading.ReadingDate,
                             CurrentReading = reading.CurrentReading,
+                            PhysicalMeterReadingsJson = reading.PhysicalMeterReadingsJson,
                             CurrentNightReading = reading.CurrentNightReading,
                             Amount = reading.Amount,
                             IsInitialReading = reading.IsInitialReading
@@ -828,6 +832,7 @@ public class FinanceModel : PageModel
         public string? PhoneNumber { get; init; }
 
         public MemberElectricityMeterType ElectricityMeterType { get; init; } = MemberElectricityMeterType.SingleRate;
+        public bool HasTwoElectricityMeters { get; init; }
 
         public bool IsActive { get; init; }
 
@@ -976,6 +981,7 @@ public class FinanceModel : PageModel
         public DateOnly ReadingDate { get; init; }
 
         public decimal CurrentReading { get; init; }
+        public string? PhysicalMeterReadingsJson { get; init; }
 
         public decimal? CurrentNightReading { get; init; }
 

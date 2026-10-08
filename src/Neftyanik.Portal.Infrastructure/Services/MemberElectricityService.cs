@@ -563,6 +563,7 @@ public sealed class MemberElectricityService : IMemberElectricityService
                 item.Id,
                 item.MemberId,
                 MemberName = item.Member != null ? item.Member.FullName : "—",
+                HasTwoElectricityMeters = item.Member != null && item.Member.HasTwoElectricityMeters,
                 MeterType = item.Member != null ? item.Member.ElectricityMeterType : MemberElectricityMeterType.SingleRate,
                 DisplayName = !string.IsNullOrWhiteSpace(item.Name)
                     ? item.Name
@@ -649,7 +650,8 @@ public sealed class MemberElectricityService : IMemberElectricityService
             meter.PreviousNightReading,
             tariff,
             consumption,
-            amount);
+            amount,
+            meter.HasTwoElectricityMeters);
     }
 
     public async Task<ElectricityReadingOperationResult> CreateInitialReadingAsync(CreateMemberElectricityInitialReadingRequest request, CancellationToken cancellationToken = default)
@@ -764,6 +766,33 @@ public sealed class MemberElectricityService : IMemberElectricityService
 
     public async Task<ElectricityReadingOperationResult> CreateReadingAsync(CreateMemberElectricityReadingRequest request, CancellationToken cancellationToken = default)
     {
+        PhysicalMeterReadings? physicalReadings = null;
+        if (request.SecondMeterReading.HasValue || request.SecondMeterNightReading.HasValue)
+        {
+            if (!request.SecondMeterReading.HasValue)
+                return ElectricityReadingOperationResult.Failure("Укажите показание второго счётчика.");
+            if (request.CurrentReading < 0m || request.SecondMeterReading < 0m
+                || request.CurrentNightReading < 0m || request.SecondMeterNightReading < 0m)
+                return ElectricityReadingOperationResult.Failure("Показания обоих счётчиков не могут быть отрицательными.");
+
+            physicalReadings = new(request.CurrentReading, request.SecondMeterReading.Value,
+                request.CurrentNightReading, request.SecondMeterNightReading);
+            if (new[] { physicalReadings.First, physicalReadings.Second, physicalReadings.FirstNight ?? 0m, physicalReadings.SecondNight ?? 0m }
+                .Any(value => decimal.Round(value, 3) != value))
+                return ElectricityReadingOperationResult.Failure("Укажите показания с точностью не более трёх знаков после запятой.");
+            // Normalize once, before the existing consumption and charge calculation.
+            const decimal maxReading = 999999999999999.999m;
+            if (physicalReadings.First > maxReading - physicalReadings.Second
+                || (physicalReadings.FirstNight ?? 0m) > maxReading - (physicalReadings.SecondNight ?? 0m))
+                return ElectricityReadingOperationResult.Failure("Сумма показаний превышает допустимое значение.");
+            request = request with
+            {
+                CurrentReading = physicalReadings.First + physicalReadings.Second,
+                CurrentNightReading = physicalReadings.FirstNight.HasValue && physicalReadings.SecondNight.HasValue
+                    ? physicalReadings.FirstNight.Value + physicalReadings.SecondNight.Value : null
+            };
+        }
+
         if (request.CurrentReading < 0m)
         {
             return ElectricityReadingOperationResult.Failure("Показание не может быть отрицательным.");
@@ -781,9 +810,24 @@ public sealed class MemberElectricityService : IMemberElectricityService
             return ElectricityReadingOperationResult.Failure("Счетчик не найден.");
         }
 
+        if (physicalReadings is not null && !meter.HasTwoElectricityMeters)
+            return ElectricityReadingOperationResult.Failure("Ввод двух счётчиков не включён в настройках участника.");
+        if (meter.HasTwoElectricityMeters && physicalReadings is null)
+            return ElectricityReadingOperationResult.Failure("Укажите показания обоих счётчиков.");
+
         if (!meter.IsActive)
         {
             return ElectricityReadingOperationResult.Failure("Счетчик деактивирован. Передача показаний недоступна.");
+        }
+
+        if (physicalReadings is not null)
+        {
+            if (meter.MeterType == MemberElectricityMeterType.DayNight
+                && (!physicalReadings.FirstNight.HasValue || !physicalReadings.SecondNight.HasValue))
+                return ElectricityReadingOperationResult.Failure("Укажите дневные и ночные показания обоих счётчиков.");
+            if (meter.MeterType != MemberElectricityMeterType.DayNight
+                && (physicalReadings.FirstNight.HasValue || physicalReadings.SecondNight.HasValue))
+                return ElectricityReadingOperationResult.Failure("Для однотарифных счётчиков укажите только основные показания.");
         }
 
         if (!meter.BillingPlotIsLinked)
@@ -879,6 +923,7 @@ public sealed class MemberElectricityService : IMemberElectricityService
             ReadingDate = request.ReadingDate,
             CurrentReading = request.CurrentReading,
             CurrentNightReading = meter.MeterType == MemberElectricityMeterType.DayNight ? request.CurrentNightReading : null,
+            PhysicalMeterReadingsJson = physicalReadings?.ToJson(),
             AppliedMemberRate = tariff,
             AppliedMemberNightRate = nightTariff,
             Amount = amount,
@@ -904,6 +949,18 @@ public sealed class MemberElectricityService : IMemberElectricityService
             if (latest is null || latest.ReadingDate != meter.PreviousReadingDate
                 || latest.CurrentReading != meter.PreviousReading || latest.CurrentNightReading != meter.PreviousNightReading)
                 return ElectricityReadingOperationResult.Failure("Показания изменились. Обновите страницу и повторите ввод.");
+            var hasTwoMetersNow = await _dbContext.MemberElectricityMeters.AsNoTracking()
+                .Where(m => m.Id == request.MeterId).Select(m => m.Member != null && m.Member.HasTwoElectricityMeters)
+                .FirstOrDefaultAsync(cancellationToken);
+            if (hasTwoMetersNow != meter.HasTwoElectricityMeters)
+                return ElectricityReadingOperationResult.Failure("Настройки счётчиков изменились. Обновите страницу и повторите ввод.");
+            var previousPhysicalReadings = PhysicalMeterReadings.FromJson(latest.PhysicalMeterReadingsJson);
+            if (physicalReadings is not null && previousPhysicalReadings is not null
+                && (physicalReadings.First < previousPhysicalReadings.First
+                    || physicalReadings.Second < previousPhysicalReadings.Second
+                    || physicalReadings.FirstNight < previousPhysicalReadings.FirstNight
+                    || physicalReadings.SecondNight < previousPhysicalReadings.SecondNight))
+                return ElectricityReadingOperationResult.Failure("Показание каждого счётчика не может быть меньше его предыдущего показания.");
             _dbContext.MemberElectricityReadings.Add(reading);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -982,6 +1039,7 @@ public sealed class MemberElectricityService : IMemberElectricityService
                 reading.ReadingDate,
                 Value = reading.CurrentReading,
                 reading.CurrentNightReading,
+                reading.PhysicalMeterReadingsJson,
                 Consumption = consumption,
                 reading.AppliedMemberRate,
                 reading.AppliedMemberNightRate,

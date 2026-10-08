@@ -65,7 +65,7 @@ public class CreateModel : PageModel
     public async Task<IActionResult> OnPostAsync(int id, CancellationToken cancellationToken)
     {
         var readingDate = Input.ReadingDate ?? DateOnly.FromDateTime(DateTime.Today);
-        if (!await LoadPageStateAsync(id, readingDate, Input.CurrentReading, Input.CurrentNightReading, cancellationToken))
+        if (!await LoadPageStateAsync(id, readingDate, Input.TotalReading, Input.TotalNightReading, cancellationToken))
         {
             return NotFound();
         }
@@ -90,7 +90,9 @@ public class CreateModel : PageModel
                 Input.ReadingDate!.Value,
                 Input.CurrentReading!.Value,
                 Input.CurrentNightReading,
-                currentUser?.Id),
+                currentUser?.Id,
+                SecondMeterReading: Input.SecondMeterReading,
+                SecondMeterNightReading: Input.SecondMeterNightReading),
             cancellationToken);
 
         if (!result.Succeeded)
@@ -117,6 +119,7 @@ public class CreateModel : PageModel
             MemberName = context.MemberName,
             DisplayName = context.DisplayName,
             MeterType = context.MeterType,
+            HasTwoElectricityMeters = context.HasTwoElectricityMeters,
             BillingPlotId = context.BillingPlotId,
             BillingPlotNumber = context.BillingPlotNumber,
             LinkedPlotNumbers = context.LinkedPlotNumbers,
@@ -198,6 +201,7 @@ public class CreateModel : PageModel
 
     public sealed class MeterContextViewModel
     {
+        public bool HasTwoElectricityMeters { get; init; }
         public int Id { get; init; }
         public string MemberName { get; init; } = "—";
         public string DisplayName { get; init; } = "—";

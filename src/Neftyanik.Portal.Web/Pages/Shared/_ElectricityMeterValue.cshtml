@@ -1,4 +1,8 @@
 @model Neftyanik.Portal.Web.Pages.Finance.ElectricityMeterReading
+@if (Model.PhysicalMeterReadingsJson is not null)
+{
+    <partial name="_PhysicalMeterReadings" model="Model.PhysicalMeterReadingsJson" />
+}
 <span>@Model.Date.ToString("dd.MM.yyyy") — @(Model.Night.HasValue ? "Т1 " : "")@Model.Day.ToString("0.###") @AppLocalizer.Get("кВт·ч", "кВт·год", "kWh")</span>
 @if (Model.Night.HasValue)
 {

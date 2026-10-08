@@ -65,6 +65,7 @@ public class IndexModel : PageModel
                 ReadingDate = reading.ReadingDate,
                 IsInitialReading = reading.IsInitialReading,
                 CurrentReading = reading.CurrentReading,
+                PhysicalMeterReadingsJson = reading.PhysicalMeterReadingsJson,
                 CurrentNightReading = reading.CurrentNightReading,
                 AppliedMemberRate = reading.AppliedMemberRate,
                 AppliedMemberNightRate = reading.AppliedMemberNightRate,
@@ -144,6 +145,7 @@ public class IndexModel : PageModel
         public bool IsInitialReading { get; init; }
         public decimal? PreviousReading { get; set; }
         public decimal CurrentReading { get; init; }
+        public string? PhysicalMeterReadingsJson { get; init; }
         public decimal? CurrentNightReading { get; init; }
         public decimal? Consumption { get; set; }
         public decimal? AppliedMemberRate { get; init; }

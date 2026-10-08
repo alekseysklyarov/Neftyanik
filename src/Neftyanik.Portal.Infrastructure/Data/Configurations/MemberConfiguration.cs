@@ -35,6 +35,9 @@ public class MemberConfiguration : IEntityTypeConfiguration<Member>
         builder.Property(x => x.ElectricityMeterType)
             .HasDefaultValue(MemberElectricityMeterType.SingleRate);
 
+        builder.Property(x => x.HasTwoElectricityMeters)
+            .HasDefaultValue(false);
+
         builder.Property(x => x.IsElectricityDisconnected)
             .HasDefaultValue(false);
 

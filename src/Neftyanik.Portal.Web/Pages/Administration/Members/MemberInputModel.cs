@@ -30,6 +30,9 @@ public class MemberInputModel
     [Display(Name = "Электрика отключена")]
     public bool IsElectricityDisconnected { get; set; }
 
+    [Display(Name = "Два электросчётчика")]
+    public bool HasTwoElectricityMeters { get; set; }
+
     [DataType(DataType.Date)]
     [Display(Name = "Дата вступления")]
     public DateOnly? JoinedAt { get; set; }

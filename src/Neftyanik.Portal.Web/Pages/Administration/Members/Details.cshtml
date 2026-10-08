@@ -40,6 +40,8 @@
 
                     <dt class="col-sm-4">@AppLocalizer.Get("Тип счётчика", "Тип лічильника", "Meter type")</dt>
                     <dd class="col-sm-8">@(Model.Member.ElectricityMeterType == MemberElectricityMeterType.DayNight ? AppLocalizer.Get("Двухзонный", "Двозонний", "Day/night") : AppLocalizer.Get("Однозонный", "Однозонний", "Single-rate"))</dd>
+                    <dt class="col-sm-4">@AppLocalizer.Get("Количество счётчиков", "Кількість лічильників", "Number of meters")</dt>
+                    <dd class="col-sm-8">@(Model.Member.HasTwoElectricityMeters ? 2 : 1)</dd>
 
                     <dt class="col-sm-4">@AppLocalizer.Get("Электрика отключена", "Електрику відключено", "Electricity disconnected")</dt>
                     <dd class="col-sm-8">

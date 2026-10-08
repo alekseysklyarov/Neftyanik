@@ -64,9 +64,12 @@
                             <li class="nav-item">
                                 <a class="nav-link portal-nav-link" asp-page="/Administration/Finance/Index">@AppLocalizer.Get("Финансы", "Фінанси", "Finance")</a>
                             </li>
-                            <li class="nav-item">
-                                <a class="nav-link portal-nav-link" asp-page="/Administration/Index">@AppLocalizer.Get("Администрирование", "Адміністрування", "Administration")</a>
-                            </li>
+                            @if (isAdministrator)
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link portal-nav-link" asp-page="/Administration/Index">@AppLocalizer.Get("Администрирование", "Адміністрування", "Administration")</a>
+                                </li>
+                            }
                         }
                         @if (User.IsInRole(RoleNames.Member))
                         {

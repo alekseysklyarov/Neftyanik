@@ -30,6 +30,9 @@ public class MemberElectricityReadingConfiguration : IEntityTypeConfiguration<Me
         builder.Property(x => x.CurrentNightReading)
             .HasPrecision(18, 3);
 
+        builder.Property(x => x.PhysicalMeterReadingsJson)
+            .HasMaxLength(1000);
+
         builder.Property(x => x.AppliedMemberRate)
             .HasPrecision(18, 4);
 

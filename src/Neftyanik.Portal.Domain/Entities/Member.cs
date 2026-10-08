@@ -32,6 +32,8 @@ public class Member : IAssociationOwned
 
     public bool IsElectricityDisconnected { get; set; }
 
+    public bool HasTwoElectricityMeters { get; set; }
+
     public DateOnly? JoinedAt { get; set; }
 
     public bool IsActive { get; set; } = true;

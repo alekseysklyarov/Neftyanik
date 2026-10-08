@@ -52,6 +52,11 @@
                     <textarea asp-for="Input.Notes" class="form-control" rows="5"></textarea>
                     <span asp-validation-for="Input.Notes" class="text-danger"></span>
                 </div>
+                <div class="col-12 form-check ms-2">
+                    <input asp-for="Input.HasTwoElectricityMeters" class="form-check-input" />
+                    <label asp-for="Input.HasTwoElectricityMeters" class="form-check-label">@AppLocalizer.Get("Два электросчётчика", "Два електролічильники", "Two electricity meters")</label>
+                    <div class="form-text">@AppLocalizer.Get("Начальные показания задаются общей суммой двух счётчиков.", "Початкові показання задаються загальною сумою двох лічильників.", "Set the initial reading to the sum of both meters.")</div>
+                </div>
                 <div class="col-12">
                     <div class="form-check">
                         <input asp-for="Input.IsElectricityDisconnected" class="form-check-input" />

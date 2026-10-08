@@ -418,6 +418,9 @@ else
                                             <a class="btn btn-sm btn-outline-primary mt-2"
                                                asp-page="/Administration/Electricity/Meters/Readings/Correct"
                                                asp-route-id="@meter.Id" asp-route-readingId="@latestReading.Id">@AppLocalizer.Get("Исправить последнее показание", "Виправити останній показник", "Correct latest reading")</a>
+                                            <a class="btn btn-sm btn-outline-danger mt-2 ms-1"
+                                               asp-page="/Administration/Electricity/Meters/Readings/Delete"
+                                               asp-route-id="@meter.Id" asp-route-readingId="@latestReading.Id">@AppLocalizer.Get("Удалить последнее показание", "Видалити останній показник", "Delete latest reading")</a>
                                         }
                                     </td>
                                     <td>@meter.BillingPlotNumber</td>
@@ -455,6 +458,10 @@ else
                                                                 <span class="fw-semibold">@reading.ReadingDate.ToString("dd.MM.yyyy")</span>
                                                                  <span>
                                                                      Т1 @reading.CurrentReading.ToString("0.###") кВт·ч
+                                                                     @if (reading.PhysicalMeterReadingsJson is not null)
+                                                                     {
+                                                                         <partial name="_PhysicalMeterReadings" model="reading.PhysicalMeterReadingsJson" />
+                                                                     }
                                                                      @if (reading.CurrentNightReading.HasValue)
                                                                      {
                                                                          <span class="ms-2">Т2 @reading.CurrentNightReading.Value.ToString("0.###") кВт·ч</span>
@@ -533,8 +540,25 @@ else
                         <div class="mb-3">
                             <label asp-for="ReadingInput.CurrentNightReading" class="form-label"></label>
                             <input asp-for="ReadingInput.CurrentNightReading" class="form-control" type="number" step="0.001" min="0" />
-                            <span asp-validation-for="ReadingInput.CurrentNightReading" class="text-danger"></span>
+                        <span asp-validation-for="ReadingInput.CurrentNightReading" class="text-danger"></span>
                         </div>
+                    }
+                    @if (Model.Member.HasTwoElectricityMeters)
+                    {
+                        <p class="text-muted">Выше укажите первый счётчик, ниже — второй. Для расчёта используется сумма.</p>
+                        <div class="mb-3">
+                            <label asp-for="ReadingInput.SecondMeterReading" class="form-label">Счётчик 2: @(Model.Member.ElectricityMeterType == Neftyanik.Portal.Domain.Enums.MemberElectricityMeterType.DayNight ? "день, " : "")кВт·ч</label>
+                            <input asp-for="ReadingInput.SecondMeterReading" class="form-control" type="number" step="0.001" min="0" />
+                            <span asp-validation-for="ReadingInput.SecondMeterReading" class="text-danger"></span>
+                        </div>
+                        @if (Model.Member.ElectricityMeterType == Neftyanik.Portal.Domain.Enums.MemberElectricityMeterType.DayNight)
+                        {
+                            <div class="mb-3">
+                                <label asp-for="ReadingInput.SecondMeterNightReading" class="form-label">Счётчик 2: ночь, кВт·ч</label>
+                                <input asp-for="ReadingInput.SecondMeterNightReading" class="form-control" type="number" step="0.001" min="0" />
+                                <span asp-validation-for="ReadingInput.SecondMeterNightReading" class="text-danger"></span>
+                            </div>
+                        }
                     }
                 </div>
                 <div class="modal-footer">

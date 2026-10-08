@@ -44,6 +44,10 @@
                                     <div class="fw-semibold">@AppLocalizer.Get("Начальные показания", "Початкові показання", "Initial readings")</div>
                                 }
                                 <div>@item.CurrentReading.ToString("0.000") кВт·ч</div>
+                                @if (item.PhysicalMeterReadingsJson is not null)
+                                {
+                                    <partial name="_PhysicalMeterReadings" model="item.PhysicalMeterReadingsJson" />
+                                }
                             </td>
                             <td>@(item.Consumption.HasValue ? $"{item.Consumption.Value:0.000} кВт·ч" : "—")</td>
                             <td>

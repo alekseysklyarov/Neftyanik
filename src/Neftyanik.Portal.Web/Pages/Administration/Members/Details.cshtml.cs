@@ -38,6 +38,7 @@ public class DetailsModel : PageModel
                 Email = item.Email,
                 ElectricityMeterType = item.ElectricityMeterType,
                 IsElectricityDisconnected = item.IsElectricityDisconnected,
+                HasTwoElectricityMeters = item.HasTwoElectricityMeters,
                 JoinedAt = item.JoinedAt,
                 Notes = item.Notes,
                 IsActive = item.IsActive,
@@ -144,6 +145,7 @@ public class DetailsModel : PageModel
         public MemberElectricityMeterType ElectricityMeterType { get; init; }
 
         public bool IsElectricityDisconnected { get; init; }
+        public bool HasTwoElectricityMeters { get; init; }
 
         public DateOnly? JoinedAt { get; init; }
 

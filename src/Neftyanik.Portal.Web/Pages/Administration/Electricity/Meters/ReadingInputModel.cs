@@ -13,8 +13,25 @@ public class ReadingInputModel
 
     public decimal? CurrentNightReading { get; set; }
 
+    public decimal? SecondMeterReading { get; set; }
+
+    public decimal? SecondMeterNightReading { get; set; }
+
+    public decimal? TotalReading => SumForPreview(CurrentReading, SecondMeterReading);
+
+    public decimal? TotalNightReading => SumForPreview(CurrentNightReading, SecondMeterNightReading);
+
+    private static decimal? SumForPreview(decimal? first, decimal? second)
+    {
+        try { return first + (second ?? 0m); }
+        catch (OverflowException) { return null; }
+    }
+
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
+        if (SecondMeterReading < 0m || SecondMeterNightReading < 0m)
+            yield return new ValidationResult(AppLocalizer.Get("Показания второго счётчика не могут быть отрицательными.", "Показання другого лічильника не можуть бути від'ємними.", "The second meter readings cannot be negative."), [nameof(SecondMeterReading), nameof(SecondMeterNightReading)]);
+
         if (!ReadingDate.HasValue)
         {
             yield return new ValidationResult(AppLocalizer.Get("Укажите дату показаний.", "Вкажіть дату показань.", "Enter the reading date."), [nameof(ReadingDate)]);

@@ -68,8 +68,11 @@ public sealed class FinanceReportsPageTests
         }
         Assert.Contains("Действия", journal);
         Assert.Contains("/Administration/Finance/Expenses/Edit", journal);
-        Assert.Equal(7, Regex.Matches(Regex.Match(report, "<thead.*?</thead>", RegexOptions.Singleline).Value, "<th>").Count);
-        Assert.Contains("colspan=\"7\"", report);
+        var reportHeaders = Regex.Match(report, "<thead.*?</thead>", RegexOptions.Singleline).Value;
+        Assert.Equal(5, Regex.Matches(reportHeaders, "<th>").Count);
+        Assert.DoesNotContain("Создал", reportHeaders);
+        Assert.DoesNotContain("Статус", reportHeaders);
+        Assert.Contains("colspan=\"5\"", report);
         Assert.DoesNotContain("Действия", report);
         foreach (var action in new[] { "Create", "Edit", "Cancel", "Details" })
             Assert.DoesNotContain($"/Administration/Finance/Expenses/{action}", report);

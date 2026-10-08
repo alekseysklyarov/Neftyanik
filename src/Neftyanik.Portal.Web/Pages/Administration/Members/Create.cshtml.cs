@@ -38,6 +38,7 @@ public class CreateModel : PageModel
             Email = Normalize(Input.Email),
             ElectricityMeterType = Input.ElectricityMeterType,
             IsElectricityDisconnected = Input.IsElectricityDisconnected,
+            HasTwoElectricityMeters = Input.HasTwoElectricityMeters,
             JoinedAt = Input.JoinedAt,
             Notes = Normalize(Input.Notes),
             IsActive = Input.IsActive,

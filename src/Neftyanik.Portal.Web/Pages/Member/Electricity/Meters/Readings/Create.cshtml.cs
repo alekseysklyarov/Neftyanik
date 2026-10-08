@@ -84,7 +84,9 @@ public class CreateModel : PageModel
                 Input.CurrentReading!.Value,
                 Input.CurrentNightReading,
                 currentUser?.Id,
-                true),
+                true,
+                Input.SecondMeterReading,
+                Input.SecondMeterNightReading),
             cancellationToken);
 
         if (!result.Succeeded)
@@ -123,6 +125,7 @@ public class CreateModel : PageModel
             {
                 Id = item.Id,
                 MemberId = item.MemberId,
+                HasTwoElectricityMeters = item.Member != null && item.Member.HasTwoElectricityMeters,
                 MeterType = item.Member != null ? item.Member.ElectricityMeterType : MemberElectricityMeterType.SingleRate,
                 DisplayName = !string.IsNullOrWhiteSpace(item.Name) ? item.Name : !string.IsNullOrWhiteSpace(item.MeterNumber) ? item.MeterNumber : AppLocalizer.Get($"Счетчик #{item.Id}", $"Лічильник #{item.Id}", $"Meter #{item.Id}"),
                 BillingPlotId = item.BillingPlotId,
@@ -133,6 +136,7 @@ public class CreateModel : PageModel
                 PreviousReadingDate = item.Readings.OrderByDescending(reading => reading.ReadingDate).ThenByDescending(reading => reading.Id).Select(reading => (DateOnly?)reading.ReadingDate).FirstOrDefault(),
                 PreviousReading = item.Readings.OrderByDescending(reading => reading.ReadingDate).ThenByDescending(reading => reading.Id).Select(reading => (decimal?)reading.CurrentReading).FirstOrDefault(),
                 PreviousNightReading = item.Readings.OrderByDescending(reading => reading.ReadingDate).ThenByDescending(reading => reading.Id).Select(reading => reading.CurrentNightReading).FirstOrDefault(),
+                PreviousPhysicalMeterReadingsJson = item.Readings.OrderByDescending(reading => reading.ReadingDate).ThenByDescending(reading => reading.Id).Select(reading => reading.PhysicalMeterReadingsJson).FirstOrDefault(),
                 HasInitialReading = item.Readings.Any()
             })
             .FirstOrDefaultAsync(cancellationToken);
@@ -179,12 +183,12 @@ public class CreateModel : PageModel
             })
             .FirstOrDefaultAsync(cancellationToken);
 
-        var dayConsumption = Input.CurrentReading.HasValue && previousReading.HasValue
-            ? Input.CurrentReading.Value - previousReading.Value
+        var dayConsumption = Input.TotalReading.HasValue && previousReading.HasValue
+            ? Input.TotalReading.Value - previousReading.Value
             : (decimal?)null;
 
-        var nightConsumption = Input.CurrentNightReading.HasValue && previousNightReading.HasValue
-            ? Input.CurrentNightReading.Value - previousNightReading.Value
+        var nightConsumption = Input.TotalNightReading.HasValue && previousNightReading.HasValue
+            ? Input.TotalNightReading.Value - previousNightReading.Value
             : (decimal?)null;
 
         var consumption = meterType == MemberElectricityMeterType.DayNight
@@ -219,6 +223,7 @@ public class CreateModel : PageModel
     {
         public int Id { get; init; }
         public int MemberId { get; init; }
+        public bool HasTwoElectricityMeters { get; init; }
         public MemberElectricityMeterType MeterType { get; init; } = MemberElectricityMeterType.SingleRate;
         public string DisplayName { get; init; } = "—";
         public int BillingPlotId { get; init; }
@@ -227,6 +232,7 @@ public class CreateModel : PageModel
         public DateOnly? PreviousReadingDate { get; init; }
         public decimal? PreviousReading { get; init; }
         public decimal? PreviousNightReading { get; init; }
+        public string? PreviousPhysicalMeterReadingsJson { get; init; }
         public bool HasInitialReading { get; init; }
         public bool RequiresNightReading => MeterType == MemberElectricityMeterType.DayNight;
     }

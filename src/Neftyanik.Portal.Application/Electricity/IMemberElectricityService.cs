@@ -83,7 +83,9 @@ public sealed record CreateMemberElectricityReadingRequest(
     decimal CurrentReading,
     decimal? CurrentNightReading,
     string? CreatedByUserId,
-    bool SubmittedByMember = false);
+    bool SubmittedByMember = false,
+    decimal? SecondMeterReading = null,
+    decimal? SecondMeterNightReading = null);
 
 public sealed record MemberElectricityMeterOperationResult(
     bool Succeeded,
@@ -129,7 +131,8 @@ public sealed record MemberElectricityReadingEntryContext(
     decimal? PreviousNightReading,
     MemberElectricityTariffSnapshot? Tariff,
     decimal? Consumption,
-    decimal? Amount);
+    decimal? Amount,
+    bool HasTwoElectricityMeters = false);
 
 public sealed record MemberElectricityTariffSnapshot(
     DateOnly EffectiveFrom,

@@ -1,0 +1,16 @@
+@model string
+@using Neftyanik.Portal.Domain.Entities
+@{
+    var readings = PhysicalMeterReadings.FromJson(Model);
+}
+@if (readings is not null)
+{
+    <span class="d-block small text-muted">
+        <span class="d-block">@AppLocalizer.Get("Счётчик 1", "Лічильник 1", "Meter 1"): @readings.First.ToString("0.000")@(readings.FirstNight.HasValue ? $" / {readings.FirstNight.Value:0.000}" : "") @AppLocalizer.Get("кВт·ч", "кВт·год", "kWh")</span>
+        <span class="d-block">@AppLocalizer.Get("Счётчик 2", "Лічильник 2", "Meter 2"): @readings.Second.ToString("0.000")@(readings.SecondNight.HasValue ? $" / {readings.SecondNight.Value:0.000}" : "") @AppLocalizer.Get("кВт·ч", "кВт·год", "kWh")</span>
+        @if (readings.FirstNight.HasValue)
+        {
+            <span class="d-block">@AppLocalizer.Get("День / ночь", "День / ніч", "Day / night")</span>
+        }
+    </span>
+}

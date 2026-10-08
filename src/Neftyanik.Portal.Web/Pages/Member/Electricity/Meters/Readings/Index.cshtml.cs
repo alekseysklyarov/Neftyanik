@@ -59,6 +59,7 @@ public class IndexModel : PageModel
                 ReadingDate = reading.ReadingDate,
                 CurrentNightReading = reading.CurrentNightReading,
                 CurrentReading = reading.CurrentReading,
+                PhysicalMeterReadingsJson = reading.PhysicalMeterReadingsJson,
                 AppliedMemberRate = reading.AppliedMemberRate,
                 AppliedMemberNightRate = reading.AppliedMemberNightRate,
                 Amount = reading.Amount,
@@ -172,6 +173,7 @@ public class IndexModel : PageModel
         public long Id { get; init; }
         public DateOnly ReadingDate { get; init; }
         public decimal CurrentReading { get; init; }
+        public string? PhysicalMeterReadingsJson { get; init; }
         public decimal? CurrentNightReading { get; init; }
         public decimal? Consumption { get; set; }
         public decimal? AppliedMemberRate { get; init; }

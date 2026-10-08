@@ -18,6 +18,8 @@ public class MemberElectricityReading : IAssociationOwned
 
     public decimal? CurrentNightReading { get; set; }
 
+    public string? PhysicalMeterReadingsJson { get; set; }
+
     public decimal? AppliedMemberRate { get; set; }
 
     public decimal? AppliedMemberNightRate { get; set; }
