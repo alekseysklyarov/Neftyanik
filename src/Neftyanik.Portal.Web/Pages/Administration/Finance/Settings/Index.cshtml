@@ -4,10 +4,6 @@
     ViewData["Title"] = AppLocalizer.Get("Настройки финансов", "Налаштування фінансів", "Finance settings");
 }
 
-@if (User.IsInRole(RoleNames.Administrator))
-{
-    <p><a class="btn btn-outline-primary" asp-page="PaymentInstructions">Реквизиты для оплаты участниками</a></p>
-}
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
         <h1 class="h2 mb-1">@AppLocalizer.Get("Настройки финансов", "Налаштування фінансів", "Finance settings")</h1>
@@ -23,6 +19,18 @@
         <h2 class="h4">@AppLocalizer.Get("Готовность товарищества", "Готовність товариства", "Association readiness")</h2>
         <p>@AppLocalizer.Get("Обзор на", "Огляд на", "Overview as of") @Model.Readiness.AsOfDate.ToString("dd.MM.yyyy").
             @AppLocalizer.Get("Это отдельные проверки, а не блокировка портала. Операции сохраняют собственные проверки, в том числе тариф на дату показания и права доступа.", "Це окремі перевірки, а не блокування порталу. Операції зберігають власні перевірки, зокрема тариф на дату показання й права доступу.", "These are individual checks, not a portal lock. Operations retain their own validation, including tariffs on the reading date and access permissions.")</p>
+    </div>
+    <div class="col-md-6 col-xl-4">
+        <section class="card h-100 shadow-sm" data-settings-area="PaymentInstructions" aria-labelledby="payment-instructions-title">
+            <div class="card-body d-flex flex-column">
+                <h3 class="h5" id="payment-instructions-title">@AppLocalizer.Get("Реквизиты для оплаты", "Реквізити для оплати", "Payment details")</h3>
+                <p>@AppLocalizer.Get("Получатель, номер карты и назначение платежа для участников.", "Отримувач, номер картки та призначення платежу для учасників.", "Recipient, card number and payment purpose for members.")</p>
+                <p class="text-muted flex-grow-1">@AppLocalizer.Get("Эти данные отображаются участникам в личном кабинете. Изменять их могут администратор и бухгалтер.", "Ці дані відображаються учасникам в особистому кабінеті. Змінювати їх можуть адміністратор і бухгалтер.", "Members see these details in their account. Administrators and accountants can edit them.")</p>
+                <div>
+                    <a class="btn btn-outline-primary" asp-page="PaymentInstructions">@AppLocalizer.Get("Настроить реквизиты", "Налаштувати реквізити", "Configure payment details")</a>
+                </div>
+            </div>
+        </section>
     </div>
     @foreach (var card in Model.Cards)
     {

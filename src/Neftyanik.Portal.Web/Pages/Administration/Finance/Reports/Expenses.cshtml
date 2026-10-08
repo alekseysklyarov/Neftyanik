@@ -1,0 +1,8 @@
+@page
+@model Neftyanik.Portal.Web.Pages.Administration.Finance.Reports.ExpensesModel
+@{
+    ViewData["Title"] = AppLocalizer.Get("Расходы", "Витрати", "Expenses");
+    ViewData["IsExpenseReport"] = true;
+}
+
+<partial name="/Pages/Administration/Finance/Expenses/_ExpenseList.cshtml" model="Model" />

@@ -25,7 +25,13 @@ public sealed class AssociationReadinessPageTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var html = WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync());
         var cards = Regex.Matches(html, "<section[^>]*data-readiness-area=.*?</section>", RegexOptions.Singleline);
-        Assert.Equal(9, cards.Count);
+        Assert.Equal(6, cards.Count);
+        var expenseCategories = Card(html, ReadinessArea.ElectricityExpenseCategory);
+        Assert.Contains("Категории расходов", expenseCategories);
+        Assert.Contains("Категория электроэнергии не настроена", expenseCategories);
+        Assert.Contains("Нет обычной активной категории", expenseCategories);
+        Assert.DoesNotContain("data-readiness-area=\"ManualExpenseCategories\"", html);
+        Assert.DoesNotContain("Finance.ElectricityExpenseCategoryId", html);
         Assert.All(cards.Cast<Match>(), card =>
         {
             Assert.Contains("class=\"badge", card.Value);
@@ -35,14 +41,17 @@ public sealed class AssociationReadinessPageTests
         });
         Assert.Contains("Учёт начинается с нулевого остатка", html);
         Assert.Contains("Что уже можно делать", html);
-        Assert.Contains("Автоматические ставки членских взносов пока не подключены к начислениям", html);
-        Assert.Contains("Функция не реализована", Card(html, ReadinessArea.MembershipFeeRates));
+        Assert.DoesNotContain("MembershipFeeRate", html);
+        Assert.DoesNotContain("data-readiness-area=\"MembersAndPlots\"", html);
+        Assert.Equal(1, Regex.Matches(html, "href=\"/new-readiness/Administration/Electricity/MemberTariffs\"").Count);
+        Assert.Contains("Получатель, номер карты и назначение платежа", html);
+        Assert.Contains("data-settings-area=\"PaymentInstructions\"", html);
         Assert.Contains("Не используется / нет данных", Card(html, ReadinessArea.IndividualMeters));
         foreach (var page in new[]
         {
             "Electricity/MemberTariffs", "Electricity/Association/Tariffs", "Electricity/Association/Initial",
             "Electricity/Meters", "Finance/ChargeTypes", "Finance/ExpenseCategories",
-            "Finance/Settings/CashInitialization", "Members", "Plots"
+            "Finance/Settings/CashInitialization", "Finance/Settings/PaymentInstructions"
         })
         {
             Assert.Contains($"href=\"/new-readiness/Administration/{page}\"", html);
@@ -61,9 +70,9 @@ public sealed class AssociationReadinessPageTests
     }
 
     [Theory]
-    [InlineData("uk-UA", "Облік починається з нульового залишку", "Функцію не реалізовано")]
-    [InlineData("en-US", "Accounting starts with a zero balance", "Not implemented")]
-    public async Task GetAsync_UsesExistingLocalization(string culture, string cashText, string unimplementedText)
+    [InlineData("uk-UA", "Облік починається з нульового залишку", "Налаштувати реквізити")]
+    [InlineData("en-US", "Accounting starts with a zero balance", "Configure payment details")]
+    public async Task GetAsync_UsesExistingLocalization(string culture, string cashText, string paymentDetailsText)
     {
         using var factory = new PortalWebApplicationFactory();
         await CreateTenantAsync(factory);
@@ -72,7 +81,7 @@ public sealed class AssociationReadinessPageTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var html = WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync());
         Assert.Contains(cashText, Card(html, ReadinessArea.Cash));
-        Assert.Contains(unimplementedText, Card(html, ReadinessArea.MembershipFeeRates));
+        Assert.Contains(paymentDetailsText, html);
         Assert.DoesNotContain("Учёт начинается", html);
     }
 
@@ -96,8 +105,8 @@ public sealed class AssociationReadinessPageTests
         Assert.DoesNotContain("PrivateCashSource", html);
         Assert.DoesNotContain("987", Card(html, ReadinessArea.Cash));
         Assert.DoesNotContain("123", Card(html, ReadinessArea.Cash));
-        Assert.Contains("Функция не реализована", Card(html, ReadinessArea.MembershipFeeRates));
-        Assert.DoesNotContain("777", Card(html, ReadinessArea.MembershipFeeRates));
+        Assert.DoesNotContain("MembershipFeeRate", html);
+        Assert.DoesNotContain("777", html);
     }
 
     [Fact]
@@ -116,7 +125,7 @@ public sealed class AssociationReadinessPageTests
         var response = await client.GetAsync(OverviewPath);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var html = WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync());
-        Assert.Contains("Участников: 0; участков: 0", Card(html, ReadinessArea.MembersAndPlots));
+        Assert.Contains("Нет истории общего счётчика", Card(html, ReadinessArea.SupplierElectricity));
         Assert.Contains("На сегодня нет действующего тарифа", Card(html, ReadinessArea.MemberElectricity));
         Assert.DoesNotContain("Private foreign", html);
         using var forbidden = await client.GetAsync("/neftyanik/Administration/Finance/Settings");
@@ -147,7 +156,7 @@ public sealed class AssociationReadinessPageTests
         await page.OnGetAsync(cancellation.Token);
         Assert.Equal(cancellation.Token, service.Token);
         Assert.Same(service.Snapshot, page.Readiness);
-        Assert.Equal(ReadinessArea.MembershipFeeRates, Assert.Single(page.Cards).Area);
+        Assert.Empty(page.Cards);
     }
 
     private static string Card(string html, ReadinessArea area)

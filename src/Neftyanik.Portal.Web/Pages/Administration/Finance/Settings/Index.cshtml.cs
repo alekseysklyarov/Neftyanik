@@ -14,6 +14,12 @@ public class IndexModel(IAssociationReadinessService readinessService) : PageMod
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
         Readiness = await readinessService.GetAsync(cancellationToken);
-        Cards = Readiness.Checks.Select(check => ReadinessCard.Create(check, Readiness.Facts)).ToArray();
+        Cards = Readiness.Checks
+            .Where(check => check.Area is not (ReadinessArea.ManualExpenseCategories
+                or ReadinessArea.MembersAndPlots or ReadinessArea.MembershipFeeRates))
+            .Select(check => check.Area == ReadinessArea.ElectricityExpenseCategory
+                ? ReadinessCard.CreateExpenseCategories(check,
+                    Readiness.Checks.Single(item => item.Area == ReadinessArea.ManualExpenseCategories), Readiness.Facts)
+                : ReadinessCard.Create(check, Readiness.Facts)).ToArray();
     }
 }

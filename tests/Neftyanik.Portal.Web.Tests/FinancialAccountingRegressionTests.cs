@@ -60,13 +60,20 @@ public class FinancialAccountingRegressionTests
         Assert.DoesNotContain("IBAN:", html);
     }
 
-    [Fact]
-    public async Task PaymentInstructions_SaveLongCyrillicTextWithEmptyOptionalContact()
+    [Theory]
+    [InlineData(RoleNames.Administrator)]
+    [InlineData(RoleNames.Accountant)]
+    public async Task PaymentInstructions_SaveLongCyrillicTextWithEmptyOptionalContact(string role)
     {
         using var factory = new PortalWebApplicationFactory();
-        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser("instructions-admin", RoleNames.Administrator));
+        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser("instructions-editor", role));
         const string url = "/neftyanik/Administration/Finance/Settings/PaymentInstructions";
-        var html = await (await client.GetAsync(url)).ReadDecodedHtmlAsync();
+        var settings = await client.GetAsync("/neftyanik/Administration/Finance/Settings");
+        Assert.Equal(HttpStatusCode.OK, settings.StatusCode);
+        Assert.Contains(url, await settings.ReadDecodedHtmlAsync());
+        var form = await client.GetAsync(url);
+        Assert.Equal(HttpStatusCode.OK, form.StatusCode);
+        var html = await form.ReadDecodedHtmlAsync();
         var token = System.Text.RegularExpressions.Regex.Match(html, "name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"").Groups[1].Value;
         Assert.NotEmpty(token);
         var purpose = new string('я', 500);
@@ -85,6 +92,32 @@ public class FinancialAccountingRegressionTests
             Assert.Equal(purpose, data.Purpose);
             Assert.Equal("", data.Contact);
             Assert.Equal("4111111111111111", data.CardNumber);
+            Assert.Equal("instructions-editor", setting.UpdatedByUserId);
+            var audit = await db.FinancialAuditLogs.SingleAsync(a => a.EntityType == nameof(SystemSetting) && a.EntityId == PaymentInstructionsData.SettingKey);
+            Assert.Equal("instructions-editor", audit.UserId);
+        });
+    }
+
+    [Theory]
+    [InlineData(RoleNames.Member)]
+    [InlineData(null)]
+    public async Task PaymentInstructions_MemberAndAnonymousCannotOpenOrSave(string? role)
+    {
+        using var factory = new PortalWebApplicationFactory();
+        using var client = role is null ? factory.CreateAnonymousClient()
+            : factory.CreateAuthenticatedClient(new TestAuthenticatedUser("instructions-denied", role));
+        const string url = "/neftyanik/Administration/Finance/Settings/PaymentInstructions";
+        using var get = await client.GetAsync(url);
+        Assert.True(get.StatusCode is HttpStatusCode.Forbidden or HttpStatusCode.Found);
+        using var post = await client.PostAsync(url, new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["Input.Recipient"] = "Недопустимое изменение", ["Input.CardNumber"] = "4111111111111111", ["Input.Purpose"] = "Взносы"
+        }));
+        Assert.True(post.StatusCode is HttpStatusCode.Forbidden or HttpStatusCode.Found);
+        await factory.ExecuteDbContextAsync(async db =>
+        {
+            Assert.False(await db.SystemSettings.AnyAsync(s => s.Key == PaymentInstructionsData.SettingKey));
+            Assert.Empty(await db.FinancialAuditLogs.ToListAsync());
         });
     }
 

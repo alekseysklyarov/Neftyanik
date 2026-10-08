@@ -14,7 +14,7 @@ using Neftyanik.Portal.Web.Pages.Finance;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Finance.Settings;
 
-[Authorize(Roles = RoleNames.Administrator)]
+[Authorize(Roles = RoleNames.AdministratorOrAccountant)]
 public class PaymentInstructionsModel(ApplicationDbContext db, IFinancialAuditService audit) : PageModel
 {
     [BindProperty] public InputModel Input { get; set; } = new();

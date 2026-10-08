@@ -22,6 +22,31 @@ public sealed record ReadinessCard(
             : Get("Эта проверка не ограничивает операции.", "Ця перевірка не обмежує операції.", "This check does not limit operations."), links);
     }
 
+    internal static ReadinessCard CreateExpenseCategories(
+        ReadinessCheck electricity, ReadinessCheck manual, AssociationReadinessFacts facts)
+    {
+        var status = electricity.Status == ReadinessStatus.RequiredForOperation || manual.Status == ReadinessStatus.RequiredForOperation
+            ? ReadinessStatus.RequiredForOperation
+            : electricity.Status == ReadinessStatus.Warning || manual.Status == ReadinessStatus.Warning
+                ? ReadinessStatus.Warning : ReadinessStatus.Ready;
+        return Create(electricity with { Status = status }, facts) with
+        {
+            Reason = electricity.Reason == ReadinessReason.Configured
+                ? Get("Категория «Электроэнергия» доступна для расходов по общему счётчику.",
+                    "Категорія «Електроенергія» доступна для витрат за загальним лічильником.",
+                    "The electricity category is available for shared meter expenses.")
+                : ReasonText(electricity.Reason),
+            Details = manual.Reason == ReadinessReason.Configured
+                ? Get($"Категорий для ручных расходов: {facts.ActiveManualExpenseCategories}.",
+                    $"Категорій для ручних витрат: {facts.ActiveManualExpenseCategories}.",
+                    $"Categories for manual expenses: {facts.ActiveManualExpenseCategories}.")
+                : ReasonText(manual.Reason),
+            Limitation = Get("Электроэнергия оформляется отдельно. Остальные категории используются для зарплаты, покупок, ремонта и других ручных расходов.",
+                "Електроенергія оформлюється окремо. Решта категорій використовується для зарплати, покупок, ремонту та інших ручних витрат.",
+                "Electricity expenses are recorded separately. Other categories are used for salaries, purchases, repairs and other manual expenses.")
+        };
+    }
+
     private static string StatusText(ReadinessStatus status) => status switch
     {
         ReadinessStatus.Ready => Get("Готово", "Готово", "Ready"),
@@ -46,19 +71,14 @@ public sealed record ReadinessCard(
         ReadinessArea.IndividualMeters => (
             Get("Индивидуальные счётчики", "Індивідуальні лічильники", "Individual meters"),
             Get("Расчёт потребления соответствующего счётчика требует начального показания и подходящего тарифа.", "Розрахунок споживання відповідного лічильника потребує початкового показання й відповідного тарифу.", "Consumption calculation for an affected meter requires an initial reading and applicable tariff."),
-            [new("/Administration/Electricity/Meters/Index", Get("Счётчики и начальные показания", "Лічильники та початкові показання", "Meters and initial readings")),
-             new("/Administration/Electricity/MemberTariffs/Index", Get("Тарифы участников", "Тарифи учасників", "Member tariffs"))]),
+            [new("/Administration/Electricity/Meters/Index", Get("Счётчики и начальные показания", "Лічильники та початкові показання", "Meters and initial readings"))]),
         ReadinessArea.ChargeTypes => (
             Get("Типы начислений", "Типи нарахувань", "Charge types"),
             Get("Для ручных начислений нужен активный тип начисления.", "Для ручних нарахувань потрібен активний тип нарахування.", "Manual charges require an active charge type."),
             [new("/Administration/Finance/ChargeTypes/Index", Get("Типы начислений", "Типи нарахувань", "Charge types"))]),
         ReadinessArea.ElectricityExpenseCategory => (
-            Get("Системная категория электроэнергии", "Системна категорія електроенергії", "System electricity category"),
-            Get("Регистрация расходов поставщика требует корректной системной категории. Создание обычной категории не исправляет SystemSetting; обратитесь к администратору.", "Реєстрація витрат постачальника потребує коректної системної категорії. Створення звичайної категорії не виправляє SystemSetting; зверніться до адміністратора.", "Supplier expense registration requires a valid system category. Creating an ordinary category does not repair SystemSetting; contact the administrator."),
-            [new("/Administration/Finance/ExpenseCategories/Index", Get("Категории расходов", "Категорії витрат", "Expense categories"))]),
-        ReadinessArea.ManualExpenseCategories => (
-            Get("Категории ручных расходов", "Категорії ручних витрат", "Manual expense categories"),
-            Get("Для ручного расхода нужна обычная активная категория.", "Для ручної витрати потрібна звичайна активна категорія.", "Manual expenses require an ordinary active category."),
+            Get("Категории расходов", "Категорії витрат", "Expense categories"),
+            Get("Для расходов по общему счётчику нужна категория электроэнергии; для остальных расходов — обычная активная категория.", "Для витрат за загальним лічильником потрібна категорія електроенергії; для решти витрат — звичайна активна категорія.", "Shared meter expenses require an electricity category; other expenses require an ordinary active category."),
             [new("/Administration/Finance/ExpenseCategories/Index", Get("Категории расходов", "Категорії витрат", "Expense categories"))]),
         ReadinessArea.Cash => (
             Get("Касса", "Каса", "Cash"),
@@ -86,12 +106,12 @@ public sealed record ReadinessCard(
         ReadinessReason.MissingTariffAndInitialReading => Get("Нет действующего тарифа и начального показания. Существующую историю нужно проверить отдельно.", "Немає чинного тарифу й початкового показання. Наявну історію потрібно перевірити окремо.", "No current tariff or initial reading. Existing history needs a separate review."),
         ReadinessReason.IncompleteMeters => Get("Не всем активным счётчикам хватает начальных показаний или тарифа на сегодня.", "Не всім активним лічильникам вистачає початкових показань або тарифу на сьогодні.", "Some active meters lack initial readings or a tariff for today."),
         ReadinessReason.NoActiveChargeTypes => Get("Нет активных типов начислений.", "Немає активних типів нарахувань.", "No active charge types."),
-        ReadinessReason.MissingCategorySetting => Get("Отсутствует Finance.ElectricityExpenseCategoryId и подходящая системная категория.", "Відсутні Finance.ElectricityExpenseCategoryId і відповідна системна категорія.", "Finance.ElectricityExpenseCategoryId and a suitable system category are missing."),
-        ReadinessReason.LegacyCategoryFallback => Get("Finance.ElectricityExpenseCategoryId отсутствует; используется совместимая системная категория этого товарищества.", "Finance.ElectricityExpenseCategoryId відсутній; використовується сумісна системна категорія цього товариства.", "Finance.ElectricityExpenseCategoryId is absent; the association's legacy system category is used."),
-        ReadinessReason.InvalidCategorySetting => Get("Finance.ElectricityExpenseCategoryId содержит некорректный идентификатор.", "Finance.ElectricityExpenseCategoryId містить некоректний ідентифікатор.", "Finance.ElectricityExpenseCategoryId contains an invalid identifier."),
-        ReadinessReason.CategoryUnavailable => Get("Системная настройка не указывает на активную категорию этого товарищества.", "Системне налаштування не вказує на активну категорію цього товариства.", "The system setting does not reference an active category of this association."),
+        ReadinessReason.MissingCategorySetting => Get("Категория электроэнергии не настроена. Обратитесь к администратору.", "Категорію електроенергії не налаштовано. Зверніться до адміністратора.", "The electricity category is not configured. Contact the administrator."),
+        ReadinessReason.LegacyCategoryFallback => Get("Категория электроэнергии определена автоматически и используется для расходов по общему счётчику.", "Категорію електроенергії визначено автоматично та використано для витрат за загальним лічильником.", "The electricity category was identified automatically and is used for shared meter expenses."),
+        ReadinessReason.InvalidCategorySetting => Get("Настройка категории электроэнергии некорректна. Обратитесь к администратору.", "Налаштування категорії електроенергії некоректне. Зверніться до адміністратора.", "The electricity category configuration is invalid. Contact the administrator."),
+        ReadinessReason.CategoryUnavailable => Get("Категория электроэнергии недоступна или неактивна. Обратитесь к администратору.", "Категорія електроенергії недоступна або неактивна. Зверніться до адміністратора.", "The electricity category is unavailable or inactive. Contact the administrator."),
         ReadinessReason.NoManualCategories => Get("Нет обычной активной категории для ручных расходов.", "Немає звичайної активної категорії для ручних витрат.", "No ordinary active category for manual expenses."),
-        ReadinessReason.UnknownCategoryMapping => Get("Есть активные категории, но без корректной системной связи нельзя надёжно выделить обычные категории.", "Є активні категорії, але без коректного системного зв’язку неможливо надійно визначити звичайні категорії.", "Active categories exist, but ordinary categories cannot be reliably identified without a valid system mapping."),
+        ReadinessReason.UnknownCategoryMapping => Get("Количество категорий для ручных расходов можно определить после настройки категории электроэнергии.", "Кількість категорій для ручних витрат можна визначити після налаштування категорії електроенергії.", "The number of manual expense categories can be determined once the electricity category is configured."),
         ReadinessReason.CashStartsAtZero => Get("Учёт начинается с нулевого остатка", "Облік починається з нульового залишку", "Accounting starts with a zero balance"),
         ReadinessReason.InvalidCashInitialization => Get("Запись инициализации кассы требует проверки администратором; обзор её не изменяет.", "Запис ініціалізації каси потребує перевірки адміністратором; огляд його не змінює.", "Cash initialization needs administrator review; this overview does not change it."),
         ReadinessReason.NoMembersOrPlots => Get("Участники или участки ещё не созданы.", "Учасників або ділянки ще не створено.", "Members or plots have not been created yet."),
@@ -113,8 +133,6 @@ public sealed record ReadinessCard(
         ReadinessArea.ChargeTypes => Get($"Активных: {facts.ActiveChargeTypes}; ежегодных: {facts.YearlyChargeTypes}. Ежегодный тип не обязательно является членским взносом.",
             $"Активних: {facts.ActiveChargeTypes}; щорічних: {facts.YearlyChargeTypes}. Щорічний тип не обов’язково є членським внеском.",
             $"Active: {facts.ActiveChargeTypes}; yearly: {facts.YearlyChargeTypes}. A yearly type is not necessarily a membership fee."),
-        ReadinessArea.ManualExpenseCategories => Get($"Активных, кроме определённой системной категории: {facts.ActiveManualExpenseCategories}.",
-            $"Активних, крім визначеної системної категорії: {facts.ActiveManualExpenseCategories}.", $"Active, excluding the identified system category: {facts.ActiveManualExpenseCategories}."),
         ReadinessArea.Cash => facts.CashInitializedOn is { } date
             ? Get($"Инициализация настроена на {date:dd.MM.yyyy}.", $"Ініціалізацію налаштовано на {date:dd.MM.yyyy}.", $"Initialization configured for {date:yyyy-MM-dd}.") : "",
         ReadinessArea.MembersAndPlots => Get($"Участников: {facts.Members}; участков: {facts.Plots}; действующих связей владения: {facts.CurrentOwnerships}.",

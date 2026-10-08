@@ -1,11 +1,11 @@
 @page
 @model Neftyanik.Portal.Web.Pages.Administration.Finance.FundsModel
-@{ ViewData["Title"] = "Взносы и расходование средств"; }
-<h1 class="h2">Взносы и расходование средств</h1>
+@{ ViewData["Title"] = AppLocalizer.Get("Взносы и расходование средств", "Внески та використання коштів", "Contributions and use of funds"); }
+<h1 class="h2">@ViewData["Title"]</h1>
 <form method="get" class="d-flex gap-2 my-3 align-items-end flex-wrap">
     <div><label asp-for="From">С</label><input asp-for="From" type="date" class="form-control" /></div>
     <div><label asp-for="To">По</label><input asp-for="To" type="date" class="form-control" /></div>
-    <button class="btn btn-primary">Показать</button><a asp-page="Index" class="btn btn-outline-secondary">К финансам</a>
+    <button class="btn btn-primary">Показать</button><a asp-page="Reports/Index" class="btn btn-outline-secondary">@AppLocalizer.Get("К отчётам", "До звітів", "Back to reports")</a>
 </form>
 <div asp-validation-summary="All" class="text-danger"></div>
 <p class="text-muted">Отчёт по зарегистрированным операциям и текущему распределению платежей. Начальная касса не распределяется по фондам автоматически. Отметьте типы членских взносов в справочнике и источник средств у расходов.</p>
