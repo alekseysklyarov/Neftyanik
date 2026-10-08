@@ -59,6 +59,12 @@ public class ChargeConfiguration : IEntityTypeConfiguration<Charge>
 
         builder.HasIndex(x => new { x.AssociationId, x.CancelledAtUtc });
 
+        builder.HasOne(x => x.Member)
+            .WithMany()
+            .HasForeignKey(x => new { x.AssociationId, x.MemberId })
+            .HasPrincipalKey(x => new { x.AssociationId, x.Id })
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasOne(x => x.Plot)
             .WithMany(x => x.Charges)
             .HasForeignKey(x => new { x.AssociationId, x.PlotId })

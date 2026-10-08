@@ -11,12 +11,12 @@ public sealed record OutstandingPaymentCharge(
 public static class OutstandingPaymentChargeQueries
 {
     public static async Task<IReadOnlyList<OutstandingPaymentCharge>> LoadOutstandingPaymentChargesAsync(
-        this ApplicationDbContext db, int[] plotIds, CancellationToken cancellationToken = default)
+        this ApplicationDbContext db, int[] plotIds, CancellationToken cancellationToken = default, int? memberId = null)
     {
         if (plotIds.Length == 0) return [];
 
         var charges = await db.Charges.AsNoTracking()
-            .Where(c => c.CancelledAtUtc == null && c.PlotId.HasValue && plotIds.Contains(c.PlotId.Value))
+            .Where(c => (!memberId.HasValue || c.MemberId == memberId) && c.CancelledAtUtc == null && c.PlotId.HasValue && plotIds.Contains(c.PlotId.Value))
             .OrderBy(c => c.ChargeDate).ThenBy(c => c.Id)
             .Select(c => new { c.Id, c.ChargeTypeId, ChargeTypeName = c.ChargeType != null ? c.ChargeType.Name : "—", c.ChargeDate, c.Amount })
             .ToListAsync(cancellationToken);

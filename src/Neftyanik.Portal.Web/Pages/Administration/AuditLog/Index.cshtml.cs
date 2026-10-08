@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Infrastructure.Data;
 using Neftyanik.Portal.Web.Localization;
+using Neftyanik.Portal.Web.Pages.Finance;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.FinancialAuditLog;
 
@@ -96,11 +96,29 @@ public class IndexModel : PageModel
 
         if (!string.IsNullOrWhiteSpace(Search))
         {
+            var members = _dbContext.Members.Where(m => m.FullName.Contains(Search)).Select(m => m.Id);
+            var plots = _dbContext.Plots.Where(p => p.Number.Contains(Search)).Select(p => p.Id);
+            var payments = _dbContext.Payments.Where(p => (p.MemberId.HasValue && members.Contains(p.MemberId.Value))
+                || (p.PlotId.HasValue && plots.Contains(p.PlotId.Value))).Select(p => p.Id.ToString());
+            var charges = _dbContext.Charges.Where(c => (c.MemberId.HasValue && members.Contains(c.MemberId.Value))
+                || (c.PlotId.HasValue && plots.Contains(c.PlotId.Value))).Select(c => c.Id.ToString());
+            var notifications = _dbContext.PaymentNotifications.Where(n => members.Contains(n.MemberId)
+                || (n.Payment != null && n.Payment.PlotId.HasValue && plots.Contains(n.Payment.PlotId.Value))).Select(n => n.Id.ToString());
+            var meters = _dbContext.MemberElectricityMeters.Where(m => members.Contains(m.MemberId) || plots.Contains(m.BillingPlotId)).Select(m => m.Id);
+            var meterIds = _dbContext.MemberElectricityMeters.Where(m => meters.Contains(m.Id)).Select(m => m.Id.ToString());
+            var readings = _dbContext.MemberElectricityReadings.Where(r => r.Charge != null
+                ? (r.Charge.MemberId.HasValue && members.Contains(r.Charge.MemberId.Value)) || (r.Charge.PlotId.HasValue && plots.Contains(r.Charge.PlotId.Value))
+                : meters.Contains(r.MemberElectricityMeterId)).Select(r => r.Id.ToString());
             query = query.Where(item => item.EntityId.Contains(Search)
                 || (item.Description != null && item.Description.Contains(Search))
                 || (item.UserName != null && item.UserName.Contains(Search))
                 || item.EntityType.Contains(Search)
-                || item.Action.Contains(Search));
+                || item.Action.Contains(Search)
+                || (item.EntityType == "Payment" && payments.Contains(item.EntityId))
+                || (item.EntityType == "Charge" && charges.Contains(item.EntityId))
+                || (item.EntityType == "PaymentNotification" && notifications.Contains(item.EntityId))
+                || (item.EntityType == "MemberElectricityMeter" && meterIds.Contains(item.EntityId))
+                || (item.EntityType == "MemberElectricityReading" && readings.Contains(item.EntityId)));
         }
 
         TotalCount = await query.CountAsync(cancellationToken);
@@ -111,12 +129,14 @@ public class IndexModel : PageModel
             PageNumber = TotalPages;
         }
 
-        Entries = await query
+        var entries = await query
             .OrderByDescending(item => item.CreatedAtUtc)
             .ThenByDescending(item => item.Id)
             .Skip((PageNumber - 1) * PageSize)
             .Take(PageSize)
-            .Select(item => new AuditLogListItemViewModel
+            .ToListAsync(cancellationToken);
+        var descriptions = await AuditDescriptionFormatter.FormatAsync(_dbContext, entries, cancellationToken);
+        Entries = entries.Select(item => new AuditLogListItemViewModel
             {
                 Id = item.Id,
                 CreatedAtUtc = item.CreatedAtUtc,
@@ -125,9 +145,9 @@ public class IndexModel : PageModel
                 Action = item.Action,
                 EntityType = item.EntityType,
                 EntityId = item.EntityId,
-                Description = item.Description
+                Description = descriptions[item.Id]
             })
-            .ToListAsync(cancellationToken);
+            .ToList();
 
         EmptyStateMessage = HasFilters()
             ? AppLocalizer.Get(

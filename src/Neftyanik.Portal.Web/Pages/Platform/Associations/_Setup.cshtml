@@ -31,7 +31,7 @@
                 <li class="list-group-item px-0" data-setup-check="@key" data-complete="@done.ToString().ToLowerInvariant()">
                     <div class="d-flex flex-wrap justify-content-between gap-2">
                         <strong>@title</strong>
-                        <span class="badge @(done ? "text-bg-success" : "text-bg-secondary")">@(done ? AppLocalizer.Get("Есть", "Є", "Present") : AppLocalizer.Get("Не настроено", "Не налаштовано", "Not configured"))</span>
+                        <span class="badge @(done ? "bg-success text-white" : "bg-secondary text-white")">@(done ? AppLocalizer.Get("Есть", "Є", "Present") : AppLocalizer.Get("Не настроено", "Не налаштовано", "Not configured"))</span>
                     </div>
                     @if (!done) { <p class="text-muted mb-0 mt-1">@guidance</p> }
                 </li>

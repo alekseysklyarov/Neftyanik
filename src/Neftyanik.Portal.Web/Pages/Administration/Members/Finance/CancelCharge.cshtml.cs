@@ -102,7 +102,7 @@ public class CancelChargeModel : PageModel
             .AsNoTracking()
             .Where(item => item.Id == chargeId
                 && item.PlotId.HasValue
-                && _dbContext.PlotOwnerships.Any(ownership => ownership.MemberId == memberId && ownership.PlotId == item.PlotId.Value))
+                && item.MemberId == memberId)
             .Select(item => new ChargeCancelViewModel
             {
                 ChargeId = item.Id,

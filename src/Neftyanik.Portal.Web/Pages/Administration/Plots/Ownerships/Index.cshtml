@@ -42,11 +42,11 @@
                     <dd class="col-sm-8">
                         @if (Model.Plot.PlotIsActive)
                         {
-                            <span class="badge text-bg-success">@AppLocalizer.Get("Активен", "Активний", "Active")</span>
+                            <span class="badge bg-success text-white">@AppLocalizer.Get("Активен", "Активний", "Active")</span>
                         }
                         else
                         {
-                            <span class="badge text-bg-secondary">@AppLocalizer.Get("В архиве", "В архіві", "Archived")</span>
+                            <span class="badge bg-secondary text-white">@AppLocalizer.Get("В архиве", "В архіві", "Archived")</span>
                         }
                     </dd>
                 </dl>
@@ -105,7 +105,7 @@
                                 <td>@(string.IsNullOrWhiteSpace(ownership.MemberPhoneNumber) ? "—" : ownership.MemberPhoneNumber)</td>
                                 <td>@(string.IsNullOrWhiteSpace(ownership.MemberEmail) ? "—" : ownership.MemberEmail)</td>
                                 <td>@(ownership.ValidFrom.HasValue ? ownership.ValidFrom.Value.ToString("dd.MM.yyyy") : "—")</td>
-                                <td><span class="badge text-bg-success">@AppLocalizer.Get("Активный", "Активний", "Active")</span></td>
+                                <td><span class="badge bg-success text-white">@AppLocalizer.Get("Активный", "Активний", "Active")</span></td>
                                 <td class="text-end">
                                     <div class="btn-group btn-group-sm" role="group">
                                         <a class="btn btn-outline-success" asp-page="/Administration/Members/Finance" asp-route-id="@ownership.MemberId">@AppLocalizer.Get("Финансы", "Фінанси", "Finance")</a>
@@ -157,7 +157,7 @@
                                 <td>@(string.IsNullOrWhiteSpace(ownership.MemberEmail) ? "—" : ownership.MemberEmail)</td>
                                 <td>@(ownership.ValidFrom.HasValue ? ownership.ValidFrom.Value.ToString("dd.MM.yyyy") : "—")</td>
                                 <td>@(ownership.ValidTo.HasValue ? ownership.ValidTo.Value.ToString("dd.MM.yyyy") : "—")</td>
-                                <td><span class="badge text-bg-secondary">@AppLocalizer.Get("Аннулирован", "Анульовано", "Cancelled")</span></td>
+                                <td><span class="badge bg-secondary text-white">@AppLocalizer.Get("Аннулирован", "Анульовано", "Cancelled")</span></td>
                                 <td class="text-end">
                                     <div class="btn-group btn-group-sm" role="group">
                                         <a class="btn btn-outline-success" asp-page="/Administration/Members/Finance" asp-route-id="@ownership.MemberId">@AppLocalizer.Get("Финансы", "Фінанси", "Finance")</a>

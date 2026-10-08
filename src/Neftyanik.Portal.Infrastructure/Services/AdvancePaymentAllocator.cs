@@ -36,10 +36,7 @@ public static class AdvancePaymentAllocator
         var charges = await db.Charges.AsNoTracking()
             .Where(c => ids.Contains(c.Id) && c.CancelledAtUtc == null && c.PlotId.HasValue)
             .OrderBy(c => c.ChargeDate).ThenBy(c => c.Id).ToListAsync(cancellationToken);
-        var plotIds = charges.Select(c => c.PlotId!.Value).Distinct().ToArray();
-        var ownerships = await db.PlotOwnerships.AsNoTracking()
-            .Where(o => plotIds.Contains(o.PlotId)).ToListAsync(cancellationToken);
-        var memberIds = ownerships.Select(o => o.MemberId).Distinct().ToArray();
+        var memberIds = charges.Where(c => c.MemberId.HasValue).Select(c => c.MemberId!.Value).Distinct().ToArray();
         var payments = await db.Payments.AsNoTracking()
             .Where(p => p.MemberId.HasValue && memberIds.Contains(p.MemberId.Value) && p.CancelledAtUtc == null)
             .OrderBy(p => p.PaymentDate).ThenBy(p => p.Id).ToListAsync(cancellationToken);
@@ -56,11 +53,7 @@ public static class AdvancePaymentAllocator
         foreach (var charge in charges)
         {
             var remaining = charge.Amount - paid.GetValueOrDefault(charge.Id);
-            var owners = ownerships.Where(o => o.PlotId == charge.PlotId
-                && (!o.ValidFrom.HasValue || o.ValidFrom <= charge.ChargeDate)
-                && (!o.ValidTo.HasValue || o.ValidTo >= charge.ChargeDate))
-                .Select(o => o.MemberId).ToHashSet();
-            foreach (var payment in payments.Where(p => owners.Contains(p.MemberId!.Value)))
+            foreach (var payment in payments.Where(p => p.MemberId == charge.MemberId))
             {
                 if (remaining <= 0) break;
                 var available = payment.Amount - used.GetValueOrDefault(payment.Id);

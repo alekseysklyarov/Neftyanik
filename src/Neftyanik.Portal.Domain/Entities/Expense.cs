@@ -14,6 +14,11 @@ public class Expense : IAssociationOwned
 
     public decimal Amount { get; set; }
 
+    public Neftyanik.Portal.Domain.Enums.PaymentMethod PaymentMethod { get; set; } = Neftyanik.Portal.Domain.Enums.PaymentMethod.Cash;
+
+    // 0 = unclassified; 1 = membership fees; 2 = electricity; 3 = other funds.
+    public int FundingSource { get; set; }
+
     public string Description { get; set; } = string.Empty;
 
     public string? Payee { get; set; }

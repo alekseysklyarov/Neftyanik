@@ -4,6 +4,10 @@
     ViewData["Title"] = AppLocalizer.Get("Настройки финансов", "Налаштування фінансів", "Finance settings");
 }
 
+@if (User.IsInRole(RoleNames.Administrator))
+{
+    <p><a class="btn btn-outline-primary" asp-page="PaymentInstructions">Реквизиты для оплаты участниками</a></p>
+}
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
         <h1 class="h2 mb-1">@AppLocalizer.Get("Настройки финансов", "Налаштування фінансів", "Finance settings")</h1>

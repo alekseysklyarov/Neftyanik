@@ -46,6 +46,9 @@ public class CancelModel : PageModel
 
     public async Task<IActionResult> OnPostAsync(long id, CancellationToken cancellationToken)
     {
+        await using var transaction = _dbContext.Database.IsRelational() && _dbContext.Database.CurrentTransaction is null
+            ? await _dbContext.Database.BeginTransactionAsync(cancellationToken) : null;
+        await Neftyanik.Portal.Infrastructure.Services.AdvancePaymentAllocator.LockAsync(_dbContext, cancellationToken);
         var expense = await _dbContext.Expenses.FirstOrDefaultAsync(item => item.Id == id, cancellationToken);
         if (expense is null)
         {
@@ -65,6 +68,19 @@ public class CancelModel : PageModel
             return Page();
         }
 
+        if (expense.IsCancelled && expense.AssociationElectricityReadingId.HasValue)
+        {
+            var total = await _dbContext.AssociationElectricityReadings
+                .Where(r => r.Id == expense.AssociationElectricityReadingId).Select(r => r.TotalSupplierAmount).SingleAsync(cancellationToken);
+            var paid = await _dbContext.Expenses.Where(e => e.AssociationElectricityReadingId == expense.AssociationElectricityReadingId && !e.IsCancelled)
+                .Select(e => e.Amount).ToListAsync(cancellationToken);
+            if (expense.Amount + paid.Sum() > (total ?? 0m))
+            {
+                Expense = (await LoadViewModelAsync(id, cancellationToken))!;
+                ModelState.AddModelError(string.Empty, "Восстановление превысит сумму начисления поставщика. Сначала отмените заменяющую оплату.");
+                return Page();
+            }
+        }
         var isCancelling = !expense.IsCancelled;
         var oldValues = CreateAuditValues(expense);
 
@@ -96,6 +112,7 @@ public class CancelModel : PageModel
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        if (transaction is not null) await transaction.CommitAsync(cancellationToken);
 
         TempData["SuccessMessage"] = expense.IsCancelled
             ? "Расход отменён."

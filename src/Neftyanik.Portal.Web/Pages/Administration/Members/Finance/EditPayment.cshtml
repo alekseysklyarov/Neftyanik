@@ -1,0 +1,29 @@
+@page "/Administration/Members/Finance/{memberId:int}/Payments/{paymentId:long}/Edit"
+@model Neftyanik.Portal.Web.Pages.Administration.Members.Finance.EditPaymentModel
+@{ ViewData["Title"] = "Исправление платежа"; }
+<h1 class="h2">Исправление платежа №@Model.Payment.Id</h1>
+<p>@Model.Payment.Member?.FullName · участок @Model.Payment.Plot?.Number · @Model.Payment.PaymentDate.ToString("dd.MM.yyyy")</p>
+<div asp-validation-summary="All" class="text-danger"></div>
+@if (!Model.CanCorrect)
+{
+    <div class="alert alert-warning">Можно исправить только последний активный платёж участника.</div>
+    <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Finance" asp-route-id="@Model.Payment.MemberId">К финансам участника</a>
+}
+else
+{
+    <p>Можно исправить последний активный платёж независимо от даты. Изменение суммы пересчитает зачтённые оплаты и аванс. Прежние значения и причина исправления сохранятся в журнале.</p>
+    <form method="post" class="card card-body">
+        <input asp-for="Input.Version" type="hidden" />
+        <label asp-for="Input.Amount" class="form-label"></label>
+        <input asp-for="Input.Amount" class="form-control mb-3" inputmode="decimal" />
+        <label asp-for="Input.PaymentMethod" class="form-label"></label>
+        <select asp-for="Input.PaymentMethod" class="form-select mb-3">
+            <option value="1">Наличные</option><option value="3">Перевод на карту</option>
+        </select>
+        <label asp-for="Input.ReferenceNumber" class="form-label"></label><input asp-for="Input.ReferenceNumber" class="form-control mb-3" />
+        <label asp-for="Input.Description" class="form-label"></label><textarea asp-for="Input.Description" class="form-control mb-3"></textarea>
+        <label asp-for="Input.Reason" class="form-label"></label><textarea asp-for="Input.Reason" class="form-control mb-3" required></textarea>
+        <div><button class="btn btn-primary" type="submit">Сохранить исправление</button>
+        <a class="btn btn-outline-secondary" asp-page="/Administration/Members/Finance" asp-route-id="@Model.Payment.MemberId">Отмена</a></div>
+    </form>
+}

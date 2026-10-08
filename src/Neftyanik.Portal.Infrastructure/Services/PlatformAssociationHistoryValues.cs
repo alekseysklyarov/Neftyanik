@@ -16,6 +16,7 @@ internal static class PlatformAssociationHistoryValues
             PlatformAuditActions.AssociationEdited => ["Name", "ContactEmail", "ContactPhone", "PostalAddress"],
             PlatformAuditActions.AssociationActivated or PlatformAuditActions.AssociationDeactivated => ["IsActive"],
             PlatformAuditActions.AdministratorAssigned => ["AdministratorUserName", "AdministratorUserId", "Role"],
+            "AdministratorAccessChanged" or "AdministratorPasswordReset" => ["AdministratorUserName", "IsActive"],
             _ => []
         };
         try

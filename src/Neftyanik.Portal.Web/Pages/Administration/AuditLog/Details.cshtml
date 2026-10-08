@@ -37,7 +37,13 @@
             <dd class="col-sm-8">@Model.Entry.EntityId</dd>
 
             <dt class="col-sm-4">@AppLocalizer.Get("Описание", "Опис", "Description")</dt>
-            <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Entry.Description) ? "—" : Model.Entry.Description)</dd>
+            <dd class="col-sm-8">
+                @(string.IsNullOrWhiteSpace(Model.Entry.DisplayDescription) ? "—" : Model.Entry.DisplayDescription)
+                @if (Model.Entry.Description != Model.Entry.DisplayDescription)
+                {
+                    <details class="mt-2 small text-muted"><summary>Исходная запись</summary>@Model.Entry.Description</details>
+                }
+            </dd>
         </dl>
     </div>
 </div>

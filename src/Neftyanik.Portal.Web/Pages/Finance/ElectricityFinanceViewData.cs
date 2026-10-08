@@ -55,7 +55,7 @@ public static class ElectricityFinanceViewData
             .Select(r => new { r.MemberElectricityMeterId, r.ReadingDate, r.CurrentReading, r.CurrentNightReading })
             .ToListAsync(cancellationToken);
         var charges = await db.Charges.AsNoTracking()
-            .Where(c => c.CancelledAtUtc == null && c.PlotId.HasValue && plotIds.Contains(c.PlotId.Value)
+            .Where(c => c.MemberId == memberId && c.CancelledAtUtc == null && c.PlotId.HasValue && plotIds.Contains(c.PlotId.Value)
                 && ((c.ChargeType != null && c.ChargeType.Code == ChargeTypeCodes.Electricity) || c.MemberElectricityReading != null))
             .Select(c => new { c.Id, c.ChargeDate, c.PeriodYear, c.PeriodMonth, c.Amount })
             .ToListAsync(cancellationToken);

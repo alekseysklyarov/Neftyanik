@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -103,8 +102,8 @@ public class CancelPaymentModel : PageModel
         var payment = await _dbContext.Payments
             .AsNoTracking()
             .Where(item => item.Id == paymentId
-                && item.PlotId.HasValue
-                && _dbContext.PlotOwnerships.Any(ownership => ownership.MemberId == memberId && ownership.PlotId == item.PlotId.Value))
+                && item.MemberId == memberId
+                && item.PlotId.HasValue)
             .Select(item => new PaymentCancelViewModel
             {
                 PaymentId = item.Id,

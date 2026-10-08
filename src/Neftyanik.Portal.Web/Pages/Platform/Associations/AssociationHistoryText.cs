@@ -12,6 +12,8 @@ public static class AssociationHistoryText
         PlatformAuditActions.AssociationActivated => Get("Товарищество активировано", "Товариство активовано", "Association activated"),
         PlatformAuditActions.AssociationDeactivated => Get("Товарищество деактивировано", "Товариство деактивовано", "Association deactivated"),
         PlatformAuditActions.AdministratorAssigned => Get("Администратор назначен", "Адміністратора призначено", "Administrator assigned"),
+        "AdministratorAccessChanged" => Get("Доступ администратора изменён", "Доступ адміністратора змінено", "Administrator access changed"),
+        "AdministratorPasswordReset" => Get("Пароль администратора сброшен", "Пароль адміністратора скинуто", "Administrator password reset"),
         _ => Get("Другое действие", "Інша дія", "Other action")
     };
 

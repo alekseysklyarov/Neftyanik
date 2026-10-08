@@ -31,6 +31,10 @@ public class IndexModel : PageModel
     [BindProperty]
     public ReadingInputModel Input { get; set; } = new();
 
+    public decimal SupplierAccrued => Readings.Sum(r => r.TotalSupplierAmount ?? 0m);
+    public decimal SupplierPaid => Readings.Sum(r => r.PaidAmount);
+    public decimal SupplierDebt => Readings.Sum(r => r.RemainingAmount);
+
     public bool HasHistory => Readings.Count > 0;
 
     public PreviousReadingViewModel? PreviousReading { get; private set; }
@@ -154,10 +158,15 @@ public class IndexModel : PageModel
                 AppliedSupplierNightRate = reading.AppliedSupplierNightRate,
                 TotalSupplierAmount = reading.TotalSupplierAmount,
                 IsInitialReading = reading.IsInitialReading,
-                HasExpense = reading.SupplierExpense != null,
-                ExpenseId = reading.SupplierExpense != null ? reading.SupplierExpense.Id : null
+
             })
             .ToListAsync(cancellationToken);
+
+        var paid = await _dbContext.Expenses.AsNoTracking()
+            .Where(e => e.AssociationElectricityReadingId.HasValue && !e.IsCancelled)
+            .Select(e => new { e.AssociationElectricityReadingId, e.Amount }).ToListAsync(cancellationToken);
+        foreach (var reading in Readings)
+            reading.PaidAmount = paid.Where(e => e.AssociationElectricityReadingId == reading.Id).Sum(e => e.Amount);
 
         PreviousReading = Readings.Count == 0
             ? null
@@ -250,7 +259,9 @@ public class IndexModel : PageModel
         public decimal? AppliedSupplierNightRate { get; init; }
         public decimal? TotalSupplierAmount { get; init; }
         public bool IsInitialReading { get; init; }
-        public bool HasExpense { get; init; }
+        public decimal PaidAmount { get; set; }
+        public decimal RemainingAmount => Math.Max((TotalSupplierAmount ?? 0m) - PaidAmount, 0m);
+        public bool HasExpense => !IsInitialReading && RemainingAmount == 0m;
         public long? ExpenseId { get; init; }
     }
 }

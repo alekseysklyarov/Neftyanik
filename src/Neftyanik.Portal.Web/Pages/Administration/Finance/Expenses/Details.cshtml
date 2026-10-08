@@ -31,6 +31,10 @@
             <dt class="col-sm-4">Сумма</dt>
             <dd class="col-sm-8">@Model.Expense.Amount.ToString("0.00")</dd>
 
+            <dt class="col-sm-4">Оплачено из</dt>
+            <dd class="col-sm-8">@(Model.Expense.PaymentMethod == Neftyanik.Portal.Domain.Enums.PaymentMethod.Cash ? "Касса" : "Банковский счёт")</dd>
+            <dt class="col-sm-4">Источник средств</dt>
+            <dd class="col-sm-8">@(Model.Expense.FundingSource switch { 1 => "Членские взносы", 2 => "Электроэнергия", 3 => "Прочие средства", _ => "Не указан" })</dd>
             <dt class="col-sm-4">Получатель</dt>
             <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Expense.Payee) ? "—" : Model.Expense.Payee)</dd>
 

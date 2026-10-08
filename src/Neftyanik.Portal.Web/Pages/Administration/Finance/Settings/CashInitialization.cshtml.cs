@@ -59,6 +59,11 @@ public class CashInitializationModel : PageModel
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
         await LoadCashInitializationAsync(cancellationToken);
+        if (CashInitialization is not null)
+        {
+            Adjustment.Amount = CashInitialization.Amount;
+            Adjustment.BankAmount = CashInitialization.BankAmount;
+        }
 
         if (!HasExistingSetting)
         {
@@ -82,7 +87,7 @@ public class CashInitializationModel : PageModel
             return Page();
         }
 
-        if (Input.Amount.HasValue && Input.Amount.Value <= 0m)
+        if (Input.Amount.HasValue && (Input.Amount.Value < 0m || (Input.Amount.Value == 0m && Input.BankAmount <= 0m)))
         {
             ModelState.AddModelError($"{nameof(Input)}.{nameof(InputModel.Amount)}", "Сумма должна быть больше нуля.");
         }
@@ -112,7 +117,8 @@ public class CashInitializationModel : PageModel
             decimal.Round(Input.Amount!.Value, 2, MidpointRounding.AwayFromZero),
             Input.AcceptedAt!.Value,
             Input.AcceptedFrom!.Trim(),
-            decimal.Round(Input.AdvancePaymentsAmount ?? 0m, 2, MidpointRounding.AwayFromZero));
+            decimal.Round(Input.AdvancePaymentsAmount ?? 0m, 2, MidpointRounding.AwayFromZero),
+            decimal.Round(Input.BankAmount, 2, MidpointRounding.AwayFromZero));
 
         _dbContext.SystemSettings.Add(new SystemSetting
         {
@@ -156,7 +162,7 @@ public class CashInitializationModel : PageModel
             return Page();
         }
 
-        if (Adjustment.Amount.HasValue && Adjustment.Amount.Value <= 0m)
+        if (Adjustment.Amount.HasValue && (Adjustment.Amount.Value < 0m || (Adjustment.Amount.Value == 0m && Adjustment.BankAmount <= 0m)))
         {
             ModelState.AddModelError($"{nameof(Adjustment)}.{nameof(AdjustmentInputModel.Amount)}", "Сумма должна быть больше нуля.");
         }
@@ -202,13 +208,13 @@ public class CashInitializationModel : PageModel
         }
 
         var newAmount = decimal.Round(Adjustment.Amount!.Value, 2, MidpointRounding.AwayFromZero);
-        if (newAmount == currentData.Amount)
+        if (newAmount == currentData.Amount && Adjustment.BankAmount == currentData.BankAmount)
         {
             TempData["InfoMessage"] = "Сумма не изменилась.";
             return RedirectToPage("/Administration/Finance/Settings/CashInitialization");
         }
 
-        var updatedData = currentData with { Amount = newAmount };
+        var updatedData = currentData with { Amount = newAmount, BankAmount = decimal.Round(Adjustment.BankAmount, 2, MidpointRounding.AwayFromZero) };
         setting.Value = CashInitializationSettingSerializer.Serialize(updatedData);
         setting.UpdatedAt = DateTimeOffset.UtcNow;
         setting.UpdatedByUserId = currentUser.Id;
@@ -220,11 +226,11 @@ public class CashInitializationModel : PageModel
             $"Скорректирована инициализация кассы. Причина: {Adjustment.AdjustmentReason}",
             oldValues: new
             {
-                Amount = currentData.Amount
+                Amount = currentData.Amount, currentData.BankAmount
             },
             newValues: new
             {
-                Amount = newAmount
+                Amount = newAmount, BankAmount = updatedData.BankAmount
             });
 
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -291,6 +297,7 @@ public class CashInitializationModel : PageModel
         CashInitialization = new CashInitializationViewModel
         {
             Amount = data.Amount,
+            BankAmount = data.BankAmount,
             AdvancePaymentsAmount = data.AdvancePaymentsAmount,
             AcceptedAt = data.AcceptedAt,
             AcceptedFrom = data.AcceptedFrom,
@@ -433,6 +440,10 @@ public class CashInitializationModel : PageModel
         [Display(Name = "Сумма в кассе")]
         public decimal? Amount { get; set; }
 
+        [Range(typeof(decimal), "0", "999999999999", ErrorMessage = "Остаток банка не может быть отрицательным.")]
+        [Display(Name = "Начальный остаток банковского счёта")]
+        public decimal BankAmount { get; set; }
+
         [Display(Name = "Дебиторская задолженность")]
         public decimal? AdvancePaymentsAmount { get; set; }
 
@@ -455,6 +466,10 @@ public class CashInitializationModel : PageModel
         [Display(Name = "Новая сумма")]
         public decimal? Amount { get; set; }
 
+        [Range(typeof(decimal), "0", "999999999999", ErrorMessage = "Остаток банка не может быть отрицательным.")]
+        [Display(Name = "Начальный остаток банковского счёта")]
+        public decimal BankAmount { get; set; }
+
         [Required(ErrorMessage = "Укажите причину корректировки.")]
         [StringLength(500, ErrorMessage = "Причина корректировки не должна превышать 500 символов.")]
         [Display(Name = "Причина корректировки")]
@@ -464,6 +479,7 @@ public class CashInitializationModel : PageModel
     public sealed class CashInitializationViewModel
     {
         public decimal Amount { get; init; }
+        public decimal BankAmount { get; init; }
 
         public decimal AdvancePaymentsAmount { get; init; }
 

@@ -292,7 +292,7 @@ public class AdministrationExpenseTests
         Assert.Empty(await dbContext.Expenses.AsNoTracking().ToListAsync());
 
         var expenseResult = await service.CreateExpenseAsync(
-            new CreateAssociationElectricityExpenseRequest(readingResult.ReadingId!.Value, "accountant-user"),
+            new CreateAssociationElectricityExpenseRequest(readingResult.ReadingId!.Value, "accountant-user", new DateOnly(2026, 2, 1)),
             CancellationToken.None);
 
         Assert.True(expenseResult.Succeeded);

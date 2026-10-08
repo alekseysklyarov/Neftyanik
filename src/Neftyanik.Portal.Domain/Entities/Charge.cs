@@ -10,6 +10,10 @@ public class Charge : IValidatableObject, IAssociationOwned
 
     public long Id { get; set; }
 
+    // The debtor is fixed when the charge is created; changing plot ownership never transfers it.
+    public int? MemberId { get; set; }
+    public Member? Member { get; set; }
+
     public int? PlotId { get; set; }
 
     public Plot? Plot { get; set; }

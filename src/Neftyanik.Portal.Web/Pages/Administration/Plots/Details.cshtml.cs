@@ -111,6 +111,7 @@ public class DetailsModel : PageModel
             .Select(charge => new PlotChargeViewModel
             {
                 ChargeDate = charge.ChargeDate,
+                DebtorName = charge.Member != null ? charge.Member.FullName : "Требуется уточнение",
                 ChargeTypeName = charge.ChargeType != null ? charge.ChargeType.Name : "—",
                 Amount = charge.Amount,
                 DueDate = charge.DueDate,
@@ -168,6 +169,7 @@ public class DetailsModel : PageModel
 
     public sealed class PlotChargeViewModel
     {
+        public string DebtorName { get; init; } = string.Empty;
         public DateOnly ChargeDate { get; init; }
 
         public string ChargeTypeName { get; init; } = string.Empty;

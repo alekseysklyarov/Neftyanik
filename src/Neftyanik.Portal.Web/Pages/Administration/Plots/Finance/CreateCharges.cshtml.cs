@@ -125,6 +125,9 @@ public class CreateChargesModel : PageModel
                 duplicatePlotIds = await _dbContext.Charges
                     .AsNoTracking()
                     .Where(charge => charge.CancelledAtUtc == null
+                        && _dbContext.PlotOwnerships.Any(o => o.PlotId == charge.PlotId && o.MemberId == charge.MemberId
+                            && (!o.ValidFrom.HasValue || o.ValidFrom <= Input.ChargeDate!.Value)
+                            && (!o.ValidTo.HasValue || o.ValidTo >= Input.ChargeDate!.Value))
                         && charge.PlotId.HasValue
                         && Input.SelectedPlotIds.Contains(charge.PlotId.Value)
                         && charge.ChargeTypeId == Input.ChargeTypeId.Value

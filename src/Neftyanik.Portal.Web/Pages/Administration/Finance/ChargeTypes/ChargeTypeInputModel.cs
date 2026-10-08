@@ -20,6 +20,9 @@ public class ChargeTypeInputModel : IValidatableObject
     [Display(Name = "Ежегодный")]
     public bool IsYearly { get; set; }
 
+    [Display(Name = "Членский взнос (для отчёта)")]
+    public bool IsMembershipFee { get; set; }
+
     [Display(Name = "Только при смене владельца")]
     public bool OnlyOnOwnerChange { get; set; }
 

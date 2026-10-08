@@ -98,6 +98,7 @@ public class AdministrationFinanceSummaryTests
         dbContext.Payments.AddRange(
             new Payment
             {
+                MemberId = 1,
                 Id = 1,
                 PlotId = 1,
                 Amount = 40m,
@@ -107,6 +108,7 @@ public class AdministrationFinanceSummaryTests
             },
             new Payment
             {
+                MemberId = 1,
                 Id = 2,
                 PlotId = 1,
                 Amount = 20m,
@@ -116,6 +118,7 @@ public class AdministrationFinanceSummaryTests
             },
             new Payment
             {
+                MemberId = 1,
                 Id = 3,
                 PlotId = 1,
                 Amount = 50m,
@@ -125,6 +128,7 @@ public class AdministrationFinanceSummaryTests
             },
             new Payment
             {
+                MemberId = 1,
                 Id = 4,
                 PlotId = 1,
                 Amount = 15m,

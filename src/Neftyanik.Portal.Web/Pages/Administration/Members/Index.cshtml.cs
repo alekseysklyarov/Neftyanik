@@ -102,53 +102,19 @@ public class IndexModel : PageModel
                 .GroupBy(item => item.MemberId)
                 .ToDictionary(group => group.Key, group => group.Count());
 
-            var memberPlotPairs = currentOwnerships
-                .Distinct()
-                .ToList();
-
-            var plotIds = memberPlotPairs
-                .Select(item => item.PlotId)
-                .Distinct()
-                .ToArray();
-
-            var chargeTotalsByPlot = plotIds.Length == 0
-                ? new Dictionary<int, decimal>()
-                : (await _dbContext.Charges
-                    .AsNoTracking()
-                    .Where(charge => charge.PlotId.HasValue && plotIds.Contains(charge.PlotId.Value) && charge.CancelledAtUtc == null)
-                    .Select(charge => new
-                    {
-                        PlotId = charge.PlotId!.Value,
-                        charge.Amount
-                    })
-                    .ToListAsync(cancellationToken))
-                    .GroupBy(item => item.PlotId)
-                    .ToDictionary(group => group.Key, group => group.Sum(item => item.Amount));
-
-            var paymentTotalsByPlot = plotIds.Length == 0
-                ? new Dictionary<int, decimal>()
-                : (await _dbContext.Payments
-                    .AsNoTracking()
-                    .Where(payment => payment.PlotId.HasValue && plotIds.Contains(payment.PlotId.Value) && payment.CancelledAtUtc == null)
-                    .Select(payment => new
-                    {
-                        PlotId = payment.PlotId!.Value,
-                        payment.Amount
-                    })
-                    .ToListAsync(cancellationToken))
-                    .GroupBy(item => item.PlotId)
-                    .ToDictionary(group => group.Key, group => group.Sum(item => item.Amount));
-
-            var balancesByMember = memberPlotPairs
-                .GroupBy(item => item.MemberId)
-                .ToDictionary(
-                    group => group.Key,
-                    group => group.Sum(item => chargeTotalsByPlot.GetValueOrDefault(item.PlotId) - paymentTotalsByPlot.GetValueOrDefault(item.PlotId)));
+            var chargesByMember = (await _dbContext.Charges.AsNoTracking()
+                .Where(c => c.MemberId.HasValue && memberIds.Contains(c.MemberId.Value) && c.CancelledAtUtc == null)
+                .Select(c => new { MemberId = c.MemberId!.Value, c.Amount }).ToListAsync(cancellationToken))
+                .GroupBy(c => c.MemberId).ToDictionary(g => g.Key, g => g.Sum(c => c.Amount));
+            var paymentsByMember = (await _dbContext.Payments.AsNoTracking()
+                .Where(p => p.MemberId.HasValue && memberIds.Contains(p.MemberId.Value) && p.CancelledAtUtc == null)
+                .Select(p => new { MemberId = p.MemberId!.Value, p.Amount }).ToListAsync(cancellationToken))
+                .GroupBy(p => p.MemberId).ToDictionary(g => g.Key, g => g.Sum(p => p.Amount));
 
             foreach (var member in members)
             {
                 member.ActiveOwnershipsCount = activeOwnershipsCountByMember.GetValueOrDefault(member.Id);
-                member.Balance = balancesByMember.GetValueOrDefault(member.Id);
+                member.Balance = chargesByMember.GetValueOrDefault(member.Id) - paymentsByMember.GetValueOrDefault(member.Id);
             }
         }
 

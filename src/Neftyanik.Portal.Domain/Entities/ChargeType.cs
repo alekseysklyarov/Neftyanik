@@ -26,6 +26,8 @@ public class ChargeType : IValidatableObject, IAssociationOwned
 
     public bool IsYearly { get; set; }
 
+    public bool IsMembershipFee { get; set; }
+
     public bool OnlyOnOwnerChange { get; set; }
 
     public decimal? DefaultAmount { get; set; }

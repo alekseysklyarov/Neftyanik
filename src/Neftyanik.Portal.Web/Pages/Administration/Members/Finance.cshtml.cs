@@ -68,6 +68,8 @@ public class FinanceModel : PageModel
 
     public IReadOnlyList<PaymentItemViewModel> Payments { get; private set; } = [];
 
+    public long? CorrectablePaymentId { get; private set; }
+
     public ElectricityFinanceSummary? ElectricitySummary { get; private set; }
 
     public IReadOnlyDictionary<long, ElectricityChargeDetail> ElectricityCharges { get; private set; }
@@ -393,19 +395,16 @@ public class FinanceModel : PageModel
             return false;
         }
 
-        var plotIds = await _dbContext.PlotOwnerships
-            .AsNoTracking()
-            .WhereCurrentForMember(id, currentDate)
-            .Select(ownership => ownership.PlotId)
-            .Distinct()
-            .ToArrayAsync(cancellationToken);
+        var plotIds = await _dbContext.LoadMemberFinancePlotIdsAsync(id, cancellationToken);
 
         var chargeDates = await _dbContext.Charges.AsNoTracking()
+            .Where(c => c.MemberId == id)
             .Where(c => c.PlotId.HasValue && plotIds.Contains(c.PlotId.Value))
             .Select(c => c.ChargeDate).ToListAsync(cancellationToken);
         var memberPayments = await _dbContext.Payments.AsNoTracking()
             .Where(p => p.MemberId == id)
             .Select(p => new { p.PaymentDate, p.Amount, p.CancelledAtUtc }).ToListAsync(cancellationToken);
+        CorrectablePaymentId = await Neftyanik.Portal.Infrastructure.Services.PaymentCorrectionService.LatestActivePaymentIdAsync(_dbContext, id, cancellationToken);
         var recordedYears = chargeDates.Select(d => d.Year).Concat(memberPayments.Select(p => p.PaymentDate.Year))
             .Where(y => y >= 1900 && y <= 9998).Append(currentDate.Year).Append(Year).ToArray();
         AvailableYears = Enumerable.Range(recordedYears.Min(), recordedYears.Max() - recordedYears.Min() + 1)
@@ -425,7 +424,9 @@ public class FinanceModel : PageModel
                 })
                 .ToListAsync(cancellationToken);
 
-            SetupPlotOptions = plots
+            var currentPlotIds = await _dbContext.PlotOwnerships.AsNoTracking()
+                .WhereCurrentForMember(id, currentDate).Select(o => o.PlotId).ToArrayAsync(cancellationToken);
+            SetupPlotOptions = plots.Where(p => currentPlotIds.Contains(p.Id))
                 .Select(plot => new SelectListItem
                 {
                     Value = plot.Id.ToString(),
@@ -437,6 +438,7 @@ public class FinanceModel : PageModel
 
             var activeCharges = await _dbContext.Charges
                 .AsNoTracking()
+            .Where(c => c.MemberId == id)
                 .Where(charge => charge.PlotId != null && plotIds.Contains(charge.PlotId.Value) && charge.CancelledAtUtc == null && charge.ChargeDate < yearEnd)
                 .Select(charge => new
                 {
@@ -479,6 +481,7 @@ public class FinanceModel : PageModel
 
             var chargesQuery = _dbContext.Charges
                 .AsNoTracking()
+            .Where(c => c.MemberId == id)
                 .Where(charge => charge.PlotId != null && plotIds.Contains(charge.PlotId.Value)
                     && charge.ChargeDate >= yearStart && charge.ChargeDate < yearEnd)
                 .OrderByDescending(charge => charge.ChargeDate)

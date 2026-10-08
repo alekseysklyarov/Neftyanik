@@ -34,7 +34,7 @@ internal static class FinanceCashCalculator
             .Where(expense => !expense.IsCancelled)
             .Select(expense => new ExpenseAmountItem(
                 expense.Amount,
-                expense.ExpenseDate))
+                expense.ExpenseDate, expense.PaymentMethod))
             .ToListAsync(cancellationToken);
 
         var paymentsFromInitialization = activePayments
@@ -54,7 +54,7 @@ internal static class FinanceCashCalculator
         var totalExpensesFromInitialization = expensesFromInitialization.Sum(expense => expense.Amount);
 
         var openingYearInitializationAmount = cashInitialization is not null && cashInitialization.AcceptedAt < currentYearStart
-            ? cashInitialization.Amount - cashInitialization.AdvancePaymentsAmount
+            ? cashInitialization.Amount + cashInitialization.BankAmount - cashInitialization.AdvancePaymentsAmount
             : 0m;
         var openingYearPayments = activePayments
             .Where(payment => payment.PaymentDate < currentYearStart
@@ -66,9 +66,9 @@ internal static class FinanceCashCalculator
             .Sum(expense => expense.Amount);
 
         return new FinanceCashSnapshot(
-            initializationAmount - advancePaymentsAmount + totalPaymentsFromInitialization - totalExpensesFromInitialization,
-            initializationAmount - advancePaymentsAmount + totalCashPaymentsFromInitialization - totalExpensesFromInitialization,
-            totalNonCashPaymentsFromInitialization,
+            initializationAmount + (cashInitialization?.BankAmount ?? 0m) - advancePaymentsAmount + totalPaymentsFromInitialization - totalExpensesFromInitialization,
+            initializationAmount - advancePaymentsAmount + totalCashPaymentsFromInitialization - expensesFromInitialization.Where(e => e.PaymentMethod == PaymentMethod.Cash).Sum(e => e.Amount),
+            (cashInitialization?.BankAmount ?? 0m) + totalNonCashPaymentsFromInitialization - expensesFromInitialization.Where(e => e.PaymentMethod != PaymentMethod.Cash).Sum(e => e.Amount),
             openingYearInitializationAmount + openingYearPayments - openingYearExpenses,
             advancePaymentsAmount,
             initializationAcceptedAt);
@@ -89,5 +89,5 @@ internal static class FinanceCashCalculator
 
     private sealed record PaymentAmountItem(decimal Amount, DateOnly PaymentDate, PaymentMethod PaymentMethod);
 
-    private sealed record ExpenseAmountItem(decimal Amount, DateOnly ExpenseDate);
+    private sealed record ExpenseAmountItem(decimal Amount, DateOnly ExpenseDate, PaymentMethod PaymentMethod);
 }

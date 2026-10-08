@@ -31,7 +31,7 @@ public class DetailsModel : PageModel
             {
                 Id = item.Id,
                 ExpenseDate = item.ExpenseDate,
-                Amount = item.Amount,
+                Amount = item.Amount, PaymentMethod = item.PaymentMethod, FundingSource = item.FundingSource,
                 CategoryName = item.ExpenseCategory != null ? item.ExpenseCategory.Name : "—",
                 Description = item.Description,
                 Payee = item.Payee,
@@ -131,7 +131,7 @@ public class DetailsModel : PageModel
         var orderedKeys = new[]
         {
             "ExpenseDate",
-            "Amount",
+            "Amount", "PaymentMethod", "FundingSource",
             "ExpenseCategoryId",
             "Description",
             "Payee",
@@ -227,6 +227,8 @@ public class DetailsModel : PageModel
         {
             "ExpenseDate" => "Дата",
             "Amount" => "Сумма",
+            "PaymentMethod" => "Счёт оплаты",
+            "FundingSource" => "Источник средств",
             "ExpenseCategoryId" => "Тип расхода (ID)",
             "Description" => "Описание",
             "Payee" => "Получатель",
@@ -246,6 +248,8 @@ public class DetailsModel : PageModel
         public DateOnly ExpenseDate { get; init; }
 
         public decimal Amount { get; init; }
+        public Neftyanik.Portal.Domain.Enums.PaymentMethod PaymentMethod { get; init; }
+        public int FundingSource { get; init; }
 
         public string CategoryName { get; init; } = string.Empty;
 

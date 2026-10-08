@@ -248,6 +248,8 @@ public sealed class MemberFinanceBalanceQueriesTests
                 IsActive = true
             });
 
+            DbContext.PlotOwnerships.Add(new PlotOwnership { MemberId = memberId, PlotId = plotId, ValidFrom = new DateOnly(2020, 1, 1) });
+
             DbContext.ChargeTypes.Add(new Neftyanik.Portal.Domain.Entities.ChargeType
             {
                 Id = 1,

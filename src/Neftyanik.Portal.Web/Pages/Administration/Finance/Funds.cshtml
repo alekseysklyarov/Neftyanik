@@ -1,0 +1,20 @@
+@page
+@model Neftyanik.Portal.Web.Pages.Administration.Finance.FundsModel
+@{ ViewData["Title"] = "Взносы и расходование средств"; }
+<h1 class="h2">Взносы и расходование средств</h1>
+<form method="get" class="d-flex gap-2 my-3 align-items-end flex-wrap">
+    <div><label asp-for="From">С</label><input asp-for="From" type="date" class="form-control" /></div>
+    <div><label asp-for="To">По</label><input asp-for="To" type="date" class="form-control" /></div>
+    <button class="btn btn-primary">Показать</button><a asp-page="Index" class="btn btn-outline-secondary">К финансам</a>
+</form>
+<div asp-validation-summary="All" class="text-danger"></div>
+<p class="text-muted">Отчёт по зарегистрированным операциям и текущему распределению платежей. Начальная касса не распределяется по фондам автоматически. Отметьте типы членских взносов в справочнике и источник средств у расходов.</p>
+@if (Model.UnclassifiedExpenses > 0) { <p class="alert alert-warning">У расходов на @Model.UnclassifiedExpenses.ToString("0.00") грн не указан источник средств. Уточните их в журнале расходов для полного отчёта.</p> }
+<div class="table-responsive card"><table class="table mb-0">
+    <thead><tr><th>Средства</th><th>На начало</th><th>Поступило</th><th>Потрачено</th><th>На конец</th></tr></thead>
+    <tbody>@foreach (var row in Model.Rows) { <tr><th>@row.Name</th><td>@row.Opening.ToString("0.00")</td><td>@row.Received.ToString("0.00")</td><td>@row.Spent.ToString("0.00")</td><td>@row.Closing.ToString("0.00")</td></tr> }</tbody>
+</table></div>
+<h2 class="h5 mt-4">Расходы из членских взносов</h2>
+@foreach (var row in Model.Categories) { <p>@row.Name: <strong>@row.Amount.ToString("0.00") грн</strong></p> }
+<a asp-page="ChargeTypes/Index" class="btn btn-outline-primary">Типы начислений</a>
+<a asp-page="Expenses/Index" class="btn btn-outline-primary">Расходы</a>

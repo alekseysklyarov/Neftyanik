@@ -1,0 +1,18 @@
+@page
+@model Neftyanik.Portal.Web.Pages.Platform.Associations.AdministratorModel
+@{ ViewData["Title"] = "Доступ администратора"; }
+<h1 class="h2">Доступ администратора: @Model.Administrator.UserName</h1>
+<div asp-validation-summary="All" class="text-danger"></div>
+<div class="card card-body mb-3">
+    <p>Назначение: @(Model.Administrator.IsAssignmentActive ? "Активно" : "Отключено")</p>
+    <form method="post" asp-page-handler="Status" asp-route-id="@Request.Query["id"]" asp-route-userName="@Model.Administrator.UserName">
+        <input type="hidden" name="active" value="@(Model.Administrator.IsAssignmentActive ? "false" : "true")" />
+        <button type="submit" class="btn btn-warning">@(Model.Administrator.IsAssignmentActive ? "Отключить доступ" : "Включить доступ")</button>
+    </form>
+</div>
+<form method="post" asp-page-handler="Password" asp-route-id="@Request.Query["id"]" asp-route-userName="@Model.Administrator.UserName" class="card card-body">
+    <label for="TemporaryPassword" class="form-label">Новый временный пароль</label>
+    <input id="TemporaryPassword" name="TemporaryPassword" type="password" autocomplete="new-password" required maxlength="128" class="form-control mb-3" />
+    <p class="text-muted">Передайте пароль администратору. При следующем входе он должен будет сменить его.</p>
+    <div><button type="submit" class="btn btn-primary">Сбросить пароль</button> <a asp-page="Details" asp-route-id="@Request.Query["id"]" class="btn btn-outline-secondary">Назад</a></div>
+</form>

@@ -45,6 +45,7 @@ public class CreateModel : PageModel
             DefaultAmount = Input.DefaultAmount,
             IsDefault = Input.IsDefault,
             IsYearly = Input.IsYearly,
+            IsMembershipFee = Input.IsMembershipFee,
             OnlyOnOwnerChange = Input.OnlyOnOwnerChange,
             IsActive = Input.IsActive,
             CreatedAtUtc = DateTime.UtcNow

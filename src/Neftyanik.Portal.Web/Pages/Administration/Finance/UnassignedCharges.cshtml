@@ -1,0 +1,22 @@
+@page
+@model Neftyanik.Portal.Web.Pages.Administration.Finance.UnassignedChargesModel
+@{ ViewData["Title"] = "Уточнение плательщиков"; }
+<h1 class="h2">Уточнение плательщиков</h1>
+<p>Для этих старых начислений не удалось однозначно определить участника по истории владения и платежам. Укажите того, кому принадлежит начисление. Долг прежнего владельца остаётся за ним.</p>
+<p>Всего: @Model.Total. Показаны первые 100; после уточнения появятся следующие.</p>
+<div asp-validation-summary="All" class="text-danger"></div>
+@foreach (var charge in Model.Charges)
+{
+    <form method="post" class="card card-body mb-3">
+        <input type="hidden" name="chargeId" value="@charge.Id" />
+        <h2 class="h5">#@charge.Id · участок @charge.Plot?.Number · @charge.ChargeDate.ToString("dd.MM.yyyy")</h2>
+        <p>@charge.ChargeType?.Name — @charge.Amount.ToString("0.00") грн @(charge.CancelledAtUtc.HasValue ? "(отменено)" : "")</p>
+        <p>@charge.Description</p>
+        <label for="member-@charge.Id" class="form-label">Плательщик</label>
+        <select id="member-@charge.Id" name="memberId" asp-items="Model.Members" class="form-select mb-2" required><option value="">Выберите участника</option></select>
+        <label for="reason-@charge.Id" class="form-label">Основание выбора</label>
+        <input id="reason-@charge.Id" name="reason" maxlength="500" class="form-control mb-3" required />
+        <button class="btn btn-primary align-self-start">Сохранить плательщика</button>
+    </form>
+}
+<a asp-page="Index" class="btn btn-outline-secondary">К финансам</a>

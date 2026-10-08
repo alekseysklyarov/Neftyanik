@@ -129,7 +129,7 @@ public class CreateChargeModel : PageModel
             var periodEnd = new DateOnly(chargeDate.Year, 12, 31);
             var duplicateExists = await _dbContext.Charges
                 .AsNoTracking()
-                .AnyAsync(charge => charge.CancelledAtUtc == null
+                .AnyAsync(charge => charge.CancelledAtUtc == null && charge.MemberId == id
                     && charge.PlotId == Input.PlotId.Value
                     && charge.ChargeTypeId == Input.ChargeTypeId.Value
                     && charge.ChargeDate >= periodStart
@@ -166,7 +166,7 @@ public class CreateChargeModel : PageModel
 
             var duplicateExists = await _dbContext.Charges
                 .AsNoTracking()
-                .AnyAsync(charge => charge.CancelledAtUtc == null
+                .AnyAsync(charge => charge.CancelledAtUtc == null && charge.MemberId == id
                     && charge.PlotId == Input.PlotId.Value
                     && charge.ChargeTypeId == Input.ChargeTypeId.Value
                     && charge.ChargeDate >= ownershipStart
@@ -185,6 +185,7 @@ public class CreateChargeModel : PageModel
         var charge = new Charge
         {
             PlotId = Input.PlotId.Value,
+            MemberId = id,
             ChargeTypeId = Input.ChargeTypeId.Value,
             Amount = Input.Amount!.Value,
             ChargeDate = Input.ChargeDate!.Value,

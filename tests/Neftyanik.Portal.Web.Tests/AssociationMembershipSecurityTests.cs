@@ -58,7 +58,7 @@ public class AssociationMembershipSecurityTests
         using var client = AuthenticationCookieTests.CreateBrowser(fixture.App, cookies);
         using var login = await fixture.LoginAsync(client, "dual", "neftyanik");
         Assert.Equal(HttpStatusCode.Found, login.StatusCode);
-        Assert.Equal("/neftyanik/Administration", login.Headers.Location?.OriginalString);
+        Assert.Equal("/neftyanik/Administration/Members", login.Headers.Location?.OriginalString);
         var session = Assert.Single(cookies.GetAllCookies().Cast<Cookie>().Where(x => x.Name == fixture.CookieOptions.Cookie.Name));
         Assert.Equal("/", session.Path);
         Assert.True(session.HttpOnly);

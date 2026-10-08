@@ -10,6 +10,7 @@
         <p class="text-muted mb-0">@AppLocalizer.Get("Сводная информация по начислениям, платежам, расходам и балансам участков.", "Зведена інформація щодо нарахувань, платежів, витрат і балансів ділянок.", "Summary information on charges, payments, expenses, and plot balances.")</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
+        <a class="btn btn-outline-primary" asp-page="Funds">Взносы и расходование средств</a>
         <a class="btn btn-outline-primary" asp-page="/Administration/Plots/Index">@AppLocalizer.Get("Участки и балансы", "Ділянки та баланси", "Plots and balances")</a>
         <a class="btn btn-outline-primary" asp-page="/Administration/Finance/Expenses/Index">@AppLocalizer.Get("Расходы", "Витрати", "Expenses")</a>
         <a class="btn btn-outline-primary" asp-page="/Administration/Finance/Expenses/Electricity/Index">@AppLocalizer.Get("Расходы электроэнергии", "Витрати на електроенергію", "Electricity expenses")</a>
@@ -21,6 +22,13 @@
         <a class="btn btn-outline-secondary" asp-page="/Administration/Index">@AppLocalizer.Get("К администрированию", "До адміністрування", "Back to administration")</a>
     </div>
 </div>
+
+@if (Model.UnassignedChargesCount > 0)
+{
+    <div class="alert alert-warning">Требуется уточнить плательщиков для @Model.UnassignedChargesCount старых начислений. До уточнения они не отражаются в личных кабинетах.
+        <a asp-page="UnassignedCharges">Уточнить плательщиков</a>
+    </div>
+}
 
 <div class="row g-4 mb-4">
     <div class="col-sm-6 col-xl-4">
@@ -51,7 +59,7 @@
         <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">@AppLocalizer.Get($"Задолженность членов товарищества на начало {Model.CurrentYear} года", $"Заборгованість членів товариства на початок {Model.CurrentYear} року", $"Members' debt at the beginning of {Model.CurrentYear}")</h2><p class="display-6 mb-0 text-danger">@Model.Summary.OpeningYearDebt.ToString("0.00")</p></div></div>
     </div>
     <div class="col-sm-6 col-xl-4">
-        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">@AppLocalizer.Get($"Задолженность членов товарищества за {Model.CurrentYear} год", $"Заборгованість членів товариства за {Model.CurrentYear} рік", $"Members' debt for {Model.CurrentYear}")</h2><p class="display-6 mb-0 text-danger">@Model.Summary.CurrentYearDebt.ToString("0.00")</p></div></div>
+        <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">@AppLocalizer.Get("Текущая задолженность участников", "Поточна заборгованість учасників", "Current member debt")</h2><p class="display-6 mb-0 text-danger">@Model.Summary.CurrentYearDebt.ToString("0.00")</p></div></div>
     </div>
     <div class="col-sm-6 col-xl-4">
         <div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h6 text-muted">@AppLocalizer.Get("Переплаты", "Переплати", "Overpayments")</h2><p class="display-6 mb-0 text-primary">@Model.Summary.TotalOverpayments.ToString("0.00")</p></div></div>

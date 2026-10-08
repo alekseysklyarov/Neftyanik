@@ -165,6 +165,9 @@ public class IndexModel : PageModel
                 var duplicatePlots = await _dbContext.Charges
                     .AsNoTracking()
                     .Where(charge => charge.CancelledAtUtc == null
+                        && _dbContext.PlotOwnerships.Any(o => o.PlotId == charge.PlotId && o.MemberId == charge.MemberId
+                            && (!o.ValidFrom.HasValue || o.ValidFrom <= ChargeInput.ChargeDate!.Value)
+                            && (!o.ValidTo.HasValue || o.ValidTo >= ChargeInput.ChargeDate!.Value))
                         && charge.PlotId.HasValue
                         && validSelectedPlotIds.Contains(charge.PlotId.Value)
                         && charge.ChargeTypeId == ChargeInput.ChargeTypeId.Value
@@ -389,12 +392,16 @@ public class IndexModel : PageModel
         var plotIds = await _dbContext.Plots.AsNoTracking().Select(p => p.Id).ToArrayAsync(cancellationToken);
         var chargesByPlot = (await _dbContext.Charges.AsNoTracking()
             .Where(c => c.PlotId.HasValue && c.CancelledAtUtc == null && c.ChargeType != null && c.ChargeType.IsYearly)
+            .Where(c => _dbContext.PlotOwnerships.Any(o => o.PlotId == c.PlotId && o.MemberId == c.MemberId
+                && (!o.ValidFrom.HasValue || o.ValidFrom <= currentDate) && (!o.ValidTo.HasValue || o.ValidTo >= currentDate)))
             .Select(c => new { PlotId = c.PlotId!.Value, c.Amount }).ToListAsync(cancellationToken))
             .GroupBy(c => c.PlotId).ToDictionary(g => g.Key, g => g.Sum(c => c.Amount));
         var paymentsByPlot = (await _dbContext.PaymentAllocations.AsNoTracking()
             .Where(a => a.Payment != null && a.Payment.CancelledAtUtc == null
                 && a.Charge != null && a.Charge.CancelledAtUtc == null && a.Charge.PlotId.HasValue
                 && a.Charge.ChargeType != null && a.Charge.ChargeType.IsYearly)
+            .Where(a => _dbContext.PlotOwnerships.Any(o => o.PlotId == a.Charge!.PlotId && o.MemberId == a.Charge.MemberId
+                && (!o.ValidFrom.HasValue || o.ValidFrom <= currentDate) && (!o.ValidTo.HasValue || o.ValidTo >= currentDate)))
             .Select(a => new { PlotId = a.Charge!.PlotId!.Value, a.Amount }).ToListAsync(cancellationToken))
             .GroupBy(a => a.PlotId).ToDictionary(g => g.Key, g => g.Sum(a => a.Amount));
 

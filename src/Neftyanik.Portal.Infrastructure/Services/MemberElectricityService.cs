@@ -186,6 +186,7 @@ public sealed class MemberElectricityService : IMemberElectricityService
             openingDebtCharge = new Charge
             {
                 PlotId = meter.BillingPlotId,
+            MemberId = meter.MemberId,
                 ChargeType = chargeType,
                 Amount = RoundMoney(request.OpeningDebtAmount),
                 ChargeDate = request.ReadingDate,
@@ -387,6 +388,7 @@ public sealed class MemberElectricityService : IMemberElectricityService
             openingDebtCharge = new Charge
             {
                 PlotId = request.BillingPlotId,
+                MemberId = request.MemberId,
                 ChargeType = chargeType,
                 Amount = RoundMoney(request.OpeningDebtAmount),
                 ChargeDate = request.ReadingDate,
@@ -862,6 +864,7 @@ public sealed class MemberElectricityService : IMemberElectricityService
         var charge = new Charge
         {
             PlotId = meter.BillingPlotId,
+            MemberId = meter.MemberId,
             ChargeType = chargeType,
             Amount = amount,
             ChargeDate = request.ReadingDate,
@@ -895,6 +898,12 @@ public sealed class MemberElectricityService : IMemberElectricityService
         try
         {
             await AdvancePaymentAllocator.LockAsync(_dbContext, cancellationToken);
+            var latest = await _dbContext.MemberElectricityReadings.AsNoTracking()
+                .Where(r => r.MemberElectricityMeterId == request.MeterId)
+                .OrderByDescending(r => r.ReadingDate).ThenByDescending(r => r.Id).FirstOrDefaultAsync(cancellationToken);
+            if (latest is null || latest.ReadingDate != meter.PreviousReadingDate
+                || latest.CurrentReading != meter.PreviousReading || latest.CurrentNightReading != meter.PreviousNightReading)
+                return ElectricityReadingOperationResult.Failure("Показания изменились. Обновите страницу и повторите ввод.");
             _dbContext.MemberElectricityReadings.Add(reading);
             await _dbContext.SaveChangesAsync(cancellationToken);
 

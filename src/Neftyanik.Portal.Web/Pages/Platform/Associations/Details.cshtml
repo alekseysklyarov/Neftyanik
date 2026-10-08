@@ -60,12 +60,14 @@ else
                 @foreach (var administrator in Model.Association.Administrators)
                 {
                     <tr>
-                        <td>@(administrator.UserName ?? "—")</td>
+                        <td>@(administrator.UserName ?? "—")
+                            <a class="btn btn-sm btn-outline-primary" asp-page="Administrator" asp-route-id="@Model.Association.Id" asp-route-userName="@administrator.UserName">Доступ и пароль</a>
+                        </td>
                         <td>
                             @(administrator.IsAccountActive ? AppLocalizer.Get("Активна", "Активний", "Active") : AppLocalizer.Get("Неактивна", "Неактивний", "Inactive"))
                             @if (administrator.IsAccountLocked)
                             {
-                                <span class="badge text-bg-warning">@AppLocalizer.Get("Заблокирована", "Заблокований", "Locked")</span>
+                                <span class="badge bg-warning text-dark">@AppLocalizer.Get("Заблокирована", "Заблокований", "Locked")</span>
                             }
                         </td>
                         <td>@(administrator.IsAssignmentActive ? AppLocalizer.Get("Активно", "Активне", "Active") : AppLocalizer.Get("Отключено", "Вимкнене", "Disabled"))</td>

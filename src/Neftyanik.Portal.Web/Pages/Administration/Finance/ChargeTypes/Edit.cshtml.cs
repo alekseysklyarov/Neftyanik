@@ -42,6 +42,7 @@ public class EditModel : PageModel
             DefaultAmount = chargeType.DefaultAmount,
             IsDefault = chargeType.IsDefault,
             IsYearly = chargeType.IsYearly,
+            IsMembershipFee = chargeType.IsMembershipFee,
             OnlyOnOwnerChange = chargeType.OnlyOnOwnerChange,
             IsActive = chargeType.IsActive
         };
@@ -79,6 +80,7 @@ public class EditModel : PageModel
         chargeType.DefaultAmount = Input.DefaultAmount;
         chargeType.IsDefault = Input.IsDefault;
         chargeType.IsYearly = Input.IsYearly;
+        chargeType.IsMembershipFee = Input.IsMembershipFee;
         chargeType.OnlyOnOwnerChange = Input.OnlyOnOwnerChange;
         chargeType.IsActive = Input.IsActive;
         chargeType.UpdatedAtUtc = DateTime.UtcNow;

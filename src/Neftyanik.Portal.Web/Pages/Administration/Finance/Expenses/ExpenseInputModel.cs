@@ -18,10 +18,18 @@ public class ExpenseInputModel
     [Display(Name = "Сумма")]
     public decimal? Amount { get; set; }
 
+    [Range(1, 2, ErrorMessage = "Выберите кассу или банковский счёт.")]
+    [Display(Name = "Оплачено из")]
+    public Neftyanik.Portal.Domain.Enums.PaymentMethod PaymentMethod { get; set; } = Neftyanik.Portal.Domain.Enums.PaymentMethod.Cash;
+
     [Required(ErrorMessage = "Введите описание расхода.")]
     [StringLength(1000, ErrorMessage = "Описание не должно превышать 1000 символов.")]
     [Display(Name = "Описание")]
     public string Description { get; set; } = string.Empty;
+
+    [Range(0, 3)]
+    [Display(Name = "За счёт каких средств")]
+    public int FundingSource { get; set; }
 
     [StringLength(200, ErrorMessage = "Получатель не должен превышать 200 символов.")]
     [Display(Name = "Получатель")]

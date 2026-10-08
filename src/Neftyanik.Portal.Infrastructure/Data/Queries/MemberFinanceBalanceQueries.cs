@@ -4,23 +4,23 @@ namespace Neftyanik.Portal.Infrastructure.Data.Queries;
 
 public static class MemberFinanceBalanceQueries
 {
+    public static Task<int[]> LoadMemberFinancePlotIdsAsync(this ApplicationDbContext dbContext,
+        int memberId, CancellationToken cancellationToken = default) =>
+        dbContext.PlotOwnerships.Where(o => o.MemberId == memberId).Select(o => o.PlotId)
+            .Union(dbContext.Charges.Where(c => c.MemberId == memberId && c.PlotId.HasValue).Select(c => c.PlotId!.Value))
+            .Union(dbContext.Payments.Where(p => p.MemberId == memberId && p.PlotId.HasValue).Select(p => p.PlotId!.Value))
+            .ToArrayAsync(cancellationToken);
+
     public static async Task<decimal> CalculateActiveBalanceAsync(
         this ApplicationDbContext dbContext,
         int memberId,
         IEnumerable<int> plotIds,
         CancellationToken cancellationToken = default)
     {
-        var plotIdArray = plotIds.Distinct().ToArray();
-        if (plotIdArray.Length == 0)
-        {
-            return 0m;
-        }
-
         var chargeAmounts = await dbContext.Charges
             .AsNoTracking()
             .Where(charge => charge.CancelledAtUtc == null
-                && charge.PlotId.HasValue
-                && plotIdArray.Contains(charge.PlotId.Value))
+                && charge.MemberId == memberId)
             .Select(charge => charge.Amount)
             .ToListAsync(cancellationToken);
 

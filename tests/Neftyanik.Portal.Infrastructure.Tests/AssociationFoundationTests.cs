@@ -164,7 +164,7 @@ public class AssociationFoundationTests : IClassFixture<AssociationDatabaseFixtu
                 tested++;
             }
         }
-        Assert.Equal(18, tested);
+        Assert.Equal(19, tested);
     }
 
     [Fact]

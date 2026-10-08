@@ -109,6 +109,12 @@ public DbSet<UserLoginHistory> UserLoginHistories => Set<UserLoginHistory>();
                     throw new AssociationIsolationException("The record does not belong to the current association.");
                 }
             }
+            foreach (var entry in ChangeTracker.Entries<Charge>().Where(e => e.State == EntityState.Modified))
+            {
+                var stored = await entry.GetDatabaseValuesAsync(cancellationToken);
+                if (stored is not null && stored.GetValue<int?>(nameof(Charge.MemberId)) is int debtorId && debtorId != entry.Entity.MemberId)
+                    throw new InvalidOperationException("Плательщик сохранённого начисления не может быть изменён.");
+            }
             foreach (var entry in ChangeTracker.Entries<Association>().Where(x => x.State != EntityState.Deleted))
             {
                 entry.Entity.ValidateSlug();
@@ -120,6 +126,7 @@ public DbSet<UserLoginHistory> UserLoginHistories => Set<UserLoginHistory>();
             if (Database.IsSqlServer())
                 await LockAccountAssignmentsAsync(assignmentUserIds, cancellationToken);
             await EnforceAccountBindingsAsync(cancellationToken);
+            await AssignChargeDebtorsAsync(cancellationToken);
             ChangeTracker.DetectChanges();
             var result = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
             if (bindingTransaction is not null) await bindingTransaction.CommitAsync(cancellationToken);
@@ -128,6 +135,35 @@ public DbSet<UserLoginHistory> UserLoginHistories => Set<UserLoginHistory>();
         finally
         {
             ChangeTracker.AutoDetectChangesEnabled = autoDetectChanges;
+        }
+    }
+
+    private async Task AssignChargeDebtorsAsync(CancellationToken cancellationToken)
+    {
+        var charges = ChangeTracker.Entries<Charge>()
+            .Where(e => e.State == EntityState.Added && e.Entity.MemberId == null && e.Entity.Member == null && (e.Entity.PlotId.HasValue || e.Entity.Plot != null))
+            .Select(e => e.Entity).ToArray();
+        if (charges.Length == 0) return;
+        var plotIds = charges.Where(c => c.PlotId.HasValue).Select(c => c.PlotId!.Value).Distinct().ToArray();
+        var owners = await PlotOwnerships.AsNoTracking().Where(o => plotIds.Contains(o.PlotId)).ToListAsync(cancellationToken);
+        var pendingOwners = ChangeTracker.Entries<PlotOwnership>().Where(e => e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted).ToArray();
+        var replacedIds = pendingOwners.Where(e => e.State != EntityState.Added).Select(e => e.Entity.Id).ToHashSet();
+        owners.RemoveAll(o => replacedIds.Contains(o.Id));
+        owners.AddRange(pendingOwners.Where(e => e.State != EntityState.Deleted).Select(e => e.Entity));
+        foreach (var charge in charges)
+        {
+            var candidates = owners.Where(o => (charge.PlotId.HasValue && o.PlotId == charge.PlotId || charge.Plot != null && ReferenceEquals(o.Plot, charge.Plot))
+                && (!o.ValidFrom.HasValue || o.ValidFrom <= charge.ChargeDate)
+                && (!o.ValidTo.HasValue || o.ValidTo >= charge.ChargeDate))
+                .GroupBy(o => o.MemberId != 0 ? o.MemberId : Entry(o).Property(x => x.MemberId).CurrentValue)
+                .Select(g => g.First()).ToArray();
+            if (candidates.Length == 1)
+            {
+                if (candidates[0].Member is not null) charge.Member = candidates[0].Member;
+                else charge.MemberId = candidates[0].MemberId;
+            }
+            else if (candidates.Length > 1)
+                throw new InvalidOperationException("Нельзя определить плательщика: на дату начисления несколько владельцев.");
         }
     }
 

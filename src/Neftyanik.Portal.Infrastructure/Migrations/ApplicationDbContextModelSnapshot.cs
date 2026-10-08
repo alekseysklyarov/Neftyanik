@@ -717,6 +717,9 @@ namespace Neftyanik.Portal.Infrastructure.Migrations
                     b.Property<DateOnly?>("DueDate")
                         .HasColumnType("date");
 
+                    b.Property<int?>("MemberId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("PeriodMonth")
                         .HasColumnType("int");
 
@@ -737,6 +740,8 @@ namespace Neftyanik.Portal.Infrastructure.Migrations
                     b.HasIndex("AssociationId", "ChargeTypeId");
 
                     b.HasIndex("AssociationId", "DueDate");
+
+                    b.HasIndex("AssociationId", "MemberId");
 
                     b.HasIndex("AssociationId", "PlotId");
 
@@ -789,6 +794,9 @@ namespace Neftyanik.Portal.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
                         .HasDefaultValue(false);
+
+                    b.Property<bool>("IsMembershipFee")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsYearly")
                         .ValueGeneratedOnAdd()
@@ -881,12 +889,18 @@ namespace Neftyanik.Portal.Infrastructure.Migrations
                     b.Property<DateOnly>("ExpenseDate")
                         .HasColumnType("date");
 
+                    b.Property<int>("FundingSource")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsCancelled")
                         .HasColumnType("bit");
 
                     b.Property<string>("Payee")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("PaymentMethod")
+                        .HasColumnType("int");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("datetimeoffset");
@@ -896,7 +910,6 @@ namespace Neftyanik.Portal.Infrastructure.Migrations
                     b.HasIndex("CreatedByUserId");
 
                     b.HasIndex("AssociationId", "AssociationElectricityReadingId")
-                        .IsUnique()
                         .HasFilter("[AssociationElectricityReadingId] IS NOT NULL");
 
                     b.HasIndex("AssociationId", "ExpenseCategoryId");
@@ -2138,6 +2151,12 @@ namespace Neftyanik.Portal.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Neftyanik.Portal.Domain.Entities.Member", "Member")
+                        .WithMany()
+                        .HasForeignKey("AssociationId", "MemberId")
+                        .HasPrincipalKey("AssociationId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Neftyanik.Portal.Domain.Entities.Plot", "Plot")
                         .WithMany("Charges")
                         .HasForeignKey("AssociationId", "PlotId")
@@ -2149,6 +2168,8 @@ namespace Neftyanik.Portal.Infrastructure.Migrations
                     b.Navigation("ChargeType");
 
                     b.Navigation("CreatedByUser");
+
+                    b.Navigation("Member");
 
                     b.Navigation("Plot");
                 });
@@ -2179,9 +2200,9 @@ namespace Neftyanik.Portal.Infrastructure.Migrations
                         .IsRequired();
 
                     b.HasOne("Neftyanik.Portal.Domain.Entities.AssociationElectricityReading", "AssociationElectricityReading")
-                        .WithOne("SupplierExpense")
-                        .HasForeignKey("Neftyanik.Portal.Domain.Entities.Expense", "AssociationId", "AssociationElectricityReadingId")
-                        .HasPrincipalKey("Neftyanik.Portal.Domain.Entities.AssociationElectricityReading", "AssociationId", "Id")
+                        .WithMany("SupplierExpenses")
+                        .HasForeignKey("AssociationId", "AssociationElectricityReadingId")
+                        .HasPrincipalKey("AssociationId", "Id")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Neftyanik.Portal.Domain.Entities.ExpenseCategory", "ExpenseCategory")
@@ -2620,7 +2641,7 @@ namespace Neftyanik.Portal.Infrastructure.Migrations
 
             modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.AssociationElectricityReading", b =>
                 {
-                    b.Navigation("SupplierExpense");
+                    b.Navigation("SupplierExpenses");
                 });
 
             modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.Charge", b =>

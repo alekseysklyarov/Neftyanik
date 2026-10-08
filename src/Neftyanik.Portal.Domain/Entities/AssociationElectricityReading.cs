@@ -42,5 +42,5 @@ public class AssociationElectricityReading : IAssociationOwned
 
     public ApplicationUser? CreatedByUser { get; set; }
 
-    public Expense? SupplierExpense { get; set; }
+    public List<Expense> SupplierExpenses { get; set; } = [];
 }

@@ -68,15 +68,15 @@
                                     <div class="d-flex flex-wrap gap-1">
                                         @if (chargeType.IsDefault)
                                         {
-                                            <span class="badge text-bg-primary">@AppLocalizer.Get("По умолчанию", "За замовчуванням", "Default")</span>
+                                            <span class="badge bg-primary text-white">@AppLocalizer.Get("По умолчанию", "За замовчуванням", "Default")</span>
                                         }
                                         @if (chargeType.IsYearly)
                                         {
-                                            <span class="badge text-bg-info">@AppLocalizer.Get("Ежегодный", "Щорічний", "Yearly")</span>
+                                            <span class="badge bg-info text-dark">@AppLocalizer.Get("Ежегодный", "Щорічний", "Yearly")</span>
                                         }
                                         @if (chargeType.OnlyOnOwnerChange)
                                         {
-                                            <span class="badge text-bg-warning">@AppLocalizer.Get("При смене владельца", "При зміні власника", "On owner change")</span>
+                                            <span class="badge bg-warning text-dark">@AppLocalizer.Get("При смене владельца", "При зміні власника", "On owner change")</span>
                                         }
                                         @if (!chargeType.IsDefault && !chargeType.IsYearly && !chargeType.OnlyOnOwnerChange)
                                         {
@@ -87,11 +87,11 @@
                                 <td>
                                     @if (chargeType.IsActive)
                                     {
-                                        <span class="badge text-bg-success">@AppLocalizer.Get("Активен", "Активний", "Active")</span>
+                                        <span class="badge bg-success text-white">@AppLocalizer.Get("Активен", "Активний", "Active")</span>
                                     }
                                     else
                                     {
-                                        <span class="badge text-bg-secondary">@AppLocalizer.Get("В архиве", "В архіві", "Archived")</span>
+                                        <span class="badge bg-secondary text-white">@AppLocalizer.Get("В архиве", "В архіві", "Archived")</span>
                                     }
                                 </td>
                                 <td>@chargeType.ChargesCount</td>

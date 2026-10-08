@@ -48,6 +48,7 @@ public class EditModel : PageModel
                 item.ExpenseCategoryId,
                 item.ExpenseDate,
                 item.Amount,
+                item.PaymentMethod, item.FundingSource,
                 item.Description,
                 item.Payee,
                 item.DocumentNumber,
@@ -74,6 +75,7 @@ public class EditModel : PageModel
             ExpenseCategoryId = expense.ExpenseCategoryId,
             ExpenseDate = expense.ExpenseDate,
             Amount = expense.Amount,
+            PaymentMethod = expense.PaymentMethod, FundingSource = expense.FundingSource,
             Description = expense.Description,
             Payee = expense.Payee,
             DocumentNumber = expense.DocumentNumber
@@ -122,6 +124,8 @@ public class EditModel : PageModel
         expense.ExpenseCategoryId = Input.ExpenseCategoryId.Value;
         expense.ExpenseDate = Input.ExpenseDate.Value;
         expense.Amount = Input.Amount.Value;
+        expense.PaymentMethod = Input.PaymentMethod;
+        expense.FundingSource = Input.FundingSource;
         expense.Description = Input.Description.Trim();
         expense.Payee = Normalize(Input.Payee);
         expense.DocumentNumber = Normalize(Input.DocumentNumber);
@@ -171,6 +175,7 @@ public class EditModel : PageModel
             expense.Id,
             expense.ExpenseDate,
             expense.Amount,
+            expense.PaymentMethod, expense.FundingSource,
             expense.ExpenseCategoryId,
             expense.Description,
             expense.Payee,
@@ -190,6 +195,8 @@ public class EditModel : PageModel
         long ExpenseId,
         DateOnly ExpenseDate,
         decimal Amount,
+        Neftyanik.Portal.Domain.Enums.PaymentMethod PaymentMethod,
+        int FundingSource,
         int ExpenseCategoryId,
         string Description,
         string? Payee,

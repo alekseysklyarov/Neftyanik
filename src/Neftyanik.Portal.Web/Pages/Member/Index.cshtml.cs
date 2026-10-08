@@ -56,6 +56,8 @@ public class IndexModel : PageModel
     public int Year { get; set; } = DateTime.Today.Year;
 
     public IReadOnlyList<int> AvailableYears { get; private set; } = [];
+    public PaymentInstructionsData PaymentInstructions { get; private set; } = new();
+    public IReadOnlyList<OutstandingPaymentCharge> OutstandingForPayment { get; private set; } = [];
     public decimal OpeningBalance { get; private set; }
     public decimal OpeningDebt => Math.Max(OpeningBalance, 0m);
     public decimal OpeningCredit => Math.Max(-OpeningBalance, 0m);
@@ -438,20 +440,30 @@ public class IndexModel : PageModel
 
         var plots = await _dbContext.PlotOwnerships
             .AsNoTracking()
-            .WhereCurrentForMember(member.MemberId, currentDate)
+            .Where(ownership => ownership.MemberId == member.MemberId)
             .OrderBy(ownership => ownership.Plot != null ? ownership.Plot.Number : string.Empty)
             .Select(ownership => new PlotViewModel
             {
                 PlotId = ownership.PlotId,
                 PlotNumber = ownership.Plot != null ? ownership.Plot.Number : "—",
                 Address = ownership.Plot != null ? ownership.Plot.Address : null,
+                IsCurrent = (!ownership.ValidFrom.HasValue || ownership.ValidFrom <= currentDate) && (!ownership.ValidTo.HasValue || ownership.ValidTo >= currentDate),
                 OwnershipShare = ownership.OwnershipShare
             })
             .ToListAsync(cancellationToken);
 
-        var plotIds = plots.Select(plot => plot.PlotId).Distinct().ToArray();
+        plots = plots.OrderByDescending(p => p.IsCurrent).DistinctBy(p => p.PlotId).ToList();
+        var plotIds = await _dbContext.LoadMemberFinancePlotIdsAsync(member.MemberId, cancellationToken);
+        var displayedPlotIds = plots.Select(p => p.PlotId).ToArray();
+        plots.AddRange(await _dbContext.Plots.AsNoTracking()
+            .Where(p => plotIds.Contains(p.Id) && !displayedPlotIds.Contains(p.Id))
+            .Select(p => new PlotViewModel { PlotId = p.Id, PlotNumber = p.Number, Address = p.Address })
+            .ToListAsync(cancellationToken));
+        PaymentInstructions = await PaymentInstructionsData.LoadAsync(_dbContext, cancellationToken);
+        OutstandingForPayment = await _dbContext.LoadOutstandingPaymentChargesAsync(plotIds, cancellationToken, member.MemberId);
         var memberCharges = await _dbContext.Charges
                 .AsNoTracking()
+            .Where(c => c.MemberId == member.MemberId)
                 .Where(charge => charge.PlotId.HasValue
                     && plotIds.Contains(charge.PlotId.Value))
                 .Select(charge => new
@@ -496,6 +508,7 @@ public class IndexModel : PageModel
 
         ChargeTypeOptions = await _dbContext.Charges
             .AsNoTracking()
+            .Where(c => c.MemberId == member.MemberId)
             .Where(charge => charge.PlotId != null && plotIds.Contains(charge.PlotId.Value))
             .Select(charge => new
             {
@@ -518,6 +531,7 @@ public class IndexModel : PageModel
 
         var chargesQuery = _dbContext.Charges
             .AsNoTracking()
+            .Where(c => c.MemberId == member.MemberId)
             .Where(charge => charge.PlotId != null && plotIds.Contains(charge.PlotId.Value)
                 && charge.ChargeDate >= yearStart && charge.ChargeDate < yearEnd);
 
@@ -964,6 +978,7 @@ public class IndexModel : PageModel
 
     public sealed record PlotViewModel
     {
+        public bool IsCurrent { get; init; }
         public int PlotId { get; init; }
 
         public string PlotNumber { get; init; } = string.Empty;

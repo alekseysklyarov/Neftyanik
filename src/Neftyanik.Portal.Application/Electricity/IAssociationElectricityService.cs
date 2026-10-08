@@ -31,7 +31,11 @@ public sealed record CreateAssociationElectricityReadingRequest(
 
 public sealed record CreateAssociationElectricityExpenseRequest(
     long ReadingId,
-    string? CreatedByUserId);
+    string? CreatedByUserId,
+    DateOnly? PaymentDate = null,
+    decimal? Amount = null,
+    Neftyanik.Portal.Domain.Enums.PaymentMethod PaymentMethod = Neftyanik.Portal.Domain.Enums.PaymentMethod.Cash,
+    string? DocumentNumber = null);
 
 public sealed record AssociationElectricityExpenseOperationResult(
     bool Succeeded,

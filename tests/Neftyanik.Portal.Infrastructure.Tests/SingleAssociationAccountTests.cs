@@ -113,7 +113,9 @@ public class SingleAssociationAccountTests
             foreach (var entity in db.Model.GetEntityTypes().Where(x => x.ClrType != typeof(AssociationAccountBinding)))
             {
                 var table = entity.GetTableName()!;
-                var columns = string.Join(",", entity.GetProperties().Select(x => $"[{x.GetColumnName()}]"));
+                var actualColumns = await db.Database.SqlQueryRaw<string>(
+                    "SELECT COLUMN_NAME AS Value FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = {0}", table).ToListAsync();
+                var columns = string.Join(",", entity.GetProperties().Where(x => actualColumns.Contains(x.GetColumnName()!)).Select(x => $"[{x.GetColumnName()}]"));
                 var order = string.Join(",", entity.FindPrimaryKey()!.Properties.Select(x => $"[{x.GetColumnName()}]"));
                 snapshots.Add(table, (columns, order, await AssociationMigrationTests.ReadJsonAsync(db, table, columns, order)));
             }

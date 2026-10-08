@@ -33,5 +33,6 @@ internal static class CashInitializationSettingSerializer
         decimal Amount,
         DateOnly AcceptedAt,
         string AcceptedFrom,
-        decimal AdvancePaymentsAmount = 0m);
+        decimal AdvancePaymentsAmount = 0m,
+        decimal BankAmount = 0m);
 }

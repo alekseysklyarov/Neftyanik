@@ -222,6 +222,7 @@ public class AdministrationListPageTests
         dbContext.Payments.Add(new Payment
         {
             Id = 3000,
+            MemberId = 1,
             PlotId = 10,
             Amount = 50m,
             PaymentDate = new DateOnly(2026, 1, 2)

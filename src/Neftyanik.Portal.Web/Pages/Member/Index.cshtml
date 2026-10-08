@@ -37,6 +37,29 @@
         </div>
     </section>
 
+    @if (Model.Dashboard.IsLinked)
+    {
+        <details class="card card-body mb-4">
+            <summary class="h5 mb-0">Как оплатить</summary>
+            <div class="mt-3">
+                @foreach (var debt in Model.OutstandingForPayment.GroupBy(c => c.ChargeTypeName))
+                {
+                    <p>@debt.Key: <strong>@debt.Sum(c => c.OutstandingAmount).ToString("0.00") грн</strong></p>
+                }
+                @if (Model.PaymentInstructions.IsConfigured)
+                {
+                    <p>Получатель: <strong>@Model.PaymentInstructions.Recipient</strong></p>
+                    <p>Номер карты: <strong class="text-break">@Model.PaymentInstructions.CardNumber</strong></p>
+                    <p>Назначение платежа: @Model.PaymentInstructions.Purpose</p>
+                }
+                else { <p>Реквизиты ещё не заполнены. Уточните способ оплаты у бухгалтера.</p> }
+                <p>@Model.PaymentInstructions.Contact</p>
+                <p>После перевода отправьте уведомление. Платёж появится в истории после подтверждения бухгалтером.</p>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#paymentNotificationModal">Я оплатил</button>
+            </div>
+        </details>
+    }
+
     @if (TempData["SuccessMessage"] is string successMessage)
     {
         <div class="alert alert-success" role="alert">@successMessage</div>
@@ -161,7 +184,7 @@
                                         @foreach (var plot in Model.Plots)
                                         {
                                             <tr>
-                                                <td class="fw-semibold">@plot.PlotNumber</td>
+                                                <td class="fw-semibold">@plot.PlotNumber @if (!plot.IsCurrent) { <span class="small text-muted">· прежнее владение</span> }</td>
                                                 <td>@(string.IsNullOrWhiteSpace(plot.Address) ? "—" : plot.Address)</td>
                                                 <td>@plot.ActiveChargesTotal.ToString("0.00") <span class="member-dashboard-currency">₴</span></td>
                                                 <td>@plot.ActivePaymentsTotal.ToString("0.00") <span class="member-dashboard-currency">₴</span></td>
@@ -296,7 +319,7 @@
                                                              <span>@charge.Amount.ToString("0.00") <span class="member-dashboard-currency">₴</span></span>
                                                              @if (charge.IsCancelled)
                                                              {
-                                                                 <span class="badge text-bg-secondary ms-2">@charge.StatusText</span>
+                                                                 <span class="badge bg-secondary text-white ms-2">@charge.StatusText</span>
                                                              }
                                                          </td>
                                                         <td>@(charge.DueDate.HasValue ? charge.DueDate.Value.ToString("dd.MM.yyyy") : "—")</td>
@@ -381,7 +404,7 @@
                                                              <span>@payment.Amount.ToString("0.00") <span class="member-dashboard-currency">₴</span></span>
                                                              @if (payment.IsCancelled)
                                                              {
-                                                                 <span class="badge text-bg-secondary ms-2">@payment.StatusText</span>
+                                                                 <span class="badge bg-secondary text-white ms-2">@payment.StatusText</span>
                                                              }
                                                          </td>
                                                         <td>@payment.PaymentMethodText</td>
@@ -474,15 +497,15 @@
                                                     <td>
                                                         @if (!meter.IsActive)
                                                         {
-                                                            <span class="badge text-bg-secondary">@AppLocalizer.Get("Неактивен", "Неактивний", "Inactive")</span>
+                                                            <span class="badge bg-secondary text-white">@AppLocalizer.Get("Неактивен", "Неактивний", "Inactive")</span>
                                                         }
                                                         else if (!meter.HasReadings)
                                                         {
-                                                            <span class="badge text-bg-warning">@AppLocalizer.Get("Требуется инициализация", "Потрібна ініціалізація", "Initialization required")</span>
+                                                            <span class="badge bg-warning text-dark">@AppLocalizer.Get("Требуется инициализация", "Потрібна ініціалізація", "Initialization required")</span>
                                                         }
                                                         else
                                                         {
-                                                            <span class="badge text-bg-success">@AppLocalizer.Get("Готов к работе", "Готовий до роботи", "Ready")</span>
+                                                            <span class="badge bg-success text-white">@AppLocalizer.Get("Готов к работе", "Готовий до роботи", "Ready")</span>
                                                         }
                                                     </td>
                                                 </tr>

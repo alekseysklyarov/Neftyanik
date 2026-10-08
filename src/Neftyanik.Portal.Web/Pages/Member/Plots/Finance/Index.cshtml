@@ -75,7 +75,7 @@
                                      <span>@charge.Amount.ToString("0.00")</span>
                                      @if (charge.IsCancelled)
                                      {
-                                         <span class="badge text-bg-secondary ms-2">@charge.StatusText</span>
+                                         <span class="badge bg-secondary text-white ms-2">@charge.StatusText</span>
                                      }
                                  </td>
                                 <td>@(charge.DueDate.HasValue ? charge.DueDate.Value.ToString("dd.MM.yyyy") : "—")</td>
@@ -169,7 +169,7 @@
                                      <span>@payment.Amount.ToString("0.00")</span>
                                      @if (payment.IsCancelled)
                                      {
-                                         <span class="badge text-bg-secondary ms-2">@payment.StatusText</span>
+                                         <span class="badge bg-secondary text-white ms-2">@payment.StatusText</span>
                                      }
                                  </td>
                                 <td>@payment.PaymentMethodText</td>

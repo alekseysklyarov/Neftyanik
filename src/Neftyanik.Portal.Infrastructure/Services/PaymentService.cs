@@ -44,6 +44,11 @@ public sealed class PaymentService : IPaymentService
             .Distinct()
             .ToArrayAsync(cancellationToken);
 
+        var debtPlotIds = await _dbContext.Charges.AsNoTracking()
+            .Where(c => c.MemberId == request.MemberId && c.CancelledAtUtc == null && c.PlotId.HasValue && c.ChargeDate <= paymentDate)
+            .Select(c => c.PlotId!.Value).Distinct().ToArrayAsync(cancellationToken);
+        memberPlotIds = memberPlotIds.Concat(debtPlotIds).Distinct().ToArray();
+
         if (memberPlotIds.Length == 0)
         {
             return CreateMemberPaymentResult.Failure(CreateMemberPaymentResultCode.NoEligiblePlots);
@@ -65,7 +70,7 @@ public sealed class PaymentService : IPaymentService
         try
         {
             await AdvancePaymentAllocator.LockAsync(_dbContext, cancellationToken);
-            var outstandingCharges = await _dbContext.LoadOutstandingPaymentChargesAsync(memberPlotIds, cancellationToken);
+            var outstandingCharges = await _dbContext.LoadOutstandingPaymentChargesAsync(memberPlotIds, cancellationToken, request.MemberId);
             if (request.PriorityChargeTypeId.HasValue
                 && !outstandingCharges.Any(c => c.ChargeTypeId == request.PriorityChargeTypeId.Value))
             {

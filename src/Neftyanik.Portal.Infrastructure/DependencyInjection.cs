@@ -36,6 +36,7 @@ namespace Neftyanik.Portal.Infrastructure
             services.AddScoped<AssociationCreationOperation>();
             services.AddScoped<IPlatformAssociationAdministratorCreator, PlatformAssociationAdministratorCreator>();
             services.AddScoped<AssociationAdministratorCreationOperation>();
+            services.AddScoped<PlatformAssociationAdministratorManager>();
             services.AddScoped<IAssociationReadinessService, AssociationReadinessService>();
 
             services.AddSingleton(TimeProvider.System);
@@ -55,6 +56,7 @@ namespace Neftyanik.Portal.Infrastructure
             services.AddScoped<IFinancialAuditService, FinancialAuditService>();
             services.AddScoped<IMemberElectricityService, MemberElectricityService>();
             services.AddScoped<IPaymentService, PaymentService>();
+            services.AddScoped<PaymentCorrectionService>();
             services.AddScoped<IPaymentNotificationService, PaymentNotificationService>();
             services.AddScoped<IUserActivityService, UserActivityService>();
             services.AddScoped<LegacyElectricityWorkbookReader>();

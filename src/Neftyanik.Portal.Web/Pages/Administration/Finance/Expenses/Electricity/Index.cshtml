@@ -26,6 +26,11 @@
     <div class="alert alert-danger" role="alert">@errorMessage</div>
 }
 
+<div class="alert alert-info">
+    Начислено поставщиком: <strong>@Model.SupplierAccrued.ToString("0.00") грн</strong> ·
+    Оплачено: <strong>@Model.SupplierPaid.ToString("0.00") грн</strong> ·
+    Долг: <strong>@Model.SupplierDebt.ToString("0.00") грн</strong>
+</div>
 <div class="row g-4 mb-4">
     <div class="col-xl-5">
         <div class="card shadow-sm h-100">
@@ -145,15 +150,8 @@
                                             }
                                             else
                                             {
-                                                <form method="post" asp-page-handler="Pay" asp-route-readingId="@item.Id" class="d-inline" id="payReadingForm-@item.Id">
-                                                    <button type="button"
-                                                            class="btn btn-sm btn-success js-open-pay-confirmation"
-                                                            data-form-id="payReadingForm-@item.Id"
-                                                            data-reading-date="@item.ReadingDate.ToString("dd.MM.yyyy")"
-                                                            data-total-amount="@(item.TotalSupplierAmount.HasValue ? item.TotalSupplierAmount.Value.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture) : string.Empty)">
-                                                        Оплатить
-                                                    </button>
-                                                </form>
+                                                <div class="small">Осталось: @item.RemainingAmount.ToString("0.00") грн</div>
+                                                <a class="btn btn-sm btn-success" asp-page="Pay" asp-route-readingId="@item.Id">Записать оплату</a>
                                             }
                                         </td>
                                     </tr>

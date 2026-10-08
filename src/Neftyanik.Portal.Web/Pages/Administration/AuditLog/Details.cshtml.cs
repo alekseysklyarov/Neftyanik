@@ -1,11 +1,11 @@
 using System.Text.Json;
-using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Domain.Constants;
 using Neftyanik.Portal.Infrastructure.Data;
+using Neftyanik.Portal.Web.Pages.Finance;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.FinancialAuditLog;
 
@@ -48,6 +48,13 @@ public class DetailsModel : PageModel
 
         entry.OldValues = ParseValueRows(entry.OldValuesJson);
         entry.NewValues = ParseValueRows(entry.NewValuesJson);
+        var descriptions = await AuditDescriptionFormatter.FormatAsync(_dbContext,
+            [new Neftyanik.Portal.Domain.Entities.FinancialAuditLog
+            {
+                Id = entry.Id, EntityType = entry.EntityType, EntityId = entry.EntityId,
+                Description = entry.Description, OldValuesJson = entry.OldValuesJson, NewValuesJson = entry.NewValuesJson
+            }], cancellationToken);
+        entry.DisplayDescription = descriptions[entry.Id];
         Entry = entry;
         return Page();
     }
@@ -69,6 +76,8 @@ public class DetailsModel : PageModel
         public string EntityId { get; init; } = string.Empty;
 
         public string? Description { get; init; }
+
+        public string? DisplayDescription { get; set; }
 
         public string? OldValuesJson { get; init; }
 

@@ -38,8 +38,7 @@ public class ExpenseConfiguration : IEntityTypeConfiguration<Expense>
             .HasMaxLength(450);
 
         builder.HasIndex(x => new { x.AssociationId, x.AssociationElectricityReadingId })
-            .IsUnique()
-            .HasFilter("[AssociationElectricityReadingId] IS NOT NULL");
+             .HasFilter("[AssociationElectricityReadingId] IS NOT NULL");
 
         builder.HasIndex(x => new { x.AssociationId, x.ExpenseDate });
 
@@ -55,9 +54,9 @@ public class ExpenseConfiguration : IEntityTypeConfiguration<Expense>
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(x => x.AssociationElectricityReading)
-            .WithOne(x => x.SupplierExpense)
-            .HasForeignKey<Expense>(x => new { x.AssociationId, x.AssociationElectricityReadingId })
-            .HasPrincipalKey<AssociationElectricityReading>(x => new { x.AssociationId, x.Id })
+            .WithMany(x => x.SupplierExpenses)
+            .HasForeignKey(x => new { x.AssociationId, x.AssociationElectricityReadingId })
+            .HasPrincipalKey(x => new { x.AssociationId, x.Id })
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.Ignore(x => x.CategoryId);

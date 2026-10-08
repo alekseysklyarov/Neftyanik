@@ -575,12 +575,12 @@ public sealed class PaymentReceiptPageTests
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var chargesHeader = ExtractSection(html, "<h2 class=\"h5 mb-0\">Начисления</h2>", "</thead>");
-        var paymentsHeader = ExtractSection(html, "<h2 class=\"h5 mb-0\">Платежи</h2>", "</thead>");
+        var chargesHeader = ExtractSection(html, "<h2 class=\"h5 mb-0\">Начисления", "</thead>");
+        var paymentsHeader = ExtractSection(html, "<h2 class=\"h5 mb-0\">Платежи", "</thead>");
 
         Assert.DoesNotContain("Статус", chargesHeader, StringComparison.Ordinal);
         Assert.DoesNotContain("Статус", paymentsHeader, StringComparison.Ordinal);
-        Assert.Contains("badge text-bg-secondary ms-2", html, StringComparison.Ordinal);
+        Assert.Contains("badge bg-secondary text-white ms-2", html, StringComparison.Ordinal);
         Assert.Contains("Тестовая отмена начисления", html, StringComparison.Ordinal);
         Assert.Contains("Тестовая отмена платежа", html, StringComparison.Ordinal);
         Assert.Contains("colspan=\"5\"", html, StringComparison.Ordinal);
@@ -635,12 +635,12 @@ public sealed class PaymentReceiptPageTests
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var chargesHeader = ExtractSection(html, "<h2 class=\"h5 mb-0\">Начисления</h2>", "</thead>");
-        var paymentsHeader = ExtractSection(html, "<h2 class=\"h5 mb-0\">Платежи</h2>", "</thead>");
+        var chargesHeader = ExtractSection(html, "<h2 class=\"h5 mb-0\">Начисления", "</thead>");
+        var paymentsHeader = ExtractSection(html, "<h2 class=\"h5 mb-0\">Платежи", "</thead>");
 
         Assert.DoesNotContain("Статус", chargesHeader, StringComparison.Ordinal);
         Assert.DoesNotContain("Статус", paymentsHeader, StringComparison.Ordinal);
-        Assert.Contains("badge text-bg-secondary ms-2", html, StringComparison.Ordinal);
+        Assert.Contains("badge bg-secondary text-white ms-2", html, StringComparison.Ordinal);
         Assert.Contains("Причина отмены начисления", html, StringComparison.Ordinal);
         Assert.Contains("Причина отмены платежа", html, StringComparison.Ordinal);
     }

@@ -86,7 +86,7 @@ public class IndexModel : PageModel
 
         var ownership = await _dbContext.PlotOwnerships
             .AsNoTracking()
-            .WhereCurrentForMember(memberId.Value, currentDate)
+            .Where(ownership => ownership.MemberId == memberId.Value)
             .Where(ownershipItem => ownershipItem.PlotId == plotId)
             .Select(ownershipItem => new PlotOwnershipViewModel
             {
@@ -95,7 +95,8 @@ public class IndexModel : PageModel
             })
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (ownership is null)
+        if (ownership is null && !await _dbContext.Charges.AnyAsync(c => c.MemberId == memberId.Value && c.PlotId == plotId, cancellationToken)
+            && !await _dbContext.Payments.AnyAsync(p => p.MemberId == memberId.Value && p.PlotId == plotId, cancellationToken))
         {
             return NotFound();
         }
@@ -113,6 +114,7 @@ public class IndexModel : PageModel
 
         var activeChargeAmounts = await _dbContext.Charges
             .AsNoTracking()
+            .Where(c => c.MemberId == memberId.Value)
             .Where(charge => charge.PlotId == plotId && charge.CancelledAtUtc == null)
             .Select(charge => charge.Amount)
             .ToListAsync(cancellationToken);
@@ -124,13 +126,14 @@ public class IndexModel : PageModel
             PlotId = plotInfo.PlotId,
             PlotNumber = plotInfo.PlotNumber,
             PlotAddress = plotInfo.PlotAddress,
-            OwnershipShare = ownership.OwnershipShare,
+            OwnershipShare = ownership?.OwnershipShare,
             ActiveChargesTotal = activeChargeAmounts.Sum(),
             ActivePaymentsTotal = paymentTotalsByPlot.GetValueOrDefault(plotId)
         };
 
             var chargesQuery = _dbContext.Charges
                 .AsNoTracking()
+            .Where(c => c.MemberId == memberId.Value)
                 .Where(charge => charge.PlotId == plotId)
                 .OrderByDescending(charge => charge.ChargeDate)
                 .ThenByDescending(charge => charge.Id);

@@ -272,7 +272,7 @@ public class TenantHttpIsolationTests
         using var login = await client.PostAsync("/neftyanik/Account/Login", Form(token,
             ("Input.Login", "stage2-user"), ("Input.Password", "Pass123!"), ("ReturnUrl", "/second/Administration/Members")));
         Assert.Equal(HttpStatusCode.Found, login.StatusCode);
-        Assert.Equal("/neftyanik/Administration", login.Headers.Location?.OriginalString);
+        Assert.Equal("/neftyanik/Administration/Members", login.Headers.Location?.OriginalString);
 
         using var authenticated = factory.CreateAuthenticatedClient(AdministratorFor("second"), associationSlug: "second");
         token = await TokenAsync(authenticated, "/second/Administration/Plots/Create");

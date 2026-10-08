@@ -183,7 +183,7 @@
                                             <span>@charge.Amount.ToString("0.00")</span>
                                             @if (charge.IsCancelled)
                                             {
-                                                <span class="badge text-bg-secondary ms-2">@charge.StatusText</span>
+                                                <span class="badge bg-secondary text-white ms-2">@charge.StatusText</span>
                                             }
                                         </td>
                                         <td>@(charge.DueDate.HasValue ? charge.DueDate.Value.ToString("dd.MM.yyyy") : "—")</td>
@@ -273,7 +273,7 @@
                                             <span>@payment.Amount.ToString("0.00")</span>
                                             @if (payment.IsCancelled)
                                             {
-                                                <span class="badge text-bg-secondary ms-2">@payment.StatusText</span>
+                                                <span class="badge bg-secondary text-white ms-2">@payment.StatusText</span>
                                             }
                                         </td>
                                         <td>@payment.PaymentMethodText</td>
@@ -283,6 +283,10 @@
                                                 <a class="btn btn-outline-secondary" asp-page="/Payments/Receipt" asp-route-paymentId="@payment.PaymentId" asp-route-memberId="@Model.Member.Id">@AppLocalizer.Get("Платёжка", "Платіжка", "Receipt")</a>
                                                 @if (!payment.IsCancelled)
                                                 {
+                                                    @if (payment.PaymentId == Model.CorrectablePaymentId)
+                                                    {
+                                                        <a class="btn btn-outline-primary" asp-page="/Administration/Members/Finance/EditPayment" asp-route-memberId="@Model.Member.Id" asp-route-paymentId="@payment.PaymentId">Исправить</a>
+                                                    }
                                                     <a class="btn btn-outline-secondary" title="Отменить платеж" aria-label="Отменить платеж" asp-page="/Administration/Members/Finance/CancelPayment" asp-route-memberId="@Model.Member.Id" asp-route-paymentId="@payment.PaymentId">Отменить</a>
                                                 }
                                             </div>
@@ -407,20 +411,28 @@ else
                             @foreach (var meter in Model.ElectricityMeters)
                             {
                                 <tr>
-                                    <td class="fw-semibold">@meter.DisplayName</td>
+                                    <td>
+                                        <div class="fw-semibold">@meter.DisplayName</div>
+                                        @if (meter.Readings.FirstOrDefault() is { } latestReading)
+                                        {
+                                            <a class="btn btn-sm btn-outline-primary mt-2"
+                                               asp-page="/Administration/Electricity/Meters/Readings/Correct"
+                                               asp-route-id="@meter.Id" asp-route-readingId="@latestReading.Id">@AppLocalizer.Get("Исправить последнее показание", "Виправити останній показник", "Correct latest reading")</a>
+                                        }
+                                    </td>
                                     <td>@meter.BillingPlotNumber</td>
                                     <td>
                                         @if (!meter.IsActive)
                                         {
-                                            <span class="badge text-bg-secondary">@AppLocalizer.Get("Неактивен", "Неактивний", "Inactive")</span>
+                                            <span class="badge bg-secondary text-white">@AppLocalizer.Get("Неактивен", "Неактивний", "Inactive")</span>
                                         }
                                         else if (!meter.HasReadings)
                                         {
-                                            <span class="badge text-bg-warning">@AppLocalizer.Get("Требуется инициализация", "Потрібна ініціалізація", "Initialization required")</span>
+                                            <span class="badge bg-warning text-dark">@AppLocalizer.Get("Требуется инициализация", "Потрібна ініціалізація", "Initialization required")</span>
                                         }
                                         else
                                         {
-                                            <span class="badge text-bg-success">@AppLocalizer.Get("Готов к работе", "Готовий до роботи", "Ready")</span>
+                                            <span class="badge bg-success text-white">@AppLocalizer.Get("Готов к работе", "Готовий до роботи", "Ready")</span>
                                         }
                                     </td>
                                 </tr>

@@ -205,7 +205,8 @@ public class RegisterPaymentModel : PageModel
 
         PlotOptions = await _dbContext.PlotOwnerships
             .AsNoTracking()
-            .WhereCurrentForMember(memberId, currentDate)
+            .Where(o => o.MemberId == memberId && ((!o.ValidFrom.HasValue || o.ValidFrom <= currentDate) && (!o.ValidTo.HasValue || o.ValidTo >= currentDate)
+                || _dbContext.Charges.Any(c => c.MemberId == memberId && c.PlotId == o.PlotId && c.CancelledAtUtc == null && c.ChargeDate <= currentDate)))
             .OrderBy(ownership => ownership.Plot != null ? ownership.Plot.Number : string.Empty)
             .Select(ownership => new SelectListItem
             {
@@ -244,8 +245,12 @@ public class RegisterPaymentModel : PageModel
     private async Task<IReadOnlyList<SelectListItem>> LoadPaymentPriorityOptionsAsync(int memberId, DateOnly paymentDate, CancellationToken cancellationToken)
     {
         var plotIds = await _dbContext.PlotOwnerships.AsNoTracking()
-            .WhereCurrentForMember(memberId, paymentDate).Select(o => o.PlotId).Distinct().ToArrayAsync(cancellationToken);
-        var charges = await _dbContext.LoadOutstandingPaymentChargesAsync(plotIds, cancellationToken);
+            .Where(o => o.MemberId == memberId
+                && ((!o.ValidFrom.HasValue || o.ValidFrom <= paymentDate) && (!o.ValidTo.HasValue || o.ValidTo >= paymentDate)
+                    || _dbContext.Charges.Any(c => c.MemberId == memberId && c.PlotId == o.PlotId
+                        && c.CancelledAtUtc == null && c.ChargeDate <= paymentDate)))
+            .Select(o => o.PlotId).Distinct().ToArrayAsync(cancellationToken);
+        var charges = await _dbContext.LoadOutstandingPaymentChargesAsync(plotIds, cancellationToken, memberId);
         return charges.GroupBy(c => c.ChargeTypeId).Select(group => new SelectListItem
         {
             Value = group.Key.ToString(),

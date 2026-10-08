@@ -20,10 +20,13 @@ public class IndexModel : PageModel
 
     public FinanceSummaryViewModel Summary { get; private set; } = new();
 
+    public int UnassignedChargesCount { get; private set; }
+
     public int CurrentYear { get; private set; }
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
+        UnassignedChargesCount = await _dbContext.Charges.CountAsync(c => c.MemberId == null, cancellationToken);
         CurrentYear = DateTime.Today.Year;
         var currentYearStart = new DateOnly(CurrentYear, 1, 1);
         var cashSnapshot = await FinanceCashCalculator.CalculateAsync(_dbContext, CurrentYear, cancellationToken);
@@ -70,6 +73,7 @@ public class IndexModel : PageModel
             .Where(charge => charge.CancelledAtUtc == null)
             .Select(charge => new
             {
+                charge.Id, charge.MemberId,
                 charge.Amount,
                 charge.ChargeDate
             })
@@ -80,6 +84,7 @@ public class IndexModel : PageModel
             .Where(payment => payment.CancelledAtUtc == null)
             .Select(payment => new
             {
+                payment.Id, payment.MemberId,
                 payment.Amount,
                 payment.PaymentDate,
                 payment.PaymentMethod
@@ -111,6 +116,17 @@ public class IndexModel : PageModel
             .Where(payment => payment.PaymentDate >= currentYearStart)
             .Sum(payment => payment.Amount);
 
+        decimal DebtAt(DateOnly? before) => activeCharges
+            .Where(c => !before.HasValue || c.ChargeDate < before.Value)
+            .Select(c => (Key: c.MemberId.HasValue ? $"member:{c.MemberId}" : $"charge:{c.Id}", Amount: c.Amount))
+            .Concat(activePayments.Where(p => !before.HasValue || p.PaymentDate < before.Value)
+                .Select(p => (Key: p.MemberId.HasValue ? $"member:{p.MemberId}" : $"payment:{p.Id}", Amount: -p.Amount)))
+            .GroupBy(x => x.Key).Sum(g => Math.Max(g.Sum(x => x.Amount), 0m));
+        var balances = activeCharges
+            .Select(c => (Key: c.MemberId.HasValue ? $"member:{c.MemberId}" : $"charge:{c.Id}", Amount: c.Amount))
+            .Concat(activePayments.Select(p => (Key: p.MemberId.HasValue ? $"member:{p.MemberId}" : $"payment:{p.Id}", Amount: -p.Amount)))
+            .GroupBy(x => x.Key).Select(g => g.Sum(x => x.Amount)).ToArray();
+
         Summary = new FinanceSummaryViewModel
         {
             TotalActiveCharges = totalActiveCharges,
@@ -120,19 +136,15 @@ public class IndexModel : PageModel
             CurrentNonCashAmount = cashSnapshot.CurrentNonCashAmount,
             OpeningYearCashAmount = cashSnapshot.OpeningYearCashAmount,
             CurrentYearCharges = currentYearCharges,
-            OpeningYearDebt = Math.Max(openingYearCharges - openingYearPayments, 0m),
-            CurrentYearDebt = Math.Max(currentYearCharges - currentYearPayments, 0m),
+            OpeningYearDebt = DebtAt(currentYearStart),
+            CurrentYearDebt = DebtAt(null),
             PlotsWithDebtCount = allPlotBalances.Count(plot => plot.Balance > 0m),
             PlotsWithOverpaymentCount = allPlotBalances.Count(plot => plot.Balance < 0m),
             PlotsWithZeroBalanceCount = allPlotBalances.Count(plot => plot.Balance == 0m)
         };
 
-        Summary.TotalCurrentDebt = Summary.TotalActiveCharges >= Summary.TotalActivePayments
-            ? Summary.TotalActiveCharges - Summary.TotalActivePayments
-            : 0m;
-        Summary.TotalOverpayments = Summary.TotalActivePayments > Summary.TotalActiveCharges
-            ? Summary.TotalActivePayments - Summary.TotalActiveCharges
-            : 0m;
+        Summary.TotalCurrentDebt = balances.Sum(b => Math.Max(b, 0m));
+        Summary.TotalOverpayments = balances.Sum(b => Math.Max(-b, 0m));
 
     }
 

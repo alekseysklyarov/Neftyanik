@@ -1,3 +1,5 @@
+using Neftyanik.Portal.Infrastructure.Services;
+using Microsoft.AspNetCore.DataProtection;
 using System.Data.Common;
 using System.Security.Cryptography;
 using System.Text.Json;
@@ -255,6 +257,38 @@ public class PlatformAssociationCreationTests
     public void ValidateSlug_RejectsReservedRoots(string slug) =>
         Assert.Throws<InvalidOperationException>(() => new Association { Slug = slug }.ValidateSlug());
 
+    [Fact]
+    public async Task AdministratorManagement_ProtectsLastAdminScopesAccessAndResetsPassword()
+    {
+        await using var fixture = await Fixture.CreateAsync();
+        await using var scope = fixture.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var association = await db.Associations.SingleAsync(a => a.Id == fixture.InitialId);
+        scope.ServiceProvider.GetRequiredService<AssociationContext>().Resolve(association);
+        db.AssociationUserMemberships.Add(new AssociationUserMembership { ApplicationUserId = "existing", Role = RoleNames.Administrator });
+        await db.SaveChangesAsync();
+        var manager = scope.ServiceProvider.GetRequiredService<PlatformAssociationAdministratorManager>();
+        Assert.NotNull(await manager.ChangeAsync(association.Id, "existing-admin", false, null, default));
+        db.AssociationUserMemberships.Add(new AssociationUserMembership { ApplicationUserId = "other", Role = RoleNames.Administrator });
+        await db.SaveChangesAsync();
+        Assert.Null(await manager.ChangeAsync(association.Id, "existing-admin", false, null, default));
+        db.ChangeTracker.Clear();
+        Assert.False((await db.AssociationUserMemberships.SingleAsync(m => m.ApplicationUserId == "existing" && m.Role == RoleNames.Administrator)).IsActive);
+        Assert.NotNull(await manager.ChangeAsync(association.Id, "other-admin", false, null, default));
+        Assert.NotNull(await manager.ChangeAsync(association.Id, "operator", false, null, default));
+        var password = Convert.ToHexString(RandomNumberGenerator.GetBytes(24)) + "aA1!";
+        Assert.Null(await manager.ChangeAsync(association.Id, "other-admin", null, password, default));
+        db.ChangeTracker.Clear();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var user = (await users.FindByNameAsync("other-admin"))!;
+        Assert.True(user.MustChangePassword);
+        Assert.True(await users.CheckPasswordAsync(user, password));
+        var audit = await db.PlatformAuditLogs.SingleAsync(a => a.Action == "AdministratorPasswordReset");
+        Assert.DoesNotContain(password, audit.NewValuesJson);
+        fixture.Access.Denied = true;
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => manager.ChangeAsync(association.Id, "other-admin", true, null, default));
+    }
+
     private static AssociationCreationRequest Request(string slug) =>
         new("New association", slug, null, null, null, "shared-email@example.invalid", "admin-" + slug, true,
             Convert.ToHexString(RandomNumberGenerator.GetBytes(24)) + "aA1!");
@@ -328,7 +362,8 @@ public class PlatformAssociationCreationTests
                 services.RemoveAll<ApplicationDbContext>();
                 services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connection).AddInterceptors(interceptor));
             }
-            services.AddIdentityCore<ApplicationUser>().AddRoles<IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>();
+            services.AddDataProtection().UseEphemeralDataProtectionProvider();
+            services.AddIdentityCore<ApplicationUser>().AddRoles<IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();
             services.AddSingleton<IPlatformAssociationWriteAccess>(fixture.Access);
             services.AddSingleton<IAssociationSlugReservations, Reservations>();
             fixture.Services = services.BuildServiceProvider();

@@ -1,0 +1,12 @@
+@page "/Administration/Electricity/Meters/{id:int}/Readings/{readingId:long}/Correct"
+@model Neftyanik.Portal.Web.Pages.Administration.Electricity.Meters.Readings.CorrectModel
+@{ ViewData["Title"] = "Исправление показаний"; }
+<h1 class="h2">Исправление показаний от @Model.ReadingDate.ToString("dd.MM.yyyy")</h1>
+<p>Можно исправить только последнее показание. Связанное начисление будет пересчитано; прежнее начисление сохранится в истории, внесённые оплаты будут учтены. Дата показания не меняется.</p>
+<form method="post" class="card card-body">
+    <div asp-validation-summary="All" class="text-danger"></div>
+    <label asp-for="Input.Day" class="form-label"></label><input asp-for="Input.Day" type="number" min="0" step="1" class="form-control mb-3" />
+    @if (Model.HasNight) { <label asp-for="Input.Night" class="form-label"></label><input asp-for="Input.Night" type="number" min="0" step="1" class="form-control mb-3" required /> }
+    <label asp-for="Input.Reason" class="form-label"></label><textarea asp-for="Input.Reason" class="form-control mb-3" maxlength="500" required></textarea>
+    <div><button type="submit" class="btn btn-primary">Исправить и пересчитать</button> <a asp-page="/Administration/Members/Finance" asp-route-id="@Model.MemberId" class="btn btn-outline-secondary">Отмена</a></div>
+</form>

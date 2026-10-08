@@ -147,6 +147,145 @@ public sealed class AdvancePaymentTests
         });
     }
 
+    [Fact]
+    public async Task Transfer_KeepsOldDebtAndPaidChargesWithPreviousOwner()
+    {
+        using var factory = new PortalWebApplicationFactory();
+        await factory.ExecuteDbContextAsync(async db =>
+        {
+            await SeedAsync(db);
+            db.Charges.AddRange(Charge(101, 801, 100, Date.AddDays(-10)), Charge(102, 801, 50, Date.AddDays(-9)));
+            db.Payments.Add(Payment(1, 701, 801, 100));
+            await db.SaveChangesAsync();
+            await AdvancePaymentAllocator.ApplyAsync(db, Audit(db), [101, 102]);
+            (await db.PlotOwnerships.SingleAsync(o => o.PlotId == 801)).ValidTo = Date.AddDays(-1);
+            db.PlotOwnerships.Add(new PlotOwnership { MemberId = 702, PlotId = 801, ValidFrom = Date });
+            await db.SaveChangesAsync();
+            Assert.Equal(50, await db.CalculateActiveBalanceAsync(701, []));
+            Assert.Equal(0, await db.CalculateActiveBalanceAsync(702, [801]));
+            Assert.Equal(100, (await db.PaymentAllocations.SingleAsync()).Amount);
+            Assert.All(await db.Charges.ToListAsync(), c => Assert.Equal(701, c.MemberId));
+            var payment = await new PaymentService(db, Audit(db)).CreateMemberPaymentAsync(
+                new(701, 801, Date, 50, PaymentMethod.Cash, null, null, null));
+            Assert.True(payment.Succeeded);
+            Assert.Equal(0, await db.CalculateActiveBalanceAsync(701, []));
+            Assert.Equal(0, await db.CalculateActiveBalanceAsync(702, [801]));
+        });
+    }
+
+    [Fact]
+    public async Task Correction_RecalculatesLatestIntervalAndPreservesEarlierChargePaymentsAndAudit()
+    {
+        using var factory = new PortalWebApplicationFactory();
+        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser("correction-admin", RoleNames.Administrator));
+        await factory.ExecuteDbContextAsync(async db =>
+        {
+            await SeedAsync(db);
+            db.Payments.Add(Payment(1, 701, 801, 300));
+            await db.SaveChangesAsync();
+            var service = new MemberElectricityService(db, Audit(db));
+            Assert.True((await service.CreateReadingAsync(new(901, Date, 140, null, null))).Succeeded);
+            Assert.True((await service.CreateReadingAsync(new(901, Date.AddDays(1), 160, null, null))).Succeeded);
+            var earlierChargeId = (await db.MemberElectricityReadings.SingleAsync(r => r.ReadingDate == Date)).ChargeId;
+            var original = await db.MemberElectricityReadings.SingleAsync(r => r.ReadingDate == Date.AddDays(1));
+            var originalChargeId = original.ChargeId;
+            var result = await new MemberReadingCorrectionService(db, Audit(db))
+                .CorrectAsync(901, original.Id, 150, null, "Ошибка ввода", "correction-admin");
+            Assert.True(result.Succeeded, result.ErrorMessage);
+            db.ChangeTracker.Clear();
+            var active = await db.Charges.Where(c => c.CancelledAtUtc == null).OrderBy(c => c.ChargeDate).ToListAsync();
+            Assert.Equal(new decimal[] { 180, 45 }, active.Select(c => c.Amount));
+            Assert.Equal(earlierChargeId, active[0].Id);
+            Assert.Equal(1, await db.Charges.CountAsync(c => c.CancelledAtUtc != null));
+            Assert.NotEqual(originalChargeId, (await db.MemberElectricityReadings.SingleAsync(r => r.Id == original.Id)).ChargeId);
+            Assert.Equal(300, (await db.Payments.SingleAsync()).Amount);
+            Assert.Equal(225, (await db.PaymentAllocations.Where(a => a.Charge!.CancelledAtUtc == null).Select(a => a.Amount).ToListAsync()).Sum());
+            Assert.Equal(-75, await db.CalculateActiveBalanceAsync(701, []));
+            Assert.True(await db.FinancialAuditLogs.AnyAsync(a => a.EntityType == nameof(MemberElectricityReading)
+                && a.Action == FinancialAuditLogActions.Updated && a.OldValuesJson != null));
+            Assert.False((await new MemberReadingCorrectionService(db, Audit(db))
+                .CorrectAsync(901, original.Id, 130, null, "Ошибка ввода", "correction-admin")).Succeeded);
+            Assert.Equal(3, await db.Charges.CountAsync());
+        });
+    }
+
+    [Fact]
+    public async Task CorrectionPage_PostUsesEnteredValue()
+    {
+        using var factory = new PortalWebApplicationFactory();
+        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser("correct-page-admin", RoleNames.Administrator), cultureName: "ru-RU");
+        long readingId = 0;
+        await factory.ExecuteDbContextAsync(async db =>
+        {
+            await SeedAsync(db);
+            Assert.True((await new MemberElectricityService(db, Audit(db)).CreateReadingAsync(new(901, Date, 140, null, null))).Succeeded);
+            readingId = (await db.MemberElectricityReadings.SingleAsync(r => !r.IsInitialReading)).Id;
+        });
+        var url = $"/neftyanik/Administration/Electricity/Meters/901/Readings/{readingId}/Correct";
+        const string memberUrl = "/neftyanik/Administration/Members/Finance/701/Finance";
+        var memberHtml = await (await client.GetAsync(memberUrl)).ReadDecodedHtmlAsync();
+        Assert.Contains(url, memberHtml);
+        Assert.Contains("Исправить последнее показание", memberHtml);
+        var html = await (await client.GetAsync(url)).ReadDecodedHtmlAsync();
+        Assert.Contains(memberUrl, html);
+        var token = System.Text.RegularExpressions.Regex.Match(html, "name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"").Groups[1].Value;
+        Assert.NotEmpty(token);
+        var response = await client.PostAsync(url, new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["__RequestVerificationToken"] = WebUtility.HtmlDecode(token), ["Input.Day"] = "130", ["Input.Reason"] = "Ошибка ввода"
+        }));
+        Assert.Equal(HttpStatusCode.Found, response.StatusCode);
+        Assert.Equal(memberUrl, response.Headers.Location?.OriginalString);
+        await factory.ExecuteDbContextAsync(async db =>
+            Assert.Equal(130, (await db.MemberElectricityReadings.SingleAsync(r => r.Id == readingId)).CurrentReading));
+    }
+
+    [Fact]
+    public async Task Correction_RejectsEarlierReadingIncludingStaleFormWithoutChangingFinance()
+    {
+        using var factory = new PortalWebApplicationFactory();
+        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser("stale-correction-admin", RoleNames.Administrator));
+        long earlierId = 0, latestId = 0;
+        await factory.ExecuteDbContextAsync(async db =>
+        {
+            await SeedAsync(db);
+            Assert.True((await new MemberElectricityService(db, Audit(db)).CreateReadingAsync(new(901, Date, 140, null, null))).Succeeded);
+            earlierId = (await db.MemberElectricityReadings.SingleAsync(r => !r.IsInitialReading)).Id;
+        });
+        var url = $"/neftyanik/Administration/Electricity/Meters/901/Readings/{earlierId}/Correct";
+        var html = await (await client.GetAsync(url)).ReadDecodedHtmlAsync();
+        var token = System.Text.RegularExpressions.Regex.Match(html, "name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"").Groups[1].Value;
+        Assert.NotEmpty(token);
+        await factory.ExecuteDbContextAsync(async db =>
+        {
+            Assert.True((await new MemberElectricityService(db, Audit(db)).CreateReadingAsync(new(901, Date.AddDays(1), 160, null, null))).Succeeded);
+            latestId = (await db.MemberElectricityReadings.SingleAsync(r => r.ReadingDate == Date.AddDays(1))).Id;
+            var auditCount = await db.FinancialAuditLogs.CountAsync();
+            foreach (var id in await db.MemberElectricityReadings.Where(r => r.Id != latestId).Select(r => r.Id).ToListAsync())
+            {
+                var result = await new MemberReadingCorrectionService(db, Audit(db)).CorrectAsync(901, id, 130, null, "Ошибка", "stale-correction-admin");
+                Assert.False(result.Succeeded);
+                Assert.Contains("только последнее", result.ErrorMessage);
+            }
+            Assert.Equal(auditCount, await db.FinancialAuditLogs.CountAsync());
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.GetAsync(url)).StatusCode);
+        var response = await client.PostAsync(url, new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["__RequestVerificationToken"] = WebUtility.HtmlDecode(token), ["Input.Day"] = "130", ["Input.Reason"] = "Ошибка"
+        }));
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var memberHtml = await (await client.GetAsync("/neftyanik/Administration/Members/Finance/701/Finance")).ReadDecodedHtmlAsync();
+        Assert.DoesNotContain(url, memberHtml);
+        Assert.Contains($"/neftyanik/Administration/Electricity/Meters/901/Readings/{latestId}/Correct", memberHtml);
+        await factory.ExecuteDbContextAsync(async db =>
+        {
+            Assert.Equal(140, (await db.MemberElectricityReadings.SingleAsync(r => r.Id == earlierId)).CurrentReading);
+            Assert.Equal(2, await db.Charges.CountAsync());
+            Assert.False(await db.Charges.AnyAsync(c => c.CancelledAtUtc != null));
+        });
+    }
+
     private sealed class ThrowOnAdvanceAudit : IFinancialAuditService
     {
         public void Add(string action, string entityType, string entityId, string? description = null, object? oldValues = null, object? newValues = null)

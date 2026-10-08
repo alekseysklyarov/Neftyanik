@@ -261,146 +261,49 @@ public sealed class AssociationElectricityService : IAssociationElectricityServi
     public async Task<AssociationElectricityExpenseOperationResult> CreateExpenseAsync(CreateAssociationElectricityExpenseRequest request, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(request.CreatedByUserId))
-        {
-            return AssociationElectricityExpenseOperationResult.Failure("Не удалось определить пользователя, который оплачивает электроэнергию по общему счетчику.");
-        }
+            return AssociationElectricityExpenseOperationResult.Failure("Не удалось определить пользователя.");
+        if (request.PaymentMethod is not (Neftyanik.Portal.Domain.Enums.PaymentMethod.Cash or Neftyanik.Portal.Domain.Enums.PaymentMethod.BankTransfer))
+            return AssociationElectricityExpenseOperationResult.Failure("Выберите кассу или банковский счёт.");
+        if (request.DocumentNumber?.Length > 100)
+            return AssociationElectricityExpenseOperationResult.Failure("Номер документа слишком длинный.");
 
-        var reading = await _dbContext.AssociationElectricityReadings
-            .AsNoTracking()
-            .Where(item => item.Id == request.ReadingId)
-            .Select(item => new
-            {
-                item.Id,
-                item.ReadingDate,
-                item.PreviousDayReading,
-                item.CurrentDayReading,
-                item.DayConsumption,
-                item.AppliedSupplierDayRate,
-                item.PreviousNightReading,
-                item.CurrentNightReading,
-                item.NightConsumption,
-                item.AppliedSupplierNightRate,
-                item.TotalSupplierAmount,
-                item.IsInitialReading,
-                HasExpense = item.SupplierExpense != null
-            })
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (reading is null)
-        {
-            return AssociationElectricityExpenseOperationResult.Failure("Показания общего счетчика не найдены.");
-        }
-
-        if (reading.IsInitialReading)
-        {
-            return AssociationElectricityExpenseOperationResult.Failure("Для начальных показаний расход не создается.");
-        }
-
-        if (reading.HasExpense)
-        {
-            return AssociationElectricityExpenseOperationResult.Failure("Расход по этим показаниям уже создан.");
-        }
-
-        if (!reading.DayConsumption.HasValue
-            || !reading.NightConsumption.HasValue
-            || !reading.AppliedSupplierDayRate.HasValue
-            || !reading.AppliedSupplierNightRate.HasValue
-            || !reading.TotalSupplierAmount.HasValue
-            || !reading.PreviousDayReading.HasValue
-            || !reading.PreviousNightReading.HasValue)
-        {
-            return AssociationElectricityExpenseOperationResult.Failure("Недостаточно данных для создания расхода по указанным показаниям.");
-        }
-
-        var electricityCategoryId = await _dbContext.GetElectricityExpenseCategoryIdAsync(cancellationToken);
-        if (!electricityCategoryId.HasValue)
-        {
-            return AssociationElectricityExpenseOperationResult.Failure("Для товарищества не настроен тип расхода на электроэнергию.");
-        }
+        await using var transaction = _dbContext.Database.IsRelational() && _dbContext.Database.CurrentTransaction is null
+            ? await _dbContext.Database.BeginTransactionAsync(cancellationToken) : null;
+        await AdvancePaymentAllocator.LockAsync(_dbContext, cancellationToken);
+        var reading = await _dbContext.AssociationElectricityReadings.AsNoTracking()
+            .SingleOrDefaultAsync(r => r.Id == request.ReadingId, cancellationToken);
+        if (reading is null || reading.IsInitialReading || !reading.TotalSupplierAmount.HasValue)
+            return AssociationElectricityExpenseOperationResult.Failure("Не найдено начисление поставщика.");
+        var payments = await _dbContext.Expenses.AsNoTracking()
+            .Where(e => e.AssociationElectricityReadingId == reading.Id && !e.IsCancelled)
+            .Select(e => e.Amount).ToListAsync(cancellationToken);
+        var remaining = reading.TotalSupplierAmount.Value - payments.Sum();
+        var amount = request.Amount ?? remaining;
+        var date = request.PaymentDate ?? DateOnly.FromDateTime(DateTime.Today);
+        if (amount <= 0 || amount > remaining || decimal.Round(amount, 2) != amount)
+            return AssociationElectricityExpenseOperationResult.Failure("Сумма должна быть больше нуля и не превышать остаток долга; укажите не более двух знаков после запятой.");
+        if (date > DateOnly.FromDateTime(DateTime.Today))
+            return AssociationElectricityExpenseOperationResult.Failure("Дата фактической оплаты не может быть в будущем.");
+        var categoryId = await _dbContext.GetElectricityExpenseCategoryIdAsync(cancellationToken);
+        if (!categoryId.HasValue)
+            return AssociationElectricityExpenseOperationResult.Failure("Не настроен тип расхода на электроэнергию.");
 
         var expense = new Expense
         {
-            ExpenseCategoryId = electricityCategoryId.Value,
-            ExpenseDate = reading.ReadingDate,
-            Amount = reading.TotalSupplierAmount.Value,
-            Description = BuildElectricityExpenseDescription(
-                reading.PreviousDayReading.Value,
-                reading.CurrentDayReading,
-                reading.DayConsumption.Value,
-                reading.AppliedSupplierDayRate.Value,
-                reading.PreviousNightReading.Value,
-                reading.CurrentNightReading,
-                reading.NightConsumption.Value,
-                reading.AppliedSupplierNightRate.Value),
-            Payee = ElectricitySupplierPayee,
-            CreatedByUserId = request.CreatedByUserId,
-            CreatedAt = DateTimeOffset.UtcNow,
-            AssociationElectricityReadingId = reading.Id
+            ExpenseCategoryId = categoryId.Value, ExpenseDate = date, Amount = amount,
+            FundingSource = 2, PaymentMethod = request.PaymentMethod, DocumentNumber = request.DocumentNumber?.Trim(),
+            Description = $"Оплата поставщику по показаниям от {reading.ReadingDate:dd.MM.yyyy}.",
+            Payee = ElectricitySupplierPayee, CreatedByUserId = request.CreatedByUserId,
+            CreatedAt = DateTimeOffset.UtcNow, AssociationElectricityReadingId = reading.Id
         };
-
-        IDbContextTransaction? transaction = null;
-        if (_dbContext.Database.IsRelational() && _dbContext.Database.CurrentTransaction is null)
-        {
-            transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
-        }
-
-        try
-        {
-            _dbContext.Expenses.Add(expense);
-            await _dbContext.SaveChangesAsync(cancellationToken);
-
-            _financialAuditService.Add(
-                FinancialAuditLogActions.Created,
-                nameof(Expense),
-                expense.Id.ToString(),
-                $"Создан расход #{expense.Id}.",
-                newValues: new
-                {
-                    ExpenseId = expense.Id,
-                    expense.ExpenseDate,
-                    expense.Amount,
-                    expense.ExpenseCategoryId,
-                    expense.Description,
-                    expense.Payee,
-                    expense.DocumentNumber,
-                    expense.AssociationElectricityReadingId
-                });
-
-            await _dbContext.SaveChangesAsync(cancellationToken);
-
-            if (transaction is not null)
-            {
-                await transaction.CommitAsync(cancellationToken);
-            }
-
-            return AssociationElectricityExpenseOperationResult.Success(expense.Id, expense.Amount);
-        }
-        catch (DbUpdateException exception) when (exception.Message.Contains("AssociationElectricityReadingId", StringComparison.OrdinalIgnoreCase)
-            || exception.InnerException?.Message.Contains("AssociationElectricityReadingId", StringComparison.OrdinalIgnoreCase) == true)
-        {
-            if (transaction is not null)
-            {
-                await transaction.RollbackAsync(cancellationToken);
-            }
-
-            return AssociationElectricityExpenseOperationResult.Failure("Расход по этим показаниям уже создан.");
-        }
-        catch
-        {
-            if (transaction is not null)
-            {
-                await transaction.RollbackAsync(cancellationToken);
-            }
-
-            throw;
-        }
-        finally
-        {
-            if (transaction is not null)
-            {
-                await transaction.DisposeAsync();
-            }
-        }
+        _dbContext.Expenses.Add(expense);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        _financialAuditService.Add(FinancialAuditLogActions.Created, nameof(Expense), expense.Id.ToString(),
+            $"Зарегистрирована оплата поставщику #{expense.Id}.",
+            newValues: new { expense.ExpenseDate, expense.Amount, expense.PaymentMethod, expense.DocumentNumber, expense.AssociationElectricityReadingId });
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        if (transaction is not null) await transaction.CommitAsync(cancellationToken);
+        return AssociationElectricityExpenseOperationResult.Success(expense.Id, expense.Amount);
     }
 
     private static string? ValidateReadings(decimal currentDayReading, decimal currentNightReading)

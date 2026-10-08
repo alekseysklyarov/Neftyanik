@@ -19,7 +19,7 @@
     <div class="col-sm-6 col-xl-3">
         <div class="card h-100 shadow-sm">
             <div class="card-body">
-                <h2 class="h6 text-muted">@AppLocalizer.Get("Найдено записьей", "Знайдено записів", "Entries found")</h2>
+                <h2 class="h6 text-muted">@AppLocalizer.Get("Найдено записей", "Знайдено записів", "Entries found")</h2>
                 <p class="display-6 mb-0">@Model.TotalCount</p>
             </div>
         </div>
@@ -59,7 +59,7 @@
             </div>
             <div class="col-md-2">
                 <label asp-for="Search" class="form-label">@AppLocalizer.Get("Поиск", "Пошук", "Search")</label>
-                <input asp-for="Search" class="form-control" placeholder="@AppLocalizer.Get("ID сущности или текст", "ID сутності або текст", "Entity ID or text")" />
+                <input asp-for="Search" class="form-control" placeholder="@AppLocalizer.Get("Фамилия, участок или текст", "Прізвище, ділянка або текст", "Name, plot or text")" />
             </div>
             <div class="col-12 d-flex gap-2 flex-wrap">
                 <button type="submit" class="btn btn-outline-primary">@AppLocalizer.Get("Применить", "Застосувати", "Apply")</button>
@@ -102,7 +102,7 @@
                                         <div class="small text-muted">@item.UserId</div>
                                     }
                                 </td>
-                                <td><span class="badge text-bg-primary">@item.Action</span></td>
+                                <td><span class="badge bg-primary text-white">@item.Action</span></td>
                                 <td>@item.EntityType</td>
                                 <td>@item.EntityId</td>
                                 <td>@(string.IsNullOrWhiteSpace(item.Description) ? "—" : item.Description)</td>

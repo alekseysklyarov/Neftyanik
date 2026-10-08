@@ -43,11 +43,11 @@
                     <dd class="col-sm-8">
                         @if (Model.Plot.IsActive)
                         {
-                            <span class="badge text-bg-success">@AppLocalizer.Get("Активен", "Активний", "Active")</span>
+                            <span class="badge bg-success text-white">@AppLocalizer.Get("Активен", "Активний", "Active")</span>
                         }
                         else
                         {
-                            <span class="badge text-bg-secondary">@AppLocalizer.Get("В архиве", "В архіві", "Archived")</span>
+                            <span class="badge bg-secondary text-white">@AppLocalizer.Get("В архиве", "В архіві", "Archived")</span>
                         }
                     </dd>
 
@@ -145,6 +145,7 @@
                         <tr>
                             <th>@AppLocalizer.Get("Дата", "Дата", "Date")</th>
                             <th>@AppLocalizer.Get("Тип", "Тип", "Type")</th>
+                            <th>Плательщик</th>
                             <th>@AppLocalizer.Get("Сумма", "Сума", "Amount")</th>
                             <th>@AppLocalizer.Get("Срок", "Строк", "Due date")</th>
                             <th>@AppLocalizer.Get("Статус", "Статус", "Status")</th>
@@ -156,6 +157,7 @@
                             <tr>
                                 <td>@charge.ChargeDate.ToString("dd.MM.yyyy")</td>
                                 <td>@charge.ChargeTypeName</td>
+                                <td>@charge.DebtorName</td>
                                 <td>@charge.Amount.ToString("0.00")</td>
                                 <td>@(charge.DueDate.HasValue ? charge.DueDate.Value.ToString("dd.MM.yyyy") : "—")</td>
                                 <td>@charge.StatusText</td>
@@ -163,7 +165,7 @@
                             @if (!string.IsNullOrWhiteSpace(charge.Description) || !string.IsNullOrWhiteSpace(charge.CancellationReason))
                             {
                                 <tr class="table-light">
-                                    <td colspan="5" class="small text-muted">
+                                    <td colspan="6" class="small text-muted">
                                         @if (!string.IsNullOrWhiteSpace(charge.Description))
                                         {
                                             <div><strong>@AppLocalizer.Get("Описание:", "Опис:", "Description:")</strong> @charge.Description</div>

@@ -20,6 +20,9 @@ public sealed class AdministrationPlotFinanceTests
                 new ChargeType { Id = 3, Name = "Other" });
             for (var i = 1; i <= 28; i++)
                 db.Plots.Add(new Plot { Id = i, Number = $"FIN-{i:D2}", IsActive = true });
+            db.Members.Add(new Member { Id = 1, FullName = "Finance owner" });
+            for (var i = 26; i <= 28; i++)
+                db.PlotOwnerships.Add(new PlotOwnership { MemberId = 1, PlotId = i, ValidFrom = new(2020, 1, 1) });
             db.Charges.AddRange(
                 new Charge { Id = 1, PlotId = 26, ChargeTypeId = 1, Amount = 100, ChargeDate = new(2026, 1, 1) },
                 new Charge { Id = 2, PlotId = 27, ChargeTypeId = 1, Amount = 100, ChargeDate = new(2026, 1, 1) },
@@ -28,9 +31,9 @@ public sealed class AdministrationPlotFinanceTests
                 new Charge { Id = 5, PlotId = 27, ChargeTypeId = 2, Amount = 700, ChargeDate = new(2026, 1, 1) },
                 new Charge { Id = 6, PlotId = 27, ChargeTypeId = 3, Amount = 200, ChargeDate = new(2026, 1, 1) });
             db.Payments.AddRange(
-                new Payment { Id = 1, PlotId = 26, Amount = 250, PaymentDate = new(2026, 1, 2) },
-                new Payment { Id = 2, PlotId = 28, Amount = 75, PaymentDate = new(2026, 1, 2), CancelledAtUtc = DateTime.UtcNow },
-                new Payment { Id = 3, PlotId = 27, Amount = 900, PaymentDate = new(2026, 1, 2) });
+                new Payment { MemberId = 1, Id = 1, PlotId = 26, Amount = 250, PaymentDate = new(2026, 1, 2) },
+                new Payment { MemberId = 1, Id = 2, PlotId = 28, Amount = 75, PaymentDate = new(2026, 1, 2), CancelledAtUtc = DateTime.UtcNow },
+                new Payment { MemberId = 1, Id = 3, PlotId = 27, Amount = 900, PaymentDate = new(2026, 1, 2) });
             db.PaymentAllocations.AddRange(
                 new PaymentAllocation { PaymentId = 1, ChargeId = 1, Amount = 100 },
                 new PaymentAllocation { PaymentId = 1, ChargeId = 2, Amount = 100 },

@@ -1,4 +1,6 @@
 #if WEB_TESTS
+using System.Net;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -22,6 +24,63 @@ namespace Neftyanik.Portal.Web.Tests;
 
 public class PaymentCancellationPageTests
 {
+    [Theory]
+    [InlineData(RoleNames.Administrator, true)]
+    [InlineData(RoleNames.Accountant, false)]
+    public async Task AfterOwnershipTransfer_OnlyPayerRouteCanViewAndCancelPayment(string role, bool keepFormerOwnership)
+    {
+        using var factory = new PortalWebApplicationFactory();
+        await factory.ExecuteDbContextAsync(async db =>
+        {
+            db.Members.AddRange(new Member { Id = 3101, FullName = "Прежний плательщик" }, new Member { Id = 3102, FullName = "Новый владелец" });
+            db.Plots.Add(new Plot { Id = 3103, Number = "186" });
+            if (keepFormerOwnership)
+                db.PlotOwnerships.Add(new PlotOwnership { MemberId = 3101, PlotId = 3103, ValidFrom = new(2020, 1, 1), ValidTo = new(2026, 9, 30) });
+            db.PlotOwnerships.Add(new PlotOwnership { MemberId = 3102, PlotId = 3103, ValidFrom = new(2026, 10, 1) });
+            db.ChargeTypes.Add(new Neftyanik.Portal.Domain.Entities.ChargeType { Id = 3104, Name = "Взнос" });
+            db.Charges.Add(new Charge { Id = 3105, MemberId = 3101, PlotId = 3103, ChargeTypeId = 3104, Amount = 100, ChargeDate = new(2026, 9, 1) });
+            db.Payments.Add(new Payment { Id = 3106, MemberId = 3101, PlotId = 3103, Amount = 100, PaymentDate = new(2026, 9, 2), PaymentMethod = PaymentMethod.Cash });
+            db.PaymentAllocations.Add(new PaymentAllocation { PaymentId = 3106, ChargeId = 3105, Amount = 100 });
+            await db.SaveChangesAsync();
+        });
+        using var client = factory.CreateAuthenticatedClient(new TestAuthenticatedUser("transfer-cancel-user", role), cultureName: "ru-RU");
+        const string ownUrl = "/neftyanik/Administration/Members/Finance/3101/Payments/3106/Cancel";
+        const string wrongUrl = "/neftyanik/Administration/Members/Finance/3102/Payments/3106/Cancel";
+        using var ownPage = await client.GetAsync(ownUrl);
+        Assert.Equal(HttpStatusCode.OK, ownPage.StatusCode);
+        var html = await ownPage.ReadDecodedHtmlAsync();
+        Assert.Contains("Прежний плательщик", html);
+        Assert.DoesNotContain("Новый владелец", html);
+        var token = Regex.Match(html, "name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"").Groups[1].Value;
+        Assert.NotEmpty(token);
+        FormUrlEncodedContent Form() => new(new Dictionary<string, string>
+        {
+            ["__RequestVerificationToken"] = token,
+            ["Input.CancellationReason"] = "Ошибочный платёж прежнего владельца"
+        });
+        using var wrongPage = await client.GetAsync(wrongUrl);
+        Assert.Equal(HttpStatusCode.NotFound, wrongPage.StatusCode);
+        using var wrongPost = await client.PostAsync(wrongUrl, Form());
+        Assert.Equal(HttpStatusCode.NotFound, wrongPost.StatusCode);
+        await factory.ExecuteDbContextAsync(async db =>
+        {
+            Assert.Null((await db.Payments.SingleAsync(p => p.Id == 3106)).CancelledAtUtc);
+            Assert.Equal(100, (await db.PaymentAllocations.SingleAsync(a => a.PaymentId == 3106)).Amount);
+            Assert.Empty(await db.FinancialAuditLogs.ToListAsync());
+        });
+        using var cancelled = await client.PostAsync(ownUrl, Form());
+        Assert.Equal(HttpStatusCode.Found, cancelled.StatusCode);
+        Assert.Equal("/neftyanik/Administration/Members/Finance/3101/Finance", cancelled.Headers.Location?.OriginalString);
+        await factory.ExecuteDbContextAsync(async db =>
+        {
+            var payment = await db.Payments.SingleAsync(p => p.Id == 3106);
+            Assert.NotNull(payment.CancelledAtUtc);
+            Assert.Equal(3101, payment.MemberId);
+            Assert.Equal(3101, (await db.Charges.SingleAsync(c => c.Id == 3105)).MemberId);
+            Assert.Single(await db.FinancialAuditLogs.Where(a => a.EntityType == nameof(Payment) && a.EntityId == "3106" && a.Action == FinancialAuditLogActions.Cancelled).ToListAsync());
+        });
+    }
+
     [Fact]
     public async Task OnPostCancelPaymentAsync_CancelsPaymentAndRedirectsToMemberFinance()
     {
