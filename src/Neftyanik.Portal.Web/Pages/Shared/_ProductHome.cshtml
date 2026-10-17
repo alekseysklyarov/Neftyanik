@@ -1,0 +1,36 @@
+@{
+    string L(string ru, string uk, string en) => AppLocalizer.Get(ru, uk, en);
+    var culture = System.Globalization.CultureInfo.CurrentUICulture.Name;
+}
+<section class="product-hero">
+    <div class="product-intro">
+        <h1>@L("Портал садового товарищества", "Портал садового товариства", "Garden association portal")</h1>
+        <p class="lead">@L("Участки, электроэнергия, взносы и платежи — в одном месте. Войдите в своё товарищество или попробуйте портал на учебных данных.", "Ділянки, електроенергія, внески та платежі — в одному місці. Увійдіть до свого товариства або спробуйте портал на навчальних даних.", "Plots, electricity, contributions and payments in one place. Sign in to your association or try the portal with sample data.")</p>
+    </div>
+    <div class="access-cards">
+        <article class="access-card real-access">
+            <span class="access-tag">@L("ДЛЯ УЧАСТНИКОВ ТОВАРИЩЕСТВА", "ДЛЯ УЧАСНИКІВ ТОВАРИСТВА", "FOR ASSOCIATION MEMBERS")</span>
+            <h2>@L("Уже зарегистрированы?", "Уже зареєстровані?", "Already registered?")</h2>
+            <p>@L("Ваш личный кабинет: показания, начисления, оплаты и история расчётов.", "Ваш особистий кабінет: показання, нарахування, оплати та історія розрахунків.", "Your member dashboard: readings, charges, payments and balance history.")</p>
+            <a class="product-button" href="@Url.Content("~/neftyanik/?culture=" + culture)">@L("Войти в кабинет", "Увійти до кабінету", "Sign in")</a>
+            <small>@L("Используйте свой логин и пароль.", "Використовуйте свій логін і пароль.", "Use your own login and password.")</small>
+        </article>
+        <article class="access-card">
+            <span class="access-tag">@L("ДЛЯ ЗНАКОМСТВА С ПОРТАЛОМ", "ДЛЯ ЗНАЙОМСТВА З ПОРТАЛОМ", "EXPLORE THE PORTAL")</span>
+            <h2>@L("Тестовое товарищество", "Тестове товариство", "Test association")</h2>
+            <p>@L("Попробуйте действия участника, бухгалтера и администратора. Только вымышленные данные, без регистрации.", "Спробуйте дії учасника, бухгалтера та адміністратора. Лише вигадані дані, без реєстрації.", "Try the member, accountant and administrator workflows. Fictional data only, with no registration.")</p>
+            <form method="post" asp-page="/Product/Demo" asp-page-handler="Enter" asp-route-culture="@culture" asp-antiforgery="true"><input type="hidden" name="screen" value="member" /><button class="product-button secondary" type="submit">@L("Попробовать без регистрации", "Спробувати без реєстрації", "Try without signing up")</button></form>
+            <small>@L("Отдельная сессия на 30 минут. Затем данные сбрасываются.", "Окрема сесія на 30 хвилин. Потім дані скидаються.", "A private 30-minute session. Data is reset afterwards.")</small>
+        </article>
+    </div>
+</section>
+<section id="features" class="product-section">
+    <h2>@L("Посмотрите экраны и попробуйте сами", "Перегляньте екрани та спробуйте самі", "See the screens and try them yourself")</h2>
+    <p class="section-description">@L("Скриншоты настоящих страниц с учебными данными. Под каждым — вход сразу в показанный раздел тестового товарищества.", "Попередній перегляд справжніх сторінок із навчальними даними. Під кожною — вхід одразу до показаного розділу тестового товариства.", "Previews of real pages with sample data. Each button signs you into the corresponding section of the test association.")</p>
+    <partial name="_DemoGallery" />
+    <p class="management-link"><a class="product-button secondary" asp-page="/Product/Management" asp-route-culture="@culture">@L("Экраны для бухгалтера и администратора", "Екрани для бухгалтера й адміністратора", "Screens for accountants and administrators") →</a></p>
+</section>
+<section id="pricing" class="product-section connection-section">
+    <div><h2>@L("Подключить своё товарищество", "Підключити своє товариство", "Connect your association")</h2><p>@L("Расскажите, сколько у вас участков и как сейчас ведётся учёт. Обсудим возможности портала, подготовку данных, стоимость и порядок запуска.", "Розкажіть, скільки у вас ділянок і як зараз ведеться облік. Обговоримо можливості порталу, підготовку даних, вартість і порядок запуску.", "Tell us how many plots you manage and how you keep records. We can discuss the portal, data preparation, pricing and setup.")</p><p class="muted">@L("Стоимость по запросу. Заявка не оформляет подписку и не требует оплаты.", "Вартість за запитом. Заявка не оформлює підписку та не потребує оплати.", "Pricing on request. An inquiry does not create a subscription or require payment.")</p><p><a class="text-link" asp-page="/Product/Pricing" asp-route-culture="@System.Globalization.CultureInfo.CurrentUICulture.Name">@L("Подробнее о стоимости и сопровождении", "Докладніше про вартість і супровід", "More about pricing and support") →</a></p></div>
+    <a class="product-button secondary" asp-page="/Product/Request" asp-route-culture="@culture">@L("Обсудить подключение", "Обговорити підключення", "Discuss setup")</a>
+</section>

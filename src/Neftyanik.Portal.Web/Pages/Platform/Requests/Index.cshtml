@@ -1,0 +1,61 @@
+@page
+@model Neftyanik.Portal.Web.Pages.Platform.Requests.IndexModel
+@{
+    string L(string ru, string uk, string en) => AppLocalizer.Get(ru, uk, en);
+    ViewData["Title"] = L("Заявки на подключение", "Заявки на підключення", "Setup requests");
+}
+<h1 class="h2">@ViewData["Title"]</h1>
+<p class="text-muted">@L("Обращения с публичной страницы DachaHub. Ответьте клиенту и отметьте «Связались». Уведомление администратору не отправляет ответ клиенту автоматически.", "Звернення з публічної сторінки DachaHub. Дайте відповідь клієнту й позначте «Зв’язалися». Сповіщення адміністратору не надсилає відповідь клієнту автоматично.", "Inquiries from the DachaHub public page. Reply to the prospective customer, then mark the request as contacted. An administrator notification does not automatically reply to the customer.")</p>
+<div class="alert @(Model.NotificationsConfigured ? "alert-light" : "alert-warning")">
+    <strong>@L("Получатель уведомлений:", "Отримувач сповіщень:", "Notification recipient:")</strong> <span class="text-break">@Model.NotificationRecipient</span>
+    <p class="mb-0">@(Model.NotificationsConfigured
+        ? L("Отправка настроена. Уведомления проверяются каждую минуту; при сбое письмо повторяется позже. Состояние каждой заявки показано ниже.", "Надсилання налаштовано. Сповіщення перевіряються щохвилини; у разі збою лист повторюється згодом. Стан кожної заявки показано нижче.", "Delivery is configured. Notifications are checked every minute; failed deliveries are retried later. Each request’s status is shown below.")
+        : L("Почта ещё не подключена. Заявки сохраняются здесь; после подключения почты уведомления по необработанным заявкам будут отправлены.", "Пошту ще не підключено. Заявки зберігаються тут; після підключення пошти буде надіслано сповіщення щодо неопрацьованих заявок.", "Email is not connected yet. Requests are saved here; notifications for unhandled requests will be sent once email is connected."))</p>
+</div>
+<nav class="d-flex gap-3 mb-4" aria-label="@L("Статус заявок", "Статус заявок", "Request status")">
+    <a asp-page="Index" asp-route-showContacted="false" aria-current="@(!Model.ShowContacted ? "page" : null)">@L("Новые", "Нові", "New")</a>
+    <a asp-page="Index" asp-route-showContacted="true" aria-current="@(Model.ShowContacted ? "page" : null)">@L("Связались", "Зв’язалися", "Contacted")</a>
+</nav>
+<p>@L("Всего:", "Усього:", "Total:") @Model.TotalCount</p>
+@if (Model.Requests.Count == 0)
+{
+    <p class="alert alert-light">@L("В этом разделе пока нет заявок.", "У цьому розділі поки немає заявок.", "No requests in this view yet.")</p>
+}
+@foreach (var request in Model.Requests)
+{
+    <article class="card mb-3" data-request-id="@request.Id"><div class="card-body">
+        <div class="d-flex flex-wrap justify-content-between gap-2"><h2 class="h5">#@request.Id · @request.AssociationName</h2><span class="text-muted">@request.CreatedAtUtc.ToString("dd.MM.yyyy HH:mm") UTC</span></div>
+        <dl class="row"><dt class="col-sm-3">@L("Контакт", "Контакт", "Contact")</dt><dd class="col-sm-9">@request.ContactName</dd><dt class="col-sm-3">Email</dt><dd class="col-sm-9 text-break">@request.Email</dd><dt class="col-sm-3">@L("Участков", "Ділянок", "Plots")</dt><dd class="col-sm-9">@(request.PlotCount?.ToString() ?? "—")</dd></dl>
+        @if (!string.IsNullOrWhiteSpace(request.Message)) { <p class="text-break" style="white-space: pre-wrap">@request.Message</p> }
+        @if (request.ContactedAtUtc.HasValue) { <p class="text-muted">@L("Связались:", "Зв’язалися:", "Contacted:") @request.ContactedAtUtc.Value.ToString("dd.MM.yyyy HH:mm") UTC</p> }
+        <p class="small text-muted">
+            @L("Уведомление администратору:", "Сповіщення адміністратору:", "Administrator notification:")
+            @if (request.NotificationSentAtUtc.HasValue)
+            {
+                <span>@L("Передано почтовому серверу", "Передано поштовому серверу", "Accepted by the mail server") · @request.NotificationSentAtUtc.Value.ToString("dd.MM.yyyy HH:mm") UTC</span>
+            }
+            else if (request.ContactedAtUtc.HasValue)
+            {
+                <span>@L("Не требуется — с клиентом уже связались", "Не потрібне — з клієнтом уже зв’язалися", "Not needed — the customer has been contacted")</span>
+            }
+            else
+            {
+                <span>@(Model.NotificationsConfigured ? L("В очереди", "У черзі", "Queued") : L("Ожидает подключения почты", "Очікує підключення пошти", "Waiting for email setup"))</span>
+                @if (request.NotificationAttemptCount > 0 && request.NotificationNextAttemptAtUtc.HasValue)
+                {
+                    <span> · @L("Следующая попытка не ранее", "Наступна спроба не раніше", "Next attempt no earlier than") @request.NotificationNextAttemptAtUtc.Value.ToString("dd.MM.yyyy HH:mm") UTC</span>
+                }
+            }
+        </p>
+        <p><a class="btn btn-primary" href="@($"mailto:{Uri.EscapeDataString(request.Email)}?subject={Uri.EscapeDataString("DachaHub: " + request.AssociationName.Replace("\r", " ").Replace("\n", " "))}")">@L("Ответить по email", "Відповісти на email", "Reply by email") →</a></p>
+        <form method="post" asp-page-handler="Status" asp-route-showContacted="@Model.ShowContacted" asp-route-pageNumber="@Model.PageNumber" asp-antiforgery="true">
+            <input type="hidden" name="id" value="@request.Id" /><input type="hidden" name="contacted" value="@(!Model.ShowContacted ? "true" : "false")" />
+            <button class="btn btn-outline-primary" type="submit">@(Model.ShowContacted ? L("Вернуть в новые", "Повернути до нових", "Move to new") : L("Отметить: связались", "Позначити: зв’язалися", "Mark as contacted"))</button>
+        </form>
+    </div></article>
+}
+<nav class="d-flex align-items-center gap-3" aria-label="@L("Страницы заявок", "Сторінки заявок", "Request pages")">
+    @if (Model.PageNumber > 1) { <a asp-page="Index" asp-route-showContacted="@Model.ShowContacted" asp-route-pageNumber="@(Model.PageNumber - 1)">@L("Назад", "Назад", "Previous")</a> }
+    <span>@Model.PageNumber / @Model.TotalPages</span>
+    @if (Model.PageNumber < Model.TotalPages) { <a asp-page="Index" asp-route-showContacted="@Model.ShowContacted" asp-route-pageNumber="@(Model.PageNumber + 1)">@L("Далее", "Далі", "Next")</a> }
+</nav>

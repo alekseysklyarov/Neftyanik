@@ -9,8 +9,19 @@
     var canAccessAdministration = User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.Accountant);
     var isAuthenticated = User.Identity?.IsAuthenticated == true;
     var heroColumnClass = isAuthenticated ? "col-lg-12 portal-hero-copy" : "col-lg-7 portal-hero-copy";
+    if (!AssociationContext.IsResolved)
+    {
+        Layout = "_PublicLayout";
+        ViewData["Title"] = AppLocalizer.Get("Портал для садовых товариществ", "Портал для садових товариств", "Garden association portal");
+    }
 }
 
+@if (!AssociationContext.IsResolved)
+{
+    <partial name="_ProductHome" />
+}
+else
+{
 <section class="portal-card portal-hero mb-4">
     <div class="row g-4 align-items-center">
         <div class="@heroColumnClass">
@@ -99,6 +110,11 @@
     </div>
 </section>
 
+}
+
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+    @if (AssociationContext.IsResolved)
+    {
+        <partial name="_ValidationScriptsPartial" />
+    }
 }

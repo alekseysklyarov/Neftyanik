@@ -87,15 +87,18 @@ public class HomePageLoginTests
     }
 
     [Fact]
-    public async Task GetRoot_PreservesRedirectToNeftyanik()
+    public async Task GetRoot_ShowsPublicProductPageAndExistingMemberAccess()
     {
         using var factory = new PortalWebApplicationFactory();
         using var client = factory.CreateAnonymousClient();
 
         using var response = await client.GetAsync("/");
 
-        Assert.Equal(HttpStatusCode.TemporaryRedirect, response.StatusCode);
-        Assert.Equal("/neftyanik/", response.Headers.Location?.OriginalString);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var html = await response.Content.ReadAsStringAsync();
+        Assert.Contains("DachaHub", html);
+        Assert.Contains("/Product/Request", html);
+        Assert.Contains("/neftyanik/", html);
     }
 
     private static void AssertBranding(string html, string name, string pageTitle)

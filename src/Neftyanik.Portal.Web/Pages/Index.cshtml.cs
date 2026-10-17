@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Neftyanik.Portal.Application.Identity;
@@ -12,17 +11,21 @@ namespace Neftyanik.Portal.Web.Pages;
 [AllowAnonymous]
 public class IndexModel : LoginPageModelBase
 {
+    private readonly IAssociationContext _associationContext;
     public IndexModel(
         SignInManager<ApplicationUser> signInManager,
         IUserActivityService userActivityService,
         ILogger<IndexModel> logger,
-        IAssociationMembershipService memberships)
+        IAssociationMembershipService memberships,
+        IAssociationContext associationContext)
         : base(signInManager, userActivityService, logger, memberships)
     {
+        _associationContext = associationContext;
     }
 
     public async Task<IActionResult> OnGetAsync(string? returnUrl = null)
     {
+        if (!_associationContext.IsResolved) return Page();
         if (User.Identity?.IsAuthenticated == true)
         {
             return await RedirectAuthenticatedUserAsync();
@@ -32,5 +35,6 @@ public class IndexModel : LoginPageModelBase
         return Page();
     }
 
-    public Task<IActionResult> OnPostAsync(string? returnUrl = null) => SignInAsync(returnUrl);
+    public Task<IActionResult> OnPostAsync(string? returnUrl = null) => _associationContext.IsResolved
+        ? SignInAsync(returnUrl) : Task.FromResult<IActionResult>(BadRequest());
 }

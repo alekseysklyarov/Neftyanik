@@ -1,0 +1,45 @@
+@using System.Globalization
+@{
+    var culture = CultureInfo.CurrentUICulture.Name;
+}
+<!DOCTYPE html>
+<html lang="@CultureInfo.CurrentUICulture.TwoLetterISOLanguageName">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="@AppLocalizer.Get("DachaHub — портал садового товарищества. Вход в личный кабинет и знакомство с порталом на учебных данных.", "DachaHub — портал садового товариства. Вхід до особистого кабінету та знайомство з порталом на навчальних даних.", "DachaHub garden association portal. Sign in to your account or explore the portal with sample data.")" />
+    <title>@ViewData["Title"] — DachaHub</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/product.css" asp-append-version="true" />
+</head>
+<body class="portal-body product-body">
+    <a class="skip-link" href="#main">@AppLocalizer.Get("К содержимому", "До вмісту", "Skip to content")</a>
+    <header class="product-header">
+        <nav class="product-container product-nav" aria-label="@AppLocalizer.Get("Главная навигация", "Головна навігація", "Main navigation")">
+            <a class="product-brand" href="@Url.Content("~/?culture=" + culture)">DachaHub<span>@AppLocalizer.Get("портал товарищества", "портал товариства", "association portal")</span></a>
+            <div class="product-links">
+                <a asp-page="/Product/Management" asp-route-culture="@culture">@AppLocalizer.Get("Бухгалтеру и администратору", "Бухгалтеру й адміністратору", "For management")</a>
+                <a href="@Url.Content("~/?culture=" + culture + "#features")">@AppLocalizer.Get("Возможности", "Можливості", "Features")</a>
+                <a asp-page="/Product/Demo" asp-route-culture="@culture">@AppLocalizer.Get("Тестовое товарищество", "Тестове товариство", "Test association")</a>
+            </div>
+            <div class="header-actions">
+                <form method="get" class="language-picker">
+                    @foreach (var item in Context.Request.Query.Where(x => x.Key != "culture" && x.Key != "ui-culture")) { <input type="hidden" name="@item.Key" value="@item.Value" /> }
+                    <label class="sr-only" for="product-culture">@AppLocalizer.Get("Язык", "Мова", "Language")</label>
+                    <select id="product-culture" name="culture"><option value="uk-UA" selected="@(culture == "uk-UA")">Українська</option><option value="ru-RU" selected="@(culture == "ru-RU")">Русский</option><option value="en-US" selected="@(culture == "en-US")">English</option></select>
+                    <button type="submit" aria-label="@AppLocalizer.Get("Изменить язык", "Змінити мову", "Change language")">→</button>
+                </form>
+                <div class="returning-user">
+                    <span>@AppLocalizer.Get("Уже зарегистрированы?", "Уже зареєстровані?", "Already registered?")</span>
+                    <a class="product-button" href="@Url.Content("~/neftyanik/?culture=" + culture)">@AppLocalizer.Get("Войти в кабинет", "Увійти до кабінету", "Sign in")</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <main id="main" class="product-container">@RenderBody()</main>
+    <footer class="product-footer product-container"><span>© @DateTime.UtcNow.Year DachaHub</span><a asp-page="/Product/Pricing" asp-route-culture="@culture">@AppLocalizer.Get("Стоимость и сопровождение", "Вартість і супровід", "Pricing and support")</a><a asp-page="/Product/Request" asp-route-culture="@culture">@AppLocalizer.Get("Подключить товарищество", "Підключити товариство", "Connect your association")</a></footer>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

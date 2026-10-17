@@ -1,5 +1,4 @@
 # Production deployment foundation
-# Production deployment foundation
 
 This directory contains the Docker-based production deployment foundation for `Neftyanik Portal`.
 
@@ -98,7 +97,7 @@ Required variables:
 - `MSSQL_SA_PASSWORD` - strong SQL Server SA password;
 - `DB_NAME` - application database name.
 
-Optional variables are included only for explicit bootstrap commands such as `create-admin`.
+Additional settings for host filtering and optional sales email delivery are documented in [PUBLIC_LAUNCH_RU.md](PUBLIC_LAUNCH_RU.md). Sales notifications stay disabled by default until email setup is completed.
 
 Example values:
 
@@ -362,19 +361,9 @@ docker volume rm neftyanik_caddy_data neftyanik_caddy_config neftyanik_aspnet_da
 
 `docker system prune --volumes` can also remove unused volumes and should be treated as destructive.
 
-## Optional explicit administrator bootstrap
+## Platform administrator onboarding
 
-Only if an initial administrator account is needed and the application database is already migrated:
-
-```sh
-docker compose --env-file deploy/.env -f deploy/docker-compose.production.yml run --rm \
-  -e NEFTYANIK_ADMIN_EMAIL=admin@example.com \
-  -e NEFTYANIK_ADMIN_PASSWORD='ChangeThis_AdminPassword123!' \
-  -e NEFTYANIK_ADMIN_NAME='Portal Administrator' \
-  web create-admin
-```
-
-Do not store real administrator passwords in tracked files.
+Use the current interactive onboarding procedure in [PLATFORM_ADMIN_ONBOARDING.md](../docs/PLATFORM_ADMIN_ONBOARDING.md). The Development-only create-admin command is not a production bootstrap procedure.
 
 ## Emergency manual deployment fallback
 

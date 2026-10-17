@@ -17,7 +17,7 @@ namespace Neftyanik.Portal.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.0")
+                .HasAnnotation("ProductVersion", "8.0.8")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -835,6 +835,65 @@ namespace Neftyanik.Portal.Infrastructure.Migrations
 
                             t.HasCheckConstraint("CK_ChargeTypes_YearlyAndOwnerChangeExclusive", "[IsYearly] = 0 OR [OnlyOnOwnerChange] = 0");
                         });
+                });
+
+            modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.DemoRequest", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("AssociationName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("ConsentVersion")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<string>("ContactName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<DateTime?>("ContactedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("nvarchar(254)");
+
+                    b.Property<string>("Message")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("NotificationAttemptCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("NotificationNextAttemptAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("NotificationSentAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("PlotCount")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContactedAtUtc", "CreatedAtUtc");
+
+                    b.HasIndex("NotificationSentAtUtc", "NotificationNextAttemptAtUtc");
+
+                    b.ToTable("DemoRequests", (string)null);
                 });
 
             modelBuilder.Entity("Neftyanik.Portal.Domain.Entities.Expense", b =>

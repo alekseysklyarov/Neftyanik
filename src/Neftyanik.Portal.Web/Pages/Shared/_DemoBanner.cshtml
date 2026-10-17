@@ -1,0 +1,14 @@
+@inject Neftyanik.Portal.Web.Demo.DemoRequestScope DemoScope
+@inject TimeProvider Clock
+@if (DemoScope.Workspace is { } workspace)
+{
+    <div class="alert alert-info d-flex flex-wrap gap-3 justify-content-between align-items-center mt-3" role="status">
+        <div><strong>@AppLocalizer.Get("Тестовое товарищество", "Тестове товариство", "Test association")</strong><br />
+        @AppLocalizer.Get("Вымышленные данные. Можно пробовать действия. Сессия закончится через", "Вигадані дані. Можна пробувати дії. Сесія завершиться через", "Fictional data. You can try actions. This session ends in")
+        @Math.Max(0, (int)Math.Ceiling((workspace.ExpiresAtUtc - Clock.GetUtcNow()).TotalMinutes)) @AppLocalizer.Get("мин. Затем изменения удалятся.", "хв. Потім зміни видаляться.", "min. Changes will then be discarded.")</div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a class="btn btn-outline-primary" href="@(DemoScope.OriginPathBase + "/Product/Demo?culture=" + System.Globalization.CultureInfo.CurrentUICulture.Name)">@AppLocalizer.Get("Выбрать экран / начать заново", "Обрати екран / почати заново", "Choose screen / restart")</a>
+            <a class="btn btn-primary" href="@(DemoScope.OriginPathBase + "/neftyanik/")">@AppLocalizer.Get("Войти в кабинет", "Увійти до кабінету", "Sign in")</a>
+        </div>
+    </div>
+}

@@ -1,0 +1,519 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Plots - Test association</title>
+    <link rel="stylesheet" href="../../lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="../../css/site.css?v=DJfd_yOl0yoI4EWpeIZ0ybcQmboOfqptSwlP5s091ho" />
+    <link rel="stylesheet" href="../../Neftyanik.Portal.Web.styles.css" />
+<meta name="robots" content="noindex, nofollow" /><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; base-uri 'none'; form-action 'none'" /><style>body{pointer-events:none}.alert[role="status"]{display:none}html{overflow:hidden}</style></head>
+<body inert class="portal-body">
+    <header b-gz5t9dydb1 class="portal-header border-bottom">
+        <nav b-gz5t9dydb1 class="navbar navbar-expand-xl portal-navbar">
+            <div b-gz5t9dydb1 class="container">
+                <a class="navbar-brand portal-brand">
+                    <span b-gz5t9dydb1 class="portal-brand-line">
+                        <span b-gz5t9dydb1 class="portal-brand-title">Test association</span>
+                        <span b-gz5t9dydb1 class="portal-brand-subtitle">association portal</span>
+                    </span>
+                </a>
+                <div b-gz5t9dydb1 class="portal-header-tools">
+
+<a id="payment-notification-bell" class="nav-link text-dark position-relative" title="Payments awaiting confirmation" aria-label="Payments awaiting confirmation">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+        <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2m0-14a5 5 0 0 0-5 5c0 1.098-.5 2.562-1.19 3.694-.226.371-.31.844-.057 1.23.252.387.698.576 1.147.576h10.2c.45 0 .895-.19 1.148-.576.252-.386.168-.859-.058-1.23C13.5 9.562 13 8.098 13 7a5 5 0 0 0-5-5" />
+    </svg>
+    <span class="visually-hidden">Payments awaiting confirmation</span>
+</a>
+                    <button b-gz5t9dydb1 class="navbar-toggler d-xl-none" type="button" data-bs-toggle="collapse" data-bs-target="#portalNavbar" aria-controls="portalNavbar"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                        <span b-gz5t9dydb1 class="navbar-toggler-icon"></span>
+                    </button>
+                </div>
+                <div b-gz5t9dydb1 class="navbar-collapse collapse portal-navbar-collapse" id="portalNavbar">
+                    <div b-gz5t9dydb1 class="portal-navbar-content d-xl-flex justify-content-between align-items-xl-center w-100">
+                    <ul b-gz5t9dydb1 class="navbar-nav me-auto mb-3 mb-xl-0 align-items-xl-center portal-navbar-primary">
+                            <li b-gz5t9dydb1 class="nav-item">
+                                <a class="nav-link portal-nav-link">Members</a>
+                            </li>
+                            <li b-gz5t9dydb1 class="nav-item">
+                                <a class="nav-link portal-nav-link">Plots</a>
+                            </li>
+                            <li b-gz5t9dydb1 class="nav-item">
+                                <a class="nav-link portal-nav-link">Finance</a>
+                            </li>
+                                <li b-gz5t9dydb1 class="nav-item">
+                                    <a class="nav-link portal-nav-link">Administration</a>
+                                </li>
+                    </ul>
+                    <ul b-gz5t9dydb1 class="navbar-nav portal-navbar-actions align-items-stretch align-items-xl-center justify-content-xl-end gap-2 gap-xl-2">
+                        <li b-gz5t9dydb1 class="nav-item">
+                            <div>
+                                
+                                <label b-gz5t9dydb1 class="visually-hidden" for="page-culture-selector">Language</label>
+                                <select b-gz5t9dydb1 id="page-culture-selector" name="culture" class="form-select form-select-sm" data-auto-submit="culture-selector">
+                                    <option value="ru-RU">Русский</option>
+                                    <option value="uk-UA">Українська</option>
+                                    <option value="en-US" selected="selected">English</option>
+                                </select>
+                            </div>
+                        </li>
+                            <li b-gz5t9dydb1 class="nav-item">
+                                <span b-gz5t9dydb1 class="navbar-text portal-user-pill" title="&#x414;&#x435;&#x43C;&#x43E;: &#x430;&#x434;&#x43C;&#x456;&#x43D;&#x456;&#x441;&#x442;&#x440;&#x430;&#x442;&#x43E;&#x440;">&#x414;&#x435;&#x43C;&#x43E;: &#x430;&#x434;&#x43C;&#x456;&#x43D;&#x456;&#x441;&#x442;&#x440;&#x430;&#x442;&#x43E;&#x440;</span>
+                            </li>
+                            <li b-gz5t9dydb1 class="nav-item">
+                                <div>
+                                    <button b-gz5t9dydb1 type="submit" class="btn btn-link nav-link portal-nav-link portal-logout-button px-0">Log out</button>
+                                </div>
+                            </li>
+                    </ul>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div b-gz5t9dydb1 class="container portal-main-shell portal-main-wide">
+            <div class="alert alert-info d-flex flex-wrap gap-3 justify-content-between align-items-center mt-3" role="status">
+        <div><strong>Test association</strong><br />
+        Fictional data. You can try actions. This session ends in
+        30 min. Changes will then be discarded.</div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a class="btn btn-outline-primary">Choose screen / restart</a>
+            <a class="btn btn-primary">Sign in</a>
+        </div>
+    </div>
+
+
+
+        <main b-gz5t9dydb1 role="main" class="portal-main pb-3">
+            
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h2 mb-1">Plots</h1>
+        <p class="text-muted mb-0">List of association plots.</p>
+    </div>
+        <div>
+            <a class="btn btn-primary">Add plot</a>
+        </div>
+</div>
+
+
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <div>
+            
+            
+            <div class="col-md-6 col-xl-4">
+                <label class="form-label" for="Search">Search</label>
+                <input class="form-control" placeholder="Number, address, cadastral number, or owner" type="text" id="Search" name="Search" value="" />
+            </div>
+            <div class="col-md-6 col-xl-2">
+                <label class="form-label" for="Status">Plot status</label>
+                <select class="form-select input-validation-error" data-val="true" data-val-required="The Status field is required." id="Status" name="Status">
+                    <option value="all" selected="selected">All</option>
+                    <option value="active">Active only</option>
+                    <option value="archived">Archived only</option>
+                </select>
+            </div>
+            <div class="col-md-6 col-xl-3">
+                <label class="form-label" for="Ownership">Owners</label>
+                <select class="form-select input-validation-error" data-val="true" data-val-required="The Ownership field is required." id="Ownership" name="Ownership">
+                    <option value="all" selected="selected">All plots</option>
+                    <option value="withowners">With current owners only</option>
+                    <option value="withoutowners">Without current owners only</option>
+                </select>
+            </div>
+            <div class="col-md-6 col-xl-3">
+                <label class="form-label" for="FinancialStatus">Financial status *</label>
+                <select class="form-select input-validation-error" data-val="true" data-val-required="The FinancialStatus field is required." id="FinancialStatus" name="FinancialStatus">
+                    <option value="all" selected="selected">All</option>
+                    <option value="debt">With debt</option>
+                    <option value="nodebt">Zero balance</option>
+                    <option value="overpayment">With overpayment</option>
+                </select>
+            </div>
+            <div class="d-flex gap-2 plot-filter-actions">
+                <button type="submit" class="btn btn-outline-primary">Search</button>
+                <a class="btn btn-outline-secondary">Reset</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<p class="text-muted small">* Annual fees only, excluding electricity and other payments. Paid shows amounts allocated to annual charges; unallocated advances are excluded.</p>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="d-flex justify-content-between align-items-center px-3 pt-3 text-muted small">
+            <span>Record count: 6</span>
+        </div>
+            <div>
+                
+                
+                
+                
+                
+                
+                
+                <div id="bulk-charge-selected-plot-inputs"></div>
+
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 p-3 border-bottom">
+                    <div>
+                        <h2 class="h5 mb-1">Plot list</h2>
+                        <p class="small text-muted mb-0">Only active plots with current owners are available for charges.</p>
+                    </div>
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#bulkChargeModal">Charge selected</button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 plot-list-table">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 1%;">
+                                    <div class="form-check mb-0">
+                                        <input class="form-check-input" type="checkbox" id="select-all-plots" aria-label="Select all plots" />
+                                    </div>
+                                </th>
+                                <th>
+                                    <a class="text-decoration-none link-dark">Number &#x2191;</a>
+                                </th>
+                                <th>
+                                    <a class="text-decoration-none link-dark">Address </a>
+                                    <div class="small mt-1"><a class="text-decoration-none link-secondary">Cadastral number </a></div>
+                                </th>
+                                <th>
+                                    <a class="text-decoration-none link-dark">Area, &#x441;&#x43E;&#x442;&#x43E;&#x43A; </a>
+                                </th>
+                                <th>
+                                    <a class="text-decoration-none link-dark">Status </a>
+                                </th>
+                                <th>
+                                    <a class="text-decoration-none link-dark">Owner </a>
+                                </th>
+                                <th class="text-end">Charged / paid *</th>
+                                <th class="text-end">Balance / financial status *</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                                <tr>
+                                    <td>
+                                                <input class="form-check-input" type="checkbox" name="ChargeInput.SelectedPlotIds" value="1" aria-label="Select plot 01" />
+                                    </td>
+                                    <td class="fw-semibold">01</td>
+                                    <td>
+                                        <div>&#x41D;&#x430;&#x432;&#x447;&#x430;&#x43B;&#x44C;&#x43D;&#x430; &#x432;&#x443;&#x43B;&#x438;&#x446;&#x44F;, 1</div>
+                                    </td>
+                                    <td>600</td>
+                                    <td>
+                                            <span class="member-status member-status-active">Active</span>
+                                    </td>
+                                    <td>
+                                            <a>&#x422;&#x435;&#x441;&#x442;&#x43E;&#x432;&#x438;&#x439; &#x443;&#x447;&#x430;&#x441;&#x43D;&#x438;&#x43A; 01</a>
+                                    </td>
+                                    <td class="text-nowrap text-end">
+                                        <div><span class="small text-muted">Charged:</span> 1200.00 ₴</div>
+                                        <div><span class="small text-muted">Paid:</span> 1200.00 ₴</div>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="fw-semibold text-nowrap text-success">0.00 ₴</div>
+                                        <div class="small text-success">No debt</div>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="member-list-actions">
+                                            <a class="btn btn-sm btn-outline-secondary">Details</a>
+                                                <details class="member-more-actions">
+                                                    <summary class="btn btn-sm btn-outline-secondary">More</summary>
+                                                    <div class="member-more-links">
+                                                        <a>Edit</a>
+                                                        <a>Archive</a>
+                                                    </div>
+                                                </details>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                                <input class="form-check-input" type="checkbox" name="ChargeInput.SelectedPlotIds" value="2" aria-label="Select plot 02" />
+                                    </td>
+                                    <td class="fw-semibold">02</td>
+                                    <td>
+                                        <div>&#x41D;&#x430;&#x432;&#x447;&#x430;&#x43B;&#x44C;&#x43D;&#x430; &#x432;&#x443;&#x43B;&#x438;&#x446;&#x44F;, 2</div>
+                                    </td>
+                                    <td>600</td>
+                                    <td>
+                                            <span class="member-status member-status-active">Active</span>
+                                    </td>
+                                    <td>
+                                            <a>&#x422;&#x435;&#x441;&#x442;&#x43E;&#x432;&#x438;&#x439; &#x443;&#x447;&#x430;&#x441;&#x43D;&#x438;&#x43A; 02</a>
+                                    </td>
+                                    <td class="text-nowrap text-end">
+                                        <div><span class="small text-muted">Charged:</span> 1200.00 ₴</div>
+                                        <div><span class="small text-muted">Paid:</span> 800.00 ₴</div>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="fw-semibold text-nowrap text-danger">400.00 ₴</div>
+                                        <div class="small text-danger">Debt</div>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="member-list-actions">
+                                            <a class="btn btn-sm btn-outline-secondary">Details</a>
+                                                <details class="member-more-actions">
+                                                    <summary class="btn btn-sm btn-outline-secondary">More</summary>
+                                                    <div class="member-more-links">
+                                                        <a>Edit</a>
+                                                        <a>Archive</a>
+                                                    </div>
+                                                </details>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                                <input class="form-check-input" type="checkbox" name="ChargeInput.SelectedPlotIds" value="3" aria-label="Select plot 03" />
+                                    </td>
+                                    <td class="fw-semibold">03</td>
+                                    <td>
+                                        <div>&#x41D;&#x430;&#x432;&#x447;&#x430;&#x43B;&#x44C;&#x43D;&#x430; &#x432;&#x443;&#x43B;&#x438;&#x446;&#x44F;, 3</div>
+                                    </td>
+                                    <td>600</td>
+                                    <td>
+                                            <span class="member-status member-status-active">Active</span>
+                                    </td>
+                                    <td>
+                                            <a>&#x422;&#x435;&#x441;&#x442;&#x43E;&#x432;&#x438;&#x439; &#x443;&#x447;&#x430;&#x441;&#x43D;&#x438;&#x43A; 03</a>
+                                    </td>
+                                    <td class="text-nowrap text-end">
+                                        <div><span class="small text-muted">Charged:</span> 1200.00 ₴</div>
+                                        <div><span class="small text-muted">Paid:</span> 1200.00 ₴</div>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="fw-semibold text-nowrap text-success">0.00 ₴</div>
+                                        <div class="small text-success">No debt</div>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="member-list-actions">
+                                            <a class="btn btn-sm btn-outline-secondary">Details</a>
+                                                <details class="member-more-actions">
+                                                    <summary class="btn btn-sm btn-outline-secondary">More</summary>
+                                                    <div class="member-more-links">
+                                                        <a>Edit</a>
+                                                        <a>Archive</a>
+                                                    </div>
+                                                </details>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                                <input class="form-check-input" type="checkbox" name="ChargeInput.SelectedPlotIds" value="4" aria-label="Select plot 04" />
+                                    </td>
+                                    <td class="fw-semibold">04</td>
+                                    <td>
+                                        <div>&#x41D;&#x430;&#x432;&#x447;&#x430;&#x43B;&#x44C;&#x43D;&#x430; &#x432;&#x443;&#x43B;&#x438;&#x446;&#x44F;, 4</div>
+                                    </td>
+                                    <td>600</td>
+                                    <td>
+                                            <span class="member-status member-status-active">Active</span>
+                                    </td>
+                                    <td>
+                                            <a>&#x422;&#x435;&#x441;&#x442;&#x43E;&#x432;&#x438;&#x439; &#x443;&#x447;&#x430;&#x441;&#x43D;&#x438;&#x43A; 04</a>
+                                    </td>
+                                    <td class="text-nowrap text-end">
+                                        <div><span class="small text-muted">Charged:</span> 1200.00 ₴</div>
+                                        <div><span class="small text-muted">Paid:</span> 800.00 ₴</div>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="fw-semibold text-nowrap text-danger">400.00 ₴</div>
+                                        <div class="small text-danger">Debt</div>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="member-list-actions">
+                                            <a class="btn btn-sm btn-outline-secondary">Details</a>
+                                                <details class="member-more-actions">
+                                                    <summary class="btn btn-sm btn-outline-secondary">More</summary>
+                                                    <div class="member-more-links">
+                                                        <a>Edit</a>
+                                                        <a>Archive</a>
+                                                    </div>
+                                                </details>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                                <input class="form-check-input" type="checkbox" name="ChargeInput.SelectedPlotIds" value="5" aria-label="Select plot 05" />
+                                    </td>
+                                    <td class="fw-semibold">05</td>
+                                    <td>
+                                        <div>&#x41D;&#x430;&#x432;&#x447;&#x430;&#x43B;&#x44C;&#x43D;&#x430; &#x432;&#x443;&#x43B;&#x438;&#x446;&#x44F;, 5</div>
+                                    </td>
+                                    <td>600</td>
+                                    <td>
+                                            <span class="member-status member-status-active">Active</span>
+                                    </td>
+                                    <td>
+                                            <a>&#x422;&#x435;&#x441;&#x442;&#x43E;&#x432;&#x438;&#x439; &#x443;&#x447;&#x430;&#x441;&#x43D;&#x438;&#x43A; 05</a>
+                                    </td>
+                                    <td class="text-nowrap text-end">
+                                        <div><span class="small text-muted">Charged:</span> 1200.00 ₴</div>
+                                        <div><span class="small text-muted">Paid:</span> 1200.00 ₴</div>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="fw-semibold text-nowrap text-success">0.00 ₴</div>
+                                        <div class="small text-success">No debt</div>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="member-list-actions">
+                                            <a class="btn btn-sm btn-outline-secondary">Details</a>
+                                                <details class="member-more-actions">
+                                                    <summary class="btn btn-sm btn-outline-secondary">More</summary>
+                                                    <div class="member-more-links">
+                                                        <a>Edit</a>
+                                                        <a>Archive</a>
+                                                    </div>
+                                                </details>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                                <input class="form-check-input" type="checkbox" name="ChargeInput.SelectedPlotIds" value="6" aria-label="Select plot 06" />
+                                    </td>
+                                    <td class="fw-semibold">06</td>
+                                    <td>
+                                        <div>&#x41D;&#x430;&#x432;&#x447;&#x430;&#x43B;&#x44C;&#x43D;&#x430; &#x432;&#x443;&#x43B;&#x438;&#x446;&#x44F;, 6</div>
+                                    </td>
+                                    <td>600</td>
+                                    <td>
+                                            <span class="member-status member-status-active">Active</span>
+                                    </td>
+                                    <td>
+                                            <a>&#x422;&#x435;&#x441;&#x442;&#x43E;&#x432;&#x438;&#x439; &#x443;&#x447;&#x430;&#x441;&#x43D;&#x438;&#x43A; 06</a>
+                                    </td>
+                                    <td class="text-nowrap text-end">
+                                        <div><span class="small text-muted">Charged:</span> 1200.00 ₴</div>
+                                        <div><span class="small text-muted">Paid:</span> 800.00 ₴</div>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="fw-semibold text-nowrap text-danger">400.00 ₴</div>
+                                        <div class="small text-danger">Debt</div>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="member-list-actions">
+                                            <a class="btn btn-sm btn-outline-secondary">Details</a>
+                                                <details class="member-more-actions">
+                                                    <summary class="btn btn-sm btn-outline-secondary">More</summary>
+                                                    <div class="member-more-links">
+                                                        <a>Edit</a>
+                                                        <a>Archive</a>
+                                                    </div>
+                                                </details>
+                                        </div>
+                                    </td>
+                                </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="modal fade" id="bulkChargeModal" tabindex="-1" aria-labelledby="bulkChargeModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h2 class="modal-title h5" id="bulkChargeModalLabel">Charge selected plots</h2>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                
+
+                                <div class="mb-3">
+                                    <div class="fw-semibold">Selected plots</div>
+                                    <div id="bulk-charge-selected-count" class="text-muted small mb-2"></div>
+                                    <ul id="bulk-charge-selected-plots" class="mb-0 ps-3"></ul>
+                                    <span class="text-danger field-validation-valid" data-valmsg-for="ChargeInput.SelectedPlotIds" data-valmsg-replace="true"></span>
+                                </div>
+
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label" for="ChargeInput_ChargeTypeId">Charge type</label>
+                                            <select class="form-select" data-val="true" data-val-required="&#x412;&#x44B;&#x431;&#x435;&#x440;&#x438;&#x442;&#x435; &#x442;&#x438;&#x43F; &#x43D;&#x430;&#x447;&#x438;&#x441;&#x43B;&#x435;&#x43D;&#x438;&#x44F;." id="ChargeInput_ChargeTypeId" name="ChargeInput.ChargeTypeId">
+                                                <option value="">Select charge type</option>
+                                            <option selected="selected" value="1">&#x415;&#x43B;&#x435;&#x43A;&#x442;&#x440;&#x43E;&#x435;&#x43D;&#x435;&#x440;&#x433;&#x456;&#x44F;</option>
+<option value="2">&#x427;&#x43B;&#x435;&#x43D;&#x441;&#x44C;&#x43A;&#x456; &#x432;&#x43D;&#x435;&#x441;&#x43A;&#x438; (1200.00 &#x433;&#x440;&#x43D; &#x43F;&#x43E; &#x443;&#x43C;&#x43E;&#x43B;&#x447;&#x430;&#x43D;&#x438;&#x44E;, &#x435;&#x436;&#x435;&#x433;&#x43E;&#x434;&#x43D;&#x44B;&#x439;)</option>
+</select>
+                                        <span class="text-danger field-validation-valid" data-valmsg-for="ChargeInput.ChargeTypeId" data-valmsg-replace="true"></span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label" for="ChargeInput_Amount">Amount, UAH</label>
+                                        <input class="form-control" id="charge-amount-display" value="" readonly />
+                                        <span class="text-danger field-validation-valid" data-valmsg-for="ChargeInput.Amount" data-valmsg-replace="true"></span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label" for="ChargeInput_ChargeDate">Charge date</label>
+                                        <input class="form-control" value="16.10.2026" readonly />
+                                        <span class="text-danger field-validation-valid" data-valmsg-for="ChargeInput.ChargeDate" data-valmsg-replace="true"></span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label" for="ChargeInput_DueDate">Due date</label>
+                                        <input class="form-control" type="date" id="ChargeInput_DueDate" name="ChargeInput.DueDate" value="" />
+                                        <span class="text-danger field-validation-valid" data-valmsg-for="ChargeInput.DueDate" data-valmsg-replace="true"></span>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label" for="ChargeInput_Description">Description</label>
+                                        <textarea class="form-control" rows="3" data-val="true" data-val-length="The field &#x41E;&#x43F;&#x438;&#x441;&#x430;&#x43D;&#x438;&#x435; must be a string with a maximum length of 1000." data-val-length-max="1000" id="ChargeInput_Description" maxlength="1000" name="ChargeInput.Description">
+</textarea>
+                                        <span class="text-danger field-validation-valid" data-valmsg-for="ChargeInput.Description" data-valmsg-replace="true"></span>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="confirm-bulk-charge" required />
+                                            <label class="form-check-label" for="confirm-bulk-charge">
+                                                I confirm creating charges for all selected plots.
+                                            </label>
+                                            <div class="invalid-feedback d-block" id="confirm-bulk-charge-validation" hidden>
+                                                Confirm the charge creation.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-primary" id="submit-bulk-charge">Create charges</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    </div>
+</div>
+
+
+
+        </main>
+    </div>
+
+    <footer b-gz5t9dydb1 class="footer portal-footer text-muted">
+        <div b-gz5t9dydb1 class="container">
+            &copy; 2026 - Test association
+        </div>
+    </footer>
+
+    
+    
+    
+
+    
+    
+
+
+    
+
+</body>
+</html>
+

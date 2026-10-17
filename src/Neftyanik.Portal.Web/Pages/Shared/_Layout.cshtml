@@ -5,9 +5,12 @@
 
 @inject UserManager<ApplicationUser> UserManager
 @inject IAssociationContext AssociationContext
+@inject Neftyanik.Portal.Web.Demo.DemoRequestScope DemoScope
 
 @{
-    var associationName = AssociationContext.IsResolved ? AssociationContext.Association.Name : "DachaHub";
+    var associationName = DemoScope.IsActive
+        ? AppLocalizer.Get("Тестовое товарищество", "Тестове товариство", "Test association")
+        : AssociationContext.IsResolved ? AssociationContext.Association.Name : "DachaHub";
     var currentUser = User.Identity?.IsAuthenticated == true ? await UserManager.GetUserAsync(User) : null;
     var userDisplayName = !string.IsNullOrWhiteSpace(currentUser?.DisplayName)
         ? currentUser.DisplayName
@@ -108,6 +111,7 @@
         </nav>
     </header>
     <div class="container portal-main-shell @(ViewData["WideLayout"] is true ? "portal-main-wide" : "")">
+        <partial name="_DemoBanner" />
         @if (!string.IsNullOrWhiteSpace(successMessage))
         {
             <div class="alert alert-success alert-dismissible fade show" role="alert">

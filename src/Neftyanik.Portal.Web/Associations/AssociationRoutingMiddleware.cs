@@ -12,10 +12,13 @@ public sealed class AssociationRoutingMiddleware
 
     public AssociationRoutingMiddleware(RequestDelegate next) => _next = next;
 
-    public async Task InvokeAsync(HttpContext httpContext, ApplicationDbContext database, AssociationContext associationContext, IWebHostEnvironment environment)
+    public async Task InvokeAsync(HttpContext httpContext, ApplicationDbContext database, AssociationContext associationContext, IWebHostEnvironment environment, Neftyanik.Portal.Web.Demo.DemoRequestScope demo)
     {
+        if (demo.IsActive) { await _next(httpContext); return; }
         var path = httpContext.Request.Path;
-        if (path == "/health" || path == "/Error" || path.StartsWithSegments("/Platform", StringComparison.OrdinalIgnoreCase))
+        if (path == "/" || path == "/health" || path == "/Error"
+            || path.StartsWithSegments("/Product", StringComparison.OrdinalIgnoreCase)
+            || path.StartsWithSegments("/Platform", StringComparison.OrdinalIgnoreCase))
         {
             await _next(httpContext);
             return;
@@ -53,7 +56,8 @@ public sealed class AssociationRoutingMiddleware
             return;
         }
 
-        if (new PathString("/" + segments[2]).StartsWithSegments("/Platform", StringComparison.OrdinalIgnoreCase))
+        if (new PathString("/" + segments[2]).StartsWithSegments("/Platform", StringComparison.OrdinalIgnoreCase)
+            || new PathString("/" + segments[2]).StartsWithSegments("/Product", StringComparison.OrdinalIgnoreCase))
         {
             httpContext.Response.StatusCode = StatusCodes.Status404NotFound;
             return;

@@ -1,0 +1,12 @@
+[Unit]
+Description=Neftyanik SQL Server backup with checksum verification
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/Neftyanik
+UMask=0077
+# Share the deployment lock: backups and schema updates must not overlap.
+ExecStart=/usr/bin/flock -w 3600 /opt/Neftyanik/deploy/.production-deploy.lock /usr/bin/bash /opt/Neftyanik/deploy/scripts/create-sql-backup.sh
+TimeoutStartSec=2h

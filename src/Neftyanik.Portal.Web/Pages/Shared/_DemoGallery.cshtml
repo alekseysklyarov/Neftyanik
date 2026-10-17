@@ -1,0 +1,30 @@
+@{
+    string L(string ru, string uk, string en) => AppLocalizer.Get(ru, uk, en);
+    var previewCulture = System.Globalization.CultureInfo.CurrentUICulture.Name;
+    if (previewCulture != "ru-RU" && previewCulture != "uk-UA") previewCulture = "en-US";
+    var selectedScreens = ViewData["DemoScreens"] as string[] ?? new[] { "members", "member", "finance", "electricity" };
+    var screens = new[]
+    {
+        (Id: "member", Title: L("Личный кабинет участника", "Особистий кабінет учасника", "Member dashboard"), Role: L("Участник", "Учасник", "Member"), Description: L("Начисления, оплаты и история расчётов по своим участкам.", "Нарахування, оплати та історія розрахунків за своїми ділянками.", "Charges, payments and balance history for your plots.")),
+        (Id: "electricity", Title: L("Показания электроэнергии", "Показання електроенергії", "Electricity readings"), Role: L("Участник", "Учасник", "Member"), Description: L("Счётчики, история показаний и ввод нового показания.", "Лічильники, історія показань і введення нового показання.", "Meters, reading history and entering a new reading.")),
+        (Id: "finance", Title: L("Финансовый обзор", "Фінансовий огляд", "Financial overview"), Role: L("Бухгалтер", "Бухгалтер", "Accountant"), Description: L("Баланс товарищества, оплаты, расходы и задолженности.", "Баланс товариства, оплати, витрати та заборгованості.", "Association balances, payments, expenses and debts.")),
+        (Id: "members", Title: L("Члены товарищества", "Члени товариства", "Association members"), Role: L("Администратор", "Адміністратор", "Administrator"), Description: L("Карточки участников, участки, контакты и доступ к порталу.", "Картки учасників, ділянки, контакти та доступ до порталу.", "Member records, plots, contacts and portal access."))
+        ,(Id: "expenses", Title: L("Расходы товарищества", "Витрати товариства", "Association expenses"), Role: L("Бухгалтер", "Бухгалтер", "Accountant"), Description: L("Учёт расходов, категории и история операций.", "Облік витрат, категорії та історія операцій.", "Expense records, categories and transaction history."))
+        ,(Id: "plots", Title: L("Участки и владельцы", "Ділянки та власники", "Plots and owners"), Role: L("Администратор", "Адміністратор", "Administrator"), Description: L("Реестр участков, данные владельцев и связь со счётчиками.", "Реєстр ділянок, дані власників і зв’язок із лічильниками.", "Plot records, ownership details and linked meters."))
+    };
+}
+<div class="screen-gallery">
+    @foreach (var screen in screens.Where(screen => selectedScreens.Contains(screen.Id)).OrderBy(screen => Array.IndexOf(selectedScreens, screen.Id)))
+    {
+        <article class="screen-card">
+            <div class="screen-caption"><span class="sample-label">@L("ТЕСТОВЫЕ ДАННЫЕ", "ТЕСТОВІ ДАНІ", "SAMPLE DATA")</span><span>@screen.Role</span></div>
+            <div class="screen-preview" aria-hidden="true">
+                <img src="@Url.Content("~/images/demo/" + screen.Id + "-" + previewCulture + ".jpg")" alt="@screen.Title" width="1440" height="900" loading="lazy" decoding="async" />
+            </div>
+            <div class="screen-description"><h3>@screen.Title</h3><p>@screen.Description</p>
+                <a class="screen-enlarge" href="@Url.Content("~/images/demo/" + screen.Id + "-" + previewCulture + ".jpg")" target="_blank" rel="noopener">@L("Увеличить скриншот", "Збільшити знімок екрана", "Enlarge screenshot") ↗</a>
+                <form method="post" asp-page="/Product/Demo" asp-page-handler="Enter" asp-route-culture="@System.Globalization.CultureInfo.CurrentUICulture.Name" asp-antiforgery="true"><input type="hidden" name="screen" value="@screen.Id" /><button type="submit" class="product-button">@L("Войти и открыть этот экран", "Увійти й відкрити цей екран", "Enter and open this screen") →</button></form>
+            </div>
+        </article>
+    }
+</div>

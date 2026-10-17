@@ -172,7 +172,6 @@ public class TenantHttpIsolationTests
     }
 
     [Theory]
-    [InlineData("/", "/neftyanik/")]
     [InlineData("/Administration/Members?search=test", "/neftyanik/Administration/Members?search=test")]
     [InlineData("/neftyanik", "/neftyanik/")]
     [InlineData("/second", "/second/")]

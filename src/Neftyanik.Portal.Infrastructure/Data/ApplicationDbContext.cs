@@ -21,6 +21,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public int CurrentAssociationId => _associationContext.AssociationId;
     public bool IsAssociationResolved => _associationContext.IsResolved;
 
+    public DbSet<DemoRequest> DemoRequests => Set<DemoRequest>();
     public DbSet<PlatformBootstrapState> PlatformBootstrapStates => Set<PlatformBootstrapState>();
     public DbSet<PlatformPasswordRecoveryAudit> PlatformPasswordRecoveryAudits => Set<PlatformPasswordRecoveryAudit>();
     public DbSet<PlatformAuditLog> PlatformAuditLogs => Set<PlatformAuditLog>();

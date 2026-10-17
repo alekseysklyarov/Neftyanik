@@ -51,6 +51,20 @@ public class LocalizationConfigurationTests
             Uri.UnescapeDataString(model.Response.Headers.SetCookie.ToString()));
     }
 
+    [Theory]
+    [InlineData("/Product/Try/Administration/Finance?culture=uk-UA&ui-culture=uk-UA&year=2026#totals", "/Product/Try/Administration/Finance?year=2026#totals")]
+    [InlineData("/Member?Culture=uk-UA&UI-Culture=uk-UA", "/Member")]
+    [InlineData("/Member?culture=uk-UA&filter=a&filter=b", "/Member?filter=a&filter=b")]
+    public void OnPost_RemovesPreviousQueryCultureAndPreservesOtherParameters(string returnUrl, string expected)
+    {
+        var model = CreateModel();
+
+        var redirect = Assert.IsType<LocalRedirectResult>(model.OnPost("ru-RU", returnUrl));
+
+        Assert.Equal(expected, redirect.Url);
+        Assert.Contains("c=ru-RU|uic=ru-RU", Uri.UnescapeDataString(model.Response.Headers.SetCookie.ToString()));
+    }
+
     private static SetLanguageModel CreateModel()
     {
         var httpContext = new DefaultHttpContext();

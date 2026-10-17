@@ -1,0 +1,22 @@
+@page
+@model Neftyanik.Portal.Web.Pages.Product.DemoModel
+@{
+    string L(string ru, string uk, string en) => AppLocalizer.Get(ru, uk, en);
+    ViewData["Title"] = L("Тестовое товарищество", "Тестове товариство", "Test association");
+}
+<section class="product-section demo-intro">
+    <h1 class="page-title">@L("Попробуйте портал в тестовом товариществе", "Спробуйте портал у тестовому товаристві", "Try the portal in a test association")</h1>
+    <p class="lead">@L("Откройте нужный экран и попробуйте работу участника, бухгалтера или администратора. Регистрация и пароль не нужны.", "Відкрийте потрібний екран і спробуйте роботу учасника, бухгалтера або адміністратора. Реєстрація та пароль не потрібні.", "Open a screen and try the member, accountant or administrator workflow. No registration or password is needed.")</p>
+    <div class="demo-notice">@L("Здесь только вымышленные данные. Можно добавлять показания и пробовать операции. Ваша отдельная сессия длится 30 минут, после чего изменения удаляются. Это не данные и не платежи «Нефтяника».", "Тут лише вигадані дані. Можна додавати показання та пробувати операції. Ваша окрема сесія триває 30 хвилин, після чого зміни видаляються. Це не дані та не платежі «Нефтяника».", "All data is fictional. You can submit readings and try transactions. Your private session lasts 30 minutes, then its changes are discarded. These are not Neftyanik records or payments.")</div>
+    @if (Model.Expired)
+    {
+        <p class="demo-notice" role="status">@L("Тестовая сессия закончилась. Выберите экран, чтобы начать заново с исходными данными.", "Тестова сесія завершилася. Оберіть екран, щоб почати знову з початковими даними.", "The demo session has ended. Choose a screen to start again with the original sample data.")</p>
+    }
+    <div asp-validation-summary="All" class="validation-errors" role="alert"></div>
+    <partial name="_DemoGallery" />
+    <p class="management-link"><a class="product-button secondary" asp-page="/Product/Management" asp-route-culture="@System.Globalization.CultureInfo.CurrentUICulture.Name">@L("Больше экранов для бухгалтера и администратора", "Більше екранів для бухгалтера й адміністратора", "More screens for accountants and administrators") →</a></p>
+    <div class="demo-reset">
+        <p>@L("Можно восстановить исходные данные, не дожидаясь сброса.", "Можна відновити початкові дані, не чекаючи скидання.", "You can restore the original sample data before the session expires.")</p>
+        <form method="post" asp-page-handler="Enter" asp-route-culture="@System.Globalization.CultureInfo.CurrentUICulture.Name" asp-antiforgery="true"><input type="hidden" name="screen" value="member" /><input type="hidden" name="reset" value="true" /><button class="product-button secondary" type="submit">@L("Начать тест заново", "Почати тест заново", "Restart demo")</button></form>
+    </div>
+</section>

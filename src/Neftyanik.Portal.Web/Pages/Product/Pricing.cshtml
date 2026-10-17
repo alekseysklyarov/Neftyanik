@@ -1,0 +1,60 @@
+@page
+@attribute [Microsoft.AspNetCore.Authorization.AllowAnonymous]
+@{
+    string L(string ru, string uk, string en) => AppLocalizer.Get(ru, uk, en);
+    var culture = System.Globalization.CultureInfo.CurrentUICulture.Name;
+    ViewData["Title"] = L("Стоимость и сопровождение", "Вартість і супровід", "Pricing and support");
+}
+<section class="product-hero connection-intro">
+    <p class="eyebrow">@L("ПОДКЛЮЧЕНИЕ DachaHub", "ПІДКЛЮЧЕННЯ DachaHub", "CONNECTING DachaHub")</p>
+    <h1>@ViewData["Title"]</h1>
+    <p class="lead">@L("Подготовим предложение под ваше товарищество: с понятным составом работ, стоимостью запуска и дальнейшей работы портала.", "Підготуємо пропозицію для вашого товариства: зі зрозумілим складом робіт, вартістю запуску й подальшої роботи порталу.", "We will prepare a proposal for your association with a clear scope, launch cost and ongoing portal costs.")</p>
+    <div class="demo-notice"><strong>@L("Стоимость по запросу", "Вартість за запитом", "Pricing on request")</strong><br />@L("На цену влияют количество участков, состояние исходных данных, объём переноса и необходимые настройки. Итоговую стоимость и порядок оплаты согласуем до начала работ.", "На ціну впливають кількість ділянок, стан початкових даних, обсяг перенесення й потрібні налаштування. Підсумкову вартість і порядок оплати узгодимо до початку робіт.", "Pricing depends on plot counts, the condition of your records, migration scope and configuration needs. We agree on the total cost and payment arrangements before work starts.")</div>
+    <div class="role-navigation">
+        <a class="product-button" asp-page="/Product/Request" asp-route-culture="@culture" asp-fragment="connection-request">@L("Получить предложение", "Отримати пропозицію", "Request a proposal") →</a>
+        <a class="product-button secondary" asp-page="/Product/Demo" asp-route-culture="@culture">@L("Попробовать бесплатно", "Спробувати безкоштовно", "Try the free demo")</a>
+    </div>
+    <p class="connection-note">@L("Демо доступно без регистрации. Заявка на подключение не оформляет подписку и не требует оплаты.", "Демо доступне без реєстрації. Заявка на підключення не оформлює підписку й не потребує оплати.", "The demo requires no registration. A setup inquiry does not create a subscription or require payment.")</p>
+</section>
+
+<section class="product-section" aria-labelledby="cost-title">
+    <h2 id="cost-title">@L("Из чего складывается предложение", "Із чого складається пропозиція", "What the proposal covers")</h2>
+    <p class="section-description">@L("Отдельно обозначим подготовку к запуску, дальнейшее обслуживание и дополнительные работы.", "Окремо зазначимо підготовку до запуску, подальше обслуговування й додаткові роботи.", "Launch preparation, ongoing service and additional work are listed separately.")</p>
+    <div class="connection-features">
+        <article class="access-card"><h3>@L("Запуск и перенос данных", "Запуск і перенесення даних", "Launch and migration")</h3><p>@L("Подготовка товарищества, согласованные настройки, перенос данных и сверка начальных остатков. В предложении укажем, какие данные и за какой период переносим.", "Підготовка товариства, узгоджені налаштування, перенесення даних і звіряння початкових залишків. У пропозиції зазначимо, які дані й за який період переносимо.", "Association setup, agreed configuration, data migration and opening balance reconciliation. The proposal specifies which records and historical periods are included.")</p></article>
+        <article class="access-card"><h3>@L("Работа портала", "Робота порталу", "Operating the portal")</h3><p>@L("Условия размещения и использования портала, период оплаты и состав обслуживания. Укажем, что входит в стоимость, а что оплачивается отдельно.", "Умови розміщення й використання порталу, період оплати та склад обслуговування. Зазначимо, що входить у вартість, а що оплачується окремо.", "Hosting and portal usage arrangements, billing period and included services. We specify what is included and what is charged separately.")</p></article>
+        <article class="access-card"><h3>@L("Сопровождение", "Супровід", "Support")</h3><p>@L("Помощь с рабочими вопросами, разбор ошибок и порядок обновлений. Канал связи, часы обработки обращений и сроки ответа фиксируются при подключении.", "Допомога з робочими питаннями, розбір помилок і порядок оновлень. Канал зв’язку, години опрацювання звернень і строки відповіді фіксуються під час підключення.", "Help with everyday questions, error investigation and update arrangements. Contact channels, support hours and response times are agreed during setup.")</p></article>
+        <article class="access-card"><h3>@L("Дополнительные работы", "Додаткові роботи", "Additional work")</h3><p>@L("Новые функции, интеграции, нестандартные отчёты и дополнительный перенос истории обсуждаются отдельно: сначала состав работ, стоимость и сроки, затем выполнение.", "Нові функції, інтеграції, нестандартні звіти й додаткове перенесення історії обговорюються окремо: спочатку склад робіт, вартість і строки, потім виконання.", "New features, integrations, custom reports and extra historical data migration are scoped separately. Scope, pricing and timing are agreed before implementation.")</p></article>
+    </div>
+</section>
+
+<section class="product-section" aria-labelledby="data-title">
+    <h2 id="data-title">@L("Резервные копии и восстановление", "Резервні копії та відновлення", "Backups and recovery")</h2>
+    <p class="section-description">@L("Порядок защиты данных согласуем до рабочего запуска вместе с условиями размещения портала.", "Порядок захисту даних узгодимо до робочого запуску разом з умовами розміщення порталу.", "Data protection arrangements are agreed before launch alongside portal hosting terms.")</p>
+    <div class="connection-features">
+        <article class="access-card"><h3>@L("Что фиксируем для копий", "Що фіксуємо для копій", "Backup arrangements")</h3><ul class="connection-checklist">
+            <li>@L("Как часто создаются копии и сколько времени они хранятся.", "Як часто створюються копії та скільки часу вони зберігаються.", "How often backups are created and how long they are retained.")</li>
+            <li>@L("Где хранятся копии и кто отвечает за их создание и доступ к ним.", "Де зберігаються копії та хто відповідає за їх створення й доступ до них.", "Where backups are stored and who is responsible for creating and accessing them.")</li>
+            <li>@L("Как проверяется возможность восстановления.", "Як перевіряється можливість відновлення.", "How the ability to restore data is checked.")</li>
+        </ul></article>
+        <article class="access-card"><h3>@L("Что фиксируем для восстановления", "Що фіксуємо для відновлення", "Recovery arrangements")</h3><ul class="connection-checklist">
+            <li>@L("Кто может запросить восстановление и как согласуется нужная копия.", "Хто може запросити відновлення та як узгоджується потрібна копія.", "Who can request recovery and how the backup to use is agreed.")</li>
+            <li>@L("Допустимый период потери последних изменений и целевое время восстановления.", "Допустимий період втрати останніх змін і цільовий час відновлення.", "The acceptable window of lost changes and the target recovery time.")</li>
+            <li>@L("Порядок проверки данных после восстановления и стоимость таких работ.", "Порядок перевірки даних після відновлення й вартість таких робіт.", "Data checks after recovery and the cost of recovery work.")</li>
+        </ul></article>
+    </div>
+    <p class="connection-note">@L("Частота копирования, сроки хранения и время восстановления пока не установлены как единый тариф. Конкретные параметры должны быть указаны в предложении для вашего товарищества.", "Частоту копіювання, строки зберігання й час відновлення поки не встановлено як єдиний тариф. Конкретні параметри мають бути зазначені в пропозиції для вашого товариства.", "Backup frequency, retention and recovery time are not yet set as a standard plan. Specific values must be included in your association’s proposal.")</p>
+</section>
+
+<section class="product-section" aria-labelledby="questions-title">
+    <h2 id="questions-title">@L("Перед подключением", "Перед підключенням", "Before you connect")</h2>
+    <div class="product-faq">
+        <details><summary>@L("Можно сначала посмотреть портал?", "Чи можна спочатку подивитися портал?", "Can we try the portal first?")</summary><p>@L("Да. В тестовом товариществе можно бесплатно попробовать роли участника, бухгалтера и администратора. Это отдельные учебные данные, изменения сбрасываются через 30 минут.", "Так. У тестовому товаристві можна безкоштовно спробувати ролі учасника, бухгалтера й адміністратора. Це окремі навчальні дані, зміни скидаються через 30 хвилин.", "Yes. The free test association lets you try member, accountant and administrator roles. It uses separate sample data; changes reset after 30 minutes.")</p></details>
+        <details><summary>@L("Что нужно для расчёта стоимости?", "Що потрібно для розрахунку вартості?", "What do you need to estimate the cost?")</summary><p>@L("Название товарищества, примерное количество участков, способ ведения учёта и основные задачи. Файлы и данные участников в первую заявку добавлять не нужно.", "Назва товариства, приблизна кількість ділянок, спосіб ведення обліку й основні завдання. Файли та дані учасників до першої заявки додавати не потрібно.", "Your association name, approximate plot count, how records are kept and your main needs. There is no need to send files or members’ personal details with the initial inquiry.")</p></details>
+        <details><summary>@L("Как обсуждаются изменения и прекращение обслуживания?", "Як обговорюються зміни та припинення обслуговування?", "How are service changes and cancellation handled?")</summary><p>@L("До подключения согласуем порядок изменения стоимости и состава услуг, прекращения обслуживания и получения данных товарищества: формат, объём, сроки и возможную стоимость подготовки выгрузки.", "До підключення узгодимо порядок зміни вартості й складу послуг, припинення обслуговування та отримання даних товариства: формат, обсяг, строки й можливу вартість підготовки вивантаження.", "Before setup we agree on changes to prices and services, service cancellation and obtaining your association’s data, including format, scope, timing and any export preparation costs.")</p></details>
+    </div>
+</section>
+<section class="product-section connection-section">
+    <div><h2>@L("Обсудим условия для вашего товарищества", "Обговорімо умови для вашого товариства", "Discuss terms for your association")</h2><p>@L("Расскажите о количестве участков и текущем учёте — начнём с объёма работ и предложения по подключению.", "Розкажіть про кількість ділянок і поточний облік — почнімо з обсягу робіт і пропозиції щодо підключення.", "Tell us about your plot count and current records so we can scope the work and prepare a setup proposal.")</p></div>
+    <a class="product-button" asp-page="/Product/Request" asp-route-culture="@culture" asp-fragment="connection-request">@L("Обсудить подключение", "Обговорити підключення", "Discuss setup") →</a>
+</section>

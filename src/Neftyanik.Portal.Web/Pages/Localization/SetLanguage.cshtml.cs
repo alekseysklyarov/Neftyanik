@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.WebUtilities;
 using Neftyanik.Portal.Web.Localization;
 
 namespace Neftyanik.Portal.Web.Pages.Localization;
@@ -28,7 +29,21 @@ public class SetLanguageModel : PageModel
                 Secure = Request.IsHttps
             });
 
-        return LocalRedirect(GetReturnUrl(returnUrl));
+        // The query provider has priority over the culture cookie. Remove the previous
+        // culture from the return URL so the newly selected language can take effect.
+        var target = GetReturnUrl(returnUrl);
+        var fragmentIndex = target.IndexOf('#');
+        var fragment = fragmentIndex >= 0 ? target[fragmentIndex..] : string.Empty;
+        var withoutFragment = fragmentIndex >= 0 ? target[..fragmentIndex] : target;
+        var queryIndex = withoutFragment.IndexOf('?');
+        if (queryIndex >= 0)
+        {
+            var query = QueryHelpers.ParseQuery(withoutFragment[(queryIndex + 1)..]);
+            target = withoutFragment[..queryIndex] + QueryString.Create(query.Where(item =>
+                !string.Equals(item.Key, "culture", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(item.Key, "ui-culture", StringComparison.OrdinalIgnoreCase))) + fragment;
+        }
+        return LocalRedirect(target);
     }
 
     private string GetReturnUrl(string? returnUrl)

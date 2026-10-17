@@ -1,0 +1,33 @@
+@page
+@using Microsoft.AspNetCore.Mvc.ViewFeatures
+@attribute [Microsoft.AspNetCore.Authorization.AllowAnonymous]
+@{
+    string L(string ru, string uk, string en) => AppLocalizer.Get(ru, uk, en);
+    ViewData["Title"] = L("Для бухгалтера и администратора", "Для бухгалтера й адміністратора", "For accountants and administrators");
+    var accountantScreens = new ViewDataDictionary(ViewData) { ["DemoScreens"] = new[] { "finance", "expenses" } };
+    var administratorScreens = new ViewDataDictionary(ViewData) { ["DemoScreens"] = new[] { "members", "plots" } };
+}
+<section class="product-section demo-intro">
+    <h1>@ViewData["Title"]</h1>
+    <p class="lead">@L("Посмотрите, как устроена работа с финансами, участниками и участками. Это настоящие страницы портала с вымышленными учебными данными.", "Подивіться, як організована робота з фінансами, учасниками та ділянками. Це справжні сторінки порталу з вигаданими навчальними даними.", "Explore how the portal handles finances, members and plots. These are real portal pages with fictional sample data.")</p>
+    <nav class="role-navigation" aria-label="@L("Выберите роль", "Оберіть роль", "Choose a role")">
+        <a class="product-button secondary" href="#accountant">@L("Бухгалтеру", "Бухгалтеру", "Accountant")</a>
+        <a class="product-button secondary" href="#administrator">@L("Администратору", "Адміністратору", "Administrator")</a>
+    </nav>
+    <p class="demo-notice">@L("Под каждым предпросмотром — вход сразу в этот раздел с нужной ролью. Можно пробовать операции без регистрации. Учебные данные вашей сессии сбрасываются через 30 минут.", "Під кожним попереднім переглядом — вхід одразу до цього розділу з потрібною роллю. Можна пробувати операції без реєстрації. Навчальні дані вашої сесії скидаються через 30 хвилин.", "Each preview has a button to open that section with the appropriate role. Try actions without signing up. Your session's sample data resets after 30 minutes.")</p>
+</section>
+<section id="accountant" class="product-section role-section" aria-labelledby="accountant-title">
+    <h2 id="accountant-title">@L("Бухгалтеру: финансы и расходы", "Бухгалтеру: фінанси та витрати", "Accountant: finances and expenses")</h2>
+    <p class="section-description">@L("Общий финансовый обзор и подробный учёт расходов товарищества.", "Загальний фінансовий огляд і докладний облік витрат товариства.", "A financial overview and detailed association expense records.")</p>
+    <partial name="_DemoGallery" view-data="accountantScreens" />
+</section>
+<section id="administrator" class="product-section role-section" aria-labelledby="administrator-title">
+    <h2 id="administrator-title">@L("Администратору: участники и участки", "Адміністратору: учасники та ділянки", "Administrator: members and plots")</h2>
+    <p class="section-description">@L("Реестр участников, доступ к порталу и сведения об участках и владельцах.", "Реєстр учасників, доступ до порталу та відомості про ділянки й власників.", "Member records, portal access, plots and ownership details.")</p>
+    <partial name="_DemoGallery" view-data="administratorScreens" />
+</section>
+<section class="product-section connection-section">
+    <div><h2>@L("Хотите такой портал для своего товарищества?", "Хочете такий портал для свого товариства?", "Want this portal for your association?")</h2>
+    <p>@L("Расскажите о своих задачах — обсудим подключение и перенос данных.", "Розкажіть про свої завдання — обговоримо підключення та перенесення даних.", "Tell us what you need and we can discuss setup and data migration.")</p></div>
+    <a class="product-button" asp-page="/Product/Request" asp-route-culture="@System.Globalization.CultureInfo.CurrentUICulture.Name">@L("Обсудить подключение", "Обговорити підключення", "Discuss setup")</a>
+</section>

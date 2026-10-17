@@ -1,0 +1,670 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Finance: &#x422;&#x435;&#x441;&#x442;&#x43E;&#x432;&#x438;&#x439; &#x443;&#x447;&#x430;&#x441;&#x43D;&#x438;&#x43A; 01 - Test association</title>
+    <link rel="stylesheet" href="../../lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="../../css/site.css?v=DJfd_yOl0yoI4EWpeIZ0ybcQmboOfqptSwlP5s091ho" />
+    <link rel="stylesheet" href="../../Neftyanik.Portal.Web.styles.css" />
+<meta name="robots" content="noindex, nofollow" /><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; base-uri 'none'; form-action 'none'" /><style>body{pointer-events:none}.alert[role="status"]{display:none}html{overflow:hidden}</style></head>
+<body inert class="portal-body">
+    <header b-gz5t9dydb1 class="portal-header border-bottom">
+        <nav b-gz5t9dydb1 class="navbar navbar-expand-xl portal-navbar">
+            <div b-gz5t9dydb1 class="container">
+                <a class="navbar-brand portal-brand">
+                    <span b-gz5t9dydb1 class="portal-brand-line">
+                        <span b-gz5t9dydb1 class="portal-brand-title">Test association</span>
+                        <span b-gz5t9dydb1 class="portal-brand-subtitle">association portal</span>
+                    </span>
+                </a>
+                <div b-gz5t9dydb1 class="portal-header-tools">
+                    <button b-gz5t9dydb1 class="navbar-toggler d-xl-none" type="button" data-bs-toggle="collapse" data-bs-target="#portalNavbar" aria-controls="portalNavbar"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                        <span b-gz5t9dydb1 class="navbar-toggler-icon"></span>
+                    </button>
+                </div>
+                <div b-gz5t9dydb1 class="navbar-collapse collapse portal-navbar-collapse" id="portalNavbar">
+                    <div b-gz5t9dydb1 class="portal-navbar-content d-xl-flex justify-content-between align-items-xl-center w-100">
+                    <ul b-gz5t9dydb1 class="navbar-nav me-auto mb-3 mb-xl-0 align-items-xl-center portal-navbar-primary">
+                            <li b-gz5t9dydb1 class="nav-item">
+                                <a class="nav-link portal-nav-link">Member dashboard</a>
+                            </li>
+                    </ul>
+                    <ul b-gz5t9dydb1 class="navbar-nav portal-navbar-actions align-items-stretch align-items-xl-center justify-content-xl-end gap-2 gap-xl-2">
+                        <li b-gz5t9dydb1 class="nav-item">
+                            <div>
+                                
+                                <label b-gz5t9dydb1 class="visually-hidden" for="page-culture-selector">Language</label>
+                                <select b-gz5t9dydb1 id="page-culture-selector" name="culture" class="form-select form-select-sm" data-auto-submit="culture-selector">
+                                    <option value="ru-RU">Русский</option>
+                                    <option value="uk-UA">Українська</option>
+                                    <option value="en-US" selected="selected">English</option>
+                                </select>
+                            </div>
+                        </li>
+                            <li b-gz5t9dydb1 class="nav-item">
+                                <span b-gz5t9dydb1 class="navbar-text portal-user-pill" title="&#x414;&#x435;&#x43C;&#x43E;: &#x443;&#x447;&#x430;&#x441;&#x43D;&#x438;&#x43A;">&#x414;&#x435;&#x43C;&#x43E;: &#x443;&#x447;&#x430;&#x441;&#x43D;&#x438;&#x43A;</span>
+                            </li>
+                            <li b-gz5t9dydb1 class="nav-item">
+                                <div>
+                                    <button b-gz5t9dydb1 type="submit" class="btn btn-link nav-link portal-nav-link portal-logout-button px-0">Log out</button>
+                                </div>
+                            </li>
+                    </ul>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div b-gz5t9dydb1 class="container portal-main-shell portal-main-wide">
+            <div class="alert alert-info d-flex flex-wrap gap-3 justify-content-between align-items-center mt-3" role="status">
+        <div><strong>Test association</strong><br />
+        Fictional data. You can try actions. This session ends in
+        30 min. Changes will then be discarded.</div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a class="btn btn-outline-primary">Choose screen / restart</a>
+            <a class="btn btn-primary">Sign in to Neftyanik</a>
+        </div>
+    </div>
+
+
+
+        <main b-gz5t9dydb1 role="main" class="portal-main pb-3">
+            
+<div class="member-dashboard">
+    <section class="member-dashboard-header mb-4">
+        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-start gap-4">
+            <div class="member-dashboard-hero-copy">
+                <span class="portal-kicker">Member dashboard</span>
+                <h1 class="member-dashboard-title mt-3 mb-2">&#x422;&#x435;&#x441;&#x442;&#x43E;&#x432;&#x438;&#x439; &#x443;&#x447;&#x430;&#x441;&#x43D;&#x438;&#x43A; 01</h1>
+                <p class="member-dashboard-subtitle mb-0">A single view of your profile, plots, payments, and charges.</p>
+            </div>
+
+            <div class="member-dashboard-actions d-flex gap-2 flex-wrap">
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#paymentNotificationModal">Notify about payment</button>
+
+                        <a class="btn btn-outline-primary">Enter meter readings</a>
+            </div>
+        </div>
+    </section>
+
+        <details class="card card-body mb-4">
+            <summary class="h5 mb-0">Как оплатить</summary>
+            <div class="mt-3">
+                    <p>&#x415;&#x43B;&#x435;&#x43A;&#x442;&#x440;&#x43E;&#x435;&#x43D;&#x435;&#x440;&#x433;&#x456;&#x44F;: <strong>345.60 грн</strong></p>
+ <p>Реквизиты ещё не заполнены. Уточните способ оплаты у бухгалтера.</p>                 <p></p>
+                <p>После перевода отправьте уведомление. Платёж появится в истории после подтверждения бухгалтером.</p>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#paymentNotificationModal">Я оплатил</button>
+            </div>
+        </details>
+
+
+
+        <div>
+            
+            <div>
+                <label class="form-label" for="Year">Financial year</label>
+                <select class="form-select" data-val="true" data-val-required="The Year field is required." id="Year" name="Year">
+                        <option value="2026" selected="selected">2026</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-outline-primary">Show</button>
+            <p class="small text-muted mb-1 ms-md-2">Charges and payments are for the selected year. Balance includes prior years. Cancelled transactions are excluded.</p>
+        </div>
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-5 g-3 mb-4">
+            <div class="col">
+                <div class="card h-100 member-dashboard-summary-card">
+                    <div class="card-body">
+                        <h2 class="member-dashboard-summary-label">Active plots</h2>
+                        <p class="member-dashboard-summary-value mb-0">1</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 member-dashboard-summary-card">
+                    <div class="card-body">
+                        <h2 class="member-dashboard-summary-label">Opening debt</h2>
+                        <p class="member-dashboard-summary-value mb-1 text-success">0.00 <span class="member-dashboard-currency">₴</span></p>
+                        <div class="member-dashboard-balance-note text-muted">As of 01.01.2026</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 member-dashboard-summary-card">
+                    <div class="card-body">
+                        <h2 class="member-dashboard-summary-label">Charged · 2026</h2>
+                        <p class="member-dashboard-summary-value mb-0">1545.60 <span class="member-dashboard-currency">₴</span></p>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 member-dashboard-summary-card">
+                    <div class="card-body">
+                        <h2 class="member-dashboard-summary-label">Paid · 2026</h2>
+                        <p class="member-dashboard-summary-value mb-0">1200.00 <span class="member-dashboard-currency">₴</span></p>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 member-dashboard-summary-card">
+                    <div class="card-body">
+                        <h2 class="member-dashboard-summary-label">Balance · 2026</h2>
+                        <p class="member-dashboard-summary-value mb-1 text-danger">345.60 <span class="member-dashboard-currency">₴</span></p>
+                        <div class="member-dashboard-balance-note text-danger">Debt</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+            <p class="small text-muted mb-2">Electricity shows the current status, regardless of the selected year.</p>
+            <section class="card shadow-sm mb-4 electricity-finance-summary" aria-label="Electricity">
+    <div class="card-body">
+        <h2 class="h5 mb-3">Electricity</h2>
+        <div class="row g-3">
+            <div class="col-lg-6">
+                <h3 class="h6 text-muted">Meter readings</h3>
+                    <div class="mb-2">
+                        <div class="small text-muted">&#x41B;&#x456;&#x447;&#x438;&#x43B;&#x44C;&#x43D;&#x438;&#x43A; &#x434;&#x456;&#x43B;&#x44F;&#x43D;&#x43A;&#x438; 01 · Plot 01</div>
+                            <div>Latest readings: <span>11.10.2026 — 1080 kWh</span>
+</div>
+                            <div class="text-success">This month&#x27;s readings submitted</div>
+                        <div class="small text-muted mt-1">
+                            Previous month&#x27;s readings (September 2026):
+                                <span>11.09.2026 — 1000 kWh</span>
+
+                        </div>
+                    </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <h3 class="h6 text-muted">Payment of previous month&#x27;s charges · September 2026</h3>
+                <p class="h5 text-muted">No charges</p>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <h3 class="h6 text-muted">Total electricity outstanding</h3>
+                <p class="h4 text-danger">345.60 ₴</p>
+                <div class="small text-muted">All unpaid charges, including earlier months.</div>
+            </div>
+        </div>
+        <p class="small text-muted mt-3 mb-0">Payments count after they are allocated to electricity charges.</p>
+    </div>
+</section>
+
+        <div class="member-dashboard-tabs mb-4">
+            <div class="nav member-dashboard-tab-list" id="memberDashboardTabs" role="tablist" aria-label="Member dashboard sections">
+                <button class="nav-link member-dashboard-tab-button active" id="member-dashboard-overview-tab" data-bs-toggle="tab" data-bs-target="#member-dashboard-overview-pane" type="button" role="tab" aria-controls="member-dashboard-overview-pane" aria-selected="true" data-member-dashboard-tab="true">Overview</button>
+                <button class="nav-link member-dashboard-tab-button" id="member-dashboard-charges-tab" data-bs-toggle="tab" data-bs-target="#member-dashboard-charges-pane" type="button" role="tab" aria-controls="member-dashboard-charges-pane" aria-selected="false" data-member-dashboard-tab="true">Charges</button>
+                <button class="nav-link member-dashboard-tab-button" id="member-dashboard-payments-tab" data-bs-toggle="tab" data-bs-target="#member-dashboard-payments-pane" type="button" role="tab" aria-controls="member-dashboard-payments-pane" aria-selected="false" data-member-dashboard-tab="true">Payments</button>
+                <button class="nav-link member-dashboard-tab-button" id="member-dashboard-electricity-tab" data-bs-toggle="tab" data-bs-target="#member-dashboard-electricity-pane" type="button" role="tab" aria-controls="member-dashboard-electricity-pane" aria-selected="false" data-member-dashboard-tab="true">Electricity</button>
+                <button class="nav-link member-dashboard-tab-button" id="member-dashboard-profile-tab" data-bs-toggle="tab" data-bs-target="#member-dashboard-profile-pane" type="button" role="tab" aria-controls="member-dashboard-profile-pane" aria-selected="false" data-member-dashboard-tab="true">Profile</button>
+            </div>
+        </div>
+        <div class="tab-content member-dashboard-tab-content" id="memberDashboardTabContent">
+            <div class="tab-pane fade show active member-dashboard-tab-pane" id="member-dashboard-overview-pane" role="tabpanel" aria-labelledby="member-dashboard-overview-tab" tabindex="0">
+                <div class="card member-dashboard-section-card mb-4">
+                    <div class="card-header bg-white member-dashboard-section-header">
+                        <h2 class="h5 mb-0">Plots · 2026</h2>
+                        <p class="small text-muted mb-0">Figures for your current plots. Balance includes the opening balance.</p>
+                    </div>
+                    <div class="card-body p-0">
+                            <div class="table-responsive member-dashboard-table-wrap">
+                                <table class="table member-dashboard-table align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Plot</th>
+                                            <th>Address</th>
+                                            <th>Charged</th>
+                                            <th>Paid</th>
+                                            <th>Balance</th>
+                                            <th>Status</th>
+                                            <th class="text-end">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                            <tr>
+                                                <td class="fw-semibold">01 </td>
+                                                <td>&#x41D;&#x430;&#x432;&#x447;&#x430;&#x43B;&#x44C;&#x43D;&#x430; &#x432;&#x443;&#x43B;&#x438;&#x446;&#x44F;, 1</td>
+                                                <td>1545.60 <span class="member-dashboard-currency">₴</span></td>
+                                                <td>1200.00 <span class="member-dashboard-currency">₴</span></td>
+                                                <td class="text-danger">345.60 <span class="member-dashboard-currency">₴</span></td>
+                                                <td>Debt</td>
+                                                <td class="text-end">
+                                                    <a class="btn btn-sm btn-outline-primary">Finance</a>
+                                                </td>
+                                            </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                    </div>
+                </div>
+
+                <div class="card member-dashboard-section-card mb-4">
+                    <div class="card-header bg-white member-dashboard-section-header">
+                        <div>
+                            <h2 class="h5 mb-1">Recent payment notifications</h2>
+                            <p class="member-dashboard-section-subtitle mb-0">A history of submitted notifications and their current status.</p>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                            <div class="p-4 text-center text-muted member-dashboard-empty-state">No payment notifications have been sent yet.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade member-dashboard-tab-pane" id="member-dashboard-charges-pane" role="tabpanel" aria-labelledby="member-dashboard-charges-tab" tabindex="0">
+                <div class="row g-4">
+                    <div class="col-12">
+                        <div class="card member-dashboard-section-card h-100" id="charge-history" data-finance-history data-page="1" data-page-parameter="chargePage">
+                            <div class="card-header bg-white member-dashboard-section-header">
+                                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                                    <h2 class="h5 mb-0">Charges · 2026</h2>
+                                    <div>
+                                        
+                                        
+                                        <select class="form-select form-select-sm" id="ChargeTypeId" name="ChargeTypeId">
+                                            <option value="">All types</option>
+                                        <option value="1">&#x415;&#x43B;&#x435;&#x43A;&#x442;&#x440;&#x43E;&#x435;&#x43D;&#x435;&#x440;&#x433;&#x456;&#x44F;</option>
+<option value="2">&#x427;&#x43B;&#x435;&#x43D;&#x441;&#x44C;&#x43A;&#x456; &#x432;&#x43D;&#x435;&#x441;&#x43A;&#x438;</option>
+</select>
+                                        <div class="d-flex gap-2">
+                                            <button type="submit" class="btn btn-sm btn-outline-primary">Filter</button>
+                                            <a class="btn btn-sm btn-outline-secondary" data-history-reset>Reset</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body p-0">
+                                    <div class="table-responsive member-dashboard-table-wrap">
+                                        <table class="table member-dashboard-table align-middle mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th>Date</th>
+                                                    <th>Plot</th>
+                                                    <th>Type</th>
+                                                    <th>Amount</th>
+                                                    <th>Due</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                     <tr class="">
+                                                        <td>11.10.2026</td>
+                                                        <td>01</td>
+                                                        <td>&#x415;&#x43B;&#x435;&#x43A;&#x442;&#x440;&#x43E;&#x435;&#x43D;&#x435;&#x440;&#x433;&#x456;&#x44F;</td>
+                                                         <td>
+                                                             <span>345.60 <span class="member-dashboard-currency">₴</span></span>
+                                                         </td>
+                                                        <td>&#x2014;</td>
+                                                    </tr>
+                                                        <tr class="member-dashboard-table-note-row">
+                                                             <td colspan="5" class="small text-muted">
+                                                                        <div>Previous readings:
+            <span>11.09.2026 — 1000 kWh</span>
+
+    </div>
+    <div>
+        Readings at charge date:
+        <span>11.10.2026 — 1080 kWh</span>
+
+    </div>
+
+                                                            </td>
+                                                        </tr>
+                                                     <tr class="">
+                                                        <td>16.09.2026</td>
+                                                        <td>01</td>
+                                                        <td>&#x427;&#x43B;&#x435;&#x43D;&#x441;&#x44C;&#x43A;&#x456; &#x432;&#x43D;&#x435;&#x441;&#x43A;&#x438;</td>
+                                                         <td>
+                                                             <span>1200.00 <span class="member-dashboard-currency">₴</span></span>
+                                                         </td>
+                                                        <td>31.10.2026</td>
+                                                    </tr>
+                                                        <tr class="member-dashboard-table-note-row">
+                                                             <td colspan="5" class="small text-muted">
+                                                                    <div><strong>Description:</strong> &#x41D;&#x430;&#x432;&#x447;&#x430;&#x43B;&#x44C;&#x43D;&#x435; &#x43D;&#x430;&#x440;&#x430;&#x445;&#x443;&#x432;&#x430;&#x43D;&#x43D;&#x44F; &#x447;&#x43B;&#x435;&#x43D;&#x441;&#x44C;&#x43A;&#x438;&#x445; &#x432;&#x43D;&#x435;&#x441;&#x43A;&#x456;&#x432;</div>
+                                                            </td>
+                                                        </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade member-dashboard-tab-pane" id="member-dashboard-payments-pane" role="tabpanel" aria-labelledby="member-dashboard-payments-tab" tabindex="0">
+                <div class="row g-4">
+                    <div class="col-12">
+                        <div class="card member-dashboard-section-card h-100" id="payment-history" data-finance-history data-page="1" data-page-parameter="paymentPage">
+                            <div class="card-header bg-white member-dashboard-section-header">
+                                <h2 class="h5 mb-0">Payments · 2026</h2>
+                            </div>
+                            <div class="card-body p-0">
+                                    <div class="table-responsive member-dashboard-table-wrap">
+                                        <table class="table member-dashboard-table align-middle mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th>Date</th>
+                                                    <th>Plot</th>
+                                                    <th>Amount</th>
+                                                    <th>Method</th>
+                                                    <th>Document</th>
+                                                    <th class="text-end">Receipt</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                     <tr class="">
+                                                        <td>06.10.2026</td>
+                                                        <td>01</td>
+                                                         <td>
+                                                             <span>1200.00 <span class="member-dashboard-currency">₴</span></span>
+                                                         </td>
+                                                        <td>Cash</td>
+                                                        <td>&#x2014;</td>
+                                                        <td class="text-end">
+                                                            <a class="btn btn-sm btn-outline-secondary">Receipt</a>
+                                                        </td>
+                                                    </tr>
+                                                        <tr class="member-dashboard-table-note-row">
+                                                             <td colspan="6" class="small text-muted">
+                                                                    <div><strong>Description:</strong> &#x41D;&#x430;&#x432;&#x447;&#x430;&#x43B;&#x44C;&#x43D;&#x438;&#x439; &#x43F;&#x43B;&#x430;&#x442;&#x456;&#x436;</div>
+                                                            </td>
+                                                        </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade member-dashboard-tab-pane" id="member-dashboard-electricity-pane" role="tabpanel" aria-labelledby="member-dashboard-electricity-tab" tabindex="0">
+                    <div class="card member-dashboard-section-card">
+                        <div class="card-header bg-white member-dashboard-section-header">
+                            <h2 class="h5 mb-0">Electricity meters</h2>
+                        </div>
+                        <div class="card-body p-0">
+                                <div class="table-responsive member-dashboard-table-wrap">
+                                    <table class="table member-dashboard-table align-middle mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Meter</th>
+                                                <th>Billing plot</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                                <tr>
+                                                    <td class="fw-semibold">&#x41B;&#x456;&#x447;&#x438;&#x43B;&#x44C;&#x43D;&#x438;&#x43A; &#x434;&#x456;&#x43B;&#x44F;&#x43D;&#x43A;&#x438; 01</td>
+                                                    <td>01</td>
+                                                    <td>
+                                                            <span class="badge bg-success text-white">Ready</span>
+                                                    </td>
+                                                </tr>
+                                                <tr class="member-dashboard-table-note-row">
+                                                    <td colspan="3">
+                                                        <div class="small">
+                                                            <div class="fw-semibold mb-2">Reading history</div>
+
+                                                                <div class="d-flex flex-column gap-2 py-1">
+                                                                        <div class="border rounded px-2 py-1 bg-light-subtle">
+                                                                            <div class="d-flex flex-wrap justify-content-between gap-2">
+                                                                                <span class="fw-semibold">11.10.2026</span>
+                                                                                <span>1080.000 кВт·ч</span>
+                                                                            </div>
+                                                                            <div class="d-flex flex-wrap gap-3 text-muted mt-1">
+                                                                                    <span>Consumption: 80.000</span>
+
+                                                                                    <span>Charge: 345.60 <span class="member-dashboard-currency">₴</span></span>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="border rounded px-2 py-1 bg-light-subtle">
+                                                                            <div class="d-flex flex-wrap justify-content-between gap-2">
+                                                                                <span class="fw-semibold">11.09.2026</span>
+                                                                                <span>1000.000 кВт·ч</span>
+                                                                            </div>
+                                                                            <div class="d-flex flex-wrap gap-3 text-muted mt-1">
+                                                                                    <span>Initial reading</span>
+
+                                                                            </div>
+                                                                        </div>
+                                                                </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                        </div>
+                    </div>
+            </div>
+
+            <div class="tab-pane fade member-dashboard-tab-pane" id="member-dashboard-profile-pane" role="tabpanel" aria-labelledby="member-dashboard-profile-tab" tabindex="0">
+                <div class="card member-dashboard-section-card member-dashboard-profile-card">
+                    <div class="card-header bg-white member-dashboard-section-header member-dashboard-profile-header">
+                        <div>
+                            <h2 class="h5 mb-0">Basic information</h2>
+                        </div>
+                    </div>
+                    <div class="card-body member-dashboard-profile-body">
+                        <div class="member-dashboard-profile-layout">
+                            <dl class="member-dashboard-info-list mb-0">
+                                <div class="member-dashboard-info-item">
+                                    <dt>Full name</dt>
+                                    <dd>&#x422;&#x435;&#x441;&#x442;&#x43E;&#x432;&#x438;&#x439; &#x443;&#x447;&#x430;&#x441;&#x43D;&#x438;&#x43A; 01</dd>
+                                </div>
+                                <div class="member-dashboard-info-item">
+                                    <dt>Phone</dt>
+                                    <dd>Not provided</dd>
+                                </div>
+                                <div class="member-dashboard-info-item">
+                                    <dt>Email</dt>
+                                    <dd>Not provided</dd>
+                                </div>
+                            </dl>
+
+                            <dl class="member-dashboard-status-list mb-0">
+                                <div class="member-dashboard-status-item">
+                                    <dt>Status</dt>
+                                    <dd class="member-dashboard-status-value member-dashboard-status-positive">Active</dd>
+                                </div>
+                                <div class="member-dashboard-status-item">
+                                    <dt>Financial status</dt>
+                                    <dd class="member-dashboard-status-value text-danger">Debt</dd>
+                                </div>
+                            </dl>
+                        </div>
+
+                        <div class="form-text mt-2">The sign-in login can be changed by an administrator.</div>
+
+                        <div class="mt-3 d-flex gap-2 flex-wrap">
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editProfileModal">Edit</button>
+                            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Change password</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="editProfileModalLabel">Edit information</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div>
+                    <div class="modal-body">
+                        
+                        
+                        
+                                        
+
+                        
+
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label" for="Profile_FullName">Full name</label>
+                                <input class="form-control" type="text" data-val="true" data-val-required="The FullName field is required." id="Profile_FullName" name="Profile.FullName" value="&#x422;&#x435;&#x441;&#x442;&#x43E;&#x432;&#x438;&#x439; &#x443;&#x447;&#x430;&#x441;&#x43D;&#x438;&#x43A; 01" />
+                                <span class="text-danger field-validation-valid" data-valmsg-for="Profile.FullName" data-valmsg-replace="true"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="Profile_PhoneNumber">Phone</label>
+                                <input class="form-control" type="text" id="Profile_PhoneNumber" name="Profile.PhoneNumber" value="" />
+                                <span class="text-danger field-validation-valid" data-valmsg-for="Profile.PhoneNumber" data-valmsg-replace="true"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="Profile_Email">Email</label>
+                                <input class="form-control" type="text" id="Profile_Email" name="Profile.Email" value="" />
+                                <span class="text-danger field-validation-valid" data-valmsg-for="Profile.Email" data-valmsg-replace="true"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="changePasswordModalLabel">Change password</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div>
+                    <div class="modal-body">
+                        
+                        
+                        
+                                        
+
+                        
+
+                        <div class="mb-3">
+                            <label class="form-label" for="ChangePassword_CurrentPassword">Current password</label>
+                            <input class="form-control" type="password" autocomplete="current-password" data-val="true" data-val-required="The CurrentPassword field is required." id="ChangePassword_CurrentPassword" name="ChangePassword.CurrentPassword" />
+                            <span class="text-danger field-validation-valid" data-valmsg-for="ChangePassword.CurrentPassword" data-valmsg-replace="true"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="ChangePassword_NewPassword">New password</label>
+                            <input class="form-control" type="password" autocomplete="new-password" data-val="true" data-val-required="The NewPassword field is required." id="ChangePassword_NewPassword" name="ChangePassword.NewPassword" />
+                            <span class="text-danger field-validation-valid" data-valmsg-for="ChangePassword.NewPassword" data-valmsg-replace="true"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="ChangePassword_ConfirmNewPassword">Confirm new password</label>
+                            <input class="form-control" type="password" autocomplete="new-password" data-val="true" data-val-required="The ConfirmNewPassword field is required." id="ChangePassword_ConfirmNewPassword" name="ChangePassword.ConfirmNewPassword" />
+                            <span class="text-danger field-validation-valid" data-valmsg-for="ChangePassword.ConfirmNewPassword" data-valmsg-replace="true"></span>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Change password</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="paymentNotificationModal" tabindex="-1" aria-labelledby="paymentNotificationModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="paymentNotificationModalLabel">Payment notification</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div>
+                    <div class="modal-body">
+                        
+                        
+                        
+                                        
+
+                        
+
+                        <div class="mb-3">
+                            <label class="form-label" for="PaymentNotification_Amount">Amount</label>
+                            <input class="form-control" type="number" step="0.01" min="0.01" inputmode="decimal" autocomplete="off" data-val="true" data-val-number="The field Amount must be a number." id="PaymentNotification_Amount" name="PaymentNotification.Amount" value="" />
+                            <span class="text-danger field-validation-valid" data-valmsg-for="PaymentNotification.Amount" data-valmsg-replace="true"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="PaymentNotification_PaymentMethod">Payment method</label>
+                            <select class="form-select" id="PaymentNotification_PaymentMethod" name="PaymentNotification.PaymentMethod">
+                                <option value="">Select a payment method</option>
+                            <option value="Cash">Cash</option>
+<option value="Card">Card transfer</option>
+</select>
+                            <span class="text-danger field-validation-valid" data-valmsg-for="PaymentNotification.PaymentMethod" data-valmsg-replace="true"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="PaymentNotification_Description">Description</label>
+                            <textarea class="form-control" rows="3" id="PaymentNotification_Description" name="PaymentNotification.Description">
+</textarea>
+                            <span class="text-danger field-validation-valid" data-valmsg-for="PaymentNotification.Description" data-valmsg-replace="true"></span>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="openPaymentNotificationConfirmation">Send notification</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="paymentNotificationConfirmationModal" tabindex="-1" aria-labelledby="paymentNotificationConfirmationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="paymentNotificationConfirmationModalLabel">Confirm notification</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0" id="paymentNotificationConfirmationMessage"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmPaymentNotification">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        </main>
+    </div>
+
+    <footer b-gz5t9dydb1 class="footer portal-footer text-muted">
+        <div b-gz5t9dydb1 class="container">
+            &copy; 2026 - Test association
+        </div>
+    </footer>
+
+    
+    
+    
+
+    
+    
+    
+
+
+
+    
+
+    
+
+
+
+
+</body>
+</html>
+

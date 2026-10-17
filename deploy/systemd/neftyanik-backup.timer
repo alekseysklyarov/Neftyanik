@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily Neftyanik database backup (optional example schedule)
+
+[Timer]
+OnCalendar=*-*-* 02:30:00 UTC
+Persistent=true
+RandomizedDelaySec=5m
+Unit=neftyanik-backup.service
+
+[Install]
+WantedBy=timers.target

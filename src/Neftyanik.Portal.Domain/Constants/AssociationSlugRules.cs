@@ -9,6 +9,6 @@ public static class AssociationSlugRules
 
     public static bool IsReserved(string slug) =>
         LegacyPageRoots.Contains(slug, StringComparer.OrdinalIgnoreCase)
-        || new[] { "platform", "health", "error", "home", "finance", "shared", "css", "js", "lib" }
+        || new[] { "platform", "product", "health", "error", "home", "finance", "shared", "css", "js", "lib" }
             .Contains(slug, StringComparer.OrdinalIgnoreCase);
 }

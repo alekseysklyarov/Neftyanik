@@ -12,6 +12,15 @@ x-web-common: &web-common
     ConnectionStrings__DefaultConnection: Server=sqlserver;Database=${DB_NAME};User ID=sa;Password=${MSSQL_SA_PASSWORD};Encrypt=True;TrustServerCertificate=True;MultipleActiveResultSets=true
     DataProtection__KeysDirectory: /var/aspnet-data-protection/keys
     ReverseProxy__KnownProxies__0: 172.30.0.3
+    AllowedHosts: ${ALLOWED_HOSTS:-*}
+    SalesNotifications__Enabled: ${SALES_NOTIFICATIONS_ENABLED:-false}
+    SalesNotifications__Recipient: ${SALES_NOTIFICATION_RECIPIENT:-sklyarova.natasha.v@gmail.com}
+    SalesNotifications__InboxUrl: ${SALES_INBOX_URL:-}
+    PlatformSmtp__Host: ${SMTP_HOST:-smtp.gmail.com}
+    PlatformSmtp__Port: ${SMTP_PORT:-587}
+    PlatformSmtp__UserName: ${SMTP_USERNAME:-sklyarova.natasha.v@gmail.com}
+    PlatformSmtp__From: ${SMTP_FROM:-sklyarova.natasha.v@gmail.com}
+    PlatformSmtp__Password: ${SMTP_PASSWORD:-}
   networks:
     - neftyanik_private
   depends_on:

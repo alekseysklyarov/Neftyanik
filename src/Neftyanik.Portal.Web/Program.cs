@@ -24,6 +24,7 @@ using Neftyanik.Portal.Web.Localization;
 using Neftyanik.Portal.Web.Security;
 using Neftyanik.Portal.Web.Associations;
 using Neftyanik.Portal.Application.Associations;
+using Neftyanik.Portal.Web.Demo;
 
 var isPlatformBootstrap = args.Length > 0 && string.Equals(args[0], "create-first-platform-admin", StringComparison.OrdinalIgnoreCase);
 var isPlatformLegacyInitialization = args.Length > 0 && string.Equals(args[0], Neftyanik.Portal.Web.Commands.PlatformLegacyInitializationCommand.Name, StringComparison.OrdinalIgnoreCase);
@@ -96,6 +97,11 @@ if (!string.IsNullOrWhiteSpace(dataProtectionKeysDirectory))
 }
 
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.Configure<Neftyanik.Portal.Web.Sales.SalesNotificationOptions>(builder.Configuration.GetSection("SalesNotifications"));
+builder.Services.AddScoped<Neftyanik.Portal.Web.Sales.SalesNotificationSettings>();
+if (!builder.Environment.IsEnvironment("Testing") && !isPlatformOperatorCommand
+    && !IsMigrateDatabaseCommand(args))
+    builder.Services.AddHostedService<Neftyanik.Portal.Web.Sales.SalesNotificationWorker>();
 if (isPlatformLegacyInitialization)
 {
     builder.Services.AddScoped<IPlatformLegacyInitialization, PlatformLegacyInitialization>();
@@ -124,6 +130,15 @@ builder.Services.Configure<IdentityOptions>(options => options.Tokens.ProviderMa
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("DemoEntry", context => HttpMethods.IsPost(context.Request.Method)
+        ? RateLimitPartition.GetFixedWindowLimiter(context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions
+        { PermitLimit = 15, Window = TimeSpan.FromMinutes(15), QueueLimit = 0 })
+        : RateLimitPartition.GetNoLimiter("read"));
+    options.AddPolicy("DemoRequests", context => HttpMethods.IsPost(context.Request.Method)
+        ? RateLimitPartition.GetFixedWindowLimiter(context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 5, Window = TimeSpan.FromMinutes(15), QueueLimit = 0
+        }) : RateLimitPartition.GetNoLimiter("read"));
     options.AddPolicy("PlatformRecovery", context => HttpMethods.IsPost(context.Request.Method)
         ? RateLimitPartition.GetFixedWindowLimiter((context.Connection.RemoteIpAddress?.ToString() ?? "unknown") + ":" + context.Request.Path.Value?.TrimEnd('/').ToLowerInvariant(), _ => new FixedWindowRateLimiterOptions
         {
@@ -132,7 +147,12 @@ builder.Services.AddRateLimiter(options =>
         })
         : RateLimitPartition.GetNoLimiter("read"));
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
-        PlatformAuthorization.IsPlatformRequest(context.Request) && HttpMethods.IsPost(context.Request.Method)
+        context.Request.Path.StartsWithSegments("/Product/Request", StringComparison.OrdinalIgnoreCase) && HttpMethods.IsPost(context.Request.Method)
+            ? RateLimitPartition.GetFixedWindowLimiter("demo-post", _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 100, Window = TimeSpan.FromMinutes(15), QueueLimit = 0
+            })
+        : PlatformAuthorization.IsPlatformRequest(context.Request) && HttpMethods.IsPost(context.Request.Method)
             ? RateLimitPartition.GetFixedWindowLimiter("platform-post", _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 100, Window = TimeSpan.FromMinutes(15), QueueLimit = 0
@@ -252,6 +272,7 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("RequireMember", policy => policy.RequireRole(RoleNames.Member));
 });
 
+PublicDemo.AddServices(builder.Services);
 var app = builder.Build();
 var requireHttps = IsHttpsRequired(app.Configuration, app.Environment);
 
@@ -322,6 +343,7 @@ app.UseCookiePolicy();
 app.UseRequestLocalization(LocalizationConfiguration.CreateOptions());
 app.UseStaticFiles();
 
+app.UseMiddleware<DemoWorkspaceMiddleware>();
 app.UseMiddleware<AssociationRoutingMiddleware>();
 
 app.UseStaticFiles();
