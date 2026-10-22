@@ -875,6 +875,13 @@ namespace Neftyanik.Portal.Infrastructure.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
+                    b.Property<string>("NextAction")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateOnly?>("NextActionDate")
+                        .HasColumnType("date");
+
                     b.Property<int>("NotificationAttemptCount")
                         .HasColumnType("int");
 
@@ -884,8 +891,36 @@ namespace Neftyanik.Portal.Infrastructure.Migrations
                     b.Property<DateTime?>("NotificationSentAtUtc")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Phone")
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<DateOnly?>("PilotEndDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("PilotNotes")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<Guid>("PilotRevision")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PilotStage")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("nvarchar(24)");
+
+                    b.Property<DateOnly?>("PilotStartDate")
+                        .HasColumnType("date");
+
                     b.Property<int?>("PlotCount")
                         .HasColumnType("int");
+
+                    b.Property<string>("PreferredContactMethod")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
 
                     b.HasKey("Id");
 

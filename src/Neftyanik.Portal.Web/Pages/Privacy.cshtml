@@ -1,8 +1,6 @@
 ﻿@page
 @model PrivacyModel
 @{
-    ViewData["Title"] = "Privacy Policy";
+    ViewData["Title"] = AppLocalizer.Get("Конфиденциальность", "Конфіденційність", "Privacy");
 }
-<h1>@ViewData["Title"]</h1>
-
-<p>Use this page to detail your site's privacy policy.</p>
+<partial name="_PrivacyContent" />

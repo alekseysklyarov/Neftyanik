@@ -36,7 +36,13 @@ public class IndexModel(ApplicationDbContext database, SalesNotificationSettings
         var request = await database.DemoRequests.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
         if (request is null) return NotFound();
         request.ContactedAtUtc = contacted ? request.ContactedAtUtc ?? DateTime.UtcNow : null;
-        await database.SaveChangesAsync(cancellationToken);
+        if (request.PilotStage is "new" or "contacted")
+            request.PilotStage = contacted ? "contacted" : "new";
+        else if (!contacted)
+            return RedirectToPage("Details", new { id });
+        request.PilotRevision = Guid.NewGuid();
+        try { await database.SaveChangesAsync(cancellationToken); }
+        catch (DbUpdateConcurrencyException) { return RedirectToPage("Details", new { id }); }
         return RedirectToPage(new { ShowContacted, PageNumber });
     }
 }

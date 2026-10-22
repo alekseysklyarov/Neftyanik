@@ -230,13 +230,13 @@ public class PlatformAdministrationTests
     }
 
     [Fact]
-    public async Task Routing_PreservesRootRedirectAndReservesPlatformSlug()
+    public async Task Routing_ShowsPublicHomeAndReservesPlatformSlug()
     {
         using var factory = new PortalWebApplicationFactory();
         using var client = factory.CreateAnonymousClient();
         using var response = await client.GetAsync("/");
-        Assert.Equal(HttpStatusCode.TemporaryRedirect, response.StatusCode);
-        Assert.Equal("/neftyanik/", response.Headers.Location?.OriginalString);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("/Product/Request", await response.Content.ReadAsStringAsync());
         Assert.Throws<InvalidOperationException>(() => new Association { Slug = "platform", Name = "Forbidden" }.ValidateSlug());
     }
 

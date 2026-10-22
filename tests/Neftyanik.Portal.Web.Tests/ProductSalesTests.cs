@@ -86,7 +86,8 @@ public class ProductSalesTests
             var request = Assert.Single(await db.DemoRequests.ToListAsync());
             Assert.Equal("Example Garden", request.AssociationName);
             Assert.Equal("Alex", request.ContactName);
-            Assert.Equal("demo-contact-v1", request.ConsentVersion);
+            Assert.Equal("pilot-contact-v2", request.ConsentVersion);
+            Assert.Equal("email", request.PreferredContactMethod);
             Assert.Null(request.ContactedAtUtc);
             Assert.Empty(await db.Members.ToListAsync());
         });
@@ -98,6 +99,10 @@ public class ProductSalesTests
     [InlineData("Input.ContactName", "   ")]
     [InlineData("Input.PlotCount", "-1")]
     [InlineData("Input.PlotCount", "1.5")]
+    [InlineData("Input.PreferredContactMethod", "unknown")]
+    [InlineData("Input.Email", "")]
+    [InlineData("Input.Phone", "+123")]
+    [InlineData("Input.Phone", "+380letters971234567")]
     public async Task InvalidSubmission_DoesNotPersist(string field, string value)
     {
         using var factory = new PortalWebApplicationFactory();
@@ -148,12 +153,19 @@ public class ProductSalesTests
         using var client = await CreateTenantClientAsync(app, role);
         using var denied = await client.GetAsync("/Platform/Requests");
         Assert.Equal(HttpStatusCode.Forbidden, denied.StatusCode);
+        using var deniedCard = await client.GetAsync("/Platform/Requests/Details/1");
+        Assert.Equal(HttpStatusCode.Forbidden, deniedCard.StatusCode);
         var token = await AuthenticationCookieTests.TokenAsync(client, "/Product/Request");
         using var post = await client.PostAsync("/Platform/Requests?handler=Status", new FormUrlEncodedContent(new Dictionary<string, string>
         {
             ["__RequestVerificationToken"] = token, ["id"] = "1", ["contacted"] = "true"
         }));
         Assert.Equal(HttpStatusCode.Forbidden, post.StatusCode);
+        using var cardPost = await client.PostAsync("/Platform/Requests/Details/1", new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["__RequestVerificationToken"] = token, ["Input.Stage"] = "contacted"
+        }));
+        Assert.Equal(HttpStatusCode.Forbidden, cardPost.StatusCode);
         foreach (var path in new[] { "/neftyanik/Product/Request", "/neftyanik/Product/Demo", "/neftyanik/Platform/Requests" })
         {
             using var nested = await client.GetAsync(path);
@@ -203,6 +215,53 @@ public class ProductSalesTests
         Assert.Contains($"data-request-id=\"{requestId}\"", await contacted.Content.ReadAsStringAsync());
         await using var check = app.Services.CreateAsyncScope();
         Assert.NotNull((await check.ServiceProvider.GetRequiredService<ApplicationDbContext>().DemoRequests.SingleAsync()).ContactedAtUtc);
+    }
+
+    [Theory]
+    [InlineData("phone")]
+    [InlineData("viber")]
+    [InlineData("telegram")]
+    public async Task PhoneContact_RequiresPhoneAndPersistsNormalizedNumberWithoutEmail(string method)
+    {
+        using var factory = new PortalWebApplicationFactory();
+        using var client = factory.CreateAnonymousClient();
+        var fields = ValidFields(await AuthenticationCookieTests.TokenAsync(client, "/Product/Request"));
+        fields["Input.PreferredContactMethod"] = method;
+        fields["Input.Email"] = "";
+        using var missing = await client.PostAsync("/Product/Request", new FormUrlEncodedContent(fields));
+        Assert.Equal(HttpStatusCode.OK, missing.StatusCode);
+        await factory.ExecuteDbContextAsync(async db => Assert.Empty(await db.DemoRequests.ToListAsync()));
+        fields["Input.Phone"] = "+380 (97) 123-45-67";
+        using var submitted = await client.PostAsync("/Product/Request", new FormUrlEncodedContent(fields));
+        Assert.Equal(HttpStatusCode.Redirect, submitted.StatusCode);
+        await factory.ExecuteDbContextAsync(async db =>
+        {
+            var request = Assert.Single(await db.DemoRequests.ToListAsync());
+            Assert.Equal(method, request.PreferredContactMethod);
+            Assert.Equal("+380971234567", request.Phone);
+            Assert.Equal("", request.Email);
+            Assert.Equal("pilot-contact-v2", request.ConsentVersion);
+        });
+    }
+
+    [Theory]
+    [InlineData("ru-RU", "Конфиденциальность и персональные данные")]
+    [InlineData("uk-UA", "Конфіденційність і персональні дані")]
+    [InlineData("en-US", "Privacy and personal data")]
+    public async Task PublicPrivacy_IsLocalizedAndLinkedFromHomeAndConsent(string culture, string heading)
+    {
+        using var factory = new PortalWebApplicationFactory();
+        using var client = factory.CreateAnonymousClient(cultureName: culture);
+        using var privacy = await client.GetAsync("/Product/Privacy");
+        Assert.Equal(HttpStatusCode.OK, privacy.StatusCode);
+        var html = await privacy.ReadDecodedHtmlAsync();
+        Assert.Contains(heading, html);
+        Assert.Contains("mailto:sklyarova.natasha.v@gmail.com", html);
+        foreach (var path in new[] { "/", "/Product/Request" })
+        {
+            using var page = await client.GetAsync(path);
+            Assert.Contains("/Product/Privacy", await page.Content.ReadAsStringAsync());
+        }
     }
 
     private static async Task<HttpClient> CreateTenantClientAsync(WebApplicationFactory<Program> app, string role)

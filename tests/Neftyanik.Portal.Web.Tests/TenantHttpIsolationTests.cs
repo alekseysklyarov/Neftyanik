@@ -219,7 +219,7 @@ public class TenantHttpIsolationTests
     [Theory]
     [InlineData("neftyanik")]
     [InlineData("second")]
-    public async Task NavigationFormsAndPagination_KeepCurrentTenantPrefix(string slug)
+    public async Task NavigationFormsAndPagination_KeepCurrentTenantPrefixExceptPublicDocumentation(string slug)
     {
         using var factory = new PortalWebApplicationFactory();
         await SeedAsync(factory);
@@ -234,7 +234,9 @@ public class TenantHttpIsolationTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var paths = Regex.Matches(html, "(?:href|action|src)=\"(?<path>/[^\"]*)\"").Select(match => match.Groups["path"].Value).ToArray();
         Assert.NotEmpty(paths);
-        Assert.All(paths, path => Assert.True(path == $"/{slug}" || path.StartsWith($"/{slug}/", StringComparison.Ordinal), path));
+        Assert.Contains(paths, path => path.Split('?')[0] == "/Product/Documentation");
+        Assert.All(paths, path => Assert.True(path.Split('?')[0] == "/Product/Documentation"
+            || path == $"/{slug}" || path.StartsWith($"/{slug}/", StringComparison.Ordinal), path));
         Assert.Contains(paths, path => path.Contains("Localization/SetLanguage", StringComparison.Ordinal));
         Assert.Contains(paths, path => path.Contains("Account/Logout", StringComparison.Ordinal));
         Assert.Contains(paths, path => path.Contains('?', StringComparison.Ordinal));

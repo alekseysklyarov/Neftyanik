@@ -25,7 +25,24 @@
 {
     <article class="card mb-3" data-request-id="@request.Id"><div class="card-body">
         <div class="d-flex flex-wrap justify-content-between gap-2"><h2 class="h5">#@request.Id · @request.AssociationName</h2><span class="text-muted">@request.CreatedAtUtc.ToString("dd.MM.yyyy HH:mm") UTC</span></div>
-        <dl class="row"><dt class="col-sm-3">@L("Контакт", "Контакт", "Contact")</dt><dd class="col-sm-9">@request.ContactName</dd><dt class="col-sm-3">Email</dt><dd class="col-sm-9 text-break">@request.Email</dd><dt class="col-sm-3">@L("Участков", "Ділянок", "Plots")</dt><dd class="col-sm-9">@(request.PlotCount?.ToString() ?? "—")</dd></dl>
+        <dl class="row"><dt class="col-sm-3">@L("Контакт", "Контакт", "Contact")</dt><dd class="col-sm-9">@request.ContactName</dd><dt class="col-sm-3">Email</dt><dd class="col-sm-9 text-break">@(string.IsNullOrWhiteSpace(request.Email) ? "—" : request.Email)</dd><dt class="col-sm-3">@L("Участков", "Ділянок", "Plots")</dt><dd class="col-sm-9">@(request.PlotCount?.ToString() ?? "—")</dd></dl>
+        <dl class="row">
+            <dt class="col-sm-3">@L("Способ связи", "Спосіб зв’язку", "Contact method")</dt>
+            <dd class="col-sm-9">@(request.PreferredContactMethod switch { "phone" => L("Звонок", "Дзвінок", "Phone call"), "viber" => "Viber", "telegram" => "Telegram", _ => "Email" })</dd>
+            @if (!string.IsNullOrWhiteSpace(request.Phone))
+            {
+                <dt class="col-sm-3">@L("Телефон", "Телефон", "Phone")</dt><dd class="col-sm-9 text-break">@request.Phone</dd>
+            }
+        </dl>
+        <p><span class="badge bg-secondary">@Neftyanik.Portal.Web.Sales.PilotStages.Label(request.PilotStage)</span> <a asp-page="Details" asp-route-id="@request.Id">@L("Карточка пилота", "Картка пілоту", "Pilot card") →</a></p>
+        @if (!string.IsNullOrWhiteSpace(request.NextAction))
+        {
+            <p class="text-break"><strong>@L("Далее:", "Далі:", "Next:")</strong> @request.NextAction @if (request.NextActionDate.HasValue) { <span> · @request.NextActionDate.Value.ToString("dd.MM.yyyy")</span> }</p>
+        }
+        @if (request.PilotStartDate.HasValue && request.PilotEndDate.HasValue)
+        {
+            <p>@L("Пилот:", "Пілот:", "Pilot:") @request.PilotStartDate.Value.ToString("dd.MM.yyyy") — @request.PilotEndDate.Value.ToString("dd.MM.yyyy")</p>
+        }
         @if (!string.IsNullOrWhiteSpace(request.Message)) { <p class="text-break" style="white-space: pre-wrap">@request.Message</p> }
         @if (request.ContactedAtUtc.HasValue) { <p class="text-muted">@L("Связались:", "Зв’язалися:", "Contacted:") @request.ContactedAtUtc.Value.ToString("dd.MM.yyyy HH:mm") UTC</p> }
         <p class="small text-muted">
@@ -47,7 +64,10 @@
                 }
             }
         </p>
+        @if (!string.IsNullOrWhiteSpace(request.Email))
+        {
         <p><a class="btn btn-primary" href="@($"mailto:{Uri.EscapeDataString(request.Email)}?subject={Uri.EscapeDataString("DachaHub: " + request.AssociationName.Replace("\r", " ").Replace("\n", " "))}")">@L("Ответить по email", "Відповісти на email", "Reply by email") →</a></p>
+        }
         <form method="post" asp-page-handler="Status" asp-route-showContacted="@Model.ShowContacted" asp-route-pageNumber="@Model.PageNumber" asp-antiforgery="true">
             <input type="hidden" name="id" value="@request.Id" /><input type="hidden" name="contacted" value="@(!Model.ShowContacted ? "true" : "false")" />
             <button class="btn btn-outline-primary" type="submit">@(Model.ShowContacted ? L("Вернуть в новые", "Повернути до нових", "Move to new") : L("Отметить: связались", "Позначити: зв’язалися", "Mark as contacted"))</button>

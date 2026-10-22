@@ -144,6 +144,7 @@
     <footer class="footer portal-footer text-muted">
         <div class="container">
             &copy; 2026 - @associationName
+            <span class="ms-3"><a asp-page="/Privacy" asp-route-culture="@currentCulture">@AppLocalizer.Get("Конфиденциальность", "Конфіденційність", "Privacy")</a></span>
             <span class="ms-3"><a href="@documentationUrl">@AppLocalizer.Get("Документация", "Документація", "Documentation")</a></span>
         </div>
     </footer>

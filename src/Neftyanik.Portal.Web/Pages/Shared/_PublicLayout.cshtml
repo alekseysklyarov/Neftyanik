@@ -40,7 +40,7 @@
         </nav>
     </header>
     <main id="main" class="product-container">@RenderBody()</main>
-    <footer class="product-footer product-container"><span>© @DateTime.UtcNow.Year DachaHub</span><a asp-page="/Product/Pricing" asp-route-culture="@culture">@AppLocalizer.Get("Стоимость и сопровождение", "Вартість і супровід", "Pricing and support")</a><a asp-page="/Product/Request" asp-route-culture="@culture">@AppLocalizer.Get("Подключить товарищество", "Підключити товариство", "Connect your association")</a><a asp-page="/Product/Documentation" asp-route-culture="@culture">@AppLocalizer.Get("Документация", "Документація", "Documentation")</a></footer>
+    <footer class="product-footer product-container"><span>© @DateTime.UtcNow.Year DachaHub</span><a asp-page="/Product/Pricing" asp-route-culture="@culture">@AppLocalizer.Get("Первые подключения", "Перші підключення", "Early adopters")</a><a asp-page="/Product/Request" asp-route-culture="@culture">@AppLocalizer.Get("Подключить товарищество", "Підключити товариство", "Connect your association")</a><a asp-page="/Product/Privacy" asp-route-culture="@culture">@AppLocalizer.Get("Конфиденциальность", "Конфіденційність", "Privacy")</a><a asp-page="/Product/Documentation" asp-route-culture="@culture">@AppLocalizer.Get("Документация", "Документація", "Documentation")</a></footer>
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>

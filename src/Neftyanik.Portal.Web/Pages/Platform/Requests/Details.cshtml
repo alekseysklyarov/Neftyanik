@@ -1,0 +1,60 @@
+@page "{id:long}"
+@model Neftyanik.Portal.Web.Pages.Platform.Requests.DetailsModel
+@{
+    string L(string ru, string uk, string en) => AppLocalizer.Get(ru, uk, en);
+    ViewData["Title"] = L("Карточка пилота", "Картка пілоту", "Pilot card");
+}
+<p><a asp-page="Index" asp-route-showContacted="@(Model.Inquiry.ContactedAtUtc.HasValue)">← @L("К заявкам", "До заявок", "Back to inquiries")</a></p>
+<h1 class="h2">@ViewData["Title"] · #@Model.Inquiry.Id</h1>
+<h2 class="h4 text-break">@Model.Inquiry.AssociationName</h2>
+@if (Model.Saved)
+{
+    <p class="alert alert-success" role="status">@L("Карточка сохранена.", "Картку збережено.", "Card saved.")</p>
+}
+<section class="card mb-4"><div class="card-body">
+    <h3 class="h5">@L("Контакт и обращение", "Контакт і звернення", "Contact and inquiry")</h3>
+    <dl class="row mb-0">
+        <dt class="col-sm-3">@L("Имя", "Ім’я", "Name")</dt><dd class="col-sm-9 text-break">@Model.Inquiry.ContactName</dd>
+        <dt class="col-sm-3">@L("Способ связи", "Спосіб зв’язку", "Contact method")</dt><dd class="col-sm-9">@(Model.Inquiry.PreferredContactMethod switch { "phone" => L("Звонок", "Дзвінок", "Phone call"), "viber" => "Viber", "telegram" => "Telegram", _ => "Email" })</dd>
+        <dt class="col-sm-3">Email</dt><dd class="col-sm-9 text-break">@(string.IsNullOrWhiteSpace(Model.Inquiry.Email) ? "—" : Model.Inquiry.Email)</dd>
+        <dt class="col-sm-3">@L("Телефон", "Телефон", "Phone")</dt><dd class="col-sm-9 text-break">@(Model.Inquiry.Phone ?? "—")</dd>
+        <dt class="col-sm-3">@L("Участков", "Ділянок", "Plots")</dt><dd class="col-sm-9">@(Model.Inquiry.PlotCount?.ToString() ?? "—")</dd>
+    </dl>
+    @if (!string.IsNullOrWhiteSpace(Model.Inquiry.Message))
+    {
+        <p class="text-break mt-3 mb-0" style="white-space: pre-wrap">@Model.Inquiry.Message</p>
+    }
+</div></section>
+<form method="post" asp-antiforgery="true" class="card"><div class="card-body">
+    <div asp-validation-summary="All" class="text-danger" role="alert"></div>
+    <input asp-for="Input.Revision" type="hidden" />
+    <div class="mb-3">
+        <label asp-for="Input.Stage" class="form-label">@L("Этап", "Етап", "Stage") *</label>
+        <select asp-for="Input.Stage" asp-items="Model.Stages" class="form-select" required></select>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Input.Notes" class="form-label">@L("Заметки и договорённости", "Нотатки й домовленості", "Notes and agreements")</label>
+        <textarea asp-for="Input.Notes" class="form-control" rows="5" maxlength="4000" aria-describedby="notes-hint"></textarea>
+        <small id="notes-hint" class="text-muted">@L("До 4000 символов. Не записывайте пароли и данные участников.", "До 4000 символів. Не записуйте паролі й дані учасників.", "Up to 4,000 characters. Do not record passwords or members’ personal data.")</small>
+    </div>
+    <div class="row">
+        <div class="col-md-8 mb-3">
+            <label asp-for="Input.NextAction" class="form-label">@L("Следующее действие", "Наступна дія", "Next action")</label>
+            <textarea asp-for="Input.NextAction" class="form-control" rows="2" maxlength="500" aria-describedby="action-hint"></textarea>
+            <small id="action-hint" class="text-muted">@L("До 500 символов, например: согласовать образец данных с бухгалтером.", "До 500 символів, наприклад: узгодити зразок даних із бухгалтером.", "Up to 500 characters, for example: agree a data sample with the accountant.")</small>
+        </div>
+        <div class="col-md-4 mb-3">
+            <label asp-for="Input.NextActionDate" class="form-label">@L("Дата действия", "Дата дії", "Action date")</label>
+            <input asp-for="Input.NextActionDate" type="date" class="form-control" />
+        </div>
+    </div>
+    <fieldset>
+        <legend class="h5">@L("Согласованные даты пилота", "Узгоджені дати пілоту", "Agreed pilot dates")</legend>
+        <div class="row">
+            <div class="col-md-6 mb-3"><label asp-for="Input.StartDate" class="form-label">@L("Начало", "Початок", "Start")</label><input asp-for="Input.StartDate" type="date" class="form-control" /></div>
+            <div class="col-md-6 mb-3"><label asp-for="Input.EndDate" class="form-label">@L("Окончание", "Завершення", "End")</label><input asp-for="Input.EndDate" type="date" class="form-control" /></div>
+        </div>
+        <p class="small text-muted">@L("Для этапов «Пилот идёт» и «Пилот завершён» нужны обе даты. Бесплатный срок — три месяца с согласованного старта. Даты используются для учёта; доступ и оплата автоматически не меняются.", "Для етапів «Пілот триває» та «Пілот завершено» потрібні обидві дати. Безкоштовний строк — три місяці з узгодженого старту. Дати використовуються для обліку; доступ і оплата автоматично не змінюються.", "Both dates are required for active and completed pilots. The free period is three months from the agreed start. Dates are for tracking; access and billing do not change automatically.")</p>
+    </fieldset>
+    <button class="btn btn-primary" type="submit">@L("Сохранить карточку", "Зберегти картку", "Save card")</button>
+</div></form>

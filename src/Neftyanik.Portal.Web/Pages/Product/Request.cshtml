@@ -2,22 +2,22 @@
 @model Neftyanik.Portal.Web.Pages.Product.RequestModel
 @{
     string L(string ru, string uk, string en) => AppLocalizer.Get(ru, uk, en);
-    ViewData["Title"] = L("Подключить товарищество", "Підключити товариство", "Connect your association");
+    ViewData["Title"] = L("Заявка на пилот", "Заявка на пілот", "Pilot inquiry");
 }
 @if (Model.RequestSubmitted)
 {
 <section class="product-section"><div class="request-card">
-            <div role="status" class="success-message"><span class="eyebrow">@L("ЗАЯВКА СОХРАНЕНА", "ЗАЯВКУ ЗБЕРЕЖЕНО", "REQUEST SAVED")</span><h2>@L("Спасибо за интерес", "Дякуємо за інтерес", "Thank you for your interest")</h2><p>@L("Заявка передана в раздел обращений команды DachaHub. Указанный email будет использован для ответа по демонстрации и подключению.", "Заявку передано до розділу звернень команди DachaHub. Зазначений email буде використано для відповіді щодо демонстрації та підключення.", "Your request is in the DachaHub team’s inquiry inbox. Your email will be used to reply about the demonstration and setup.")</p><a asp-route-culture="@System.Globalization.CultureInfo.CurrentUICulture.Name" class="product-button" asp-page="/Product/Demo">@L("Перейти к обзору", "Перейти до огляду", "Explore the preview") →</a></div>
+            <div role="status" class="success-message"><span class="eyebrow">@L("ЗАЯВКА СОХРАНЕНА", "ЗАЯВКУ ЗБЕРЕЖЕНО", "REQUEST SAVED")</span><h2>@L("Спасибо за интерес", "Дякуємо за інтерес", "Thank you for your interest")</h2><p>@L("Заявка передана в раздел обращений команды DachaHub. Мы свяжемся с вами выбранным способом по поводу демонстрации и подключения.", "Заявку передано до розділу звернень команди DachaHub. Ми зв’яжемося з вами обраним способом щодо демонстрації та підключення.", "Your request is in the DachaHub team’s inquiry inbox. We will use your selected contact method to reply about the demonstration and setup.")</p><a asp-route-culture="@System.Globalization.CultureInfo.CurrentUICulture.Name" class="product-button" asp-page="/Product/Demo">@L("Перейти к обзору", "Перейти до огляду", "Explore the preview") →</a></div>
 </div></section>
 }
 else
 {
 <section class="product-hero connection-intro" aria-labelledby="connection-title">
     <p class="eyebrow">@L("DachaHub ДЛЯ ВАШЕГО ТОВАРИЩЕСТВА", "DachaHub ДЛЯ ВАШОГО ТОВАРИСТВА", "DachaHub FOR YOUR ASSOCIATION")</p>
-    <h1 id="connection-title">@L("Подключите портал для своего товарищества", "Підключіть портал для свого товариства", "Connect a portal for your association")</h1>
+    <h1 id="connection-title">@L("Начните с бесплатного пилота", "Почніть із безкоштовного пілоту", "Start with a free pilot")</h1>
     <p class="lead">@L("Участникам — личный кабинет и передача показаний. Бухгалтеру и администратору — общий учёт участков, начислений, оплат и расходов.", "Учасникам — особистий кабінет і передавання показань. Бухгалтеру й адміністратору — спільний облік ділянок, нарахувань, оплат і витрат.", "Members get a dashboard and meter reading submission. Accountants and administrators get shared records of plots, charges, payments and expenses.")</p>
     <div class="role-navigation">
-        <a href="#connection-request" class="product-button">@L("Обсудить подключение", "Обговорити підключення", "Discuss setup") →</a>
+        <a href="#connection-request" class="product-button">@L("Обсудить участие", "Обговорити участь", "Discuss joining") →</a>
         <a asp-page="/Product/Demo" asp-route-culture="@System.Globalization.CultureInfo.CurrentUICulture.Name" class="product-button secondary">@L("Сначала попробовать демо", "Спочатку спробувати демо", "Try the demo first")</a>
         <details class="contact-dropdown">
             <summary class="product-button secondary">@L("Связаться с нами", "Зв’язатися з нами", "Contact us")</summary>
@@ -29,8 +29,8 @@ else
             </ul>
         </details>
     </div>
-    <p class="connection-note">@L("Стоимость — по запросу, после обсуждения задач и объёма переноса данных. Отправка заявки не требует оплаты и не оформляет подписку.", "Вартість — за запитом, після обговорення завдань та обсягу перенесення даних. Надсилання заявки не потребує оплати й не оформлює підписку.", "Pricing is available on request after discussing your needs and data migration scope. Sending a request requires no payment and does not create a subscription.")</p>
-    <p><a class="text-link" asp-page="/Product/Pricing" asp-route-culture="@System.Globalization.CultureInfo.CurrentUICulture.Name">@L("Подробнее о стоимости и сопровождении", "Докладніше про вартість і супровід", "More about pricing and support") →</a></p>
+    <p class="connection-note">@L("Для первых трёх товариществ — 3 месяца бесплатно с согласованной даты запуска. Базовая настройка и помощь с согласованным переносом данных входят в пилот. Участие подтверждаем после разговора. Платное продолжение — только по отдельному согласию, без автоматических списаний.", "Для перших трьох товариств — 3 місяці безкоштовно з узгодженої дати запуску. Базове налаштування та допомога з узгодженим перенесенням даних входять до пілоту. Участь підтверджуємо після розмови. Платне продовження — лише за окремою згодою, без автоматичних списань.", "For the first three associations: 3 months free from the agreed launch date, including basic setup and help with agreed data migration. Participation is confirmed after a conversation. Paid continuation requires a separate agreement, with no automatic charges.")</p>
+    <p><a class="text-link" asp-page="/Product/Pricing" asp-route-culture="@System.Globalization.CultureInfo.CurrentUICulture.Name">@L("Условия первых подключений", "Умови перших підключень", "Early adopter terms") →</a></p>
 </section>
 
 
@@ -52,7 +52,7 @@ else
     <p class="section-description">@L("Сначала согласуем задачи и условия, затем подготовим портал к работе.", "Спочатку узгодимо завдання й умови, потім підготуємо портал до роботи.", "First we agree on your needs and terms, then prepare the portal for use.")</p>
     <ol class="connection-steps">
         <li><h3>@L("Обсуждаем ваш учёт", "Обговорюємо ваш облік", "Discuss your records")</h3><p>@L("Уточняем количество участков, роли сотрудников, правила начислений и то, где сейчас хранятся данные.", "Уточнюємо кількість ділянок, ролі працівників, правила нарахувань і те, де зараз зберігаються дані.", "We discuss plot counts, staff roles, charging rules and where your records are currently stored.")</p></li>
-        <li><h3>@L("Согласуем запуск", "Узгоджуємо запуск", "Agree on the launch")</h3><p>@L("Определяем объём переноса и настройки, стоимость, сроки и условия сопровождения до начала работ.", "Визначаємо обсяг перенесення й налаштування, вартість, строки та умови супроводу до початку робіт.", "We agree on migration and configuration scope, pricing, timing and support terms before work starts.")</p></li>
+        <li><h3>@L("Согласуем запуск", "Узгоджуємо запуск", "Agree on the launch")</h3><p>@L("Согласуем бесплатный пилот на три месяца: задачи, объём помощи с переносом, дату запуска и порядок сопровождения.", "Узгодимо безкоштовний пілот на три місяці: завдання, обсяг допомоги з перенесенням, дату запуску й порядок супроводу.", "We agree on the free three-month pilot: goals, migration assistance, launch date and support arrangements.")</p></li>
         <li><h3>@L("Готовим и сверяем данные", "Готуємо й звіряємо дані", "Prepare and reconcile data")</h3><p>@L("Готовим данные в согласованном формате, настраиваем учёт и вместе проверяем участки, счётчики и начальные балансы.", "Готуємо дані в узгодженому форматі, налаштовуємо облік і разом перевіряємо ділянки, лічильники й початкові баланси.", "We prepare data in the agreed format, configure records and review plots, meters and opening balances together.")</p></li>
         <li><h3>@L("Открываем доступ", "Відкриваємо доступ", "Open access")</h3><p>@L("После проверки предоставляем доступ сотрудникам и участникам и разбираем первые рабочие действия.", "Після перевірки надаємо доступ працівникам та учасникам і розбираємо перші робочі дії.", "After the review, we provide staff and member access and walk through the first everyday tasks.")</p></li>
     </ol>
@@ -62,7 +62,7 @@ else
     <div class="connection-preparation">
         <p class="eyebrow">@L("ПОДКЛЮЧЕНИЕ И ПЕРЕНОС ДАННЫХ", "ПІДКЛЮЧЕННЯ Й ПЕРЕНЕСЕННЯ ДАНИХ", "SETUP AND DATA MIGRATION")</p>
         <h2 id="request-title">@L("Начнём с вашего товарищества", "Почнімо з вашого товариства", "Start with your association")</h2>
-        <p class="lead">@L("В заявке достаточно имени, названия товарищества и email. Если знаете количество участков и задачи — добавьте их, чтобы обсуждение было предметным.", "У заявці достатньо імені, назви товариства й email. Якщо знаєте кількість ділянок і завдання — додайте їх, щоб обговорення було предметним.", "Your name, association name and email are enough to start. Add a plot count and your needs if you know them so we can have a focused discussion.")</p>
+        <p class="lead">@L("В заявке достаточно имени, названия товарищества и контакта для ответа. Если знаете количество участков и задачи — добавьте их, чтобы обсуждение было предметным.", "У заявці достатньо імені, назви товариства й контакту для відповіді. Якщо знаєте кількість ділянок і завдання — додайте їх, щоб обговорення було предметним.", "Your name, association name and a reply contact are enough to start. Add a plot count and your needs if you know them so we can have a focused discussion.")</p>
         <h3>@L("Для переноса позже понадобятся", "Для перенесення згодом знадобляться", "For migration, we will later need")</h3>
         <ul class="connection-checklist">
             <li>@L("Список участков и их владельцев.", "Список ділянок та їхніх власників.", "A list of plots and their owners.")</li>
@@ -74,18 +74,21 @@ else
         <p class="muted">@L("Если данные ещё не собраны, начните с заявки — обсудим, как их подготовить. Объём доступной истории и дополнительные работы согласуются отдельно.", "Якщо дані ще не зібрані, почніть із заявки — обговоримо, як їх підготувати. Обсяг доступної історії та додаткові роботи узгоджуються окремо.", "If your records are not ready, start with a request and we can discuss preparation. The historical data to include and any additional work are agreed separately.")</p>
     </div>
     <div class="request-card connection-form">
-            <h2>@L("Обсудить подключение", "Обговорити підключення", "Discuss setup")</h2>
+            <h2>@L("Обсудить участие", "Обговорити участь", "Discuss joining")</h2>
             <p class="section-description">@L("Оставьте контакт для ответа по вашему товариществу.", "Залиште контакт для відповіді щодо вашого товариства.", "Leave a contact so we can reply about your association.")</p>
             <form method="post" asp-route-culture="@System.Globalization.CultureInfo.CurrentUICulture.Name" asp-antiforgery="true">
                 <div asp-validation-summary="All" class="validation-errors" role="alert"></div>
                 <div class="form-field"><label asp-for="Input.ContactName">@L("Ваше имя", "Ваше ім’я", "Your name") *</label><input asp-for="Input.ContactName" maxlength="120" autocomplete="name" required /></div>
                 <div class="form-field"><label asp-for="Input.AssociationName">@L("Название товарищества", "Назва товариства", "Association name") *</label><input asp-for="Input.AssociationName" maxlength="200" autocomplete="organization" required /></div>
-                <div class="form-field"><label asp-for="Input.Email">Email *</label><input asp-for="Input.Email" type="email" maxlength="254" autocomplete="email" required /></div>
+                <div class="form-field"><label asp-for="Input.PreferredContactMethod">@L("Как с вами связаться", "Як із вами зв’язатися", "Preferred contact method") *</label><select asp-for="Input.PreferredContactMethod" required aria-describedby="contact-hint"><option value="email">Email</option><option value="phone">@L("Звонок", "Дзвінок", "Phone call")</option><option value="viber">Viber</option><option value="telegram">Telegram</option></select><small id="contact-hint" class="muted">@L("Для email укажите почту, для звонка или мессенджера — телефон с кодом страны. Для Viber и Telegram укажите номер, привязанный к приложению.", "Для email зазначте пошту, для дзвінка чи месенджера — телефон із кодом країни. Для Viber і Telegram зазначте номер, прив’язаний до застосунку.", "For email, enter your email address. For calls or messengers, enter a phone number with country code. For Viber and Telegram, use the number linked to your app.")</small></div>
+                <div class="form-field"><label asp-for="Input.Email">Email</label><input asp-for="Input.Email" type="email" maxlength="254" autocomplete="email" /><span asp-validation-for="Input.Email" class="validation-errors"></span></div>
+                <div class="form-field"><label asp-for="Input.Phone">@L("Телефон", "Телефон", "Phone")</label><input asp-for="Input.Phone" type="tel" maxlength="40" autocomplete="tel" placeholder="+380 97 123 4567" aria-describedby="contact-hint" /><span asp-validation-for="Input.Phone" class="validation-errors"></span></div>
                 <div class="form-field"><label asp-for="Input.PlotCount">@L("Количество участков (необязательно)", "Кількість ділянок (необов’язково)", "Number of plots (optional)")</label><input asp-for="Input.PlotCount" type="number" min="1" max="100000" /></div>
-                <div class="form-field"><label asp-for="Input.Message">@L("Что хотите обсудить? (необязательно)", "Що бажаєте обговорити? (необов’язково)", "What would you like to discuss? (optional)")</label><textarea asp-for="Input.Message" maxlength="1000" rows="4" aria-describedby="message-hint"></textarea><small id="message-hint" class="muted">@L("До 1000 символов. Не указывайте пароли и данные участников.", "До 1000 символів. Не зазначайте паролі та дані учасників.", "Up to 1,000 characters. Do not include passwords or members’ personal data.")</small></div>
+                <div class="form-field"><label asp-for="Input.Message">@L("Что хотите попробовать в пилоте? (необязательно)", "Що бажаєте спробувати в пілоті? (необов’язково)", "What would you like to try in the pilot? (optional)")</label><textarea asp-for="Input.Message" maxlength="1000" rows="4" aria-describedby="message-hint"></textarea><small id="message-hint" class="muted">@L("До 1000 символов. Не указывайте пароли и данные участников.", "До 1000 символів. Не зазначайте паролі та дані учасників.", "Up to 1,000 characters. Do not include passwords or members’ personal data.")</small></div>
                 <div class="form-trap" aria-hidden="true"><label asp-for="Website">Website</label><input asp-for="Website" tabindex="-1" autocomplete="off" /></div>
+                <p class="small"><a asp-page="/Product/Privacy" asp-route-culture="@System.Globalization.CultureInfo.CurrentUICulture.Name" target="_blank" rel="noopener noreferrer">@L("Как используются ваши данные ↗", "Як використовуються ваші дані ↗", "How your data is used ↗")</a></p>
                 <label class="consent"><input asp-for="Input.Consent" required /><span>@L("Согласен на сохранение указанных данных и их использование командой DachaHub для ответа на эту заявку.", "Погоджуюся на збереження зазначених даних та їх використання командою DachaHub для відповіді на цю заявку.", "I agree to the DachaHub team storing these details and using them to respond to this request.") *</span></label>
-                <button type="submit" class="product-button">@L("Отправить заявку", "Надіслати заявку", "Send request") →</button>
+                <button type="submit" class="product-button">@L("Отправить заявку на пилот", "Надіслати заявку на пілот", "Send pilot inquiry") →</button>
                 <p class="small muted">@L("* Обязательные поля. Заявку видят администраторы платформы.", "* Обов’язкові поля. Заявку бачать адміністратори платформи.", "* Required fields. Platform administrators can view your request.")</p>
             </form>
     </div>
