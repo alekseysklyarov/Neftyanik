@@ -115,6 +115,8 @@ public class SingleAssociationAccountTests
                 var table = entity.GetTableName()!;
                 var actualColumns = await db.Database.SqlQueryRaw<string>(
                     "SELECT COLUMN_NAME AS Value FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = {0}", table).ToListAsync();
+                // Snapshot only tables present before the migration, including all their existing columns.
+                if (actualColumns.Count == 0) continue;
                 var columns = string.Join(",", entity.GetProperties().Where(x => actualColumns.Contains(x.GetColumnName()!)).Select(x => $"[{x.GetColumnName()}]"));
                 var order = string.Join(",", entity.FindPrimaryKey()!.Properties.Select(x => $"[{x.GetColumnName()}]"));
                 snapshots.Add(table, (columns, order, await AssociationMigrationTests.ReadJsonAsync(db, table, columns, order)));

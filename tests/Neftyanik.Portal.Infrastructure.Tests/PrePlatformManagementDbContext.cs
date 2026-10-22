@@ -17,6 +17,8 @@ internal static class PrePlatformManagementDbContext
         public override void Customize(ModelBuilder builder, DbContext context)
         {
             base.Customize(builder, context);
+            // Sales requests did not exist in the schema exercised by these historical migrations.
+            builder.Ignore<DemoRequest>();
             builder.Entity<Member>().Ignore(x => x.HasTwoElectricityMeters);
             builder.Entity<MemberElectricityReading>().Ignore(x => x.PhysicalMeterReadingsJson);
             builder.Entity<Charge>().Ignore(x => x.Member).Ignore(x => x.MemberId);
