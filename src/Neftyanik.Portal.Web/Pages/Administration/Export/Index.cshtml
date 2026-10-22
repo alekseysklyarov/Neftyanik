@@ -1,0 +1,22 @@
+@page
+@model Neftyanik.Portal.Web.Pages.Administration.Export.IndexModel
+@{
+    string L(string ru, string uk, string en) => AppLocalizer.Get(ru, uk, en);
+    ViewData["Title"] = L("Выгрузка данных", "Вивантаження даних", "Data export");
+}
+<h1 class="h2">@ViewData["Title"]</h1>
+<p class="lead">@Model.AssociationName</p>
+<div class="card mb-4"><div class="card-body">
+    <h2 class="h5">@L("Один Excel-файл с шестью листами", "Один Excel-файл із шістьма аркушами", "One Excel file with six sheets")</h2>
+    <ul>
+        <li>@L("Описание: товарищество, время формирования и пояснения к суммам.", "Опис: товариство, час формування та пояснення до сум.", "About: association, capture time and explanations of amounts.")</li>
+        <li>@L("Участники: имена, контакты, дата вступления и активность.", "Учасники: імена, контакти, дата вступу й активність.", "Members: names, contacts, joining date and active status.")</li>
+        <li>@L("Участки: номера, адреса, площадь и кадастровые номера.", "Ділянки: номери, адреси, площа й кадастрові номери.", "Plots: numbers, addresses, area and cadastral numbers.")</li>
+        <li>@L("Владение: связи участников с участками, доли и даты.", "Володіння: зв’язки учасників із ділянками, частки й дати.", "Ownerships: member-to-plot links, shares and dates.")</li>
+        <li>@L("Остатки участников и остатки участков: начислено, оплачено и остаток.", "Залишки учасників і залишки ділянок: нараховано, сплачено й залишок.", "Member balances and plot balances: charges, payments and balance.")</li>
+    </ul>
+    <p>@L("Включены неактивные участники и участки, завершённые записи владения. Финансовые остатки рассчитаны по всем сохранённым неотменённым операциям без отбора периода, включая записи с будущей датой. Положительный остаток означает долг, отрицательный — переплату.", "Включено неактивних учасників і ділянки, завершені записи володіння. Фінансові залишки розраховано за всіма збереженими нескасованими операціями без відбору періоду, включно із записами з майбутньою датою. Додатний залишок означає борг, від’ємний — переплату.", "Includes inactive members and plots and ended ownerships. Balances use all saved non-cancelled transactions with no period filter, including future-dated entries. Positive balances mean debt; negative balances mean credit.")</p>
+    <p class="text-muted">@L("Файл содержит персональные данные. Передавайте его только уполномоченным лицам. Это таблицы для сверки и передачи данных; полная история операций, документы и резервная копия системы в файл не входят.", "Файл містить персональні дані. Передавайте його лише уповноваженим особам. Це таблиці для звірки й передавання даних; повна історія операцій, документи й резервна копія системи до файлу не входять.", "The file contains personal data. Share it only with authorised people. These are tables for reconciliation and handover; full transaction history, documents and a system backup are not included.")</p>
+    <form method="post" asp-page-handler="Download" asp-antiforgery="true"><button type="submit" class="btn btn-primary">@L("Скачать Excel", "Завантажити Excel", "Download Excel")</button></form>
+</div></div>
+<a asp-page="/Administration/Finance/Index">← @L("К финансовому обзору", "До фінансового огляду", "Back to financial overview")</a>

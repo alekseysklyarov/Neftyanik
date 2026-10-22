@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/product.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 <body class="portal-body product-body">
     <a class="skip-link" href="#main">@AppLocalizer.Get("К содержимому", "До вмісту", "Skip to content")</a>
@@ -22,6 +23,7 @@
                 <a asp-page="/Product/Management" asp-route-culture="@culture">@AppLocalizer.Get("Бухгалтеру и администратору", "Бухгалтеру й адміністратору", "For management")</a>
                 <a href="@Url.Content("~/?culture=" + culture + "#features")">@AppLocalizer.Get("Возможности", "Можливості", "Features")</a>
                 <a asp-page="/Product/Demo" asp-route-culture="@culture">@AppLocalizer.Get("Тестовое товарищество", "Тестове товариство", "Test association")</a>
+                <a asp-page="/Product/Documentation" asp-route-culture="@culture">@AppLocalizer.Get("Документация", "Документація", "Documentation")</a>
             </div>
             <div class="header-actions">
                 <form method="get" class="language-picker">
@@ -38,7 +40,7 @@
         </nav>
     </header>
     <main id="main" class="product-container">@RenderBody()</main>
-    <footer class="product-footer product-container"><span>© @DateTime.UtcNow.Year DachaHub</span><a asp-page="/Product/Pricing" asp-route-culture="@culture">@AppLocalizer.Get("Стоимость и сопровождение", "Вартість і супровід", "Pricing and support")</a><a asp-page="/Product/Request" asp-route-culture="@culture">@AppLocalizer.Get("Подключить товарищество", "Підключити товариство", "Connect your association")</a></footer>
+    <footer class="product-footer product-container"><span>© @DateTime.UtcNow.Year DachaHub</span><a asp-page="/Product/Pricing" asp-route-culture="@culture">@AppLocalizer.Get("Стоимость и сопровождение", "Вартість і супровід", "Pricing and support")</a><a asp-page="/Product/Request" asp-route-culture="@culture">@AppLocalizer.Get("Подключить товарищество", "Підключити товариство", "Connect your association")</a><a asp-page="/Product/Documentation" asp-route-culture="@culture">@AppLocalizer.Get("Документация", "Документація", "Documentation")</a></footer>
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>

@@ -1,0 +1,72 @@
+@page "{kind}/{mode}"
+@model Neftyanik.Portal.Web.Pages.Administration.YearTransfer.IndexModel
+@using static Neftyanik.Portal.Web.Imports.YearWorkbook
+@using Neftyanik.Portal.Web.Imports
+@{ ViewData["Title"] = Model.PageTitle; }
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <h1 class="h2 mb-0">@Model.PageTitle</h1>
+    <a class="btn btn-outline-secondary" asp-page="/Administration/Index">@L("Администрирование", "Адміністрування", "Administration")</a>
+</div>
+<div asp-validation-summary="All" class="text-danger" role="alert"></div>
+<form method="get" class="card mb-4"><div class="card-body d-flex flex-wrap align-items-end gap-3">
+    <div><label asp-for="Year" class="form-label">@L("Год", "Рік", "Year")</label><input asp-for="Year" type="number" min="2000" max="2100" required class="form-control" /></div>
+    <button class="btn btn-outline-primary" type="submit">@L("Выбрать год", "Обрати рік", "Select year")</button>
+</div></form>
+@if (Model.Mode == "export")
+{
+    <div class="card"><div class="card-body">
+        <p>@L("Будут выгружены записи только выбранного года и текущего товарищества. Формат подходит для последующего импорта.", "Буде вивантажено записи лише обраного року й поточного товариства. Формат підходить для подальшого імпорту.", "Only records from the selected year and current association are exported. The format also supports import.")</p>
+        <p>@(Model.Kind == YearWorkbook.Payments ? L("Файл включает отменённые платежи и переносы переплат с соответствующими отметками.", "Файл містить скасовані платежі й перенесення переплат із відповідними позначками.", "Cancelled payments and opening credits are included and marked.") : L("Файл включает общий счётчик, счётчики участников, начальные показания, дневные и ночные значения, а также два физических счётчика.", "Файл містить загальний лічильник, лічильники учасників, початкові показання, денні й нічні значення, а також два фізичні лічильники.", "Includes main and member meters, opening readings, day/night values and two physical meters."))</p>
+        <form method="post" asp-page-handler="Download"><input type="hidden" asp-for="Year" /><button class="btn btn-primary" type="submit">@L("Скачать Excel за ", "Завантажити Excel за ", "Download Excel for ")@Model.Year</button></form>
+    </div></div>
+}
+else
+{
+    <div class="card mb-4"><div class="card-body">
+        <p>@L("Скачайте шаблон для выбранного года и заполните лист Data. Инструкция по столбцам находится на листе Info. До 10000 строк и 10 МБ. Перед загрузкой должны быть созданы участники, участки, счётчики и тарифы.", "Завантажте шаблон для обраного року й заповніть аркуш Data. Інструкція до стовпців розміщена на аркуші Info. До 10000 рядків і 10 МБ. До завантаження мають бути створені учасники, ділянки, лічильники й тарифи.", "Download the selected year's template and fill in Data. Column instructions are on Info. Up to 10000 rows and 10 MB. Members, plots, meters and tariffs must already exist.")</p>
+        <a class="btn btn-outline-primary" asp-page-handler="Template" asp-route-year="@Model.Year">@L("Скачать шаблон", "Завантажити шаблон", "Download template") (@Model.Year)</a>
+    </div></div>
+    <div class="alert alert-info">@(Model.Kind == Readings
+        ? L("Показания добавляются по порядку после последней сохранённой даты. Портал рассчитывает расход и начисления по своим тарифам. Начальные показания допускаются только для счётчика без истории.", "Показання додаються за порядком після останньої збереженої дати. Портал розраховує споживання й нарахування за своїми тарифами. Початкові показання дозволені лише для лічильника без історії.", "Readings are appended chronologically after the latest saved date. Consumption and charges use portal tariffs. Opening readings require a meter without history.")
+        : L("Платежи распределяются по начислениям по правилам портала. Перенос переплаты учитывается на лицевом счёте без увеличения кассы или банка.", "Платежі розподіляються за нарахуваннями за правилами порталу. Перенесення переплати враховується на особовому рахунку без збільшення каси чи банку.", "Payments are allocated using portal rules. Opening credits affect member balances without increasing cash or bank funds."))</div>
+    <form method="post" enctype="multipart/form-data" asp-page-handler="Preview" class="card mb-4"><div class="card-body">
+        <input type="hidden" asp-for="Year" />
+        <label asp-for="Upload" class="form-label">@L("Файл Excel за ", "Файл Excel за ", "Excel file for ")@Model.Year</label>
+        <input asp-for="Upload" type="file" accept=".xlsx" class="form-control mb-3" required />
+        <button class="btn btn-primary" type="submit">@L("Проверить файл", "Перевірити файл", "Check file")</button>
+    </div></form>
+    @if (Model.Preview is { } preview)
+    {
+        <h2 class="h4">@L("Предварительный просмотр", "Попередній перегляд", "Preview") (@Model.Year)</h2>
+        @if (preview.Issues.Count > 0)
+        {
+            <div class="alert alert-danger" role="alert"><p>@L("Исправьте ошибки и повторите загрузку. Данные не сохранены.", "Виправте помилки й повторіть завантаження. Дані не збережено.", "Fix the errors and upload again. No data has been saved.")</p>
+                <ul>@foreach (var issue in preview.Issues) { <li>@(issue.Row > 0 ? L("Строка ", "Рядок ", "Row ") + issue.Row + ": " : "")@issue.Message</li> }</ul>
+            </div>
+        }
+        else
+        {
+            <p>@L("Будет добавлено", "Буде додано", "To be added"): <strong>@preview.Added</strong> · @L("Уже существуют, будут пропущены", "Уже існують, буде пропущено", "Already exist, will be skipped"): <strong>@preview.Skipped</strong></p>
+        }
+        <div class="table-responsive mb-3" style="max-height:32rem;overflow:auto"><table class="table table-sm table-striped">
+            <thead><tr><th>#</th><th>Key</th><th>@L("Дата", "Дата", "Date")</th><th>@L("Участник / счётчик", "Учасник / лічильник", "Member / meter")</th><th>@L("Участок", "Ділянка", "Plot")</th><th>@(Model.Kind == YearWorkbook.Payments ? L("Сумма, грн", "Сума, грн", "Amount, UAH") : L("Показания день / ночь", "Показання день / ніч", "Day / night readings"))</th><th>@L("Результат", "Результат", "Result")</th></tr></thead>
+            <tbody>@foreach (var row in preview.Rows)
+            {
+                var line = preview.Lines.FirstOrDefault(l => l.Row == row.Row);
+                <tr><td>@row.Row</td><td>@row.Key</td><td>@row.Date.ToString("yyyy-MM-dd")</td><td>@(row.Scope == "association" ? L("Общий счётчик", "Загальний лічильник", "Main meter") : row.Member) @row.Meter</td><td>@row.Plot</td><td>
+                    @row.Value @if (Model.Kind == Readings) { <span> / @(row.Night?.ToString() ?? "—")</span> @if (row.Second.HasValue) { <span> + @row.Second / @(row.SecondNight?.ToString() ?? "—")</span> } }
+                    @if (row.Cancelled) { <span class="badge bg-secondary">@L("Отменён", "Скасовано", "Cancelled")</span> }
+                </td><td>@(line is null ? "—" : line.Skipped ? L("Уже существует", "Уже існує", "Already exists") : L("Добавить", "Додати", "Add"))
+                    @if (Model.Kind == Readings && line?.Amount is decimal amount) { <div>@L("Начисление", "Нарахування", "Charge"): @amount.ToString("N2") грн</div> }
+                </td></tr>
+            }</tbody>
+        </table></div>
+        @if (preview.Issues.Count == 0 && Model.PreviewToken is not null)
+        {
+            <form method="post" asp-page-handler="Confirm"><input type="hidden" asp-for="Year" /><input type="hidden" asp-for="PreviewToken" />
+                <p>@L("Все строки сохранятся вместе после повторной проверки. Предпросмотр действует 30 минут.", "Усі рядки збережуться разом після повторної перевірки. Попередній перегляд діє 30 хвилин.", "All rows are saved together after revalidation. The preview is valid for 30 minutes.")</p>
+                <button class="btn btn-success" type="submit">@L("Подтвердить импорт", "Підтвердити імпорт", "Confirm import")</button>
+            </form>
+        }
+    }
+}

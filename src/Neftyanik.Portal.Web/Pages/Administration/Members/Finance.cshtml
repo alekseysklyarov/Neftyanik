@@ -280,7 +280,10 @@
                                         <td>@(string.IsNullOrWhiteSpace(payment.ReferenceNumber) ? "—" : payment.ReferenceNumber)</td>
                                         <td class="text-end">
                                             <div class="btn-group btn-group-sm" role="group">
-                                                <a class="btn btn-outline-secondary" asp-page="/Payments/Receipt" asp-route-paymentId="@payment.PaymentId" asp-route-memberId="@Model.Member.Id">@AppLocalizer.Get("Платёжка", "Платіжка", "Receipt")</a>
+                                                @if (!payment.IsOpeningBalance)
+                                                {
+                                                    <a class="btn btn-outline-secondary" asp-page="/Payments/Receipt" asp-route-paymentId="@payment.PaymentId" asp-route-memberId="@Model.Member.Id">@AppLocalizer.Get("Платёжка", "Платіжка", "Receipt")</a>
+                                                }
                                                 @if (!payment.IsCancelled)
                                                 {
                                                     @if (payment.PaymentId == Model.CorrectablePaymentId)

@@ -9,6 +9,7 @@ internal static class FinanceDisplayHelper
     {
         return method switch
         {
+            PaymentMethod.OpeningBalance => AppLocalizer.Get("Перенос переплаты", "Перенесення переплати", "Opening credit"),
             PaymentMethod.Cash => AppLocalizer.Get("Наличные", "Готівка", "Cash"),
             PaymentMethod.BankTransfer => AppLocalizer.Get("Банковский перевод", "Банківський переказ", "Bank transfer"),
             PaymentMethod.Card => AppLocalizer.Get("Перевод на карту", "Переказ на картку", "Card transfer"),

@@ -10,6 +10,7 @@
         <p class="text-muted mb-0">@AppLocalizer.Get("Сводная информация по начислениям, платежам, расходам и балансам участков.", "Зведена інформація щодо нарахувань, платежів, витрат і балансів ділянок.", "Summary information on charges, payments, expenses, and plot balances.")</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
+        <a class="btn btn-outline-primary" asp-page="/Administration/Export/Index">@AppLocalizer.Get("Выгрузить данные", "Вивантажити дані", "Export data")</a>
         <a class="btn btn-outline-primary" asp-page="/Administration/Finance/Reports/Index">@AppLocalizer.Get("Отчёты", "Звіти", "Reports")</a>
         <a class="btn btn-outline-primary" asp-page="/Administration/Finance/Expenses/Index">@AppLocalizer.Get("Расходы", "Витрати", "Expenses")</a>
         <a class="btn btn-outline-primary" asp-page="/Administration/Finance/Settings/Index">@AppLocalizer.Get("Настройки", "Налаштування", "Settings")</a>

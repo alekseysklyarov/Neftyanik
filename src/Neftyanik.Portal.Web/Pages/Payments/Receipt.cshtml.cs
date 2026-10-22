@@ -66,7 +66,7 @@ public class ReceiptModel : PageModel
             })
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (payment is null || !payment.PlotId.HasValue || !payment.MemberId.HasValue || string.IsNullOrWhiteSpace(payment.MemberFullName))
+        if (payment is null || payment.PaymentMethod == PaymentMethod.OpeningBalance || !payment.PlotId.HasValue || !payment.MemberId.HasValue || string.IsNullOrWhiteSpace(payment.MemberFullName))
         {
             return NotFound();
         }

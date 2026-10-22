@@ -22,7 +22,7 @@ internal static class FinanceCashCalculator
 
         var activePayments = await dbContext.Payments
             .AsNoTracking()
-            .Where(payment => payment.CancelledAtUtc == null)
+            .Where(payment => payment.CancelledAtUtc == null && payment.PaymentMethod != PaymentMethod.OpeningBalance)
             .Select(payment => new PaymentAmountItem(
                 payment.Amount,
                 payment.PaymentDate,

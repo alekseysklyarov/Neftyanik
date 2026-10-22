@@ -1,0 +1,52 @@
+@page
+@model Neftyanik.Portal.Web.Pages.Administration.Import.IndexModel
+@using Neftyanik.Portal.Web.Imports
+@using static Neftyanik.Portal.Web.Imports.ExcelOnboarding
+@{
+    ViewData["Title"] = L("Импорт из Excel", "Імпорт з Excel", "Import from Excel");
+}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <h1 class="h2 mb-0">@ViewData["Title"]</h1>
+    <a asp-page="/Administration/Index" class="btn btn-outline-secondary">@L("Администрирование", "Адміністрування", "Administration")</a>
+</div>
+<div asp-validation-summary="All" class="text-danger" role="alert"></div>
+<div class="card mb-4"><div class="card-body">
+    <h2 class="h5">@L("1. Подготовьте таблицу", "1. Підготуйте таблицю", "1. Prepare your spreadsheet")</h2>
+    <p>@L("Скачайте шаблон и заполните лист Import. Один участок — одна строка. Для нескольких участков владельца повторите его код, ФИО и контакты. Участника без участка и участок без владельца можно добавить отдельной строкой.", "Завантажте шаблон і заповніть аркуш Import. Одна ділянка — один рядок. Для кількох ділянок власника повторіть його код, ПІБ і контакти. Учасника без ділянки та ділянку без власника можна додати окремим рядком.", "Download the template and fill in the Import sheet. Use one row per plot. Repeat a member's key, name and contacts for multiple plots. Members without plots and plots without owners can have separate rows.")</p>
+    <p>@L("Остаток в гривнах: плюс — долг, минус — переплата. Для остатка нужны участок и владелец. Не повторяйте общий долг владельца для каждого участка. Формулы замените значениями.", "Залишок у гривнях: плюс — борг, мінус — переплата. Для залишку потрібні ділянка та власник. Не повторюйте загальний борг власника для кожної ділянки. Замініть формули значеннями.", "Balance in UAH: positive = debt, negative = credit. A balance requires a plot and an owner. Do not repeat a member's total balance for every plot. Replace formulas with values.")</p>
+    <a class="btn btn-outline-primary" asp-page-handler="Template">@L("Скачать шаблон Excel", "Завантажити шаблон Excel", "Download Excel template")</a>
+</div></div>
+<div class="alert alert-info">@L("Импорт добавляет новые записи. Существующие участники и участки не обновляются: совпадения нужно устранить до загрузки. Начальная переплата учитывается на лицевом счёте, но не увеличивает кассу или банк. Остатки денежных средств вводятся отдельно в финансовых настройках.", "Імпорт додає нові записи. Наявні учасники та ділянки не оновлюються: збіги потрібно усунути до завантаження. Початкова переплата враховується на особовому рахунку, але не збільшує касу чи банк. Залишки коштів вводяться окремо у фінансових налаштуваннях.", "Import adds new records. Existing members and plots are not updated; resolve matches before importing. Opening credit affects the member account, without increasing cash or bank funds. Enter opening cash and bank balances separately in finance settings.")</div>
+<form method="post" asp-page-handler="Preview" enctype="multipart/form-data" class="card mb-4">
+    <div class="card-body">
+        <h2 class="h5">@L("2. Проверьте данные", "2. Перевірте дані", "2. Check the data")</h2>
+        <div class="row g-3 align-items-end">
+            <div class="col-md-6"><label asp-for="Upload" class="form-label">@L("Файл .xlsx, до 5 МБ и 1000 строк", "Файл .xlsx, до 5 МБ і 1000 рядків", ".xlsx file, up to 5 MB and 1000 rows")</label><input asp-for="Upload" type="file" accept=".xlsx" class="form-control" required /></div>
+            <div class="col-md-3"><label asp-for="TransferDate" class="form-label">@L("Дата переноса", "Дата перенесення", "Transfer date")</label><input asp-for="TransferDate" type="date" class="form-control" required /></div>
+            <div class="col-md-3"><button type="submit" class="btn btn-primary">@L("Проверить файл", "Перевірити файл", "Check file")</button></div>
+        </div>
+    </div>
+</form>
+@if (Model.Preview is { } preview)
+{
+    <h2 class="h4">@L("3. Предварительный просмотр", "3. Попередній перегляд", "3. Preview")</h2>
+    <p>@L("Участников", "Учасників", "Members"): <strong>@preview.Members</strong> · @L("Участков", "Ділянок", "Plots"): <strong>@preview.Plots</strong> · @L("Долг", "Борг", "Debt"): <strong>@preview.Debt.ToString("N2")</strong> · @L("Переплата", "Переплата", "Credit"): <strong>@preview.Credit.ToString("N2")</strong> грн · @Model.TransferDate.ToString("yyyy-MM-dd")</p>
+    @if (preview.Issues.Count > 0)
+    {
+        <div class="alert alert-danger" role="alert"><p><strong>@L("Исправьте ошибки и загрузите файл снова. Данные не сохранены.", "Виправте помилки та завантажте файл знову. Дані не збережено.", "Fix the errors and upload again. No data has been saved.")</strong></p>
+            <ul class="mb-0">@foreach (var issue in preview.Issues) { <li>@(issue.Row > 0 ? L("Строка ", "Рядок ", "Row ") + issue.Row + ": " : "")@issue.Message</li> }</ul>
+        </div>
+    }
+    <div class="table-responsive mb-3" style="max-height: 32rem; overflow:auto"><table class="table table-sm table-striped">
+        <thead><tr><th>#</th>@for (var c = 0; c < 9; c++) { <th>@ExcelOnboarding.Header(c)</th> }</tr></thead>
+        <tbody>@foreach (var row in preview.Rows) { <tr><td>@row.Row</td><td>@row.MemberKey</td><td>@row.FullName</td><td>@row.Phone</td><td>@row.Email</td><td>@row.PlotNumber</td><td>@row.Address</td><td>@row.Area</td><td>@row.CadastralNumber</td><td>@row.Balance.ToString("N2")</td></tr> }</tbody>
+    </table></div>
+    @if (preview.Issues.Count == 0 && Model.PreviewToken is not null)
+    {
+        <form method="post" asp-page-handler="Confirm">
+            <input type="hidden" asp-for="PreviewToken" />
+            <p>@L("После подтверждения все строки будут сохранены вместе. Предпросмотр действителен 30 минут.", "Після підтвердження всі рядки буде збережено разом. Попередній перегляд дійсний 30 хвилин.", "Confirmation saves all rows together. The preview is valid for 30 minutes.")</p>
+            <button type="submit" class="btn btn-success">@L("Подтвердить импорт", "Підтвердити імпорт", "Confirm import")</button>
+        </form>
+    }
+}

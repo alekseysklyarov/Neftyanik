@@ -239,7 +239,8 @@ public sealed class AssociationElectricityService : IAssociationElectricityServi
             CreatedByUserId = request.CreatedByUserId
         };
 
-        await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+        await using var transaction = _dbContext.Database.CurrentTransaction is null
+            ? await _dbContext.Database.BeginTransactionAsync(cancellationToken) : null;
 
         _dbContext.AssociationElectricityReadings.Add(reading);
 
@@ -247,13 +248,13 @@ public sealed class AssociationElectricityService : IAssociationElectricityServi
         {
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            await transaction.CommitAsync(cancellationToken);
+            if (transaction is not null) await transaction.CommitAsync(cancellationToken);
             return ElectricityReadingOperationResult.Success(reading.Id, null, totalAmount);
         }
         catch (DbUpdateException exception) when (exception.Message.Contains("AssociationElectricityReadings", StringComparison.OrdinalIgnoreCase)
             || exception.InnerException?.Message.Contains("AssociationElectricityReadings", StringComparison.OrdinalIgnoreCase) == true)
         {
-            await transaction.RollbackAsync(cancellationToken);
+            if (transaction is not null) await transaction.RollbackAsync(cancellationToken);
             return ElectricityReadingOperationResult.Failure("Показания общего счетчика на эту дату уже существуют.");
         }
     }

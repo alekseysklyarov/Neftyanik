@@ -1,0 +1,77 @@
+@page
+@model Neftyanik.Portal.Web.Pages.Product.DocumentationModel
+@using Neftyanik.Portal.Web.Documentation
+@{
+    string T(string ru, string uk, string en) => AppLocalizer.Get(ru, uk, en);
+    ViewData["Title"] = T("Документация", "Документація", "Documentation");
+    var culture = System.Globalization.CultureInfo.CurrentUICulture.Name;
+    var roles = new[] { "member", "accountant", "administrator" };
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/documentation.css" asp-append-version="true" />
+}
+<div class="docs-root" data-guide>
+    <header class="docs-hero" id="guide-top">
+        <p class="docs-eyebrow">@T("РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ", "ПОСІБНИК КОРИСТУВАЧА", "USER GUIDE")</p>
+        <h1>@T("Как работать с DachaHub", "Як працювати з DachaHub", "How to use DachaHub")</h1>
+        <p class="lead">@T("От первого входа до сверки платежей. Найдите свою задачу и выполните её по шагам.", "Від першого входу до звірки платежів. Знайдіть своє завдання й виконайте його крок за кроком.", "From your first sign-in to reconciling payments. Find your task and follow the steps.")</p>
+        <div class="docs-starts" aria-label="@T("С чего начать", "З чого почати", "Where to start")">
+            <a href="#member-account"><span>@T("Участнику", "Учаснику", "For members")</span>@T("Баланс, оплата и показания", "Баланс, оплата й показання", "Balances, payments and readings") <span aria-hidden="true">→</span></a>
+            <a href="#payments"><span>@T("Бухгалтеру", "Бухгалтеру", "For accountants")</span>@T("Платежи и финансовый учёт", "Платежі й фінансовий облік", "Payments and financial records") <span aria-hidden="true">→</span></a>
+            <a href="#first-steps"><span>@T("Администратору", "Адміністратору", "For administrators")</span>@T("Запуск и перенос данных", "Запуск і перенесення даних", "Setup and data migration") <span aria-hidden="true">→</span></a>
+        </div>
+    </header>
+    <section class="docs-tools" data-guide-controls hidden aria-label="@T("Поиск по документации", "Пошук у документації", "Search the documentation")">
+        <div class="docs-search"><label for="guide-search">@T("Что хотите сделать?", "Що хочете зробити?", "What would you like to do?")</label>
+            <input id="guide-search" type="search" placeholder="@T("Например: импорт платежей, тариф, пароль", "Наприклад: імпорт платежів, тариф, пароль", "For example: import payments, tariff, password")" autocomplete="off" aria-controls="guide-content" />
+        </div>
+        <div class="docs-role"><label for="guide-role">@T("Инструкции для", "Інструкції для", "Instructions for")</label>
+            <select id="guide-role" aria-controls="guide-content"><option value="all">@T("Всех ролей", "Усіх ролей", "All roles")</option>@foreach (var role in roles) { <option value="@role">@DocumentationContent.Role(role)</option> }</select>
+        </div>
+        <div class="docs-tool-actions"><button type="button" class="product-button secondary" data-guide-clear>@T("Сбросить", "Скинути", "Reset")</button><button type="button" class="docs-print" data-guide-print>@T("Распечатать", "Роздрукувати", "Print")</button></div>
+        <p class="docs-search-status" role="status" aria-live="polite" data-guide-status data-template="@T("Показано разделов: {count} из {total}", "Показано розділів: {count} із {total}", "Showing {count} of {total} sections")"></p>
+    </section>
+    <div class="docs-grid">
+        <aside class="docs-sidebar">
+            <details class="docs-toc" open data-guide-toc>
+                <summary>@T("Оглавление", "Зміст", "Contents")</summary>
+                <nav aria-label="@T("Разделы документации", "Розділи документації", "Documentation sections")">
+                    @foreach (var category in Model.Articles.GroupBy(a => a.Category))
+                    {
+                        <div class="docs-nav-group" data-guide-nav-group>
+                            <h2>@DocumentationContent.Category(category.Key)</h2>
+                            <ul>@foreach (var article in category) { <li data-guide-nav-item="@article.Id"><a href="#@article.Id">@article.Title</a></li> }</ul>
+                        </div>
+                    }
+                </nav>
+            </details>
+            <a class="docs-demo-link" asp-page="/Product/Demo" asp-route-culture="@culture">@T("Попробовать на учебных данных", "Спробувати на навчальних даних", "Try with sample data") →</a>
+        </aside>
+        <div class="docs-content" id="guide-content">
+            <div class="docs-empty" data-guide-empty hidden><h2>@T("Ничего не найдено", "Нічого не знайдено", "No results found")</h2><p>@T("Попробуйте другое слово или выберите все роли. Например: «показания», «импорт», «пароль».", "Спробуйте інше слово або оберіть усі ролі. Наприклад: «показання», «імпорт», «пароль».", "Try another word or select all roles. For example: readings, import or password.")</p><button class="product-button secondary" type="button" data-guide-clear>@T("Показать все инструкции", "Показати всі інструкції", "Show all instructions")</button></div>
+            @foreach (var article in Model.Articles)
+            {
+                <article class="docs-article" id="@article.Id" data-guide-article data-roles="@article.Roles" data-keywords="@article.Id" aria-labelledby="@(article.Id)-title">
+                    <div class="docs-article-meta"><span>@DocumentationContent.Category(article.Category)</span><div>@foreach (var role in article.Roles.Split(' ')) { <span class="docs-role-badge">@DocumentationContent.Role(role)</span> }</div></div>
+                    <h2 id="@(article.Id)-title" tabindex="-1">@article.Title <a class="docs-permalink" href="#@article.Id" aria-label="@T("Ссылка на раздел: ", "Посилання на розділ: ", "Link to section: ")@article.Title">#</a></h2>
+                    <p class="docs-introduction">@article.Introduction</p>
+                    @if (article.Steps.Length > 0) { <ol class="docs-steps">@foreach (var step in article.Steps) { <li>@step</li> }</ol> }
+                    @if (article.Table is { } table)
+                    {
+                        <div class="docs-table-wrap" role="region" aria-label="@article.Title" tabindex="0"><table>
+                            <caption class="sr-only">@article.Title</caption>
+                            <thead><tr>@foreach (var header in table.Headers) { <th scope="col">@header</th> }</tr></thead>
+                            <tbody>@foreach (var row in table.Rows) { <tr>@for (var column = 0; column < row.Length; column++) { @if (column == 0) { <th scope="row">@row[column]</th> } else { <td>@row[column]</td> } }</tr> }</tbody>
+                        </table></div>
+                    }
+                    @if (article.Note is not null) { <aside class="docs-note">@article.Note</aside> }
+                    <a class="docs-back" href="#guide-top">@T("К началу руководства", "На початок посібника", "Back to the top") ↑</a>
+                </article>
+            }
+        </div>
+    </div>
+    <section class="docs-help" aria-labelledby="guide-help-title"><div><h2 id="guide-help-title">@T("Нужна помощь с подключением?", "Потрібна допомога з підключенням?", "Need help getting started?")</h2><p>@T("Оставьте заявку — обсудим запуск товарищества и перенос ваших данных. По вопросам своего лицевого счёта обращайтесь к администратору товарищества.", "Залиште заявку — обговоримо запуск товариства й перенесення ваших даних. З питань свого особового рахунку звертайтеся до адміністратора товариства.", "Send a request to discuss association setup and migration. For questions about your own balance, contact your association's administrator.")</p></div><a class="product-button" asp-page="/Product/Request" asp-route-culture="@culture">@T("Обсудить подключение", "Обговорити підключення", "Discuss setup")</a></section>
+</div>
+@section Scripts {
+    <script src="~/js/documentation.js" asp-append-version="true" defer></script>
+}

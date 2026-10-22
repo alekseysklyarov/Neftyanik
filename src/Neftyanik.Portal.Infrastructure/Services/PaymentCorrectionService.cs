@@ -14,7 +14,7 @@ namespace Neftyanik.Portal.Infrastructure.Services;
 public sealed class PaymentCorrectionService(ApplicationDbContext db, IFinancialAuditService audit)
 {
     public static Task<long?> LatestActivePaymentIdAsync(ApplicationDbContext db, int memberId, CancellationToken ct = default) =>
-        db.Payments.AsNoTracking().Where(p => p.MemberId == memberId && p.CancelledAtUtc == null)
+        db.Payments.AsNoTracking().Where(p => p.MemberId == memberId && p.CancelledAtUtc == null && p.PaymentMethod != PaymentMethod.OpeningBalance)
             .OrderByDescending(p => p.PaymentDate).ThenByDescending(p => p.Id)
             .Select(p => (long?)p.Id).FirstOrDefaultAsync(ct);
 

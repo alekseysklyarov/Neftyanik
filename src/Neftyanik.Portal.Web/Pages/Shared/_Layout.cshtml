@@ -21,6 +21,13 @@
     var errorMessage = TempData["ErrorMessage"] as string;
     var currentCulture = CultureInfo.CurrentUICulture.Name;
     var currentUrl = string.Concat(Context.Request.PathBase, Context.Request.Path, Context.Request.QueryString);
+    var documentationBase = DemoScope.IsActive ? DemoScope.OriginPathBase : Context.Request.PathBase.Value ?? string.Empty;
+    if (!DemoScope.IsActive && AssociationContext.IsResolved)
+    {
+        var tenantSuffix = "/" + AssociationContext.Slug;
+        if (documentationBase.EndsWith(tenantSuffix, StringComparison.Ordinal)) documentationBase = documentationBase[..^tenantSuffix.Length];
+    }
+    var documentationUrl = documentationBase + "/Product/Documentation?culture=" + currentCulture;
 }
 
 <!DOCTYPE html>
@@ -80,6 +87,7 @@
                                 <a class="nav-link portal-nav-link" asp-page="/Member/Index">@AppLocalizer.Get("Личный кабинет", "Особистий кабінет", "Member dashboard")</a>
                             </li>
                         }
+                        <li class="nav-item"><a class="nav-link portal-nav-link" href="@documentationUrl">@AppLocalizer.Get("Документация", "Документація", "Documentation")</a></li>
                     </ul>
                     <ul class="navbar-nav portal-navbar-actions align-items-stretch align-items-xl-center justify-content-xl-end gap-2 gap-xl-2">
                         <li class="nav-item">
@@ -136,6 +144,7 @@
     <footer class="footer portal-footer text-muted">
         <div class="container">
             &copy; 2026 - @associationName
+            <span class="ms-3"><a href="@documentationUrl">@AppLocalizer.Get("Документация", "Документація", "Documentation")</a></span>
         </div>
     </footer>
 

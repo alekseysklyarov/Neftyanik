@@ -25,6 +25,11 @@
     </div>
 </section>
 <section id="features" class="product-section">
+    <div class="access-card mb-4">
+        <h2 id="home-documentation-title">@L("Подробные инструкции под рукой", "Докладні інструкції під рукою", "Step-by-step help, whenever you need it")</h2>
+        <p>@L("Как войти в кабинет, внести показания, зарегистрировать оплату или перенести данные из Excel. В руководстве есть поиск и инструкции для каждой роли.", "Як увійти до кабінету, внести показання, зареєструвати оплату або перенести дані з Excel. У посібнику є пошук та інструкції для кожної ролі.", "Learn how to sign in, submit readings, register payments or import Excel data. Search the guide or find instructions for your role.")</p>
+        <a class="product-button secondary" asp-page="/Product/Documentation" asp-route-culture="@culture">@L("Открыть документацию", "Відкрити документацію", "Open documentation") →</a>
+    </div>
     <h2>@L("Посмотрите экраны и попробуйте сами", "Перегляньте екрани та спробуйте самі", "See the screens and try them yourself")</h2>
     <p class="section-description">@L("Скриншоты настоящих страниц с учебными данными. Под каждым — вход сразу в показанный раздел тестового товарищества.", "Попередній перегляд справжніх сторінок із навчальними даними. Під кожною — вхід одразу до показаного розділу тестового товариства.", "Previews of real pages with sample data. Each button signs you into the corresponding section of the test association.")</p>
     <partial name="_DemoGallery" />

@@ -22,14 +22,22 @@ public sealed class PaymentService : IPaymentService
         _financialAuditService = financialAuditService;
     }
 
-    public async Task<CreateMemberPaymentResult> CreateMemberPaymentAsync(CreateMemberPaymentRequest request, CancellationToken cancellationToken = default)
+    public Task<CreateMemberPaymentResult> CreateMemberPaymentAsync(CreateMemberPaymentRequest request, CancellationToken cancellationToken = default)
+        => CreatePaymentAsync(request, false, cancellationToken);
+
+    // Annual transfers also preserve historical bank/other receipts and opening credits.
+    // Normal payment forms retain their existing allowed payment methods.
+    public Task<CreateMemberPaymentResult> CreateImportedMemberPaymentAsync(CreateMemberPaymentRequest request, CancellationToken cancellationToken = default)
+        => CreatePaymentAsync(request, true, cancellationToken);
+
+    private async Task<CreateMemberPaymentResult> CreatePaymentAsync(CreateMemberPaymentRequest request, bool importing, CancellationToken cancellationToken)
     {
         if (request.Amount <= 0m)
         {
             return CreateMemberPaymentResult.Failure(CreateMemberPaymentResultCode.InvalidAmount);
         }
 
-        if (!Enum.IsDefined(request.PaymentMethod) || !PaymentMethodRules.IsAllowed(request.PaymentMethod))
+        if (!Enum.IsDefined(request.PaymentMethod) || (!importing && !PaymentMethodRules.IsAllowed(request.PaymentMethod)))
         {
             return CreateMemberPaymentResult.Failure(CreateMemberPaymentResultCode.InvalidPaymentMethod);
         }

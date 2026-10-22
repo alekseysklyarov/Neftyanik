@@ -594,6 +594,7 @@ public class IndexModel : PageModel
                 PaymentDate = payment.PaymentDate,
                 Amount = payment.Amount,
                 PaymentMethodText = FinanceDisplayHelper.GetPaymentMethodText(payment.PaymentMethod),
+                IsOpeningBalance = payment.PaymentMethod == PaymentMethod.OpeningBalance,
                 ReferenceNumber = payment.ReferenceNumber,
                 Description = payment.Description,
                 IsCancelled = payment.CancelledAtUtc != null,
@@ -1045,6 +1046,7 @@ public class IndexModel : PageModel
         public decimal Amount { get; init; }
 
         public string PaymentMethodText { get; init; } = string.Empty;
+        public bool IsOpeningBalance { get; init; }
 
         public string? ReferenceNumber { get; init; }
 

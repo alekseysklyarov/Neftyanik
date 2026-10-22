@@ -11,6 +11,27 @@
     </div>
 </div>
 
+<div class="card mb-4"><div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
+    <div><h2 class="h5 mb-1">@AppLocalizer.Get("Выгрузка данных товарищества", "Вивантаження даних товариства", "Association data export")</h2><p class="text-muted mb-0">@AppLocalizer.Get("Участники, участки, владение и финансовые остатки в Excel.", "Учасники, ділянки, володіння й фінансові залишки в Excel.", "Members, plots, ownerships and financial balances in Excel.")</p></div>
+    <a class="btn btn-outline-primary" asp-page="/Administration/Export/Index">@AppLocalizer.Get("Выгрузить данные", "Вивантажити дані", "Export data")</a>
+</div></div>
+
+<div class="card mb-4"><div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
+    <div><h2 class="h5 mb-1">@AppLocalizer.Get("Импорт из Excel", "Імпорт з Excel", "Import from Excel")</h2><p class="text-muted mb-0">@AppLocalizer.Get("Участники, участки, владельцы и начальные остатки. Проверка перед сохранением.", "Учасники, ділянки, власники й початкові залишки. Перевірка перед збереженням.", "Members, plots, owners and opening balances. Review before saving.")</p></div>
+    <a class="btn btn-outline-primary" asp-page="/Administration/Import/Index">@AppLocalizer.Get("Импортировать данные", "Імпортувати дані", "Import data")</a>
+</div></div>
+
+<div class="card mb-4"><div class="card-body">
+    <h2 class="h5">@AppLocalizer.Get("Платежи и показания за год", "Платежі та показання за рік", "Annual payments and readings")</h2>
+    <form method="get" class="d-flex flex-wrap align-items-end gap-3">
+        <div><label for="transferYear" class="form-label">@AppLocalizer.Get("Год", "Рік", "Year")</label><input id="transferYear" name="Year" type="number" min="2000" max="2100" value="@DateTime.Today.Year" required class="form-control" /></div>
+        <button class="btn btn-outline-primary" type="submit" asp-page="/Administration/YearTransfer/Index" asp-route-kind="payments" asp-route-mode="import">@AppLocalizer.Get("Импорт платежей", "Імпорт платежів", "Import payments")</button>
+        <button class="btn btn-outline-primary" type="submit" asp-page="/Administration/YearTransfer/Index" asp-route-kind="payments" asp-route-mode="export">@AppLocalizer.Get("Экспорт платежей", "Експорт платежів", "Export payments")</button>
+        <button class="btn btn-outline-primary" type="submit" asp-page="/Administration/YearTransfer/Index" asp-route-kind="readings" asp-route-mode="import">@AppLocalizer.Get("Импорт показаний", "Імпорт показань", "Import readings")</button>
+        <button class="btn btn-outline-primary" type="submit" asp-page="/Administration/YearTransfer/Index" asp-route-kind="readings" asp-route-mode="export">@AppLocalizer.Get("Экспорт показаний", "Експорт показань", "Export readings")</button>
+    </form>
+</div></div>
+
 <div class="row g-4 mb-4">
     <div class="col-sm-6 col-xl-3">
         <div class="card h-100 shadow-sm">

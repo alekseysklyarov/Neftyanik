@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Neftyanik.Portal.Domain.Constants;
+using Neftyanik.Portal.Domain.Enums;
 using Neftyanik.Portal.Infrastructure.Data;
 
 namespace Neftyanik.Portal.Web.Pages.Administration.Finance;
@@ -18,10 +19,10 @@ public class FundsModel(ApplicationDbContext db) : PageModel
     public async Task OnGetAsync(CancellationToken ct)
     {
         if (From > To) { ModelState.AddModelError(string.Empty, "Начало периода должно быть не позже окончания."); return; }
-        var payments = await db.Payments.AsNoTracking().Where(p => p.CancelledAtUtc == null && p.PaymentDate <= To)
+        var payments = await db.Payments.AsNoTracking().Where(p => p.CancelledAtUtc == null && p.PaymentMethod != PaymentMethod.OpeningBalance && p.PaymentDate <= To)
             .Select(p => new { p.Id, p.PaymentDate, p.Amount }).ToListAsync(ct);
         var allocations = await db.PaymentAllocations.AsNoTracking()
-            .Where(a => a.Payment != null && a.Payment.CancelledAtUtc == null && a.Payment.PaymentDate <= To
+            .Where(a => a.Payment != null && a.Payment.CancelledAtUtc == null && a.Payment.PaymentMethod != PaymentMethod.OpeningBalance && a.Payment.PaymentDate <= To
                 && a.Charge != null && a.Charge.CancelledAtUtc == null)
             .Select(a => new { a.PaymentId, Date = a.Payment!.PaymentDate, a.Amount,
                 Fund = a.Charge!.ChargeType != null && a.Charge.ChargeType.Code == ChargeTypeCodes.Electricity ? 2

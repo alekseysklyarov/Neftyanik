@@ -410,9 +410,12 @@
                                                         <td>@payment.PaymentMethodText</td>
                                                         <td>@(string.IsNullOrWhiteSpace(payment.ReferenceNumber) ? "—" : payment.ReferenceNumber)</td>
                                                         <td class="text-end">
-                                                            <a class="btn btn-sm btn-outline-secondary"
-                                                               asp-page="/Payments/Receipt"
-                                                               asp-route-paymentId="@payment.PaymentId">@AppLocalizer.Get("Платёжка", "Платіжка", "Receipt")</a>
+                                                            @if (!payment.IsOpeningBalance)
+                                                            {
+                                                                <a class="btn btn-sm btn-outline-secondary"
+                                                                   asp-page="/Payments/Receipt"
+                                                                   asp-route-paymentId="@payment.PaymentId">@AppLocalizer.Get("Платёжка", "Платіжка", "Receipt")</a>
+                                                            }
                                                         </td>
                                                     </tr>
                                                      @if (!string.IsNullOrWhiteSpace(payment.Description) || !string.IsNullOrWhiteSpace(payment.CancellationReason) || payment.CancelledAtUtc.HasValue || Model.ElectricityPayments.ContainsKey(payment.PaymentId))
